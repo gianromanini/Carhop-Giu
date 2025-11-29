@@ -1,4 +1,4 @@
-import { Users, Settings, Briefcase, Leaf, Fuel, Check, Shield } from "lucide-react";
+import { Users, Settings, Briefcase, Leaf, Fuel, Check, Shield, CircleDot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -63,7 +63,7 @@ export function VehicleDetailModal({
             />
           </div>
 
-          <div className="grid grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-5 gap-3 text-center">
             <div className="p-3 rounded-lg bg-muted">
               <Users className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
               <p className="text-sm font-medium">{vehicle.passengers}</p>
@@ -73,6 +73,11 @@ export function VehicleDetailModal({
               <Settings className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
               <p className="text-sm font-medium">{vehicle.transmission}</p>
               <p className="text-xs text-muted-foreground">Transmission</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted">
+              <CircleDot className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+              <p className="text-sm font-medium">{vehicle.drivetrain}</p>
+              <p className="text-xs text-muted-foreground">Drivetrain</p>
             </div>
             <div className="p-3 rounded-lg bg-muted">
               <Briefcase className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />

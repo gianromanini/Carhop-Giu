@@ -1,4 +1,4 @@
-import { Users, Settings, Briefcase, Leaf, Fuel } from "lucide-react";
+import { Users, Settings, Briefcase, Leaf, Fuel, CircleDot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -13,6 +13,7 @@ export interface Vehicle {
   mpg: number;
   passengers: number;
   transmission: "Automatic" | "Manual";
+  drivetrain: "FWD" | "RWD" | "AWD";
   luggage: number;
   fuelEfficient: boolean;
 }
@@ -71,7 +72,7 @@ export function VehicleCard({ vehicle, onSelect, onViewDetails }: VehicleCardPro
           </div>
         </div>
         
-        <div className="grid grid-cols-3 gap-2 py-2 border-y">
+        <div className="grid grid-cols-4 gap-2 py-2 border-y">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>{vehicle.passengers}</span>
@@ -79,6 +80,10 @@ export function VehicleCard({ vehicle, onSelect, onViewDetails }: VehicleCardPro
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Settings className="h-4 w-4" />
             <span className="truncate">{vehicle.transmission === "Automatic" ? "Auto" : "Manual"}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <CircleDot className="h-4 w-4" />
+            <span>{vehicle.drivetrain}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Briefcase className="h-4 w-4" />

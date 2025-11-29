@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { VehicleCard, type Vehicle } from "@/components/VehicleCard";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Leaf } from "lucide-react";
+import { Shield, Leaf, Loader2 } from "lucide-react";
 import { addDays } from "date-fns";
 
 import corollaImage from "@assets/generated_images/toyota_corolla_side_view.png";
@@ -24,87 +25,16 @@ import elantraImage from "@assets/generated_images/hyundai_elantra_side_view.png
 import forteImage from "@assets/generated_images/kia_forte_side_view.png";
 import mazda3Image from "@assets/generated_images/mazda_3_hatchback_view.png";
 
-// todo: remove mock functionality - replace with real API data
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    name: "Toyota Corolla",
-    category: "Economy",
-    image: corollaImage,
-    pricePerDay: 35,
-    payNowPrice: 29,
-    mpg: 32,
-    passengers: 5,
-    transmission: "Automatic",
-    luggage: 2,
-    fuelEfficient: true,
-  },
-  {
-    id: "2",
-    name: "Honda Civic",
-    category: "Economy",
-    image: civicImage,
-    pricePerDay: 38,
-    payNowPrice: 32,
-    mpg: 33,
-    passengers: 5,
-    transmission: "Automatic",
-    luggage: 2,
-    fuelEfficient: true,
-  },
-  {
-    id: "3",
-    name: "Nissan Versa",
-    category: "Compact",
-    image: versaImage,
-    pricePerDay: 28,
-    payNowPrice: 22,
-    mpg: 35,
-    passengers: 5,
-    transmission: "Automatic",
-    luggage: 2,
-    fuelEfficient: true,
-  },
-  {
-    id: "4",
-    name: "Hyundai Elantra",
-    category: "Economy",
-    image: elantraImage,
-    pricePerDay: 32,
-    payNowPrice: 26,
-    mpg: 31,
-    passengers: 5,
-    transmission: "Automatic",
-    luggage: 2,
-    fuelEfficient: true,
-  },
-  {
-    id: "5",
-    name: "Kia Forte",
-    category: "Economy",
-    image: forteImage,
-    pricePerDay: 30,
-    payNowPrice: 24,
-    mpg: 28,
-    passengers: 5,
-    transmission: "Automatic",
-    luggage: 2,
-    fuelEfficient: false,
-  },
-  {
-    id: "6",
-    name: "Mazda 3",
-    category: "Compact",
-    image: mazda3Image,
-    pricePerDay: 42,
-    payNowPrice: 35,
-    mpg: 30,
-    passengers: 5,
-    transmission: "Manual",
-    luggage: 2,
-    fuelEfficient: true,
-  },
-];
+const vehicleImageMap: Record<string, string> = {
+  "Toyota Corolla": corollaImage,
+  "Honda Civic": civicImage,
+  "Nissan Versa": versaImage,
+  "Hyundai Elantra": elantraImage,
+  "Kia Forte": forteImage,
+  "Mazda 3": mazda3Image,
+};
+
+const defaultImage = corollaImage;
 
 type View = "browse" | "checkout" | "confirmation";
 
@@ -120,6 +50,7 @@ export default function Home() {
     priceRange: [15, 100],
     fuelSaverOnly: false,
     transmission: [],
+    drivetrain: [],
     passengers: null,
     sortBy: "price-low",
   });
@@ -128,51 +59,38 @@ export default function Home() {
   const [manageBookingOpen, setManageBookingOpen] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
 
-  const filteredVehicles = useMemo(() => {
-    let result = [...mockVehicles];
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+    params.set("priceMin", filters.priceRange[0].toString());
+    params.set("priceMax", filters.priceRange[1].toString());
+    if (filters.fuelSaverOnly) params.set("fuelSaverOnly", "true");
+    if (filters.transmission.length > 0) params.set("transmission", filters.transmission.join(","));
+    if (filters.drivetrain.length > 0) params.set("drivetrain", filters.drivetrain.join(","));
+    if (filters.passengers) params.set("passengers", filters.passengers.toString());
+    if (filters.sortBy) params.set("sortBy", filters.sortBy);
+    return params.toString();
+  };
 
-    // Filter by price range
-    result = result.filter(
-      (v) => v.payNowPrice >= filters.priceRange[0] && v.payNowPrice <= filters.priceRange[1]
-    );
+  const { data: vehiclesData, isLoading, error } = useQuery<Vehicle[]>({
+    queryKey: ["/api/vehicles", buildQueryParams()],
+    queryFn: async () => {
+      const res = await fetch(`/api/vehicles?${buildQueryParams()}`);
+      if (!res.ok) throw new Error("Failed to fetch vehicles");
+      return res.json();
+    },
+  });
 
-    // Filter by fuel saver
-    if (filters.fuelSaverOnly) {
-      result = result.filter((v) => v.fuelEfficient);
-    }
-
-    // Filter by transmission
-    if (filters.transmission.length > 0) {
-      result = result.filter((v) => filters.transmission.includes(v.transmission));
-    }
-
-    // Filter by passengers
-    if (filters.passengers) {
-      result = result.filter((v) => v.passengers >= filters.passengers!);
-    }
-
-    // Sort
-    switch (filters.sortBy) {
-      case "price-low":
-        result.sort((a, b) => a.payNowPrice - b.payNowPrice);
-        break;
-      case "price-high":
-        result.sort((a, b) => b.payNowPrice - a.payNowPrice);
-        break;
-      case "mpg":
-        result.sort((a, b) => b.mpg - a.mpg);
-        break;
-      default:
-        break;
-    }
-
-    return result;
-  }, [filters]);
+  const vehicles = useMemo(() => {
+    if (!vehiclesData) return [];
+    return vehiclesData.map(vehicle => ({
+      ...vehicle,
+      image: vehicleImageMap[vehicle.name] || defaultImage,
+    }));
+  }, [vehiclesData]);
 
   const handleSearch = (data: { location: string; pickupDate: Date; returnDate: Date }) => {
     setSearchData(data);
     setHasSearched(true);
-    console.log("Search:", data);
   };
 
   const handleSelectVehicle = (vehicle: Vehicle) => {
@@ -231,7 +149,7 @@ export default function Home() {
           <div className="p-6 rounded-lg bg-muted/50 mb-8 text-left max-w-md mx-auto">
             <h3 className="font-semibold mb-3">Booking Details</h3>
             <div className="space-y-2 text-sm">
-              <p><span className="text-muted-foreground">Confirmation #:</span> ECO-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+              <p><span className="text-muted-foreground">Confirmation #:</span> CH-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
               <p><span className="text-muted-foreground">Vehicle:</span> {selectedVehicle?.name}</p>
               <p><span className="text-muted-foreground">Location:</span> {searchData.location}</p>
               <p><span className="text-muted-foreground">Pick-up:</span> {searchData.pickupDate.toLocaleDateString()}</p>
@@ -276,16 +194,27 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockVehicles.slice(0, 6).map((vehicle) => (
-                  <VehicleCard
-                    key={vehicle.id}
-                    vehicle={vehicle}
-                    onSelect={handleSelectVehicle}
-                    onViewDetails={(v) => setDetailVehicle(v)}
-                  />
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-16">
+                  <p className="text-lg font-medium mb-2">Failed to load vehicles</p>
+                  <p className="text-muted-foreground">Please try again later</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {vehicles.slice(0, 6).map((vehicle) => (
+                    <VehicleCard
+                      key={vehicle.id}
+                      vehicle={vehicle}
+                      onSelect={handleSelectVehicle}
+                      onViewDetails={(v) => setDetailVehicle(v)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -301,7 +230,7 @@ export default function Home() {
             <div>
               <h1 className="font-display text-2xl font-bold">Available Cars</h1>
               <p className="text-muted-foreground">
-                {filteredVehicles.length} vehicles found at {searchData.location}
+                {vehicles.length} vehicles found at {searchData.location}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -321,14 +250,18 @@ export default function Home() {
               <FilterSidebar
                 filters={filters}
                 onFiltersChange={setFilters}
-                vehicleCount={filteredVehicles.length}
+                vehicleCount={vehicles.length}
               />
             </div>
             
             <div className="lg:col-span-3">
-              {filteredVehicles.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : vehicles.length > 0 ? (
                 <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredVehicles.map((vehicle) => (
+                  {vehicles.map((vehicle) => (
                     <VehicleCard
                       key={vehicle.id}
                       vehicle={vehicle}
@@ -348,6 +281,7 @@ export default function Home() {
                         priceRange: [15, 100],
                         fuelSaverOnly: false,
                         transmission: [],
+                        drivetrain: [],
                         passengers: null,
                         sortBy: "price-low",
                       })
@@ -393,14 +327,42 @@ function ManageBookingDialog({
   bookingRef: string;
   setBookingRef: (ref: string) => void;
 }) {
-  const handleLookup = () => {
-    console.log("Looking up booking:", bookingRef);
-    // todo: replace with real API call
-    alert(`Booking ${bookingRef} not found. This is a demo.`);
+  const [isLooking, setIsLooking] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLookup = async () => {
+    if (!bookingRef.trim()) return;
+    
+    setIsLooking(true);
+    setError(null);
+    setResult(null);
+    
+    try {
+      const res = await fetch(`/api/reservations/lookup/${encodeURIComponent(bookingRef)}`);
+      if (res.status === 404) {
+        setError("Booking not found. Please check your confirmation number.");
+      } else if (!res.ok) {
+        setError("Failed to lookup booking. Please try again.");
+      } else {
+        const data = await res.json();
+        setResult(data);
+      }
+    } catch (err) {
+      setError("Failed to lookup booking. Please try again.");
+    } finally {
+      setIsLooking(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => {
+      onOpenChange(o);
+      if (!o) {
+        setResult(null);
+        setError(null);
+      }
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Manage Your Booking</DialogTitle>
@@ -409,19 +371,60 @@ function ManageBookingDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="bookingRef">Booking Reference</Label>
-            <Input
-              id="bookingRef"
-              placeholder="e.g., ECO-ABC123XYZ"
-              value={bookingRef}
-              onChange={(e) => setBookingRef(e.target.value)}
-              data-testid="input-booking-ref"
-            />
-          </div>
-          <Button className="w-full" onClick={handleLookup} data-testid="button-lookup-booking">
-            Look Up Booking
-          </Button>
+          {!result ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="bookingRef">Booking Reference</Label>
+                <Input
+                  id="bookingRef"
+                  placeholder="e.g., CH-ABC123XYZ"
+                  value={bookingRef}
+                  onChange={(e) => setBookingRef(e.target.value)}
+                  data-testid="input-booking-ref"
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              )}
+              <Button 
+                className="w-full" 
+                onClick={handleLookup} 
+                disabled={isLooking || !bookingRef.trim()}
+                data-testid="button-lookup-booking"
+              >
+                {isLooking ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Looking up...
+                  </>
+                ) : (
+                  "Look Up Booking"
+                )}
+              </Button>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted space-y-2 text-sm">
+                <p><span className="text-muted-foreground">Status:</span> <Badge variant="secondary">{result.status}</Badge></p>
+                <p><span className="text-muted-foreground">Confirmation #:</span> {result.confirmationNumber}</p>
+                <p><span className="text-muted-foreground">Vehicle:</span> {result.vehicle?.name}</p>
+                <p><span className="text-muted-foreground">Location:</span> {result.location}</p>
+                <p><span className="text-muted-foreground">Pick-up:</span> {new Date(result.pickupDate).toLocaleDateString()}</p>
+                <p><span className="text-muted-foreground">Return:</span> {new Date(result.returnDate).toLocaleDateString()}</p>
+                <p><span className="text-muted-foreground">Total:</span> ${result.totalPrice.toFixed(2)}</p>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => {
+                  setResult(null);
+                  setBookingRef("");
+                }}
+              >
+                Look Up Another Booking
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

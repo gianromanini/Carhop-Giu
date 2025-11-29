@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, ChevronLeft, Car, User, CreditCard, Shield, MapPin, Calendar } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Check, ChevronLeft, Car, User, CreditCard, Shield, MapPin, Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { PaymentComparison } from "./PaymentComparison";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Vehicle } from "./VehicleCard";
 
 interface CheckoutFlowProps {
@@ -53,15 +55,50 @@ export function CheckoutFlow({
     { number: 3, title: "Payment", icon: CreditCard },
   ];
 
+  const createReservationMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/reservations", {
+        vehicle: {
+          id: vehicle.id,
+          pricePerDay: vehicle.pricePerDay,
+          payNowPrice: vehicle.payNowPrice,
+        },
+        customer: {
+          firstName: driverInfo.firstName,
+          lastName: driverInfo.lastName,
+          email: driverInfo.email,
+          phone: driverInfo.phone,
+          licenseNumber: driverInfo.licenseNumber,
+        },
+        location,
+        pickupDate: pickupDate.toISOString(),
+        returnDate: returnDate.toISOString(),
+        paymentOption,
+        extras,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Booking Confirmed!",
+        description: `Your ${vehicle.name} is reserved. Confirmation #: ${data.confirmationNumber}`,
+      });
+      onComplete();
+    },
+    onError: () => {
+      toast({
+        title: "Booking Failed",
+        description: "There was an error processing your reservation. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleNext = () => {
     if (step < 3) {
       setStep((s) => (s + 1) as Step);
     } else {
-      toast({
-        title: "Booking Confirmed!",
-        description: `Your ${vehicle.name} is reserved. Confirmation sent to ${driverInfo.email}`,
-      });
-      onComplete();
+      createReservationMutation.mutate();
     }
   };
 

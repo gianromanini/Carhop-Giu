@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Shield, Check } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Shield, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { addDays } from "date-fns";
 
 interface PriceMatchModalProps {
   trigger?: React.ReactNode;
@@ -24,25 +27,54 @@ interface PriceMatchModalProps {
 export function PriceMatchModal({ trigger, vehicleName, currentPrice }: PriceMatchModalProps) {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
   const [competitorName, setCompetitorName] = useState("");
   const [competitorPrice, setCompetitorPrice] = useState("");
   const [competitorUrl, setCompetitorUrl] = useState("");
   const { toast } = useToast();
 
+  const priceMatchMutation = useMutation({
+    mutationFn: async () => {
+      const pickupDate = new Date();
+      const returnDate = addDays(pickupDate, 3);
+      
+      const res = await apiRequest("POST", "/api/price-match", {
+        customerEmail,
+        competitorName,
+        competitorPrice: parseFloat(competitorPrice),
+        vehicleType: vehicleName || "Economy",
+        pickupDate: pickupDate.toISOString(),
+        returnDate: returnDate.toISOString(),
+        proofUrl: competitorUrl || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      toast({
+        title: "Price Match Request Submitted",
+        description: "We'll review your request and respond within 24 hours.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your request. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Price match request:", { competitorName, competitorPrice, competitorUrl, vehicleName });
-    setSubmitted(true);
-    toast({
-      title: "Price Match Request Submitted",
-      description: "We'll review your request and respond within 24 hours.",
-    });
+    priceMatchMutation.mutate();
   };
 
   const handleClose = () => {
     setOpen(false);
     setTimeout(() => {
       setSubmitted(false);
+      setCustomerEmail("");
       setCompetitorName("");
       setCompetitorPrice("");
       setCompetitorUrl("");
@@ -83,6 +115,19 @@ export function PriceMatchModal({ trigger, vehicleName, currentPrice }: PriceMat
                   )}
                 </div>
               )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Your Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  required
+                  data-testid="input-customer-email"
+                />
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="competitor">Competitor Name</Label>
@@ -136,8 +181,19 @@ export function PriceMatchModal({ trigger, vehicleName, currentPrice }: PriceMat
                 <Button type="button" variant="outline" onClick={handleClose}>
                   Cancel
                 </Button>
-                <Button type="submit" data-testid="button-submit-price-match">
-                  Submit Request
+                <Button 
+                  type="submit" 
+                  disabled={priceMatchMutation.isPending}
+                  data-testid="button-submit-price-match"
+                >
+                  {priceMatchMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Request"
+                  )}
                 </Button>
               </DialogFooter>
             </form>

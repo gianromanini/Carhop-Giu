@@ -20,18 +20,18 @@ export function Header({ onManageBooking }: HeaderProps) {
               <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
                 <Car className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="font-display font-bold text-xl hidden sm:block">EconoDrive</span>
+              <span className="font-display font-bold text-xl hidden sm:block">CarHop</span>
             </div>
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
             <a 
-              href="tel:1-800-ECONO" 
+              href="tel:1-800-CARHOP" 
               className="flex items-center gap-2 text-sm text-muted-foreground hover-elevate px-2 py-1 rounded-md"
               data-testid="link-phone"
             >
               <Phone className="h-4 w-4" />
-              <span>1-800-ECONO</span>
+              <span>1-800-CARHOP</span>
             </a>
             <Button 
               variant="ghost" 
@@ -65,12 +65,12 @@ export function Header({ onManageBooking }: HeaderProps) {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t space-y-2">
             <a 
-              href="tel:1-800-ECONO" 
+              href="tel:1-800-CARHOP" 
               className="flex items-center gap-2 px-2 py-2 text-sm hover-elevate rounded-md"
               data-testid="link-phone-mobile"
             >
               <Phone className="h-4 w-4" />
-              <span>1-800-ECONO</span>
+              <span>1-800-CARHOP</span>
             </a>
             <Button 
               variant="ghost" 

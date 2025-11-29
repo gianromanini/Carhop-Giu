@@ -13,6 +13,7 @@ export interface Filters {
   priceRange: [number, number];
   fuelSaverOnly: boolean;
   transmission: string[];
+  drivetrain: string[];
   passengers: number | null;
   sortBy: string;
 }
@@ -29,6 +30,13 @@ function FilterContent({ filters, onFiltersChange }: Omit<FilterSidebarProps, "v
       ? [...filters.transmission, value]
       : filters.transmission.filter((t) => t !== value);
     onFiltersChange({ ...filters, transmission: newTransmission });
+  };
+
+  const handleDrivetrainChange = (value: string, checked: boolean) => {
+    const newDrivetrain = checked
+      ? [...filters.drivetrain, value]
+      : filters.drivetrain.filter((d) => d !== value);
+    onFiltersChange({ ...filters, drivetrain: newDrivetrain });
   };
 
   return (
@@ -98,6 +106,45 @@ function FilterContent({ filters, onFiltersChange }: Omit<FilterSidebarProps, "v
       </div>
 
       <div className="space-y-3">
+        <Label>Drivetrain</Label>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="fwd"
+              checked={filters.drivetrain.includes("FWD")}
+              onCheckedChange={(checked) => handleDrivetrainChange("FWD", !!checked)}
+              data-testid="checkbox-fwd"
+            />
+            <Label htmlFor="fwd" className="font-normal cursor-pointer">
+              FWD (Front-Wheel Drive)
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="rwd"
+              checked={filters.drivetrain.includes("RWD")}
+              onCheckedChange={(checked) => handleDrivetrainChange("RWD", !!checked)}
+              data-testid="checkbox-rwd"
+            />
+            <Label htmlFor="rwd" className="font-normal cursor-pointer">
+              RWD (Rear-Wheel Drive)
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="awd"
+              checked={filters.drivetrain.includes("AWD")}
+              onCheckedChange={(checked) => handleDrivetrainChange("AWD", !!checked)}
+              data-testid="checkbox-awd"
+            />
+            <Label htmlFor="awd" className="font-normal cursor-pointer">
+              AWD (All-Wheel Drive)
+            </Label>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
         <Label>Passengers</Label>
         <Select
           value={filters.passengers?.toString() || "any"}
@@ -144,6 +191,7 @@ function FilterContent({ filters, onFiltersChange }: Omit<FilterSidebarProps, "v
             priceRange: [15, 100],
             fuelSaverOnly: false,
             transmission: [],
+            drivetrain: [],
             passengers: null,
             sortBy: "price-low",
           })

@@ -35,7 +35,7 @@ export function Footer() {
                 <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
                   <Car className="h-6 w-6 text-primary-foreground" />
                 </div>
-                <span className="font-display font-bold text-xl">EconoDrive</span>
+                <span className="font-display font-bold text-xl">CarHop</span>
               </div>
             </Link>
             <p className="text-sm text-muted-foreground">
@@ -97,7 +97,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            {currentYear} EconoDrive. All rights reserved.
+            {currentYear} CarHop. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a
