@@ -31,7 +31,7 @@ export function CheckoutFlow({
 }: CheckoutFlowProps) {
   const [step, setStep] = useState<Step>(1);
   const [paymentOption, setPaymentOption] = useState<"now" | "later">("now");
-  const [extras, setExtras] = useState({ insurance: false, gps: false, childSeat: false });
+  const [extras, setExtras] = useState({ insurance: false, cleaningFee: false, childSeat: false });
   const [driverInfo, setDriverInfo] = useState({
     firstName: "",
     lastName: "",
@@ -43,7 +43,7 @@ export function CheckoutFlow({
 
   const days = Math.ceil((returnDate.getTime() - pickupDate.getTime()) / (1000 * 60 * 60 * 24));
   const basePrice = paymentOption === "now" ? vehicle.payNowPrice : vehicle.pricePerDay;
-  const extrasPrice = (extras.insurance ? 15 : 0) + (extras.gps ? 8 : 0) + (extras.childSeat ? 5 : 0);
+  const extrasPrice = (extras.insurance ? 15 : 0) + (extras.cleaningFee ? 10 : 0) + (extras.childSeat ? 5 : 0);
   const totalPerDay = basePrice + extrasPrice;
   const totalPrice = totalPerDay * days;
 
@@ -175,19 +175,19 @@ export function CheckoutFlow({
                     <div className="flex items-center justify-between p-3 rounded-lg border">
                       <div className="flex items-center gap-3">
                         <Checkbox
-                          id="gps"
-                          checked={extras.gps}
-                          onCheckedChange={(c) => setExtras({ ...extras, gps: !!c })}
-                          data-testid="checkbox-gps"
+                          id="cleaningFee"
+                          checked={extras.cleaningFee}
+                          onCheckedChange={(c) => setExtras({ ...extras, cleaningFee: !!c })}
+                          data-testid="checkbox-cleaning-fee"
                         />
                         <div>
-                          <Label htmlFor="gps" className="cursor-pointer font-medium">
-                            GPS Navigation
+                          <Label htmlFor="cleaningFee" className="cursor-pointer font-medium">
+                            Cleaning Fee
                           </Label>
-                          <p className="text-xs text-muted-foreground">Never get lost</p>
+                          <p className="text-xs text-muted-foreground">Pre-paid interior cleaning</p>
                         </div>
                       </div>
-                      <span className="font-medium">+$8/day</span>
+                      <span className="font-medium">+$10/day</span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg border">
                       <div className="flex items-center gap-3">
@@ -359,10 +359,10 @@ export function CheckoutFlow({
                     <span>$15/day x {days}</span>
                   </div>
                 )}
-                {extras.gps && (
+                {extras.cleaningFee && (
                   <div className="flex justify-between gap-2">
-                    <span className="text-muted-foreground">GPS</span>
-                    <span>$8/day x {days}</span>
+                    <span className="text-muted-foreground">Cleaning Fee</span>
+                    <span>$10/day x {days}</span>
                   </div>
                 )}
                 {extras.childSeat && (
