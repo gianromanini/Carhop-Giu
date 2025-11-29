@@ -198,5 +198,72 @@ export async function registerRoutes(
     }
   });
 
+  // Admin Routes - Vehicle Management
+  const createVehicleSchema = z.object({
+    name: z.string().min(1),
+    category: z.string().min(1),
+    image: z.string().url(),
+    pricePerDay: z.number().positive(),
+    payNowPrice: z.number().positive(),
+    mpg: z.number().positive(),
+    passengers: z.number().positive(),
+    transmission: z.enum(["Automatic", "Manual"]),
+    drivetrain: z.enum(["FWD", "RWD", "AWD"]),
+    luggage: z.number().positive(),
+    fuelEfficient: z.boolean().default(false),
+    available: z.boolean().default(true),
+  });
+
+  app.get("/api/admin/vehicles", async (req, res) => {
+    try {
+      const vehicles = Array.from((await storage as any).vehicles?.values?.() || []);
+      res.json(vehicles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch vehicles" });
+    }
+  });
+
+  app.post("/api/admin/vehicles", async (req, res) => {
+    try {
+      const data = createVehicleSchema.parse(req.body);
+      const vehicle = await storage.createVehicle(data);
+      res.status(201).json(vehicle);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create vehicle" });
+    }
+  });
+
+  app.put("/api/admin/vehicles/:id", async (req, res) => {
+    try {
+      const data = createVehicleSchema.partial().parse(req.body);
+      const vehicle = await storage.updateVehicle(req.params.id, data);
+      if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+      res.json(vehicle);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update vehicle" });
+    }
+  });
+
+  app.delete("/api/admin/vehicles/:id", async (req, res) => {
+    try {
+      const vehicle = await storage.getVehicle(req.params.id);
+      if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+      await storage.updateVehicle(req.params.id, { available: false });
+      res.json({ message: "Vehicle deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete vehicle" });
+    }
+  });
+
   return httpServer;
 }
