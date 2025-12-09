@@ -1722,7 +1722,7 @@ export default function CarHopApp() {
                       <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{b.carName}</h3>
                       <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-1">{b.days} Days | {b.location}</p>
                       
-                      {(b.status === 'Active' || b.status === 'Extended') && (
+                      {(b.status === 'Active' || b.status === 'Extended') ? (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
                           <div className="flex justify-between items-center mb-4"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Workflow</h4></div>
                           <div className="flex gap-4">
@@ -1765,6 +1765,10 @@ export default function CarHopApp() {
                               </div>
                             );})()}
                           </div>
+                        </div>
+                      ) : (
+                        <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                          <div className="flex justify-between items-center"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Summary</h4><button onClick={() => handleStartWorkflow(b, 'checkout')} className="text-xs text-green-600 hover:text-green-400 font-bold" data-testid={`button-view-completed-${b.id}`}>View Details</button></div>
                         </div>
                       )}
                     </div>
@@ -2262,14 +2266,6 @@ export default function CarHopApp() {
               >
                 <ArrowLeft size={20} />
                 Back to Home
-              </button>
-              <button 
-                onClick={() => { setView('home'); setCart({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' }); }} 
-                className="w-full py-3 text-zinc-500 hover:text-zinc-300 font-medium transition-all flex items-center justify-center gap-2" 
-                data-testid="button-close-confirmation"
-              >
-                <X size={18} />
-                Close
               </button>
             </div>
           </div>
