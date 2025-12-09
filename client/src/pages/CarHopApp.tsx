@@ -777,7 +777,7 @@ export default function CarHopApp() {
     const chargeAmount = parseFloat(extraCharge.amount);
     const chargeTypeLabels: Record<string, string> = {
       'refuel': 'Refuel',
-      'mileage': 'Excess Mileage',
+      'mileage': 'Extra Mileage',
       'damage': 'Damage',
       'cleaning': 'Extra Cleaning',
       'other': 'Other Charge'
@@ -1395,7 +1395,7 @@ export default function CarHopApp() {
                                   data-testid="select-charge-type"
                                 >
                                   <option value="refuel">Refuel</option>
-                                  <option value="mileage">Excess Mileage</option>
+                                  <option value="mileage">Extra Mileage</option>
                                   <option value="damage">Damage</option>
                                   <option value="cleaning">Extra Cleaning</option>
                                   <option value="other">Other</option>
@@ -1428,7 +1428,6 @@ export default function CarHopApp() {
                               {b.details.protection > 0 && (
                                 <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
                               )}
-                              <div className="flex justify-between text-zinc-300"><span>Excess Mileage Fee</span><span>$0.00</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
                               
@@ -1978,10 +1977,6 @@ export default function CarHopApp() {
                         <span className="text-blue-600 dark:text-blue-400">+${receiptBooking.details.extendedRate.toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-600 dark:text-zinc-400">Excess Mileage Fee</span>
-                      <span className="text-zinc-900 dark:text-white">$0.00</span>
-                    </div>
                     {receiptBooking.details?.tax && (
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
@@ -2369,10 +2364,6 @@ export default function CarHopApp() {
                         <span className="text-green-500">+${(settings.prices.childSeat * cart.billingDays).toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Excess Mileage Fee</span>
-                      <span className="text-white">$0.00</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Cleaning Fee</span>
                       <span className="text-white">${settings.cleaningFee.toFixed(2)}</span>
