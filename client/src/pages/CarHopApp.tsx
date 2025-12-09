@@ -1065,29 +1065,29 @@ export default function CarHopApp() {
       )}
       
       {showLoginModal && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
-            <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-modal"><X/></button>
-            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
-            <div className="space-y-3 mb-6">
-              <Button variant="secondary" className="w-full flex items-center justify-center gap-2" onClick={() => handleSocialLogin('google')} data-testid="button-google-login"><span className="font-bold">Continue with Google</span></Button>
-              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 bg-black text-white" onClick={() => handleSocialLogin('apple')} data-testid="button-apple-login"><span className="font-bold">Continue with Apple</span></Button>
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => setShowLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-modal"><X size={20}/></button>
+            <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-5 text-center text-zinc-900 dark:text-white">{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
+            <div className="space-y-2 mb-4">
+              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm" onClick={() => handleSocialLogin('google')} data-testid="button-google-login"><span className="font-bold">Continue with Google</span></Button>
+              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 bg-black text-white text-xs sm:text-sm" onClick={() => handleSocialLogin('apple')} data-testid="button-apple-login"><span className="font-bold">Continue with Apple</span></Button>
             </div>
-            <div className="relative mb-6">
+            <div className="relative mb-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-300 dark:border-zinc-700"></span></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500">Or continue with email</span></div>
+              <div className="relative flex justify-center text-[10px] sm:text-xs uppercase"><span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500">Or continue with email</span></div>
             </div>
-            <form onSubmit={handleClientLogin} className="space-y-4">
+            <form onSubmit={handleClientLogin} className="space-y-3">
               <Input label="Full Name" value={loginForm.name} onChange={(e: any) => setLoginForm({...loginForm, name: e.target.value})} placeholder="Your Name" required data-testid="input-name" />
               <Input label="Email Address" type="email" value={loginForm.email} onChange={(e: any) => setLoginForm({...loginForm, email: e.target.value})} placeholder="you@example.com" required data-testid="input-email" />
               <Input label="Phone Number" type="tel" value={loginForm.phone} onChange={(e: any) => setLoginForm({...loginForm, phone: e.target.value})} placeholder="(555) 000-0000" data-testid="input-phone" />
               <Input label="Password" type="password" value={loginForm.password} onChange={(e: any) => setLoginForm({...loginForm, password: e.target.value})} placeholder="******" required data-testid="input-password" />
-              <Button className="w-full mt-4" type="submit" data-testid="button-submit-login">{isRegistering ? 'Sign Up' : 'Sign In'}</Button>
+              <Button className="w-full mt-3 text-xs sm:text-sm" type="submit" data-testid="button-submit-login">{isRegistering ? 'Sign Up' : 'Sign In'}</Button>
             </form>
-            <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
-              <button onClick={handleAdminLogin} className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
+            <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800 text-center">
+              <button onClick={handleAdminLogin} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
             </div>
-            <p className="text-center text-sm text-zinc-500 mt-2 cursor-pointer hover:text-green-600 dark:hover:text-green-500 transition-colors" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? 'Already have an account? Sign In' : 'New to CarHop? Create Account'}</p>
+            <p className="text-center text-xs sm:text-sm text-zinc-500 mt-2 cursor-pointer hover:text-green-600 dark:hover:text-green-500 transition-colors" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? 'Already have an account? Sign In' : 'New to CarHop? Create Account'}</p>
           </div>
         </div>
       )}
