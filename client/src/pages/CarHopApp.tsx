@@ -1439,6 +1439,44 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
+                          {/* Chat Messages */}
+                          {(b.messages || []).length > 0 && (
+                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                <MessageCircle size={14}/> Customer Messages
+                              </h4>
+                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
+                                {(b.messages || []).map(msg => (
+                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
+                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-zinc-300">{msg.text}</p>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={chatMessage}
+                                  onChange={(e) => setChatMessage(e.target.value)}
+                                  placeholder="Type a message..."
+                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                  data-testid="input-admin-message"
+                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
+                                />
+                                <button 
+                                  onClick={() => sendChatMessage(b.id, 'admin')}
+                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                  data-testid="button-send-admin-message"
+                                >
+                                  <Send size={16}/>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Payment Details (Sensitive) */}
                           <div className={`p-4 rounded-lg border ${b.paymentRaw?.type === 'paypal' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-red-950/30 border-red-900/50'}`}>
                             <div className="flex justify-between items-center mb-3">
@@ -1478,44 +1516,6 @@ export default function CarHopApp() {
                               </div>
                             )}
                           </div>
-
-                          {/* Chat Messages */}
-                          {(b.messages || []).length > 0 && (
-                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                <MessageCircle size={14}/> Customer Messages
-                              </h4>
-                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
-                                {(b.messages || []).map(msg => (
-                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
-                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-zinc-300">{msg.text}</p>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={chatMessage}
-                                  onChange={(e) => setChatMessage(e.target.value)}
-                                  placeholder="Type a message..."
-                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                  data-testid="input-admin-message"
-                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
-                                />
-                                <button 
-                                  onClick={() => sendChatMessage(b.id, 'admin')}
-                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                  data-testid="button-send-admin-message"
-                                >
-                                  <Send size={16}/>
-                                </button>
-                              </div>
-                            </div>
-                          )}
 
                           {/* Manage Charges & Adjustments */}
                           <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
