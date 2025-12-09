@@ -305,7 +305,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -940,6 +940,7 @@ export default function CarHopApp() {
       fuel: formData.fuel,
       seats: formData.seats,
       transmission: formData.transmission,
+      driveType: formData.driveType,
       images: formData.images.filter(img => img.trim() !== ''),
       consumption: formData.consumption,
       isPriceMatch: formData.isPriceMatch,
@@ -972,6 +973,7 @@ export default function CarHopApp() {
       fuel: car.fuel,
       seats: car.seats,
       transmission: car.transmission,
+      driveType: car.driveType || 'AWD',
       images: car.images.length > 0 ? car.images : [''],
       consumption: car.consumption || '',
       isPriceMatch: car.isPriceMatch || false,
@@ -1149,20 +1151,23 @@ export default function CarHopApp() {
                         <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="p-4 sm:p-5">
-                        <div className="flex justify-between items-center mb-3 gap-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
-                            {car.isAWD && <Mountain size={16} className="text-blue-600 flex-shrink-0" title="AWD" />}
-                          </div>
+                        <div className="flex justify-between items-start mb-3 gap-2">
+                          <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate flex-1" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
                           <div className="text-right flex-shrink-0">
                             <div className="text-lg sm:text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
                             <div className="text-[10px] sm:text-xs text-zinc-500">/day</div>
                           </div>
                         </div>
-                        <div className="flex gap-3 text-xs text-zinc-500 mb-4">
-                          <span className="flex items-center gap-1"><Users size={14}/> {car.seats}</span>
+                        <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-4 flex-wrap">
+                          <span className="flex items-center gap-1"><Users size={14}/> {car.seats} passengers</span>
                           <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
                           <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
+                          <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-500">
+                            {car.driveType === 'AWD' && <Mountain size={14} title="AWD" />}
+                            {car.driveType === 'FWD' && <Navigation size={14} title="FWD" />}
+                            {car.driveType === 'RWD' && <Navigation size={14} title="RWD" className="transform rotate-180" />}
+                            {car.driveType}
+                          </span>
                         </div>
                         <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Book Now</Button>
                       </div>
@@ -1228,6 +1233,15 @@ export default function CarHopApp() {
                           <option value="Manual">Manual</option>
                         </select>
                       </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
+                      <select name="driveType" value={formData.driveType} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-drive-type">
+                        <option value="AWD">AWD (All-Wheel Drive)</option>
+                        <option value="FWD">FWD (Front-Wheel Drive)</option>
+                        <option value="RWD">RWD (Rear-Wheel Drive)</option>
+                      </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
