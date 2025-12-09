@@ -76,6 +76,11 @@ export const bookings = pgTable("bookings", {
     extendedRate?: number;
     manualCharges?: { type: string; amount: number }[];
   }>().notNull(),
+  leaseAgreement: jsonb("lease_agreement").$type<{
+    accepted: boolean;
+    clientName: string;
+    acceptedAt: string;
+  }>(),
   checkInStatus: text("check_in_status").notNull().default('pending'),
   checkOutStatus: text("check_out_status").notNull().default('pending'),
   checkInData: jsonb("check_in_data").$type<{

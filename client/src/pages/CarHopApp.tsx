@@ -392,6 +392,9 @@ export default function CarHopApp() {
   const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
 
   const [newLocation, setNewLocation] = useState('');
+  
+  const [leaseAgreementAccepted, setLeaseAgreementAccepted] = useState(false);
+  const [showLeaseModal, setShowLeaseModal] = useState(false);
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -1700,6 +1703,100 @@ export default function CarHopApp() {
                       </div>
         )}
 
+        {showLeaseModal && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Lease Agreement</h2>
+                <button onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-300">
+                    <span className="font-bold">Client Name: </span>{driverDetails.name}
+                  </p>
+                </div>
+
+                <div className="prose dark:prose-invert max-w-none">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">VEHICLE LEASE AGREEMENT</h3>
+                  
+                  <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
+                    <p><strong>This Lease Agreement ("Agreement")</strong> is entered into on this date between <strong>CarHop Rental Services</strong> ("Lessor") and <strong>{driverDetails.name}</strong> ("Lessee").</p>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">1. VEHICLE AND TERMS</h4>
+                      <p>The Lessee agrees to lease a vehicle as specified in the rental confirmation. The lease term shall be from the pickup date and time until the return date and time specified in the booking.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">2. RENTAL PAYMENT</h4>
+                      <p>The Lessee agrees to pay the total rental amount as quoted. Payment is due before or at the time of vehicle pickup. Additional charges may apply for late returns, excess mileage, fuel, or vehicle damage.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">3. DRIVER LICENSE AND LIABILITY</h4>
+                      <p>The Lessee confirms that they hold a valid driver's license and are authorized to operate the vehicle. The Lessee assumes full responsibility for the vehicle and all liability during the rental period. The Lessee is responsible for all accidents, traffic violations, and damage to the vehicle.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">4. VEHICLE CONDITION</h4>
+                      <p>The Lessee acknowledges receipt of the vehicle in good working condition and agrees to return it in the same condition. Any damage, scratches, or mechanical issues discovered will be charged to the Lessee.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE AND FUEL</h4>
+                      <p>The Lessee is entitled to {settings.includedMiles} miles per day included in the rental. Excess mileage will be charged at ${settings.extraMileRate} per mile. The vehicle must be returned with a full fuel tank. Refueling charges will apply if the vehicle is returned with less fuel.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">6. INSURANCE AND PROTECTION</h4>
+                      <p>The Lessee has selected a protection plan as detailed in the booking. This covers damage up to the specified franchise amount. The Lessee remains responsible for any damage exceeding the franchise limit.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">7. GOVERNING LAW - STATE OF CONNECTICUT</h4>
+                      <p>This Agreement shall be governed by and construed in accordance with the laws of the State of Connecticut, without regard to its conflict of law principles. The Lessee consents to the exclusive jurisdiction and venue of the federal and state courts located in Connecticut for any legal proceedings arising out of this Agreement.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">8. COMPLIANCE WITH LAWS</h4>
+                      <p>The Lessee agrees to comply with all federal, state, and local laws while operating the vehicle, including speed limits, traffic regulations, and parking ordinances. The Lessee is responsible for all fines, tickets, or penalties incurred during the rental period.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">9. LIMITATION OF LIABILITY</h4>
+                      <p>CarHop shall not be liable for any loss, damage, or injury to the Lessee or their belongings, except as provided by the selected protection plan. The Lessee assumes all risk associated with vehicle operation.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">10. ACKNOWLEDGMENT</h4>
+                      <p>By accepting this agreement, the Lessee acknowledges that they have read, understood, and agree to all terms and conditions set forth herein. The Lessee assumes all responsibility and liability for the vehicle during the rental period.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3">
+                  <button 
+                    onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); }} 
+                    className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
+                    data-testid="button-reject-lease"
+                  >
+                    Reject
+                  </button>
+                  <button 
+                    onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(true); }} 
+                    className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                    data-testid="button-accept-lease"
+                  >
+                    I Accept
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {viewingReceiptBookingId && bookings.find(b => b.id === viewingReceiptBookingId) && (() => {
           const receiptBooking = bookings.find(b => b.id === viewingReceiptBookingId)!;
           return (
@@ -2146,6 +2243,29 @@ export default function CarHopApp() {
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLicenseUpload} />
                     </div>
                   </div>
+
+                  {driverDetails.licenseImages.length === 2 && (
+                    <div className="mt-6 pt-6 border-t border-zinc-700">
+                      <div className="flex items-start gap-3 p-4 bg-zinc-800/50 rounded-lg">
+                        <input 
+                          type="checkbox" 
+                          checked={leaseAgreementAccepted} 
+                          onChange={(e) => {
+                            setLeaseAgreementAccepted(e.target.checked);
+                            if (e.target.checked) setShowLeaseModal(true);
+                          }}
+                          className="mt-1 w-5 h-5 cursor-pointer" 
+                          data-testid="checkbox-lease-agreement"
+                        />
+                        <div className="flex-1">
+                          <label className="text-sm font-bold text-white cursor-pointer block">
+                            I Accept the Lease Agreement <span className="text-red-500">* REQUIRED</span>
+                          </label>
+                          <p className="text-xs text-zinc-400 mt-1">You must read and accept our lease agreement to proceed with payment</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2209,8 +2329,8 @@ export default function CarHopApp() {
                   {/* Proceed Button */}
                   <button 
                     onClick={handleProceedToPayment} 
-                    disabled={!isCheckoutValid()} 
-                    className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
+                    disabled={!isCheckoutValid() || !leaseAgreementAccepted} 
+                    className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() && leaseAgreementAccepted ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
                     data-testid="button-proceed-payment"
                   >
                     Proceed to Payment
