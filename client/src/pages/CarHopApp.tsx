@@ -455,11 +455,11 @@ export default function CarHopApp() {
   }, []);
 
   useEffect(() => {
-    if (view === 'checkout' && cart.car && searchParams.start && searchParams.end) {
+    if ((view === 'checkout' || view === 'payment') && cart.car && searchParams.start && searchParams.end && searchParams.startTime && searchParams.endTime) {
       const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime);
       setCart(prev => ({ ...prev, billingDays }));
     }
-  }, [searchParams.end, searchParams.endTime, view, cart.car]);
+  }, [searchParams.end, searchParams.endTime, searchParams.start, searchParams.startTime, view, cart.car?.id]);
 
   const getMinReturnDate = () => {
     const today = getTodayString();
@@ -523,7 +523,7 @@ export default function CarHopApp() {
     const newParams = { ...searchParams, [field]: value }; 
     if (field === 'startTime') newParams.endTime = value; 
     if (field === 'start') if (newParams.end < value) newParams.end = value; 
-    setSearchParams(newParams); 
+    setSearchParams(newParams);
     if (view === 'checkout' || view === 'payment') { 
       const billingDays = calculateBillingDays(newParams.start, newParams.startTime, newParams.end, newParams.endTime); 
       setCart(prev => ({ ...prev, billingDays })); 
