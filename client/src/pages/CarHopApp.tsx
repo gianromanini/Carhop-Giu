@@ -386,6 +386,7 @@ export default function CarHopApp() {
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [checkData, setCheckData] = useState(initialCheckState);
   const [isCheckOutMode, setIsCheckOutMode] = useState(false);
+  const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
 
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
   const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
@@ -1699,6 +1700,152 @@ export default function CarHopApp() {
                       </div>
         )}
 
+        {viewingReceiptBookingId && bookings.find(b => b.id === viewingReceiptBookingId) && (() => {
+          const receiptBooking = bookings.find(b => b.id === viewingReceiptBookingId)!;
+          return (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+                <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Rental Receipt</h2>
+                  <button onClick={() => setViewingReceiptBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
+                </div>
+
+                <div className="p-8 space-y-8">
+                  {/* Header */}
+                  <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="text-sm text-zinc-500 uppercase tracking-wider">Booking Code</p>
+                        <p className="text-2xl font-bold text-zinc-900 dark:text-white">{receiptBooking.bookingCode}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-zinc-500 uppercase">Status</p>
+                        <p className="text-lg font-bold text-green-600">Completed</p>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3>
+                    <p className="text-sm text-zinc-500 mt-2">{receiptBooking.location}</p>
+                  </div>
+
+                  {/* Rental Dates */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Pick-up</p>
+                      <p className="text-lg font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.startDate, receiptBooking.startTime)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Return</p>
+                      <p className="text-lg font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.returnDate, receiptBooking.returnTime)}</p>
+                    </div>
+                  </div>
+
+                  {/* Extension Info */}
+                  {receiptBooking.details?.extendedRate && receiptBooking.details.extendedRate > 0 && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-sm font-bold text-blue-900 dark:text-blue-200">Extension Applied</p>
+                      <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">Extended Rate: ${receiptBooking.details.extendedRate.toFixed(2)}</p>
+                    </div>
+                  )}
+
+                  {/* Check-in Photos */}
+                  {receiptBooking.checkInData?.photosOutside && receiptBooking.checkInData.photosOutside.length > 0 && (
+                    <div>
+                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {receiptBooking.checkInData.photosOutside.slice(0, 6).map((photo, idx) => (
+                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(receiptBooking.checkInData?.photosOutside || [], idx)}>
+                            <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Check-out Photos */}
+                  {receiptBooking.checkOutData?.photosOutside && receiptBooking.checkOutData.photosOutside.length > 0 && (
+                    <div>
+                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {receiptBooking.checkOutData.photosOutside.slice(0, 6).map((photo, idx) => (
+                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(receiptBooking.checkOutData?.photosOutside || [], idx)}>
+                            <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mileage Info */}
+                  {receiptBooking.checkInData?.miles && receiptBooking.checkOutData?.miles && (
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase">Check-in Mileage</p>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.checkInData.miles} mi</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase">Check-out Mileage</p>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.checkOutData.miles} mi</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payment Method */}
+                  <div className={`p-4 rounded-lg border ${receiptBooking.paymentRaw?.type === 'paypal' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
+                    <p className={`text-xs font-bold uppercase tracking-wider ${receiptBooking.paymentRaw?.type === 'paypal' ? 'text-blue-900 dark:text-blue-200' : 'text-red-900 dark:text-red-200'}`}>Payment Method</p>
+                    <p className={`text-sm mt-1 ${receiptBooking.paymentRaw?.type === 'paypal' ? 'text-blue-800 dark:text-blue-300' : 'text-red-800 dark:text-red-300'}`}>
+                      {receiptBooking.paymentRaw?.type === 'paypal' ? 'PayPal' : `Credit Card (${receiptBooking.paymentRaw?.type || 'Visa'}) ****${receiptBooking.paymentRaw?.cardNumber?.slice(-4)}`}
+                    </p>
+                  </div>
+
+                  {/* Price Breakdown */}
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({receiptBooking.days} days)</span>
+                      <span className="text-zinc-900 dark:text-white font-medium">${receiptBooking.details?.rate?.toFixed(2) || '0.00'}</span>
+                    </div>
+                    {receiptBooking.details?.protection && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
+                        <span className="text-green-600 dark:text-green-400">+${receiptBooking.details.protection.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {receiptBooking.details?.extras && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
+                        <span className="text-green-600 dark:text-green-400">+${receiptBooking.details.extras.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {receiptBooking.details?.fees && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
+                        <span className="text-zinc-900 dark:text-white">${receiptBooking.details.fees.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {receiptBooking.details?.extendedRate && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400">Extension</span>
+                        <span className="text-blue-600 dark:text-blue-400">+${receiptBooking.details.extendedRate.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {receiptBooking.details?.tax && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
+                        <span className="text-zinc-900 dark:text-white">${receiptBooking.details.tax.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-lg font-bold border-t border-zinc-200 dark:border-zinc-800 pt-3 mt-3">
+                      <span className="text-zinc-900 dark:text-white">Total</span>
+                      <span className="text-green-600">${receiptBooking.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <button onClick={() => setViewingReceiptBookingId(null)} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors mt-6" data-testid="button-close-receipt">Close Receipt</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {view === 'bookings' && (
           <div className="max-w-4xl mx-auto px-6 py-12">
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
@@ -1766,9 +1913,10 @@ export default function CarHopApp() {
                             );})()}
                           </div>
                         </div>
-                      ) : (
+                      ) : null}
+                      {b.status === 'Completed' && (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                          <div className="flex justify-between items-center"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Summary</h4><button onClick={() => handleStartWorkflow(b, 'checkout')} className="text-xs text-green-600 hover:text-green-400 font-bold" data-testid={`button-view-completed-${b.id}`}>View Details</button></div>
+                          <div className="flex justify-between items-center"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Summary</h4><button onClick={() => setViewingReceiptBookingId(b.id)} className="text-xs text-green-600 hover:text-green-400 font-bold" data-testid={`button-view-completed-${b.id}`}>View Receipt</button></div>
                         </div>
                       )}
                     </div>
