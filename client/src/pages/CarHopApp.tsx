@@ -214,9 +214,10 @@ const Checkbox = ({ label, checked, onChange, name, ...props }: any) => (
 
 const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>; fixedExpenses: number }) => {
   const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const activeMonths = monthOrder.filter(label => data[label] && (data[label].gross > 0 || data[label].pending > 0 || fixedExpenses > 0));
+  // Only show months with actual bookings or returns (gross > 0 or pending > 0)
+  const activeMonths = monthOrder.filter(label => data[label] && (data[label].gross > 0 || data[label].pending > 0));
   
-  // Find max total for scaling
+  // Find max total for scaling vertical bars
   const maxTotal = Math.max(...activeMonths.map(label => {
     const monthData = data[label] || { gross: 0, expenses: 0, pending: 0 };
     const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
@@ -224,77 +225,80 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   }), 1);
 
   return (
-    <div className="w-full mt-4 select-none space-y-3">
+    <div className="w-full mt-4 select-none">
       {activeMonths.length > 0 ? (
-        activeMonths.map((label) => {
-          const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses, pending: 0 };
-          const gross = monthData.gross || 0;
-          const pending = monthData.pending || 0;
-          const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
-          const net = gross - expenses;
-          const total = gross + pending + expenses;
-          
-          const expPercent = total > 0 ? (expenses / total) * 100 : 0;
-          const grossPercent = total > 0 ? (gross / total) * 100 : 0;
-          const pendingPercent = total > 0 ? (pending / total) * 100 : 0;
-          
-          return (
-            <div key={label} className="group">
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-xs font-bold text-zinc-400 w-8">{label}</span>
-                <div className="flex-1 h-8 bg-zinc-800 rounded-lg overflow-hidden flex relative">
-                  {/* Expenses - Red/Orange */}
+        <div className="flex items-end justify-center gap-4 h-64">
+          {activeMonths.map((label) => {
+            const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses, pending: 0 };
+            const gross = monthData.gross || 0;
+            const pending = monthData.pending || 0;
+            const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
+            const net = gross - expenses;
+            const total = gross + pending + expenses;
+            
+            // Calculate height percentages based on max total
+            const barHeight = total > 0 ? (total / maxTotal) * 100 : 0;
+            const expPercent = total > 0 ? (expenses / total) * 100 : 0;
+            const grossPercent = total > 0 ? (gross / total) * 100 : 0;
+            const pendingPercent = total > 0 ? (pending / total) * 100 : 0;
+            
+            return (
+              <div key={label} className="flex flex-col items-center group flex-1 max-w-20">
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/95 text-white text-[10px] p-3 rounded-lg shadow-xl z-20 w-36 backdrop-blur-sm border border-zinc-700">
+                  <div className="font-bold text-sm border-b border-zinc-700 pb-1 mb-1 text-center">{label}</div>
+                  <div className="flex justify-between"><span className="text-orange-400">Expenses:</span> <span>${expenses.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-green-400">Revenue:</span> <span>${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-purple-400">Pending:</span> <span>${pending.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between font-bold border-t border-zinc-700 pt-1 mt-1"><span className={net >= 0 ? 'text-green-400' : 'text-red-400'}>Net:</span> <span>${net.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                </div>
+                
+                {/* Vertical stacked bar */}
+                <div 
+                  className="w-full bg-zinc-800 rounded-t-lg overflow-hidden flex flex-col-reverse transition-all hover:brightness-110 cursor-pointer relative"
+                  style={{ height: `${Math.max(barHeight, 5)}%` }}
+                >
+                  {/* Expenses - Orange (bottom) */}
                   {expPercent > 0 && (
                     <div 
-                      className="bg-orange-500 h-full flex items-center justify-center relative cursor-pointer transition-all hover:brightness-125 group/exp"
-                      style={{ width: `${expPercent}%` }}
+                      className="w-full bg-orange-500 flex items-center justify-center"
+                      style={{ height: `${expPercent}%` }}
                     >
-                      <span className="text-[10px] font-bold text-white drop-shadow-md truncate px-1">
-                        ${expenses > 999 ? `${(expenses/1000).toFixed(1)}k` : expenses.toFixed(0)}
-                      </span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/exp:block bg-zinc-900 text-white text-xs p-2 rounded shadow-xl z-30 whitespace-nowrap border border-orange-500">
-                        <span className="text-orange-400">Expenses:</span> ${expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                      </div>
+                      {expPercent > 15 && <span className="text-[9px] font-bold text-white">${expenses > 999 ? `${(expenses/1000).toFixed(1)}k` : expenses.toFixed(0)}</span>}
                     </div>
                   )}
-                  {/* Gross Revenue - Green */}
+                  {/* Gross Revenue - Green (middle) */}
                   {grossPercent > 0 && (
                     <div 
-                      className="bg-green-500 h-full flex items-center justify-center relative cursor-pointer transition-all hover:brightness-125 group/gross"
-                      style={{ width: `${grossPercent}%` }}
+                      className="w-full bg-green-500 flex items-center justify-center"
+                      style={{ height: `${grossPercent}%` }}
                     >
-                      <span className="text-[10px] font-bold text-white drop-shadow-md truncate px-1">
-                        ${gross > 999 ? `${(gross/1000).toFixed(1)}k` : gross.toFixed(0)}
-                      </span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/gross:block bg-zinc-900 text-white text-xs p-2 rounded shadow-xl z-30 whitespace-nowrap border border-green-500">
-                        <span className="text-green-400">Gross Revenue:</span> ${gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                      </div>
+                      {grossPercent > 15 && <span className="text-[9px] font-bold text-white">${gross > 999 ? `${(gross/1000).toFixed(1)}k` : gross.toFixed(0)}</span>}
                     </div>
                   )}
-                  {/* Pending - Purple */}
+                  {/* Pending - Purple (top) */}
                   {pendingPercent > 0 && (
                     <div 
-                      className="bg-purple-500 h-full flex items-center justify-center relative cursor-pointer transition-all hover:brightness-125 group/pend"
-                      style={{ width: `${pendingPercent}%` }}
+                      className="w-full bg-purple-500 flex items-center justify-center"
+                      style={{ height: `${pendingPercent}%` }}
                     >
-                      <span className="text-[10px] font-bold text-white drop-shadow-md truncate px-1">
-                        ${pending > 999 ? `${(pending/1000).toFixed(1)}k` : pending.toFixed(0)}
-                      </span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/pend:block bg-zinc-900 text-white text-xs p-2 rounded shadow-xl z-30 whitespace-nowrap border border-purple-500">
-                        <span className="text-purple-400">Pending:</span> ${pending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                      </div>
+                      {pendingPercent > 15 && <span className="text-[9px] font-bold text-white">${pending > 999 ? `${(pending/1000).toFixed(1)}k` : pending.toFixed(0)}</span>}
                     </div>
                   )}
                 </div>
-                <span className={`text-xs font-bold w-16 text-right ${net >= 0 ? 'text-green-400' : 'text-red-500'}`}>
-                  Net: ${net >= 0 ? '' : '-'}${Math.abs(net).toFixed(0)}
+                
+                {/* Month label */}
+                <span className="text-xs font-bold text-zinc-400 mt-2">{label}</span>
+                {/* Net value */}
+                <span className={`text-[10px] font-bold ${net >= 0 ? 'text-green-400' : 'text-red-500'}`}>
+                  ${net >= 0 ? '' : '-'}{Math.abs(net).toFixed(0)}
                 </span>
               </div>
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       ) : (
-        <div className="w-full flex items-center justify-center text-zinc-400 py-8">No revenue data available.</div>
+        <div className="w-full flex items-center justify-center text-zinc-400 py-8">No bookings or returns yet.</div>
       )}
     </div>
   );
