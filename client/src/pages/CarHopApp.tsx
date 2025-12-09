@@ -1424,6 +1424,7 @@ export default function CarHopApp() {
                               <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Excess Mileage Fee</span><span>$0.00</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
                               
@@ -2360,6 +2361,10 @@ export default function CarHopApp() {
                         <span className="text-green-500">+${(settings.prices.childSeat * cart.billingDays).toFixed(2)}</span>
                       </div>
                     )}
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Excess Mileage Fee</span>
+                      <span className="text-white">$0.00</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Cleaning Fee</span>
                       <span className="text-white">${settings.cleaningFee.toFixed(2)}</span>
