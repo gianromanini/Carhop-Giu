@@ -1448,6 +1448,7 @@ export default function CarHopApp() {
                           <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
                           <div className="text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
                           <div className="text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                          <div className="text-xs text-zinc-500 mt-1 flex items-center gap-1"><Clock size={12} /> Grace period: +30 min</div>
                         </div>
                         <div className="text-right"><div className="font-bold text-lg text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div></div>
                       </div>
@@ -1469,16 +1470,26 @@ export default function CarHopApp() {
                           </div>
                           <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
                             {!extendingBookingId && (<button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Request Extension</button>)}
-                            {extendingBookingId === b.id && (
+                            {extendingBookingId === b.id && (() => {
+                              const today = new Date();
+                              const minDate = new Date(today);
+                              minDate.setDate(minDate.getDate() + 1);
+                              const minDateStr = minDate.toISOString().split('T')[0];
+                              
+                              return (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
                                 <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">New Return Date & Time</label>
+                                <p className="text-xs text-zinc-500 mb-3">You can extend or adjust your return date (minimum 1 day from today)</p>
                                 <div className="flex flex-col gap-3">
-                                  <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Calendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={b.returnDate} onChange={(e) => setExtensionDate(e.target.value)} data-testid="input-extension-date" /></div>
+                                  <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Calendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={minDateStr} onChange={(e) => setExtensionDate(e.target.value)} data-testid="input-extension-date" /></div>
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Clock size={18} className="text-green-600 mr-2" /><select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)} data-testid="select-extension-time">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
-                                  <div className="flex gap-2 mt-2"><Button className="flex-1 text-xs" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">Confirm Extension</Button><Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button></div>
+                                  <div className="flex gap-2 mt-2">
+                                    <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">Confirm Extension</button>
+                                    <Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button>
+                                  </div>
                                 </div>
                               </div>
-                            )}
+                            );})()}
                           </div>
                         </div>
                       )}
