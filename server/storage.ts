@@ -333,6 +333,11 @@ export class MemStorage implements IStorage {
         photosOutside: [...booking.checkOutData.photosOutside] as string[],
         photosInside: [...booking.checkOutData.photosInside] as string[],
       } : null,
+      leaseAgreement: booking.leaseAgreement ? {
+        accepted: booking.leaseAgreement.accepted,
+        clientName: booking.leaseAgreement.clientName,
+        acceptedAt: booking.leaseAgreement.acceptedAt,
+      } : null,
     };
     this.bookings.set(id, newBooking);
     return newBooking;
