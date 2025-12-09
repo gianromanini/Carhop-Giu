@@ -1,322 +1,418 @@
 import { 
-  type User, type InsertUser,
+  vehicles, bookings, settings,
   type Vehicle, type InsertVehicle,
-  type Customer, type InsertCustomer,
-  type Reservation, type InsertReservation,
-  type PriceMatch, type InsertPriceMatch
+  type Booking, type InsertBooking,
+  type Settings, type InsertSettings
 } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-export interface VehicleFilters {
-  priceMin?: number;
-  priceMax?: number;
-  fuelSaverOnly?: boolean;
-  transmission?: string[];
-  drivetrain?: string[];
-  passengers?: number;
-}
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-
-  getVehicles(filters?: VehicleFilters): Promise<Vehicle[]>;
-  getVehicle(id: string): Promise<Vehicle | undefined>;
+  // Vehicles
+  getVehicles(): Promise<Vehicle[]>;
+  getVehicle(id: number): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
-  updateVehicle(id: string, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
+  updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
+  deleteVehicle(id: number): Promise<boolean>;
 
-  getCustomer(id: string): Promise<Customer | undefined>;
-  getCustomerByEmail(email: string): Promise<Customer | undefined>;
-  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  // Bookings
+  getBookings(): Promise<Booking[]>;
+  getBooking(id: number): Promise<Booking | undefined>;
+  getBookingByCode(code: string): Promise<Booking | undefined>;
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  updateBooking(id: number, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
+  deleteBooking(id: number): Promise<boolean>;
 
-  getReservations(): Promise<Reservation[]>;
-  getReservation(id: string): Promise<Reservation | undefined>;
-  getReservationByConfirmation(confirmationNumber: string): Promise<Reservation | undefined>;
-  getReservationsByCustomer(customerId: string): Promise<Reservation[]>;
-  createReservation(reservation: InsertReservation): Promise<Reservation>;
-  updateReservationStatus(id: string, status: string): Promise<Reservation | undefined>;
-
-  getPriceMatches(): Promise<PriceMatch[]>;
-  getPriceMatch(id: string): Promise<PriceMatch | undefined>;
-  createPriceMatch(priceMatch: InsertPriceMatch): Promise<PriceMatch>;
-  updatePriceMatchStatus(id: string, status: string): Promise<PriceMatch | undefined>;
+  // Settings
+  getSetting(key: string): Promise<Settings | undefined>;
+  setSetting(key: string, value: any): Promise<Settings>;
+  getAllSettings(): Promise<Settings[]>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private vehicles: Map<string, Vehicle>;
-  private customers: Map<string, Customer>;
-  private reservations: Map<string, Reservation>;
-  private priceMatches: Map<string, PriceMatch>;
+  private vehicles: Map<number, Vehicle> = new Map();
+  private bookings: Map<number, Booking> = new Map();
+  private settings: Map<string, Settings> = new Map();
+  private vehicleId = 1;
+  private bookingId = 1;
+  private settingsId = 1;
 
   constructor() {
-    this.users = new Map();
-    this.vehicles = new Map();
-    this.customers = new Map();
-    this.reservations = new Map();
-    this.priceMatches = new Map();
-    
-    this.seedVehicles();
+    this.initializeDefaultData();
   }
 
-  private seedVehicles() {
-    const seedData: InsertVehicle[] = [
+  private initializeDefaultData() {
+    const defaultVehicles: InsertVehicle[] = [
       {
-        name: "Toyota Corolla",
-        category: "Economy",
-        image: "/vehicles/corolla.png",
-        pricePerDay: 35,
-        payNowPrice: 29,
-        mpg: 32,
-        passengers: 5,
-        transmission: "Automatic",
-        drivetrain: "FWD",
-        luggage: 2,
-        fuelEfficient: true,
-        available: true,
+        model: 'Toyota Corolla',
+        category: 'Economy',
+        price: 39,
+        fuel: 'Gasoline',
+        seats: 5,
+        transmission: 'Automatic',
+        images: ['https://images.unsplash.com/photo-1623869675781-80aa31012a5a?w=500'],
+        consumption: '32 MPG',
+        isPriceMatch: true,
+        isAWD: false,
+        hasCarPlay: true,
+        hasBluetooth: true,
+        hasReverseCamera: true,
+        hasHeatedSeats: false,
       },
       {
-        name: "Honda Civic",
-        category: "Economy",
-        image: "/vehicles/civic.png",
-        pricePerDay: 38,
-        payNowPrice: 32,
-        mpg: 33,
-        passengers: 5,
-        transmission: "Automatic",
-        drivetrain: "FWD",
-        luggage: 2,
-        fuelEfficient: true,
-        available: true,
+        model: 'Honda Civic',
+        category: 'Economy',
+        price: 42,
+        fuel: 'Gasoline',
+        seats: 5,
+        transmission: 'Automatic',
+        images: ['https://images.unsplash.com/photo-1619682817481-e994891cd1f5?w=500'],
+        consumption: '33 MPG',
+        isPriceMatch: true,
+        isAWD: false,
+        hasCarPlay: true,
+        hasBluetooth: true,
+        hasReverseCamera: true,
+        hasHeatedSeats: true,
       },
       {
-        name: "Nissan Versa",
-        category: "Compact",
-        image: "/vehicles/versa.png",
-        pricePerDay: 28,
-        payNowPrice: 22,
-        mpg: 35,
-        passengers: 5,
-        transmission: "Automatic",
-        drivetrain: "FWD",
-        luggage: 2,
-        fuelEfficient: true,
-        available: true,
+        model: 'Toyota RAV4',
+        category: 'SUV',
+        price: 65,
+        fuel: 'Hybrid',
+        seats: 5,
+        transmission: 'Automatic',
+        images: ['https://images.unsplash.com/photo-1568844293986-8c8e46c8d1f6?w=500'],
+        consumption: '40 MPG',
+        isPriceMatch: false,
+        isAWD: true,
+        hasCarPlay: true,
+        hasBluetooth: true,
+        hasReverseCamera: true,
+        hasHeatedSeats: true,
       },
       {
-        name: "Hyundai Elantra",
-        category: "Economy",
-        image: "/vehicles/elantra.png",
-        pricePerDay: 32,
-        payNowPrice: 26,
-        mpg: 31,
-        passengers: 5,
-        transmission: "Automatic",
-        drivetrain: "FWD",
-        luggage: 2,
-        fuelEfficient: true,
-        available: true,
+        model: 'Ford Mustang',
+        category: 'Sports',
+        price: 89,
+        fuel: 'Gasoline',
+        seats: 4,
+        transmission: 'Manual',
+        images: ['https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=500'],
+        consumption: '22 MPG',
+        isPriceMatch: false,
+        isAWD: false,
+        hasCarPlay: true,
+        hasBluetooth: true,
+        hasReverseCamera: true,
+        hasHeatedSeats: true,
       },
       {
-        name: "Kia Forte",
-        category: "Economy",
-        image: "/vehicles/forte.png",
-        pricePerDay: 30,
-        payNowPrice: 24,
-        mpg: 28,
-        passengers: 5,
-        transmission: "Automatic",
-        drivetrain: "AWD",
-        luggage: 2,
-        fuelEfficient: false,
-        available: true,
+        model: 'Tesla Model 3',
+        category: 'Electric',
+        price: 79,
+        fuel: 'Electric',
+        seats: 5,
+        transmission: 'Automatic',
+        images: ['https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500'],
+        consumption: '130 MPGe',
+        isPriceMatch: false,
+        isAWD: true,
+        hasCarPlay: false,
+        hasBluetooth: true,
+        hasReverseCamera: true,
+        hasHeatedSeats: true,
       },
       {
-        name: "Mazda 3",
-        category: "Compact",
-        image: "/vehicles/mazda3.png",
-        pricePerDay: 42,
-        payNowPrice: 35,
-        mpg: 30,
-        passengers: 5,
-        transmission: "Manual",
-        drivetrain: "RWD",
-        luggage: 2,
-        fuelEfficient: true,
-        available: true,
+        model: 'Chevrolet Tahoe',
+        category: 'Full-Size SUV',
+        price: 95,
+        fuel: 'Gasoline',
+        seats: 8,
+        transmission: 'Automatic',
+        images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=500'],
+        consumption: '18 MPG',
+        isPriceMatch: false,
+        isAWD: true,
+        hasCarPlay: true,
+        hasBluetooth: true,
+        hasReverseCamera: true,
+        hasHeatedSeats: true,
       },
     ];
 
-    seedData.forEach((vehicle) => {
-      const id = randomUUID();
-      this.vehicles.set(id, { 
-        ...vehicle, 
-        id,
-        fuelEfficient: vehicle.fuelEfficient ?? false,
-        available: vehicle.available ?? true,
-      });
-    });
+    defaultVehicles.forEach(v => this.createVehicle(v));
+
+    const defaultSettings: { key: string; value: any }[] = [
+      { key: 'taxes', value: 8.5 },
+      { key: 'cleaningFee', value: 25 },
+      { key: 'includedMiles', value: 200 },
+      { key: 'extraMileRate', value: 0.45 },
+      { key: 'prices', value: { insurance500: 25, insurance1000: 15, childSeat: 8 } },
+      { key: 'locations', value: ['JFK Airport', 'Downtown Center', 'Fairfield County'] },
+    ];
+
+    defaultSettings.forEach(s => this.setSetting(s.key, s.value));
+
+    const mockBookings: InsertBooking[] = [
+      {
+        bookingCode: 'BK-5582',
+        date: 'Nov 15, 2023',
+        status: 'Completed',
+        carName: 'Tesla Model 3',
+        location: 'JFK Airport Drop-off',
+        startDate: '2023-11-15',
+        startTime: '10:00 AM',
+        returnDate: '2023-11-18',
+        returnTime: '10:00 AM',
+        days: 3,
+        total: 583.50,
+        image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500',
+        driver: {
+          name: "Carlos Silva",
+          phone: "(203) 555-0123",
+          email: "carlos.silva@email.com",
+          licenseNumber: "CT-99887766",
+          licenseImages: []
+        },
+        paymentRaw: { cardName: "CARLOS SILVA", cardNumber: "4242 4242 4242 4242", expiry: "12/28", cvc: "123", type: "visa" },
+        paymentMethod: "Credit Card (Visa **** 4242)",
+        details: { rate: 450, extras: 24, protection: 45, fees: 25, tax: 39.5, manualCharges: [] },
+        checkInStatus: 'completed',
+        checkOutStatus: 'completed',
+        checkInData: { miles: '10000', gas: 'Full', photosOutside: [], photosInside: [] },
+        checkOutData: { miles: '10850', gas: '1/4', photosOutside: [], photosInside: [] }
+      },
+      {
+        bookingCode: 'BK-5583',
+        date: 'Nov 20, 2023',
+        status: 'Active',
+        carName: 'Toyota RAV4',
+        location: 'Downtown Center',
+        startDate: '2023-11-20',
+        startTime: '09:00 AM',
+        returnDate: '2023-11-25',
+        returnTime: '09:00 AM',
+        days: 5,
+        total: 450.00,
+        image: 'https://images.unsplash.com/photo-1568844293986-8c8e46c8d1f6?w=500',
+        driver: {
+          name: "Ana Pereira",
+          phone: "(212) 555-9988",
+          email: "ana.p@email.com",
+          licenseNumber: "NY-11223344",
+          licenseImages: []
+        },
+        paymentRaw: { cardName: "ANA PEREIRA", cardNumber: "5555 4444 3333 2222", expiry: "10/25", cvc: "456", type: "mastercard" },
+        paymentMethod: "Credit Card (Mastercard **** 2222)",
+        details: { rate: 325, extras: 0, protection: 75, fees: 25, tax: 25, manualCharges: [] },
+        checkInStatus: 'completed',
+        checkOutStatus: 'pending',
+        checkInData: { miles: '5000', gas: 'Full', photosOutside: [], photosInside: [] },
+        checkOutData: null
+      }
+    ];
+
+    mockBookings.forEach(b => this.createBooking(b));
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  // Vehicles
+  async getVehicles(): Promise<Vehicle[]> {
+    return Array.from(this.vehicles.values());
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
-
-  async getVehicles(filters?: VehicleFilters): Promise<Vehicle[]> {
-    let result = Array.from(this.vehicles.values()).filter(v => v.available);
-
-    if (filters) {
-      if (filters.priceMin !== undefined) {
-        result = result.filter(v => v.payNowPrice >= filters.priceMin!);
-      }
-      if (filters.priceMax !== undefined) {
-        result = result.filter(v => v.payNowPrice <= filters.priceMax!);
-      }
-      if (filters.fuelSaverOnly) {
-        result = result.filter(v => v.fuelEfficient);
-      }
-      if (filters.transmission && filters.transmission.length > 0) {
-        result = result.filter(v => filters.transmission!.includes(v.transmission));
-      }
-      if (filters.drivetrain && filters.drivetrain.length > 0) {
-        result = result.filter(v => filters.drivetrain!.includes(v.drivetrain));
-      }
-      if (filters.passengers !== undefined) {
-        result = result.filter(v => v.passengers >= filters.passengers!);
-      }
-    }
-
-    return result;
-  }
-
-  async getVehicle(id: string): Promise<Vehicle | undefined> {
+  async getVehicle(id: number): Promise<Vehicle | undefined> {
     return this.vehicles.get(id);
   }
 
-  async createVehicle(insertVehicle: InsertVehicle): Promise<Vehicle> {
-    const id = randomUUID();
-    const vehicle: Vehicle = { 
-      ...insertVehicle, 
-      id,
-      fuelEfficient: insertVehicle.fuelEfficient ?? false,
-      available: insertVehicle.available ?? true,
+  async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
+    const id = this.vehicleId++;
+    const newVehicle: Vehicle = { 
+      id, 
+      model: vehicle.model,
+      category: vehicle.category,
+      price: vehicle.price,
+      fuel: vehicle.fuel ?? 'Gasoline',
+      seats: vehicle.seats ?? 5,
+      transmission: vehicle.transmission ?? 'Automatic',
+      images: vehicle.images ?? [],
+      createdAt: new Date(),
+      consumption: vehicle.consumption ?? null,
+      isPriceMatch: vehicle.isPriceMatch ?? false,
+      isAWD: vehicle.isAWD ?? false,
+      hasCarPlay: vehicle.hasCarPlay ?? false,
+      hasBluetooth: vehicle.hasBluetooth ?? false,
+      hasReverseCamera: vehicle.hasReverseCamera ?? false,
+      hasHeatedSeats: vehicle.hasHeatedSeats ?? false,
+      hasHeatedSteering: vehicle.hasHeatedSteering ?? false,
+      hasElectricSeats: vehicle.hasElectricSeats ?? false,
+      hasPaddleShifters: vehicle.hasPaddleShifters ?? false,
+      hasKeylessEntry: vehicle.hasKeylessEntry ?? false,
+      hasBlindSpotWarning: vehicle.hasBlindSpotWarning ?? false,
+      hasDriveAssist: vehicle.hasDriveAssist ?? false,
+      hasUSBCharger: vehicle.hasUSBCharger ?? false,
+      expenses: vehicle.expenses ?? null,
     };
-    this.vehicles.set(id, vehicle);
-    return vehicle;
+    this.vehicles.set(id, newVehicle);
+    return newVehicle;
   }
 
-  async updateVehicle(id: string, updates: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
-    const vehicle = this.vehicles.get(id);
-    if (!vehicle) return undefined;
-    
-    const updated = { ...vehicle, ...updates };
+  async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
+    const existing = this.vehicles.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...vehicle };
     this.vehicles.set(id, updated);
     return updated;
   }
 
-  async getCustomer(id: string): Promise<Customer | undefined> {
-    return this.customers.get(id);
+  async deleteVehicle(id: number): Promise<boolean> {
+    return this.vehicles.delete(id);
   }
 
-  async getCustomerByEmail(email: string): Promise<Customer | undefined> {
-    return Array.from(this.customers.values()).find(
-      (customer) => customer.email === email,
-    );
+  // Bookings
+  async getBookings(): Promise<Booking[]> {
+    return Array.from(this.bookings.values());
   }
 
-  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    const id = randomUUID();
-    const customer: Customer = { ...insertCustomer, id };
-    this.customers.set(id, customer);
-    return customer;
+  async getBooking(id: number): Promise<Booking | undefined> {
+    return this.bookings.get(id);
   }
 
-  async getReservations(): Promise<Reservation[]> {
-    return Array.from(this.reservations.values());
+  async getBookingByCode(code: string): Promise<Booking | undefined> {
+    return Array.from(this.bookings.values()).find(b => b.bookingCode === code);
   }
 
-  async getReservation(id: string): Promise<Reservation | undefined> {
-    return this.reservations.get(id);
-  }
-
-  async getReservationByConfirmation(confirmationNumber: string): Promise<Reservation | undefined> {
-    return Array.from(this.reservations.values()).find(
-      (reservation) => reservation.confirmationNumber === confirmationNumber,
-    );
-  }
-
-  async getReservationsByCustomer(customerId: string): Promise<Reservation[]> {
-    return Array.from(this.reservations.values()).filter(
-      (reservation) => reservation.customerId === customerId,
-    );
-  }
-
-  async createReservation(insertReservation: InsertReservation): Promise<Reservation> {
-    const id = randomUUID();
-    const reservation: Reservation = { 
-      ...insertReservation, 
-      id,
-      status: insertReservation.status ?? "confirmed",
-      insurance: insertReservation.insurance ?? false,
-      cleaningFee: insertReservation.cleaningFee ?? false,
-      childSeat: insertReservation.childSeat ?? false,
-      createdAt: new Date(),
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    const id = this.bookingId++;
+    const driver = {
+      name: booking.driver.name,
+      phone: booking.driver.phone,
+      email: booking.driver.email,
+      licenseNumber: booking.driver.licenseNumber,
+      licenseImages: [...booking.driver.licenseImages] as string[],
     };
-    this.reservations.set(id, reservation);
-    return reservation;
+    const details = {
+      rate: booking.details.rate,
+      extras: booking.details.extras,
+      protection: booking.details.protection,
+      fees: booking.details.fees,
+      tax: booking.details.tax,
+      discount: booking.details.discount as number | undefined,
+      extendedRate: booking.details.extendedRate as number | undefined,
+      manualCharges: booking.details.manualCharges as { type: string; amount: number }[] | undefined,
+    };
+    const newBooking: Booking = { 
+      id, 
+      bookingCode: booking.bookingCode,
+      date: booking.date,
+      status: booking.status ?? 'Active',
+      carName: booking.carName,
+      location: booking.location,
+      startDate: booking.startDate,
+      startTime: booking.startTime,
+      returnDate: booking.returnDate,
+      returnTime: booking.returnTime,
+      days: booking.days,
+      total: booking.total,
+      driver,
+      details,
+      checkInStatus: booking.checkInStatus ?? 'pending',
+      checkOutStatus: booking.checkOutStatus ?? 'pending',
+      createdAt: new Date(),
+      vehicleId: booking.vehicleId ?? null,
+      image: booking.image ?? null,
+      paymentRaw: booking.paymentRaw ?? null,
+      paymentMethod: booking.paymentMethod ?? null,
+      checkInData: booking.checkInData ? {
+        miles: booking.checkInData.miles,
+        gas: booking.checkInData.gas,
+        photosOutside: [...booking.checkInData.photosOutside] as string[],
+        photosInside: [...booking.checkInData.photosInside] as string[],
+      } : null,
+      checkOutData: booking.checkOutData ? {
+        miles: booking.checkOutData.miles,
+        gas: booking.checkOutData.gas,
+        photosOutside: [...booking.checkOutData.photosOutside] as string[],
+        photosInside: [...booking.checkOutData.photosInside] as string[],
+      } : null,
+    };
+    this.bookings.set(id, newBooking);
+    return newBooking;
   }
 
-  async updateReservationStatus(id: string, status: string): Promise<Reservation | undefined> {
-    const reservation = this.reservations.get(id);
-    if (!reservation) return undefined;
+  async updateBooking(id: number, booking: Partial<InsertBooking>): Promise<Booking | undefined> {
+    const existing = this.bookings.get(id);
+    if (!existing) return undefined;
     
-    const updated = { ...reservation, status };
-    this.reservations.set(id, updated);
+    let driver = existing.driver;
+    if (booking.driver) {
+      driver = {
+        name: booking.driver.name,
+        phone: booking.driver.phone,
+        email: booking.driver.email,
+        licenseNumber: booking.driver.licenseNumber,
+        licenseImages: [...booking.driver.licenseImages] as string[],
+      };
+    }
+    
+    let details = existing.details;
+    if (booking.details) {
+      details = {
+        rate: booking.details.rate,
+        extras: booking.details.extras,
+        protection: booking.details.protection,
+        fees: booking.details.fees,
+        tax: booking.details.tax,
+        discount: booking.details.discount as number | undefined,
+        extendedRate: booking.details.extendedRate as number | undefined,
+        manualCharges: booking.details.manualCharges as { type: string; amount: number }[] | undefined,
+      };
+    }
+    
+    const updated: Booking = { 
+      ...existing, 
+      ...booking,
+      driver,
+      details,
+      checkInData: booking.checkInData ? {
+        miles: booking.checkInData.miles,
+        gas: booking.checkInData.gas,
+        photosOutside: [...booking.checkInData.photosOutside] as string[],
+        photosInside: [...booking.checkInData.photosInside] as string[],
+      } : existing.checkInData,
+      checkOutData: booking.checkOutData ? {
+        miles: booking.checkOutData.miles,
+        gas: booking.checkOutData.gas,
+        photosOutside: [...booking.checkOutData.photosOutside] as string[],
+        photosInside: [...booking.checkOutData.photosInside] as string[],
+      } : existing.checkOutData,
+    };
+    this.bookings.set(id, updated);
     return updated;
   }
 
-  async getPriceMatches(): Promise<PriceMatch[]> {
-    return Array.from(this.priceMatches.values());
+  async deleteBooking(id: number): Promise<boolean> {
+    return this.bookings.delete(id);
   }
 
-  async getPriceMatch(id: string): Promise<PriceMatch | undefined> {
-    return this.priceMatches.get(id);
+  // Settings
+  async getSetting(key: string): Promise<Settings | undefined> {
+    return this.settings.get(key);
   }
 
-  async createPriceMatch(insertPriceMatch: InsertPriceMatch): Promise<PriceMatch> {
-    const id = randomUUID();
-    const priceMatch: PriceMatch = { 
-      ...insertPriceMatch, 
-      id,
-      status: "pending",
-      proofUrl: insertPriceMatch.proofUrl ?? null,
-      createdAt: new Date(),
-    };
-    this.priceMatches.set(id, priceMatch);
-    return priceMatch;
+  async setSetting(key: string, value: any): Promise<Settings> {
+    const existing = this.settings.get(key);
+    if (existing) {
+      const updated = { ...existing, value };
+      this.settings.set(key, updated);
+      return updated;
+    }
+    const id = this.settingsId++;
+    const newSetting: Settings = { id, key, value };
+    this.settings.set(key, newSetting);
+    return newSetting;
   }
 
-  async updatePriceMatchStatus(id: string, status: string): Promise<PriceMatch | undefined> {
-    const priceMatch = this.priceMatches.get(id);
-    if (!priceMatch) return undefined;
-    
-    const updated = { ...priceMatch, status };
-    this.priceMatches.set(id, updated);
-    return updated;
+  async getAllSettings(): Promise<Settings[]> {
+    return Array.from(this.settings.values());
   }
 }
 

@@ -1,269 +1,160 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import type { Server } from "http";
 import { storage } from "./storage";
-import { insertCustomerSchema, insertReservationSchema, insertPriceMatchSchema } from "@shared/schema";
-import { z } from "zod";
+import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
 
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
-  
-  app.get("/api/vehicles", async (req, res) => {
-    try {
-      const { priceMin, priceMax, fuelSaverOnly, transmission, drivetrain, passengers, sortBy } = req.query;
-      
-      const filters = {
-        priceMin: priceMin ? parseFloat(priceMin as string) : undefined,
-        priceMax: priceMax ? parseFloat(priceMax as string) : undefined,
-        fuelSaverOnly: fuelSaverOnly === "true",
-        transmission: transmission ? (transmission as string).split(",") : undefined,
-        drivetrain: drivetrain ? (drivetrain as string).split(",") : undefined,
-        passengers: passengers ? parseInt(passengers as string) : undefined,
-      };
-      
-      let vehicles = await storage.getVehicles(filters);
-      
-      if (sortBy) {
-        switch (sortBy) {
-          case "price-low":
-            vehicles.sort((a, b) => a.payNowPrice - b.payNowPrice);
-            break;
-          case "price-high":
-            vehicles.sort((a, b) => b.payNowPrice - a.payNowPrice);
-            break;
-          case "mpg":
-            vehicles.sort((a, b) => b.mpg - a.mpg);
-            break;
-        }
-      }
-      
-      res.json(vehicles);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch vehicles" });
-    }
+export async function registerRoutes(server: Server, app: Express): Promise<void> {
+  // ========== VEHICLES ==========
+  app.get("/api/vehicles", async (_req, res) => {
+    const vehicles = await storage.getVehicles();
+    res.json(vehicles);
   });
 
   app.get("/api/vehicles/:id", async (req, res) => {
-    try {
-      const vehicle = await storage.getVehicle(req.params.id);
-      if (!vehicle) {
-        return res.status(404).json({ message: "Vehicle not found" });
-      }
-      res.json(vehicle);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch vehicle" });
+    const id = parseInt(req.params.id);
+    const vehicle = await storage.getVehicle(id);
+    if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+    res.json(vehicle);
+  });
+
+  app.post("/api/vehicles", async (req, res) => {
+    const result = insertVehicleSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.flatten() });
     }
+    const vehicle = await storage.createVehicle(result.data);
+    res.status(201).json(vehicle);
   });
 
-  const createReservationSchema = z.object({
-    vehicle: z.object({
-      id: z.string(),
-      pricePerDay: z.number(),
-      payNowPrice: z.number(),
-    }),
-    customer: insertCustomerSchema,
-    location: z.string(),
-    pickupDate: z.string().transform(s => new Date(s)),
-    returnDate: z.string().transform(s => new Date(s)),
-    paymentOption: z.enum(["now", "later"]),
-    extras: z.object({
-      insurance: z.boolean().default(false),
-      cleaningFee: z.boolean().default(false),
-      childSeat: z.boolean().default(false),
-    }),
-  });
-
-  app.post("/api/reservations", async (req, res) => {
-    try {
-      const data = createReservationSchema.parse(req.body);
-      
-      let customer = await storage.getCustomerByEmail(data.customer.email);
-      if (!customer) {
-        customer = await storage.createCustomer(data.customer);
-      }
-      
-      const days = Math.ceil((data.returnDate.getTime() - data.pickupDate.getTime()) / (1000 * 60 * 60 * 24));
-      const basePrice = data.paymentOption === "now" ? data.vehicle.payNowPrice : data.vehicle.pricePerDay;
-      const extrasPrice = (data.extras.insurance ? 15 : 0) + (data.extras.cleaningFee ? 10 : 0) + (data.extras.childSeat ? 5 : 0);
-      const totalPrice = (basePrice + extrasPrice) * days;
-      
-      const confirmationNumber = `CH-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      
-      const reservation = await storage.createReservation({
-        confirmationNumber,
-        vehicleId: data.vehicle.id,
-        customerId: customer.id,
-        location: data.location,
-        pickupDate: data.pickupDate,
-        returnDate: data.returnDate,
-        paymentOption: data.paymentOption,
-        insurance: data.extras.insurance,
-        cleaningFee: data.extras.cleaningFee,
-        childSeat: data.extras.childSeat,
-        totalPrice,
-        status: "confirmed",
-      });
-      
-      res.status(201).json({
-        ...reservation,
-        customer,
-        vehicle: await storage.getVehicle(data.vehicle.id),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      console.error("Reservation error:", error);
-      res.status(500).json({ message: "Failed to create reservation" });
+  app.put("/api/vehicles/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const result = insertVehicleSchema.partial().safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.flatten() });
     }
+    const vehicle = await storage.updateVehicle(id, result.data);
+    if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+    res.json(vehicle);
   });
 
-  app.get("/api/reservations/lookup/:confirmationNumber", async (req, res) => {
-    try {
-      const reservation = await storage.getReservationByConfirmation(req.params.confirmationNumber);
-      if (!reservation) {
-        return res.status(404).json({ message: "Reservation not found" });
-      }
-      
-      const [vehicle, customer] = await Promise.all([
-        storage.getVehicle(reservation.vehicleId),
-        storage.getCustomer(reservation.customerId),
-      ]);
-      
-      res.json({
-        ...reservation,
-        vehicle,
-        customer,
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to lookup reservation" });
+  app.delete("/api/vehicles/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteVehicle(id);
+    if (!deleted) return res.status(404).json({ error: "Vehicle not found" });
+    res.status(204).send();
+  });
+
+  // ========== BOOKINGS ==========
+  app.get("/api/bookings", async (_req, res) => {
+    const bookings = await storage.getBookings();
+    res.json(bookings);
+  });
+
+  app.get("/api/bookings/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    res.json(booking);
+  });
+
+  app.get("/api/bookings/code/:code", async (req, res) => {
+    const booking = await storage.getBookingByCode(req.params.code);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    res.json(booking);
+  });
+
+  app.post("/api/bookings", async (req, res) => {
+    const result = insertBookingSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.flatten() });
     }
+    const booking = await storage.createBooking(result.data);
+    res.status(201).json(booking);
   });
 
-  app.patch("/api/reservations/:id/cancel", async (req, res) => {
-    try {
-      const reservation = await storage.updateReservationStatus(req.params.id, "cancelled");
-      if (!reservation) {
-        return res.status(404).json({ message: "Reservation not found" });
-      }
-      res.json(reservation);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to cancel reservation" });
+  app.put("/api/bookings/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const result = insertBookingSchema.partial().safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.flatten() });
     }
+    const booking = await storage.updateBooking(id, result.data);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    res.json(booking);
   });
 
-  const priceMatchRequestSchema = z.object({
-    customerEmail: z.string().email(),
-    competitorName: z.string().min(1),
-    competitorPrice: z.number().positive(),
-    vehicleType: z.string().min(1),
-    pickupDate: z.string().transform(s => new Date(s)),
-    returnDate: z.string().transform(s => new Date(s)),
-    proofUrl: z.string().url().optional(),
+  app.delete("/api/bookings/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteBooking(id);
+    if (!deleted) return res.status(404).json({ error: "Booking not found" });
+    res.status(204).send();
   });
 
-  app.post("/api/price-match", async (req, res) => {
-    try {
-      const data = priceMatchRequestSchema.parse(req.body);
-      
-      const priceMatch = await storage.createPriceMatch({
-        customerEmail: data.customerEmail,
-        competitorName: data.competitorName,
-        competitorPrice: data.competitorPrice,
-        vehicleType: data.vehicleType,
-        pickupDate: data.pickupDate,
-        returnDate: data.returnDate,
-        proofUrl: data.proofUrl,
-      });
-      
-      res.status(201).json(priceMatch);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to submit price match request" });
+  // ========== SETTINGS ==========
+  app.get("/api/settings", async (_req, res) => {
+    const allSettings = await storage.getAllSettings();
+    const settingsObj: Record<string, any> = {};
+    allSettings.forEach(s => {
+      settingsObj[s.key] = s.value;
+    });
+    res.json(settingsObj);
+  });
+
+  app.get("/api/settings/:key", async (req, res) => {
+    const setting = await storage.getSetting(req.params.key);
+    if (!setting) return res.status(404).json({ error: "Setting not found" });
+    res.json(setting.value);
+  });
+
+  app.put("/api/settings/:key", async (req, res) => {
+    const { value } = req.body;
+    if (value === undefined) {
+      return res.status(400).json({ error: "Value is required" });
     }
+    const setting = await storage.setSetting(req.params.key, value);
+    res.json(setting);
   });
 
-  app.get("/api/price-match/:id", async (req, res) => {
-    try {
-      const priceMatch = await storage.getPriceMatch(req.params.id);
-      if (!priceMatch) {
-        return res.status(404).json({ message: "Price match request not found" });
+  // ========== FINANCIAL SUMMARY ==========
+  app.get("/api/financial/summary", async (_req, res) => {
+    const bookings = await storage.getBookings();
+    const vehicles = await storage.getVehicles();
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthlyData: Record<string, { gross: number; expenses: number; net: number }> = {};
+    const vehicleTotals: Record<string, number> = {};
+
+    monthNames.forEach(m => monthlyData[m] = { gross: 0, expenses: 0, net: 0 });
+
+    const totalFleetFixedExpenses = vehicles.reduce((sum, car) => {
+      const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0 };
+      return sum + (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0);
+    }, 0);
+
+    bookings.forEach(b => {
+      if (['Completed', 'Active', 'Extended'].includes(b.status)) {
+        const [y, m, d] = b.startDate.split('-').map(Number);
+        const monthIndex = m - 1;
+        if (monthIndex >= 0 && monthIndex < 12) {
+          const monthKey = monthNames[monthIndex];
+          monthlyData[monthKey].gross += b.total;
+        }
+
+        const carKey = b.carName;
+        if (!vehicleTotals[carKey]) vehicleTotals[carKey] = 0;
+        vehicleTotals[carKey] += b.total;
       }
-      res.json(priceMatch);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch price match request" });
-    }
-  });
+    });
 
-  // Admin Routes - Vehicle Management
-  const createVehicleSchema = z.object({
-    name: z.string().min(1),
-    category: z.string().min(1),
-    image: z.string().url(),
-    pricePerDay: z.number().positive(),
-    payNowPrice: z.number().positive(),
-    mpg: z.number().positive(),
-    passengers: z.number().positive(),
-    transmission: z.enum(["Automatic", "Manual"]),
-    drivetrain: z.enum(["FWD", "RWD", "AWD"]),
-    luggage: z.number().positive(),
-    fuelEfficient: z.boolean().default(false),
-    available: z.boolean().default(true),
-  });
+    monthNames.forEach(m => {
+      monthlyData[m].expenses = totalFleetFixedExpenses;
+      monthlyData[m].net = monthlyData[m].gross - totalFleetFixedExpenses;
+    });
 
-  app.get("/api/admin/vehicles", async (req, res) => {
-    try {
-      const vehicles = Array.from((await storage as any).vehicles?.values?.() || []);
-      res.json(vehicles);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch vehicles" });
-    }
+    res.json({ 
+      monthly: monthlyData, 
+      byVehicle: vehicleTotals, 
+      fixedMonthly: totalFleetFixedExpenses 
+    });
   });
-
-  app.post("/api/admin/vehicles", async (req, res) => {
-    try {
-      const data = createVehicleSchema.parse(req.body);
-      const vehicle = await storage.createVehicle(data);
-      res.status(201).json(vehicle);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create vehicle" });
-    }
-  });
-
-  app.put("/api/admin/vehicles/:id", async (req, res) => {
-    try {
-      const data = createVehicleSchema.partial().parse(req.body);
-      const vehicle = await storage.updateVehicle(req.params.id, data);
-      if (!vehicle) {
-        return res.status(404).json({ message: "Vehicle not found" });
-      }
-      res.json(vehicle);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to update vehicle" });
-    }
-  });
-
-  app.delete("/api/admin/vehicles/:id", async (req, res) => {
-    try {
-      const vehicle = await storage.getVehicle(req.params.id);
-      if (!vehicle) {
-        return res.status(404).json({ message: "Vehicle not found" });
-      }
-      await storage.updateVehicle(req.params.id, { available: false });
-      res.json({ message: "Vehicle deleted" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete vehicle" });
-    }
-  });
-
-  return httpServer;
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-CarHop is a budget-focused car rental web application built with React and Express. The platform emphasizes fuel-efficient economy vehicles with transparent pricing, featuring a "pay now" discount model and a price match guarantee. The application provides a streamlined rental experience inspired by Airbnb's card-based browsing, Booking.com's filter systems, and Stripe's checkout flow.
+CarHop is a comprehensive car rental web application built with React (TanStack Query) and Express. The platform features vehicle fleet management, a complete booking system with check-in/check-out workflows, payment processing, driver verification, financial reporting, and an admin dashboard.
 
 ## User Preferences
 
@@ -14,112 +14,102 @@ Preferred communication style: Simple, everyday language.
 
 **Technology Stack:**
 - **Framework**: React 18 with TypeScript
-- **Routing**: Wouter (lightweight client-side routing)
 - **State Management**: TanStack Query (React Query) for server state
 - **Styling**: Tailwind CSS with custom design system
-- **UI Components**: Radix UI primitives with shadcn/ui component library
+- **UI Components**: Custom components with dark mode support
 
-**Design System:**
-- Uses "new-york" style variant of shadcn/ui
-- Custom color palette based on neutral tones with green primary (#22c55e area)
-- Typography: Inter for UI/body, Space Grotesk for headlines
-- Responsive spacing primitives (2, 4, 6, 8, 12, 16, 24)
-- Dark mode support via ThemeProvider context
-
-**Component Architecture:**
-- Modular component structure under `client/src/components/`
-- Page-level components in `client/src/pages/`
-- Reusable UI primitives in `client/src/components/ui/`
-- Context-based theme management for light/dark modes
-- Example components provided for development reference
+**Main Application:**
+- Single-page application in `client/src/pages/CarHopApp.tsx`
+- Multi-view navigation (home, checkout, payment, admin, bookings)
+- Dark/light mode toggle
+- Responsive design for mobile and desktop
 
 **Key Features:**
-- Vehicle browsing with advanced filtering (price range, fuel efficiency, transmission, drivetrain, passengers)
-- Multi-step checkout flow with payment option comparison
-- Price match guarantee submission system
-- Responsive search interface with date pickers and location autocomplete
-- Trust badges and social proof elements
+- Vehicle browsing with fuel-saver filter
+- Multi-step checkout flow with driver verification
+- License photo upload system
+- Check-in/check-out workflow with mileage and fuel tracking
+- Rental extension system with automatic pricing
+- Admin dashboard with Fleet, Bookings, Earnings, and Settings tabs
 
 ### Backend Architecture
 
 **Technology Stack:**
 - **Runtime**: Node.js with TypeScript
 - **Framework**: Express.js
-- **Database ORM**: Drizzle ORM
-- **Database**: PostgreSQL (via Neon serverless driver)
+- **Storage**: In-memory storage with mock data (ready for PostgreSQL)
 - **Validation**: Zod schemas with drizzle-zod integration
 
-**API Design:**
-- RESTful API structure under `/api` routes
-- Vehicle listing with query-based filtering (`/api/vehicles`)
-- Individual vehicle details (`/api/vehicles/:id`)
-- Customer management endpoints
-- Reservation creation and management
-- Price match request submissions
+**API Endpoints:**
+- `GET /api/vehicles` - List all vehicles
+- `GET /api/vehicles/:id` - Get vehicle by ID
+- `POST /api/vehicles` - Create vehicle
+- `PUT /api/vehicles/:id` - Update vehicle
+- `DELETE /api/vehicles/:id` - Delete vehicle
+- `GET /api/bookings` - List all bookings
+- `GET /api/bookings/:id` - Get booking by ID
+- `GET /api/bookings/code/:code` - Get booking by code
+- `POST /api/bookings` - Create booking
+- `PUT /api/bookings/:id` - Update booking
+- `DELETE /api/bookings/:id` - Delete booking
+- `GET /api/settings` - Get all settings
+- `GET /api/settings/:key` - Get specific setting
+- `PUT /api/settings/:key` - Update setting
+- `GET /api/financial/summary` - Get monthly financial summary
 
-**Data Models:**
-- **Users**: Authentication credentials (username/password)
-- **Vehicles**: Car inventory with specifications (MPG, passengers, transmission, drivetrain, pricing tiers)
-- **Customers**: Rental customer information (contact details, license)
-- **Reservations**: Booking records with confirmation numbers
-- **Price Matches**: Competitor price comparison requests
+**Data Models (defined in `shared/schema.ts`):**
 
-**Storage Pattern:**
-- Interface-based storage layer (`IStorage`) for flexibility
-- In-memory implementation (`MemStorage`) for development
-- Database implementation ready via Drizzle ORM
-- Filtering logic at storage layer for vehicle queries
+**Vehicles:**
+- model, category, price, fuel, seats, transmission
+- Feature flags: isAWD, hasCarPlay, hasBluetooth, hasReverseCamera, etc.
+- expenses (JSONB): lease, insurance, carWash, maintenance, trackApp, downPayment
 
-**Request Handling:**
-- JSON body parsing with raw body preservation for webhooks
-- Custom logging middleware with timestamps
-- CORS and security considerations built-in
-- Error handling with appropriate HTTP status codes
+**Bookings:**
+- bookingCode, status (Active/Extended/Completed)
+- Rental dates: startDate, startTime, returnDate, returnTime
+- driver (JSONB): name, phone, email, licenseNumber, licenseImages
+- paymentRaw (JSONB): cardName, cardNumber, expiry, cvc, type
+- details (JSONB): rate, extras, protection, fees, tax, discount, manualCharges
+- checkInStatus, checkOutStatus
+- checkInData/checkOutData (JSONB): miles, gas, photosOutside, photosInside
+
+**Settings:**
+- taxes, cleaningFee, includedMiles, extraMileRate
+- prices (insurance500, insurance1000, childSeat)
+- locations (array)
+
+### Storage Pattern
+
+**Interface-based design (`server/storage.ts`):**
+- `IStorage` interface for flexibility
+- `MemStorage` implementation with pre-populated mock data
+- Ready for database migration to PostgreSQL via Drizzle ORM
 
 ### Build System
 
 **Development:**
-- Vite dev server with HMR via middleware mode
+- `npm run dev` - Starts Express server with Vite middleware
 - TypeScript compilation with path aliases (`@/`, `@shared/`, `@assets/`)
-- Replit-specific plugins for development experience
+- Hot module replacement for rapid development
 
 **Production:**
-- esbuild for server bundling with selective dependency bundling
+- esbuild for server bundling
 - Vite for client-side production build
 - Static file serving from Express
-- Single-page application fallback routing
 
-**Configuration:**
-- Shared TypeScript configuration across client/server
-- PostCSS with Tailwind and Autoprefixer
-- ES modules throughout the stack
+### Configuration Files
 
-### External Dependencies
+- `shared/schema.ts` - Database schema definitions with Zod validation
+- `server/storage.ts` - Storage layer with in-memory implementation
+- `server/routes.ts` - Express API routes
+- `client/src/pages/CarHopApp.tsx` - Main application component
 
-**Database:**
-- PostgreSQL (expected via `DATABASE_URL` environment variable)
-- Neon serverless PostgreSQL driver for edge compatibility
-- Drizzle ORM for type-safe database queries
-- Migration system via `drizzle-kit`
+### Recent Changes (December 2025)
 
-**UI Libraries:**
-- Radix UI for accessible component primitives
-- Lucide React for icons
-- date-fns for date manipulation
-- embla-carousel for image carousels
-- cmdk for command palette patterns
-
-**Development Tools:**
-- Replit-specific Vite plugins (runtime error overlay, cartographer, dev banner)
-- TypeScript for type safety across stack
-- Zod for runtime validation
-
-**Asset Management:**
-- Vehicle images stored in `attached_assets/generated_images/`
-- Vite alias for asset imports (`@assets/`)
-- Hero background and vehicle-specific imagery
-
-**Sessions & Auth:**
-- connect-pg-simple for PostgreSQL-backed sessions
-- express-session middleware (configuration expected)
-- Passport.js ready for authentication strategies
+1. Migrated from Firebase to Express/TanStack Query architecture
+2. Created comprehensive database schema for vehicles, bookings, and settings
+3. Implemented in-memory storage with mock booking and vehicle data
+4. Built RESTful API routes for all CRUD operations
+5. Adapted CarHopApp.tsx to use TanStack Query for data fetching
+6. Implemented complete booking lifecycle: checkout → payment → check-in → check-out
+7. Added admin dashboard with fleet management, bookings overview, and financial reporting

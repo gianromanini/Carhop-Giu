@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal
 } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import type { Vehicle, Booking } from '@shared/schema';
 
 const generateTimeOptions = () => {
   const options = [];
@@ -29,12 +30,9 @@ const getNext30MinSlot = () => {
   const now = new Date();
   let minutes = now.getMinutes();
   let hour = now.getHours();
-  
   if (minutes < 30) { minutes = 30; } else { minutes = 0; hour += 1; }
-  
   if (hour < 6) { hour = 6; minutes = 0; }
-  if (hour >= 22) { hour = 22; minutes = 0; } 
-
+  if (hour >= 22) { hour = 22; minutes = 0; }
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
   const displayMinutes = minutes === 0 ? "00" : "30";
@@ -66,22 +64,20 @@ const addDaysToDate = (dateStr: string, days: number) => {
 };
 
 const calculateBillingDays = (start: string, startTime: string, end: string, endTime: string) => {
-    if (!start || !end || !startTime || !endTime) return 1;
-    try {
-        const startH = convertTo24Hour(startTime);
-        const endH = convertTo24Hour(endTime);
-        const startDate = new Date(`${start}T${startH}:00`);
-        const endDate = new Date(`${end}T${endH}:00`);
-        
-        const diffTime = endDate.getTime() - startDate.getTime();
-        if (isNaN(diffTime) || diffTime <= 0) return 1;
-        
-        const diffHours = diffTime / (1000 * 60 * 60);
-        const days = Math.ceil(diffHours / 24);
-        return Math.max(1, days);
-    } catch (e) {
-        return 1;
-    }
+  if (!start || !end || !startTime || !endTime) return 1;
+  try {
+    const startH = convertTo24Hour(startTime);
+    const endH = convertTo24Hour(endTime);
+    const startDate = new Date(`${start}T${startH}:00`);
+    const endDate = new Date(`${end}T${endH}:00`);
+    const diffTime = endDate.getTime() - startDate.getTime();
+    if (isNaN(diffTime) || diffTime <= 0) return 1;
+    const diffHours = diffTime / (1000 * 60 * 60);
+    const days = Math.ceil(diffHours / 24);
+    return Math.max(1, days);
+  } catch (e) {
+    return 1;
+  }
 };
 
 const formatDisplayDate = (dateStr: string, timeStr: string) => {
@@ -141,30 +137,10 @@ const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => 
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center overflow-hidden select-none"
-      onWheel={handleWheel}
-    >
-       <div 
-         className="flex-1 w-full flex items-center justify-center overflow-hidden cursor-move active:cursor-grabbing"
-         onMouseDown={handleMouseDown}
-         onMouseMove={handleMouseMove}
-         onMouseUp={handleMouseUp}
-         onMouseLeave={handleMouseUp}
-         onDoubleClick={toggleZoom}
-       >
-         <img 
-           src={src} 
-           style={{ 
-             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-             transition: isDragging ? 'none' : 'transform 0.2s ease-out'
-           }}
-           className="max-w-full max-h-[85vh] object-contain"
-           draggable={false}
-           alt=""
-         />
+    <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center overflow-hidden select-none" onWheel={handleWheel}>
+       <div className="flex-1 w-full flex items-center justify-center overflow-hidden cursor-move active:cursor-grabbing" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onDoubleClick={toggleZoom}>
+         <img src={src} style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transition: isDragging ? 'none' : 'transform 0.2s ease-out' }} className="max-w-full max-h-[85vh] object-contain" draggable={false} alt="" />
        </div>
-
        <div className="absolute bottom-8 flex items-center gap-4 bg-zinc-900/80 backdrop-blur p-3 rounded-full border border-zinc-700 text-white">
           <button onClick={() => {setScale(Math.max(1, scale - 0.5)); if(scale<=1.5) setPosition({x:0,y:0});}} className="p-2 hover:bg-zinc-700 rounded-full"><ZoomOut size={20}/></button>
           <span className="text-xs font-mono w-12 text-center">{(scale * 100).toFixed(0)}%</span>
@@ -172,13 +148,7 @@ const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => 
           <div className="w-px h-4 bg-zinc-700 mx-1"></div>
           <button onClick={() => { setScale(1); setPosition({x:0,y:0}); }} className="p-2 hover:bg-zinc-700 rounded-full" title="Reset"><Maximize2 size={18}/></button>
        </div>
-
-       <button 
-         className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
-         onClick={onClose}
-       >
-         <X size={32} />
-       </button>
+       <button className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50" onClick={onClose}><X size={32} /></button>
     </div>
   );
 };
@@ -195,9 +165,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
           <button onClick={(e) => {e.stopPropagation(); setIdx((prev) => (prev - 1 + images.length) % images.length)}} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-green-600 z-10"><ChevronLeft size={18}/></button>
           <button onClick={(e) => {e.stopPropagation(); setIdx((prev) => (prev + 1) % images.length)}} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-green-600 z-10"><ChevronRight size={18}/></button>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {images.map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === idx ? 'bg-white' : 'bg-white/50'}`}></div>
-            ))}
+            {images.map((_, i) => (<div key={i} className={`w-1.5 h-1.5 rounded-full ${i === idx ? 'bg-white' : 'bg-white/50'}`}></div>))}
           </div>
         </>
       )}
@@ -224,11 +192,7 @@ const Button = ({ children, onClick, variant = "primary", className = "", disabl
     disabled: "bg-zinc-300 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-600 cursor-not-allowed border border-transparent"
   };
   const variantClass = disabled ? variants.disabled : variants[variant];
-  return (
-    <button onClick={disabled ? undefined : onClick} type={type} className={`${baseStyle} ${variantClass} ${className}`} disabled={disabled} {...props}>
-      {children}
-    </button>
-  );
+  return (<button onClick={disabled ? undefined : onClick} type={type} className={`${baseStyle} ${variantClass} ${className}`} disabled={disabled} {...props}>{children}</button>);
 };
 
 const Input = ({ label, required, className="", ...props }: any) => (
@@ -251,182 +215,65 @@ const Checkbox = ({ label, checked, onChange, name, ...props }: any) => (
 const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>; fixedExpenses: number }) => {
   const allValues = Object.values(data).flatMap((d: any) => [d.gross, d.expenses, Math.abs(d.net)]);
   const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1000;
-  
   const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const activeMonths = monthOrder.filter(label => data[label] && data[label].gross > 0);
 
   return (
     <div className="w-full mt-6 select-none overflow-x-auto">
-        <div className="flex items-end justify-between gap-4 h-64 w-full pb-0 border-b border-zinc-200 dark:border-zinc-800 min-w-[600px]">
-        {monthOrder.map((label) => {
-            const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses };
-            const gross = monthData.gross || 0;
-            const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0); 
-            const net = gross - expenses;
-
-            const hGross = Math.max((gross / maxVal) * 100, 2);
-            const hExpenses = Math.max((expenses / maxVal) * 100, 2);
-            const hNet = Math.max((Math.abs(net) / maxVal) * 100, 2);
-
-            return (
-            <div key={label} className="flex-1 flex flex-col items-center justify-end h-full group relative min-w-[40px]">
-                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/90 text-white text-[10px] p-2 rounded shadow-xl z-20 w-32 text-center backdrop-blur-sm border border-zinc-700">
-                    <div className="font-bold text-xs border-b border-zinc-700 pb-1 mb-1">{label} Financials</div>
-                    <div className="flex justify-between"><span className="text-red-400">Exp:</span> <span>${expenses.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span className="text-green-400">Gross:</span> <span>${gross.toLocaleString()}</span></div>
-                    <div className="flex justify-between font-bold"><span className="text-blue-400">Net:</span> <span>${net.toLocaleString()}</span></div>
+        <div className="flex items-end justify-start gap-4 h-64 w-full pb-0 border-b border-zinc-200 dark:border-zinc-800 min-w-[600px]">
+        {activeMonths.length > 0 ? (
+            activeMonths.map((label) => {
+                const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses };
+                const gross = monthData.gross || 0;
+                const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
+                const net = gross - expenses;
+                const hGross = Math.max((gross / maxVal) * 100, 2);
+                const hExpenses = Math.max((expenses / maxVal) * 100, 2);
+                const hNet = Math.max((Math.abs(net) / maxVal) * 100, 2);
+                return (
+                <div key={label} className="flex-1 flex flex-col items-center justify-end h-full group relative min-w-[40px] max-w-[100px]">
+                    <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/90 text-white text-[10px] p-2 rounded shadow-xl z-20 w-32 text-center backdrop-blur-sm border border-zinc-700">
+                        <div className="font-bold text-xs border-b border-zinc-700 pb-1 mb-1">{label} Financials</div>
+                        <div className="flex justify-between"><span className="text-red-400">Exp:</span> <span>${expenses.toLocaleString()}</span></div>
+                        <div className="flex justify-between"><span className="text-green-400">Gross:</span> <span>${gross.toLocaleString()}</span></div>
+                        <div className="flex justify-between font-bold"><span className="text-blue-400">Net:</span> <span>${net.toLocaleString()}</span></div>
+                    </div>
+                    <div className="flex items-end gap-[2px] w-full h-full justify-center opacity-90 hover:opacity-100 transition-opacity">
+                        <div className="w-1/3 bg-red-500 rounded-t-sm transition-all" style={{ height: `${hExpenses}%` }}></div>
+                        <div className="w-1/3 bg-green-500 rounded-t-sm transition-all" style={{ height: `${hGross}%` }}></div>
+                        <div className={`w-1/3 rounded-t-sm transition-all ${net >= 0 ? 'bg-blue-500' : 'bg-orange-500'}`} style={{ height: `${hNet}%` }}></div>
+                    </div>
                 </div>
-
-                <div className="flex items-end gap-[2px] w-full h-full justify-center opacity-90 hover:opacity-100 transition-opacity">
-                    <div className="w-1/3 bg-red-500 rounded-t-sm transition-all relative group/bar" style={{ height: `${hExpenses}%` }}></div>
-                    <div className="w-1/3 bg-green-500 rounded-t-sm transition-all relative group/bar" style={{ height: `${hGross}%` }}></div>
-                    <div className={`w-1/3 rounded-t-sm transition-all relative group/bar ${net >= 0 ? 'bg-blue-500' : 'bg-orange-500'}`} style={{ height: `${hNet}%` }}></div>
-                </div>
-            </div>
-            );
-        })}
+                );
+            })
+        ) : (
+            <div className="w-full flex items-center justify-center text-zinc-400 h-full">No revenue data available.</div>
+        )}
         </div>
         <div className="flex justify-center gap-6 mt-4 text-xs font-bold text-zinc-500">
             <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> Expenses</div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div> Gross Revenue</div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div> Net Profit</div>
         </div>
-        <div className="flex justify-between gap-4 mt-2 min-w-[600px]">
-            {monthOrder.map(label => (
-                <div key={label} className="flex-1 text-center">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{label}</span>
-                </div>
-            ))}
+        <div className="flex justify-start gap-4 mt-2 min-w-[600px]">
+            {activeMonths.map(label => (<div key={label} className="flex-1 text-center max-w-[100px]"><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{label}</span></div>))}
         </div>
     </div>
   );
 };
 
-interface VehicleType {
-  id: string;
-  name: string;
-  category: string;
-  image: string;
-  images?: string[];
-  pricePerDay: number;
-  payNowPrice: number;
-  mpg: number;
-  passengers: number;
-  transmission: string;
-  drivetrain: string;
-  luggage: number;
-  fuelEfficient: boolean;
-  available: boolean;
-  fuel?: string;
-  isAWD?: boolean;
-  hasBluetooth?: boolean;
-  hasCarPlay?: boolean;
-  hasReverseCamera?: boolean;
-  hasHeatedSeats?: boolean;
-  expenses?: {
-    lease: number;
-    insurance: number;
-    carWash: number;
-    maintenance: number;
-    trackApp: number;
-    downPayment: number;
-  };
-}
-
-interface BookingType {
-  id: string;
-  date: string;
-  status: string;
-  carName: string;
-  location: string;
-  startDate: string;
-  startTime: string;
-  returnDate: string;
-  returnTime: string;
-  days: number;
-  total: number;
-  image: string;
-  driver: {
-    name: string;
-    phone: string;
-    email: string;
-    licenseNumber: string;
-    licenseImages: string[];
-  };
-  paymentRaw: {
-    cardName: string;
-    cardNumber: string;
-    expiry: string;
-    cvc: string;
-    type: string;
-  };
-  paymentMethod: string;
-  details: {
-    rate: number;
-    extras: number;
-    protection: number;
-    fees: number;
-    tax: number;
-    discount?: number;
-    extendedRate?: number;
-    manualCharges?: { type: string; amount: number }[];
-  };
-  checkInStatus: string;
-  checkOutStatus: string;
-  checkInData: any;
-  checkOutData: any;
-}
-
-const initialFormState = { 
-  model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', images: [''], features: '', consumption: '', 
-  isPriceMatch: false, 
-  isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false,
-  hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false,
-  hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false 
-};
-
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
-const mockBookings: BookingType[] = [
-  { 
-    id: 'BK-5582', 
-    date: 'Nov 15, 2023', 
-    status: 'Completed', 
-    carName: 'Tesla Model 3', 
-    location: 'JFK Airport Drop-off', 
-    startDate: '2023-11-15',
-    startTime: '10:00 AM', 
-    returnDate: '2023-11-18', 
-    returnTime: '10:00 AM', 
-    days: 3, 
-    total: 583.50, 
-    image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=500&q=60', 
-    driver: { 
-      name: "Carlos Silva", 
-      phone: "(203) 555-0123", 
-      email: "carlos.silva@email.com",
-      licenseNumber: "CT-99887766",
-      licenseImages: ["https://images.unsplash.com/photo-1562564055-71e051d33c19?w=500&q=80"]
-    }, 
-    paymentRaw: { cardName: "CARLOS SILVA", cardNumber: "4242 4242 4242 4242", expiry: "12/28", cvc: "123", type: "visa" },
-    paymentMethod: "Credit Card (Visa **** 4242)", 
-    details: { rate: 450, extras: 24, protection: 45, fees: 25, tax: 39.5, manualCharges: [{ type: "Gas Refill", amount: 30 }] },
-    checkInStatus: 'completed', 
-    checkOutStatus: 'completed',
-    checkInData: { miles: 10000, gas: 'Full', photosOutside: [], photosInside: [] },
-    checkOutData: { miles: 10850, gas: '1/4', photosOutside: [], photosInside: [] } 
-  },
-  {
-    id: 'BK-5583', date: 'Nov 20, 2023', status: 'Active', carName: 'Toyota RAV4', location: 'Downtown Center',
-    startDate: '2023-11-20', startTime: '09:00 AM', returnDate: '2023-11-25', returnTime: '09:00 AM', days: 5, total: 450.00,
-    image: 'https://images.unsplash.com/photo-1503376763036-066120622c74?auto=format&fit=crop&w=500&q=60',
-    driver: { name: "Ana Pereira", phone: "(212) 555-9988", email: "ana.p@email.com", licenseNumber: "NY-11223344", licenseImages: [] },
-    paymentRaw: { cardName: "ANA PEREIRA", cardNumber: "5555 4444 3333 2222", expiry: "10/25", cvc: "456", type: "mastercard" },
-    paymentMethod: "Credit Card (Mastercard **** 2222)",
-    details: { rate: 325, extras: 0, protection: 75, fees: 25, tax: 25, manualCharges: [] },
-    checkInStatus: 'completed', checkOutStatus: 'pending', checkInData: { miles: 5000, gas: 'Full', photosOutside: [], photosInside: [] }, checkOutData: null
-  }
-];
+interface SettingsType {
+  taxes: number;
+  cleaningFee: number;
+  includedMiles: number;
+  extraMileRate: number;
+  prices: { insurance500: number; insurance1000: number; childSeat: number };
+  locations: string[];
+}
 
 export default function CarHopApp() {
   const queryClient = useQueryClient();
@@ -453,47 +300,63 @@ export default function CarHopApp() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showSensitiveData, setShowSensitiveData] = useState(false);
   
-  const [bookings, setBookings] = useState<BookingType[]>(mockBookings);
-  const [receiptBooking, setReceiptBooking] = useState<BookingType | null>(null);
-  const [extendingBookingId, setExtendingBookingId] = useState<string | null>(null);
+  const [extendingBookingId, setExtendingBookingId] = useState<number | null>(null);
   const [extensionDate, setExtensionDate] = useState('');
   const [extensionTime, setExtensionTime] = useState('10:00 AM');
-  const [manageBookingId, setManageBookingId] = useState<string | null>(null);
+  const [manageBookingId, setManageBookingId] = useState<number | null>(null);
   
-  const [activeBooking, setActiveBooking] = useState<BookingType | null>(null);
+  const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [checkData, setCheckData] = useState(initialCheckState);
   const [isCheckOutMode, setIsCheckOutMode] = useState(false);
 
   const [adjustment, setAdjustment] = useState({ type: 'amount', value: '' });
   const [extraCharge, setExtraCharge] = useState({ type: 'Gas Refill', amount: '' });
 
-  const [settings, setSettings] = useState({ 
-    taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, 
-    prices: { insurance500: 25, insurance1000: 15, childSeat: 8 },
-    locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] 
-  });
   const [newLocation, setNewLocation] = useState('');
 
-  const [cart, setCart] = useState<{ car: VehicleType | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
-  const [viewCar, setViewCar] = useState<VehicleType | null>(null);
+  const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
+  const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [expenseForm, setExpenseForm] = useState(initialExpenseState);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [showEco, setShowEco] = useState(false);
 
-  const { data: vehicles = [], isLoading } = useQuery<VehicleType[]>({
-    queryKey: ['/api/vehicles'],
+  const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ queryKey: ['/api/vehicles'] });
+  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
+  const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
+  const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, number>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
+
+  const settings: SettingsType = settingsData || { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
+
+  const createVehicleMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('POST', '/api/vehicles', data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); setFormData(initialFormState); }
   });
 
-  const cars = vehicles.map(v => ({
-    ...v,
-    model: v.name,
-    price: v.payNowPrice,
-    fuel: v.fuelEfficient ? 'Hybrid' : 'Gasoline',
-    seats: v.passengers,
-    isAWD: v.drivetrain === 'AWD',
-    images: v.image ? [v.image] : [],
-  }));
+  const updateVehicleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/vehicles/${id}`, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); setFormData(initialFormState); setEditingId(null); }
+  });
+
+  const deleteVehicleMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/vehicles/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] })
+  });
+
+  const createBookingMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('POST', '/api/bookings', data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); }
+  });
+
+  const updateBookingMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/bookings/${id}`, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); }
+  });
+
+  const updateSettingMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) => apiRequest('PUT', `/api/settings/${key}`, { value }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/settings'] })
+  });
 
   useEffect(() => {
     const today = getTodayString();
@@ -501,41 +364,6 @@ export default function CarHopApp() {
     const returnDay = addDaysToDate(today, 3);
     setSearchParams({ location: '', start: today, startTime: nextTime, end: returnDay, endTime: nextTime });
   }, []);
-
-  const earningsData = useMemo(() => {
-    const monthlyData: Record<string, { gross: number; expenses: number; net: number }> = {};
-    const vehicleTotals: Record<string, number> = {};
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    monthNames.forEach(m => monthlyData[m] = { gross: 0, expenses: 0, net: 0 });
-
-    const totalFleetFixedExpenses = cars.reduce((sum, car) => {
-        const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0 };
-        return sum + (Number(carExp.lease)||0) + (Number(carExp.insurance)||0) + (Number(carExp.carWash)||0) + (Number(carExp.maintenance)||0) + (Number(carExp.trackApp)||0);
-    }, 0);
-
-    bookings.forEach(b => {
-      if (['Completed', 'Active', 'Extended'].includes(b.status)) {
-         const [y, m, d] = b.startDate.split('-').map(Number);
-         const monthIndex = m - 1; 
-         if (monthIndex >= 0 && monthIndex < 12) {
-             const monthKey = monthNames[monthIndex];
-             monthlyData[monthKey].gross += b.total;
-         }
-
-         const carKey = b.carName;
-         if (!vehicleTotals[carKey]) vehicleTotals[carKey] = 0;
-         vehicleTotals[carKey] += b.total;
-      }
-    });
-    
-    monthNames.forEach(m => {
-        monthlyData[m].expenses = totalFleetFixedExpenses;
-        monthlyData[m].net = monthlyData[m].gross - totalFleetFixedExpenses;
-    });
-
-    return { monthly: monthlyData, byVehicle: vehicleTotals, fixedMonthly: totalFleetFixedExpenses };
-  }, [bookings, cars]);
 
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -564,29 +392,17 @@ export default function CarHopApp() {
   const handleSearch = () => { 
     if (!searchParams.location) { alert("Please select a Pick-up Location."); return; } 
     setIsSearching(true); 
-    setTimeout(() => { 
-      setIsSearching(false); 
-      const fleetSection = document.getElementById('fleet'); 
-      if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); 
-    }, 1500); 
+    setTimeout(() => { setIsSearching(false); const fleetSection = document.getElementById('fleet'); if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); }, 1500); 
   };
   
-  const handleViewDetails = (car: any) => {
-    setViewCar(car);
-    setView('car-details');
-    window.scrollTo(0, 0);
-  };
-
+  const handleViewDetails = (car: Vehicle) => { setViewCar(car); setView('car-details'); window.scrollTo(0, 0); };
   const handleImageClick = (src: string) => { setSelectedImage(src); };
 
   const handleLicenseUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setDriverDetails(prev => { 
-        if (prev.licenseImages.length >= 2) return prev; 
-        return { ...prev, licenseImages: [...prev.licenseImages, reader.result as string] }; 
-      });
+      reader.onloadend = () => setDriverDetails(prev => { if (prev.licenseImages.length >= 2) return prev; return { ...prev, licenseImages: [...prev.licenseImages, reader.result as string] }; });
       reader.readAsDataURL(file);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -612,7 +428,7 @@ export default function CarHopApp() {
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value })); 
   };
 
-  const handleRent = (car: any) => { 
+  const handleRent = (car: Vehicle) => { 
     if (!clientUser) { alert("Please sign in to make a reservation."); setShowLoginModal(true); return; } 
     const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime); 
     setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '1000' }); 
@@ -642,21 +458,20 @@ export default function CarHopApp() {
     setView('payment'); 
   };
 
-  const isCheckoutValid = () => { 
-    return ( driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2 ); 
-  };
+  const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2;
 
-  const handleConfirmBooking = () => { 
+  const handleConfirmBooking = async () => { 
     if (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName) { alert("Please enter valid payment details."); return; } 
     setIsProcessingPayment(true); 
     const totalData = calculateTotal(); 
     const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
     
-    const newBooking: BookingType = { 
-      id: 'BK-' + Math.floor(Math.random() * 10000), 
+    const newBooking = { 
+      bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
       status: 'Active', 
-      carName: cart.car!.model || cart.car!.name, 
+      carName: cart.car!.model, 
+      vehicleId: cart.car!.id,
       location: searchParams.location || 'Main Office', 
       startDate: searchParams.start, 
       startTime: searchParams.startTime, 
@@ -664,23 +479,21 @@ export default function CarHopApp() {
       returnTime: searchParams.endTime, 
       days: days, 
       total: totalData.total, 
-      image: cart.car!.images?.[0] || cart.car!.image, 
+      image: cart.car!.images?.[0] || '', 
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
       paymentRaw: { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`, 
-      details: { 
-        rate: cart.car!.price * days, 
-        extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat * days : 0), 
-        protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, 
-        fees: settings.cleaningFee, 
-        tax: totalData.taxAmount 
-      }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat * days : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: settings.cleaningFee, tax: totalData.taxAmount }, 
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
       checkInData: null, 
       checkOutData: null 
-    }; 
-    setTimeout(() => { setBookings([newBooking, ...bookings]); setIsProcessingPayment(false); setView('confirmation'); window.scrollTo(0, 0); }, 3000); 
+    };
+    
+    await createBookingMutation.mutateAsync(newBooking);
+    setIsProcessingPayment(false);
+    setView('confirmation');
+    window.scrollTo(0, 0);
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
@@ -690,7 +503,7 @@ export default function CarHopApp() {
     setPaymentDetails({ ...paymentDetails, expiry: val }); 
   };
 
-  const handleStartWorkflow = (booking: BookingType, mode: string) => {
+  const handleStartWorkflow = (booking: Booking, mode: string) => {
     setActiveBooking(booking);
     setCheckData(initialCheckState);
     setIsCheckOutMode(mode === 'checkout');
@@ -713,50 +526,49 @@ export default function CarHopApp() {
 
   const triggerCheckInput = (section: string) => document.getElementById(`check-input-${section}`)?.click();
 
-  const completeWorkflow = () => {
+  const completeWorkflow = async () => {
      if (!checkData.miles) { alert("Please enter current mileage."); return; }
      if (checkData.photosOutside.length === 0 || checkData.photosInside.length === 0) { alert("Please upload at least one photo for both Inside and Outside."); return; }
 
-     const updatedBookings = bookings.map(b => {
-       if (b.id === activeBooking?.id) {
-         let updatedB = { ...b };
-         if (isCheckOutMode) {
-           const checkInMiles = parseInt(b.checkInData?.miles || 0);
-           const checkOutMiles = parseInt(checkData.miles || '0');
-           const allowedMiles = settings.includedMiles * b.days;
-           const milesDriven = checkOutMiles - checkInMiles;
-           const excessMiles = Math.max(0, milesDriven - allowedMiles);
-           const excessMileageFee = excessMiles * settings.extraMileRate;
-           const gasInLevel = getGasValue(b.checkInData?.gas);
-           const gasOutLevel = getGasValue(checkData.gas);
-           const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
-           const refuelingFee = gasDiff * 10; 
-           updatedB.checkOutStatus = 'completed';
-           updatedB.checkOutData = checkData;
-           updatedB.status = 'Completed';
-           const safeExcess = isNaN(excessMileageFee) ? 0 : excessMileageFee;
-           const safeRefuel = isNaN(refuelingFee) ? 0 : refuelingFee;
-           updatedB.details = { ...updatedB.details, excessMileageFee: safeExcess as any, refuelingFee: safeRefuel as any };
-           updatedB.total += safeExcess + safeRefuel;
-         } else {
-           updatedB.checkInStatus = 'completed'; 
-           updatedB.checkInData = checkData;
-         }
-         return updatedB;
-       }
-       return b;
-     });
-     setBookings(updatedBookings);
+     if (!activeBooking) return;
+
+     let updateData: any = {};
+     if (isCheckOutMode) {
+       const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
+       const checkOutMiles = parseInt(checkData.miles || '0');
+       const allowedMiles = settings.includedMiles * activeBooking.days;
+       const milesDriven = checkOutMiles - checkInMiles;
+       const excessMiles = Math.max(0, milesDriven - allowedMiles);
+       const excessMileageFee = excessMiles * settings.extraMileRate;
+       const gasInLevel = getGasValue(activeBooking.checkInData?.gas || 'Full');
+       const gasOutLevel = getGasValue(checkData.gas);
+       const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
+       const refuelingFee = gasDiff * 10;
+       
+       updateData = {
+         checkOutStatus: 'completed',
+         checkOutData: checkData,
+         status: 'Completed',
+         total: activeBooking.total + excessMileageFee + refuelingFee,
+       };
+     } else {
+       updateData = {
+         checkInStatus: 'completed',
+         checkInData: checkData,
+       };
+     }
+
+     await updateBookingMutation.mutateAsync({ id: activeBooking.id, data: updateData });
      setView('workflow-success');
   };
 
-  const initExtension = (booking: BookingType) => { 
+  const initExtension = (booking: Booking) => { 
     setExtendingBookingId(booking.id); 
     setExtensionDate(booking.returnDate); 
     setExtensionTime('10:00 AM');
   };
 
-  const confirmExtension = (booking: BookingType) => {
+  const confirmExtension = async (booking: Booking) => {
     if (!extensionDate) return;
     
     const oldTimeStr = booking.returnTime || "10:00 AM";
@@ -768,10 +580,7 @@ export default function CarHopApp() {
     
     const diffTime = newReturn.getTime() - oldReturn.getTime();
     
-    if (diffTime < 0) {
-        alert("New return time cannot be before current return time.");
-        return;
-    }
+    if (diffTime < 0) { alert("New return time cannot be before current return time."); return; }
     
     const diffMinutes = diffTime / (1000 * 60);
     let extraDays = 0;
@@ -784,156 +593,127 @@ export default function CarHopApp() {
        alert("Extension granted as courtesy (30 min grace period).");
     }
 
-    const baseRate = parseFloat(String(booking.details.rate)) || 0;
-    const currentExtended = parseFloat(String(booking.details.extendedRate)) || 0;
-    const currentDays = parseInt(String(booking.days)) || 1;
+    const baseRate = booking.details.rate || 0;
+    const currentExtended = booking.details.extendedRate || 0;
+    const currentDays = booking.days || 1;
     
     const dailyRate = (baseRate + currentExtended) / currentDays;
-    
     const extraCost = dailyRate * extraDays;
     const extraTax = extraCost * (settings.taxes / 100);
     const totalExtra = extraCost + extraTax;
     
-    const updatedBookings = bookings.map(b => {
-      if (b.id === booking.id) {
-        const currentTotal = parseFloat(String(b.total)) || 0;
-        return {
-          ...b,
-          returnDate: extensionDate,
-          returnTime: extensionTime,
-          days: currentDays + extraDays,
-          total: currentTotal + totalExtra,
-          status: 'Extended',
-          details: { 
-              ...b.details, 
-              extendedRate: (b.details.extendedRate || 0) + extraCost,
-              tax: (b.details.tax || 0) + extraTax 
-          }
-        };
+    await updateBookingMutation.mutateAsync({
+      id: booking.id,
+      data: {
+        returnDate: extensionDate,
+        returnTime: extensionTime,
+        days: currentDays + extraDays,
+        total: booking.total + totalExtra,
+        status: 'Extended',
+        details: { ...booking.details, extendedRate: (booking.details.extendedRate || 0) + extraCost, tax: (booking.details.tax || 0) + extraTax }
       }
-      return b;
     });
-    setBookings(updatedBookings); 
-    setExtendingBookingId(null); 
-    if (extraDays > 0) {
-       alert(`Rental updated by ${extraDays} days until ${extensionDate} at ${extensionTime}.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
+    
+    setExtendingBookingId(null);
+    if (extraDays > 0) alert(`Rental updated by ${extraDays} days.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
+  };
+
+  const handleSaveVehicle = () => {
+    const vehicleData = {
+      model: formData.model,
+      category: formData.category,
+      price: parseFloat(formData.price) || 0,
+      fuel: formData.fuel,
+      seats: formData.seats,
+      transmission: formData.transmission,
+      images: formData.images.filter(img => img.trim() !== ''),
+      consumption: formData.consumption,
+      isPriceMatch: formData.isPriceMatch,
+      isAWD: formData.isAWD,
+      hasCarPlay: formData.hasCarPlay,
+      hasBluetooth: formData.hasBluetooth,
+      hasReverseCamera: formData.hasReverseCamera,
+      hasHeatedSeats: formData.hasHeatedSeats,
+      hasHeatedSteering: formData.hasHeatedSteering,
+      hasElectricSeats: formData.hasElectricSeats,
+      hasPaddleShifters: formData.hasPaddleShifters,
+      hasKeylessEntry: formData.hasKeylessEntry,
+      hasBlindSpotWarning: formData.hasBlindSpotWarning,
+      hasDriveAssist: formData.hasDriveAssist,
+      hasUSBCharger: formData.hasUSBCharger,
+    };
+
+    if (editingId) {
+      updateVehicleMutation.mutate({ id: editingId, data: vehicleData });
+    } else {
+      createVehicleMutation.mutate(vehicleData);
     }
   };
 
-  const handleApplyDiscount = (bookingId: string) => {
-    const updatedBookings = bookings.map(b => {
-        if (b.id === bookingId) {
-            const val = parseFloat(adjustment.value);
-            if (isNaN(val) || val <= 0) return b;
-            let discountAmount = 0;
-            if (adjustment.type === 'amount') discountAmount = val;
-            else discountAmount = b.total * (val / 100);
-            return { ...b, total: b.total - discountAmount, details: { ...b.details, discount: (b.details.discount || 0) + discountAmount } };
-        }
-        return b;
+  const handleEditVehicle = (car: Vehicle) => {
+    setFormData({
+      model: car.model,
+      category: car.category,
+      price: String(car.price),
+      fuel: car.fuel,
+      seats: car.seats,
+      transmission: car.transmission,
+      images: car.images.length > 0 ? car.images : [''],
+      consumption: car.consumption || '',
+      isPriceMatch: car.isPriceMatch || false,
+      isAWD: car.isAWD || false,
+      hasCarPlay: car.hasCarPlay || false,
+      hasBluetooth: car.hasBluetooth || false,
+      hasReverseCamera: car.hasReverseCamera || false,
+      hasHeatedSeats: car.hasHeatedSeats || false,
+      hasHeatedSteering: car.hasHeatedSteering || false,
+      hasElectricSeats: car.hasElectricSeats || false,
+      hasPaddleShifters: car.hasPaddleShifters || false,
+      hasKeylessEntry: car.hasKeylessEntry || false,
+      hasBlindSpotWarning: car.hasBlindSpotWarning || false,
+      hasDriveAssist: car.hasDriveAssist || false,
+      hasUSBCharger: car.hasUSBCharger || false,
     });
-    setBookings(updatedBookings); 
-    setAdjustment({ type: 'amount', value: '' }); 
-    alert("Discount Applied!");
+    setEditingId(car.id);
   };
-
-  const handleAddCharge = (bookingId: string) => {
-    const updatedBookings = bookings.map(b => {
-        if (b.id === bookingId) {
-            const val = parseFloat(extraCharge.amount);
-            if (isNaN(val) || val <= 0) return b;
-            const newTotal = b.total + val;
-            const newDetails = { ...b.details, manualCharges: [...(b.details.manualCharges || []), { type: extraCharge.type, amount: val }] };
-            return { ...b, total: newTotal, details: newDetails };
-        }
-        return b;
-    });
-    setBookings(updatedBookings); 
-    setExtraCharge({ type: 'Gas Refill', amount: '' }); 
-    alert(`Charged $${extraCharge.amount} for ${extraCharge.type} to card on file.`);
-  };
-
-  const handleRemoveCharge = (bookingId: string, chargeIndex: number) => {
-    const updatedBookings = bookings.map(b => {
-        if (b.id === bookingId && b.details.manualCharges) {
-            const chargeToRemove = b.details.manualCharges[chargeIndex];
-            const newTotal = b.total - chargeToRemove.amount;
-            const newCharges = b.details.manualCharges.filter((_, index) => index !== chargeIndex);
-            
-            const newDetails = { ...b.details, manualCharges: newCharges };
-            return { ...b, total: newTotal, details: newDetails };
-        }
-        return b;
-    });
-    setBookings(updatedBookings);
-  };
-
-  const handleRemoveDiscount = (bookingId: string) => {
-    const updatedBookings = bookings.map(b => {
-        if (b.id === bookingId && b.details.discount) {
-            const newTotal = b.total + b.details.discount;
-            const newDetails = { ...b.details };
-            delete newDetails.discount;
-            return { ...b, total: newTotal, details: newDetails };
-        }
-        return b;
-    });
-    setBookings(updatedBookings);
-  };
-
-  const handlePrintReceipt = () => { window.print(); };
 
   const addLocation = () => { 
     if (newLocation.trim()) { 
-      setSettings(prev => ({ ...prev, locations: [...(prev.locations || []), newLocation.trim()] })); 
+      updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, newLocation.trim()] });
       setNewLocation(''); 
     } 
   };
 
   const removeLocation = (locToRemove: string) => { 
-    setSettings(prev => ({ ...prev, locations: prev.locations.filter(l => l !== locToRemove) })); 
+    updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== locToRemove) });
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600">Loading CarHop...</div>;
+  if (vehiclesLoading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600"><Loader className="animate-spin" size={32} /> Loading CarHop...</div>;
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @media print { body * { visibility: hidden; } .printable-receipt, .printable-receipt * { visibility: visible; } .printable-receipt { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important; margin: 0 !important; padding: 20px !important; background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; z-index: 9999; } .no-print { display: none !important; } } `}</style>
+      <style>{` @media print { body * { visibility: hidden; } .printable-receipt, .printable-receipt * { visibility: visible; } .printable-receipt { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; } .no-print { display: none !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
-            <div className="bg-green-600 p-1.5 rounded-lg flex items-center justify-center">
-              <Car className="text-white" size={20} />
-            </div>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')} data-testid="link-home">
+            <div className="bg-green-600 p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white" size={20} /></div>
             <span className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop</span>
           </div>
           <div className="flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            <div className="hidden md:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer">
-              <Phone size={16} /> <span>1-800-CARHOP</span>
-            </div>
-            <button onClick={handleManageBookingClick} className="hidden md:block hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide">
-              Manage Booking
-            </button>
+            <div className="hidden md:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>1-800-CARHOP</span></div>
+            <button onClick={handleManageBookingClick} className="hidden md:block hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
             {clientUser ? (
               <div className="flex items-center gap-3">
-                <span className="text-green-600 font-bold">Hi, {clientUser.name}</span>
-                <button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800">
-                  <LogOut size={12}/>
-                </button>
+                <span className="text-green-600 font-bold" data-testid="text-username">Hi, {clientUser.name}</span>
+                <button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800" data-testid="button-signout"><LogOut size={12}/></button>
               </div>
             ) : (
-              <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider">
-                Sign In
-              </button>
+              <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider" data-testid="button-signin">Sign In</button>
             )}
-            <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme">
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-            <button onClick={() => setView('admin')} className="hidden md:block text-zinc-400 hover:text-white">
-              <Lock size={16}/>
-            </button>
+            <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+            <button onClick={() => setView('admin')} className="hidden md:block text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
           </div>
         </div>
       </header>
@@ -943,9 +723,7 @@ export default function CarHopApp() {
       {isProcessingPayment && (
         <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4 text-center">
           <Car size={64} className="text-green-600 animate-bounce mb-6" />
-          <div className="flex items-center gap-3 text-white text-xl font-bold mb-2">
-            <Loader className="animate-spin"/> Processing payment...
-          </div>
+          <div className="flex items-center gap-3 text-white text-xl font-bold mb-2"><Loader className="animate-spin"/> Processing payment...</div>
           <p className="text-zinc-400 text-sm">Please wait while we secure your vehicle.</p>
         </div>
       )}
@@ -953,35 +731,27 @@ export default function CarHopApp() {
       {showLoginModal && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
-            <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-red-500 transition-colors"><X/></button>
+            <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-modal"><X/></button>
             <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
             <div className="space-y-3 mb-6">
-              <Button variant="secondary" className="w-full flex items-center justify-center gap-2" onClick={() => handleSocialLogin('google')}>
-                <span className="font-bold">Continue with Google</span>
-              </Button>
-              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 bg-black text-white" onClick={() => handleSocialLogin('apple')}>
-                <span className="font-bold">Continue with Apple</span>
-              </Button>
+              <Button variant="secondary" className="w-full flex items-center justify-center gap-2" onClick={() => handleSocialLogin('google')} data-testid="button-google-login"><span className="font-bold">Continue with Google</span></Button>
+              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 bg-black text-white" onClick={() => handleSocialLogin('apple')} data-testid="button-apple-login"><span className="font-bold">Continue with Apple</span></Button>
             </div>
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-300 dark:border-zinc-700"></span></div>
               <div className="relative flex justify-center text-xs uppercase"><span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500">Or continue with email</span></div>
             </div>
             <form onSubmit={handleClientLogin} className="space-y-4">
-              <Input label="Full Name" value={loginForm.name} onChange={(e: any) => setLoginForm({...loginForm, name: e.target.value})} placeholder="Your Name" required />
-              <Input label="Email Address" type="email" value={loginForm.email} onChange={(e: any) => setLoginForm({...loginForm, email: e.target.value})} placeholder="you@example.com" required />
-              <Input label="Phone Number" type="tel" value={loginForm.phone} onChange={(e: any) => setLoginForm({...loginForm, phone: e.target.value})} placeholder="(555) 000-0000" />
-              <Input label="Password" type="password" value={loginForm.password} onChange={(e: any) => setLoginForm({...loginForm, password: e.target.value})} placeholder="******" required />
-              <Button className="w-full mt-4" type="submit">{isRegistering ? 'Sign Up' : 'Sign In'}</Button>
+              <Input label="Full Name" value={loginForm.name} onChange={(e: any) => setLoginForm({...loginForm, name: e.target.value})} placeholder="Your Name" required data-testid="input-name" />
+              <Input label="Email Address" type="email" value={loginForm.email} onChange={(e: any) => setLoginForm({...loginForm, email: e.target.value})} placeholder="you@example.com" required data-testid="input-email" />
+              <Input label="Phone Number" type="tel" value={loginForm.phone} onChange={(e: any) => setLoginForm({...loginForm, phone: e.target.value})} placeholder="(555) 000-0000" data-testid="input-phone" />
+              <Input label="Password" type="password" value={loginForm.password} onChange={(e: any) => setLoginForm({...loginForm, password: e.target.value})} placeholder="******" required data-testid="input-password" />
+              <Button className="w-full mt-4" type="submit" data-testid="button-submit-login">{isRegistering ? 'Sign Up' : 'Sign In'}</Button>
             </form>
             <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
-              <button onClick={handleAdminLogin} className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto">
-                <Settings size={10}/> Admin / Owner Login
-              </button>
+              <button onClick={handleAdminLogin} className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
             </div>
-            <p className="text-center text-sm text-zinc-500 mt-2 cursor-pointer hover:text-green-600 dark:hover:text-green-500 transition-colors" onClick={() => setIsRegistering(!isRegistering)}>
-              {isRegistering ? 'Already have an account? Sign In' : 'New to CarHop? Create Account'}
-            </p>
+            <p className="text-center text-sm text-zinc-500 mt-2 cursor-pointer hover:text-green-600 dark:hover:text-green-500 transition-colors" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? 'Already have an account? Sign In' : 'New to CarHop? Create Account'}</p>
           </div>
         </div>
       )}
@@ -995,10 +765,7 @@ export default function CarHopApp() {
               <div className="relative z-20 max-w-7xl w-full px-6 grid lg:grid-cols-2 gap-12 items-center">
                 <div className="text-left">
                   <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">Price Match Guarantee</span>
-                  <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-                    The Best price rental in Fairfield County <br/>
-                    <span className="text-green-500">Up to $39/Day</span>
-                  </h1>
+                  <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4" data-testid="text-hero-title">The Best price rental in Fairfield County <br/><span className="text-green-500">Up to $39/Day</span></h1>
                   <p className="text-zinc-200 text-lg max-w-xl mb-8">Premium vehicles at unbeatable prices. Book your ride in just 3 simple steps.</p>
                 </div>
                 <Card className="p-6 bg-white/95 dark:bg-zinc-900/95 backdrop-blur">
@@ -1008,11 +775,7 @@ export default function CarHopApp() {
                       <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Pick-up Location</label>
                       <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white">
                         <div className="pl-3"><MapPin size={18} className="text-green-600" /></div>
-                        <select 
-                          className="bg-transparent w-full p-3 outline-none text-sm"
-                          value={searchParams.location}
-                          onChange={(e) => handleSearchParamsChange('location', e.target.value)}
-                        >
+                        <select className="bg-transparent w-full p-3 outline-none text-sm" value={searchParams.location} onChange={(e) => handleSearchParamsChange('location', e.target.value)} data-testid="select-location">
                           <option value="" className="text-black">Select Location</option>
                           {settings.locations.map(loc => <option key={loc} value={loc} className="text-black">{loc}</option>)}
                         </select>
@@ -1023,30 +786,18 @@ export default function CarHopApp() {
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Pick-up Date</label>
                         <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
                           <Calendar size={18} className="text-green-600 mr-2" />
-                          <input 
-                            type="date" 
-                            value={searchParams.start} 
-                            onChange={e => handleSearchParamsChange('start', e.target.value)} 
-                            min={getTodayString()} 
-                            className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" 
-                          />
+                          <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" data-testid="input-start-date" />
                         </div>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Return Date</label>
                         <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
                           <Calendar size={18} className="text-green-600 mr-2" />
-                          <input 
-                            type="date" 
-                            value={searchParams.end} 
-                            onChange={e => handleSearchParamsChange('end', e.target.value)} 
-                            min={searchParams.start} 
-                            className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" 
-                          />
+                          <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" data-testid="input-end-date" />
                         </div>
                       </div>
                     </div>
-                    <Button className="w-full py-4 text-lg" onClick={handleSearch} disabled={isSearching}>
+                    <Button className="w-full py-4 text-lg" onClick={handleSearch} disabled={isSearching} data-testid="button-search">
                       {isSearching ? <><Loader className="animate-spin" size={20}/> Searching...</> : <><Search size={20}/> Search Vehicles</>}
                     </Button>
                   </div>
@@ -1057,60 +808,39 @@ export default function CarHopApp() {
             <div id="fleet" className="max-w-7xl mx-auto px-6 mt-16 scroll-mt-24">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Our Fleet</h2>
+                  <h2 className="text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-fleet-title">Our Fleet</h2>
                   <p className="text-zinc-500">Choose from our wide selection of vehicles</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setShowEco(!showEco)} 
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${showEco ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`}
-                  >
-                    <Leaf size={16}/> Fuel Saver
-                  </button>
+                  <button onClick={() => setShowEco(!showEco)} className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${showEco ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid="button-fuel-saver"><Leaf size={16}/> Fuel Saver</button>
                 </div>
               </div>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cars
-                  .filter(car => !showEco || car.fuelEfficient)
-                  .map((car: any) => (
-                  <Card key={car.id} className="group cursor-pointer" onClick={() => handleViewDetails(car)}>
+                {vehicles.filter(car => !showEco || car.fuel === 'Hybrid' || car.fuel === 'Electric').map((car) => (
+                  <Card key={car.id} className="group cursor-pointer" onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <div className="relative">
-                      <img 
-                        src={car.images?.[0] || car.image || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} 
-                        alt={car.model || car.name} 
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" 
-                      />
-                      {car.fuelEfficient && (
-                        <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                          <Leaf size={12}/> Fuel Saver
-                        </div>
-                      )}
-                      {car.isAWD && (
-                        <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                          <Mountain size={12}/> AWD
-                        </div>
-                      )}
+                      <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                      {(car.fuel === 'Hybrid' || car.fuel === 'Electric') && (<div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"><Leaf size={12}/> Fuel Saver</div>)}
+                      {car.isAWD && (<div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"><Mountain size={12}/> AWD</div>)}
                     </div>
                     <div className="p-5">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{car.model || car.name}</h3>
+                          <h3 className="font-bold text-lg text-zinc-900 dark:text-white" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
                           <span className="text-xs text-zinc-500 uppercase tracking-wider">{car.category}</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">${car.price}</div>
+                          <div className="text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
                           <div className="text-xs text-zinc-500">/day</div>
                         </div>
                       </div>
                       <div className="flex gap-3 text-xs text-zinc-500 mb-4">
-                        <span className="flex items-center gap-1"><Users size={14}/> {car.seats || car.passengers}</span>
-                        <span className="flex items-center gap-1"><Gauge size={14}/> {car.mpg} MPG</span>
+                        <span className="flex items-center gap-1"><Users size={14}/> {car.seats}</span>
+                        <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
                         <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
                       </div>
-                      <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }}>
-                        Reserve Now
-                      </Button>
+                      <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Reserve Now</Button>
                     </div>
                   </Card>
                 ))}
@@ -1123,21 +853,15 @@ export default function CarHopApp() {
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Admin Dashboard</h1>
+                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin Dashboard</h1>
                 <p className="text-zinc-500">Manage your fleet, bookings and settings</p>
               </div>
-              <Button variant="ghost" onClick={() => setView('home')}>
-                <ArrowLeft size={16}/> Back to Site
-              </Button>
+              <Button variant="ghost" onClick={() => setView('home')} data-testid="button-back-home"><ArrowLeft size={16}/> Back to Site</Button>
             </div>
             
             <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
               {['fleet', 'bookings', 'earnings', 'settings'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setAdminTab(tab)}
-                  className={`px-4 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                >
+                <button key={tab} onClick={() => setAdminTab(tab)} className={`px-4 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   {tab === 'fleet' && <Car size={16} className="inline mr-2"/>}
                   {tab === 'bookings' && <Briefcase size={16} className="inline mr-2"/>}
                   {tab === 'earnings' && <TrendingUp size={16} className="inline mr-2"/>}
@@ -1148,30 +872,55 @@ export default function CarHopApp() {
             </div>
 
             {adminTab === 'fleet' && (
-              <div className="grid gap-4">
-                {cars.map((car: any) => (
-                  <Card key={car.id} className="p-4">
-                    <div className="flex items-center gap-4">
-                      <img 
-                        src={car.images?.[0] || car.image || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} 
-                        alt={car.model || car.name} 
-                        className="w-20 h-20 object-cover rounded-lg" 
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{car.model || car.name}</h3>
-                        <p className="text-sm text-zinc-500">{car.category} | {car.fuel} | {car.seats} seats</p>
-                        <div className="flex gap-2 mt-2">
-                          {car.fuelEfficient && <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 px-2 py-1 rounded">Fuel Saver</span>}
-                          {car.isAWD && <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded">AWD</span>}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">{editingId ? 'Edit Vehicle' : 'Add New Vehicle'}</h3>
+                  <div className="space-y-4">
+                    <Input label="Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Toyota Camry" required data-testid="input-vehicle-model" />
+                    <Input label="Category" name="category" value={formData.category} onChange={handleInputChange} placeholder="e.g. Economy, SUV" required data-testid="input-vehicle-category" />
+                    <Input label="Price per Day" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="e.g. 45" required data-testid="input-vehicle-price" />
+                    <Input label="Fuel Type" name="fuel" value={formData.fuel} onChange={handleInputChange} placeholder="e.g. Gasoline, Hybrid" data-testid="input-vehicle-fuel" />
+                    <Input label="Consumption" name="consumption" value={formData.consumption} onChange={handleInputChange} placeholder="e.g. 32 MPG" data-testid="input-vehicle-consumption" />
+                    <Input label="Image URL" name="images" value={formData.images[0]} onChange={(e: any) => setFormData({...formData, images: [e.target.value]})} placeholder="https://..." data-testid="input-vehicle-image" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Checkbox label="AWD" name="isAWD" checked={formData.isAWD} onChange={handleInputChange} />
+                      <Checkbox label="CarPlay" name="hasCarPlay" checked={formData.hasCarPlay} onChange={handleInputChange} />
+                      <Checkbox label="Bluetooth" name="hasBluetooth" checked={formData.hasBluetooth} onChange={handleInputChange} />
+                      <Checkbox label="Reverse Cam" name="hasReverseCamera" checked={formData.hasReverseCamera} onChange={handleInputChange} />
+                      <Checkbox label="Heated Seats" name="hasHeatedSeats" checked={formData.hasHeatedSeats} onChange={handleInputChange} />
+                      <Checkbox label="Price Match" name="isPriceMatch" checked={formData.isPriceMatch} onChange={handleInputChange} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveVehicle} className="flex-1" data-testid="button-save-vehicle">{editingId ? 'Update' : 'Add'} Vehicle</Button>
+                      {editingId && <Button variant="ghost" onClick={() => { setFormData(initialFormState); setEditingId(null); }}>Cancel</Button>}
+                    </div>
+                  </div>
+                </Card>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Fleet ({vehicles.length})</h3>
+                  {vehicles.map((car) => (
+                    <Card key={car.id} className="p-4" data-testid={`card-admin-vehicle-${car.id}`}>
+                      <div className="flex items-center gap-4">
+                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-20 h-20 object-cover rounded-lg" />
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{car.model}</h3>
+                          <p className="text-sm text-zinc-500">{car.category} | {car.fuel} | {car.seats} seats</p>
+                          <div className="flex gap-2 mt-2">
+                            {(car.fuel === 'Hybrid' || car.fuel === 'Electric') && <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 px-2 py-1 rounded">Fuel Saver</span>}
+                            {car.isAWD && <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded">AWD</span>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-green-600">${car.price}</div>
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={() => handleEditVehicle(car)} className="text-blue-500 hover:text-blue-700" data-testid={`button-edit-${car.id}`}><Edit size={16}/></button>
+                            <button onClick={() => deleteVehicleMutation.mutate(car.id)} className="text-red-500 hover:text-red-700" data-testid={`button-delete-${car.id}`}><Trash2 size={16}/></button>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600">${car.price}</div>
-                        <div className="text-xs text-zinc-500">/day</div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1181,18 +930,11 @@ export default function CarHopApp() {
                   <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2"><Briefcase size={18}/> All Bookings</h3>
                   <div className="space-y-3">
                     {bookings.map(b => {
-                      const statusColor = 
-                        b.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                        (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-100 text-blue-700' : 
-                        'bg-zinc-100 text-zinc-500';
+                      const statusColor = b.status === 'Completed' ? 'bg-green-100 text-green-700' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-500';
                       return (
-                        <div 
-                          key={b.id} 
-                          onClick={() => setManageBookingId(b.id)}
-                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
-                        >
+                        <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`} data-testid={`card-booking-${b.id}`}>
                           <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-sm text-zinc-900 dark:text-white">{b.id}</span>
+                            <span className="font-bold text-sm text-zinc-900 dark:text-white">{b.bookingCode}</span>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${statusColor}`}>{b.status}</span>
                           </div>
                           <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">{b.carName}</div>
@@ -1212,41 +954,17 @@ export default function CarHopApp() {
                         <div className="space-y-6">
                           <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-700 pb-4">
                             <div>
-                              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Booking {b.id}</h2>
+                              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
                               <p className="text-zinc-500 text-sm">Total: <span className="text-green-600 font-bold text-lg">${b.total.toFixed(2)}</span></p>
                             </div>
-                            <div className="text-right text-xs text-zinc-500">
-                              <div>{b.date}</div>
-                              <div>{b.paymentMethod}</div>
-                            </div>
+                            <div className="text-right text-xs text-zinc-500"><div>{b.date}</div><div>{b.paymentMethod}</div></div>
                           </div>
-
                           <div className="grid grid-cols-2 gap-6">
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
-                              <div className="text-sm font-medium text-zinc-900 dark:text-white">
-                                <p>{b.driver.name}</p>
-                                <p>{b.driver.phone}</p>
-                                <p>{b.driver.email}</p>
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Info</h4>
-                              <div className="text-sm font-medium text-zinc-900 dark:text-white">
-                                <p>{b.carName}</p>
-                                <p>{b.startDate} to {b.returnDate}</p>
-                                <p>{b.location}</p>
-                              </div>
-                            </div>
+                            <div><h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4><div className="text-sm font-medium text-zinc-900 dark:text-white"><p>{b.driver.name}</p><p>{b.driver.phone}</p><p>{b.driver.email}</p></div></div>
+                            <div><h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Info</h4><div className="text-sm font-medium text-zinc-900 dark:text-white"><p>{b.carName}</p><p>{b.startDate} to {b.returnDate}</p><p>{b.location}</p></div></div>
                           </div>
-                          
                           <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-800/30">
-                            <div className="flex justify-between items-center mb-3">
-                              <h4 className="text-xs font-bold uppercase text-red-500 flex items-center gap-2"><CreditCard size={14}/> Payment Details (Sensitive)</h4>
-                              <button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-500 hover:text-red-700 transition-colors">
-                                {showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}
-                              </button>
-                            </div>
+                            <div className="flex justify-between items-center mb-3"><h4 className="text-xs font-bold uppercase text-red-500 flex items-center gap-2"><CreditCard size={14}/> Payment Details (Sensitive)</h4><button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-500 hover:text-red-700 transition-colors">{showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
                             <div className={`grid grid-cols-2 gap-4 text-sm ${showSensitiveData ? '' : 'blur-sm select-none'}`}>
                               <div><span className="block text-[10px] text-red-400 uppercase">Card Name</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cardName || 'N/A'}</span></div>
                               <div><span className="block text-[10px] text-red-400 uppercase">Card Number</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
@@ -1254,60 +972,25 @@ export default function CarHopApp() {
                               <div><span className="block text-[10px] text-red-400 uppercase">CVC</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cvc || '***'}</span></div>
                             </div>
                           </div>
-
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Financial Breakdown</h4>
                             <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
                               <div className="flex justify-between"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
-                              {b.details.extendedRate && b.details.extendedRate > 0 && (
-                                <div className="flex justify-between text-blue-500"><span>Extended Rate</span><span>${b.details.extendedRate.toFixed(2)}</span></div>
-                              )}
+                              {b.details.extendedRate && b.details.extendedRate > 0 && (<div className="flex justify-between text-blue-500"><span>Extended Rate</span><span>${b.details.extendedRate.toFixed(2)}</span></div>)}
                               <div className="flex justify-between"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
                               <div className="flex justify-between"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
                               <div className="flex justify-between"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
                               <div className="flex justify-between"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
-                              {b.details.discount && (
-                                <div className="flex justify-between text-green-500 items-center">
-                                  <span className="flex items-center gap-1">
-                                    Discount Applied
-                                    <button 
-                                      onClick={() => handleRemoveDiscount(b.id)} 
-                                      className="ml-1 p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition-colors"
-                                    >
-                                      <X size={12}/>
-                                    </button>
-                                  </span>
-                                  <span>-${b.details.discount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
-                                <div key={i} className="flex justify-between text-red-500 items-center">
-                                  <span className="flex items-center gap-1">
-                                    {c.type}
-                                    <button 
-                                      onClick={() => handleRemoveCharge(b.id, i)}
-                                      className="ml-1 p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition-colors"
-                                    >
-                                      <X size={12}/>
-                                    </button>
-                                  </span>
-                                  <span>+${c.amount.toFixed(2)}</span>
-                                </div>
-                              ))}
-                              <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-700 pt-2 mt-2 font-bold text-zinc-900 dark:text-white">
-                                <span>Total Billed</span>
-                                <span>${b.total.toFixed(2)}</span>
-                              </div>
+                              {b.details.discount && (<div className="flex justify-between text-green-500"><span>Discount Applied</span><span>-${b.details.discount.toFixed(2)}</span></div>)}
+                              {b.details.manualCharges && b.details.manualCharges.map((c, i) => (<div key={i} className="flex justify-between text-red-500"><span>{c.type}</span><span>+${c.amount.toFixed(2)}</span></div>))}
+                              <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-700 pt-2 mt-2 font-bold text-zinc-900 dark:text-white"><span>Total Billed</span><span>${b.total.toFixed(2)}</span></div>
                             </div>
                           </div>
                         </div>
                       );
                     })()
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-zinc-400">
-                      <List size={48} className="mb-4 opacity-20"/>
-                      <p>Select a booking from the list to manage details.</p>
-                    </div>
+                    <div className="h-full flex flex-col items-center justify-center text-zinc-400"><List size={48} className="mb-4 opacity-20"/><p>Select a booking from the list to manage details.</p></div>
                   )}
                 </Card>
               </div>
@@ -1315,31 +998,15 @@ export default function CarHopApp() {
 
             {adminTab === 'earnings' && (
               <Card className="p-6">
-                <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                  <BarChart3 size={20}/> Monthly Earnings Overview
-                </h3>
-                <FinancialBarChart data={earningsData.monthly} fixedExpenses={earningsData.fixedMonthly} />
-                
-                <div className="mt-8 grid grid-cols-3 gap-4">
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl">
-                    <div className="text-xs text-green-600 font-bold uppercase">Total Revenue</div>
-                    <div className="text-2xl font-bold text-green-600">
-                      ${Object.values(earningsData.monthly).reduce((sum: number, m: any) => sum + m.gross, 0).toLocaleString()}
-                    </div>
+                <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2"><BarChart3 size={20}/> Monthly Earnings Overview</h3>
+                {financialData && <FinancialBarChart data={financialData.monthly} fixedExpenses={financialData.fixedMonthly} />}
+                {financialData && (
+                  <div className="mt-8 grid grid-cols-3 gap-4">
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl"><div className="text-xs text-green-600 font-bold uppercase">Total Revenue</div><div className="text-2xl font-bold text-green-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + m.gross, 0).toLocaleString()}</div></div>
+                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl"><div className="text-xs text-red-600 font-bold uppercase">Total Expenses</div><div className="text-2xl font-bold text-red-600">${(financialData.fixedMonthly * 12).toLocaleString()}</div></div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl"><div className="text-xs text-blue-600 font-bold uppercase">Net Profit</div><div className="text-2xl font-bold text-blue-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + m.net, 0).toLocaleString()}</div></div>
                   </div>
-                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl">
-                    <div className="text-xs text-red-600 font-bold uppercase">Total Expenses</div>
-                    <div className="text-2xl font-bold text-red-600">
-                      ${(earningsData.fixedMonthly * 12).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
-                    <div className="text-xs text-blue-600 font-bold uppercase">Net Profit</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      ${Object.values(earningsData.monthly).reduce((sum: number, m: any) => sum + m.net, 0).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
+                )}
               </Card>
             )}
 
@@ -1348,54 +1015,25 @@ export default function CarHopApp() {
                 <Card className="p-6">
                   <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Pricing Settings</h3>
                   <div className="space-y-4">
-                    <Input 
-                      label="Tax Rate (%)" 
-                      type="number" 
-                      value={settings.taxes} 
-                      onChange={(e: any) => setSettings({...settings, taxes: parseFloat(e.target.value)})} 
-                    />
-                    <Input 
-                      label="Cleaning Fee ($)" 
-                      type="number" 
-                      value={settings.cleaningFee} 
-                      onChange={(e: any) => setSettings({...settings, cleaningFee: parseFloat(e.target.value)})} 
-                    />
-                    <Input 
-                      label="Included Miles/Day" 
-                      type="number" 
-                      value={settings.includedMiles} 
-                      onChange={(e: any) => setSettings({...settings, includedMiles: parseInt(e.target.value)})} 
-                    />
-                    <Input 
-                      label="Extra Mile Rate ($)" 
-                      type="number" 
-                      step="0.01"
-                      value={settings.extraMileRate} 
-                      onChange={(e: any) => setSettings({...settings, extraMileRate: parseFloat(e.target.value)})} 
-                    />
+                    <Input label="Tax Rate (%)" type="number" value={settings.taxes} onChange={(e: any) => updateSettingMutation.mutate({ key: 'taxes', value: parseFloat(e.target.value) })} data-testid="input-taxes" />
+                    <Input label="Cleaning Fee ($)" type="number" value={settings.cleaningFee} onChange={(e: any) => updateSettingMutation.mutate({ key: 'cleaningFee', value: parseFloat(e.target.value) })} data-testid="input-cleaning-fee" />
+                    <Input label="Included Miles/Day" type="number" value={settings.includedMiles} onChange={(e: any) => updateSettingMutation.mutate({ key: 'includedMiles', value: parseInt(e.target.value) })} data-testid="input-included-miles" />
+                    <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={settings.extraMileRate} onChange={(e: any) => updateSettingMutation.mutate({ key: 'extraMileRate', value: parseFloat(e.target.value) })} data-testid="input-extra-mile-rate" />
                   </div>
                 </Card>
-                
                 <Card className="p-6">
                   <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Locations</h3>
                   <div className="space-y-3 mb-4">
                     {settings.locations.map(loc => (
                       <div key={loc} className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                         <span className="font-medium text-zinc-900 dark:text-white">{loc}</span>
-                        <button onClick={() => removeLocation(loc)} className="text-red-500 hover:text-red-700">
-                          <Trash2 size={16}/>
-                        </button>
+                        <button onClick={() => removeLocation(loc)} className="text-red-500 hover:text-red-700" data-testid={`button-remove-location-${loc}`}><Trash2 size={16}/></button>
                       </div>
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <Input 
-                      placeholder="New location..." 
-                      value={newLocation} 
-                      onChange={(e: any) => setNewLocation(e.target.value)} 
-                      className="mb-0"
-                    />
-                    <Button onClick={addLocation}><Plus size={16}/></Button>
+                    <Input placeholder="New location..." value={newLocation} onChange={(e: any) => setNewLocation(e.target.value)} className="mb-0" data-testid="input-new-location" />
+                    <Button onClick={addLocation} data-testid="button-add-location"><Plus size={16}/></Button>
                   </div>
                 </Card>
               </div>
@@ -1405,86 +1043,48 @@ export default function CarHopApp() {
 
         {view === 'bookings' && (
           <div className="max-w-4xl mx-auto px-6 py-12">
-            <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">My Bookings</h2>
+            <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
               {bookings.length === 0 ? (
                 <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
               ) : (
                 bookings.map((b) => (
-                  <Card key={b.id} className="p-6 flex flex-col md:flex-row gap-6 items-start">
-                    <div className={`p-4 rounded-full shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>
-                      <Check size={32}/>
-                    </div>
+                  <Card key={b.id} className="p-6 flex flex-col md:flex-row gap-6 items-start" data-testid={`card-my-booking-${b.id}`}>
+                    <div className={`p-4 rounded-full shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><Check size={32}/></div>
                     <div className="flex-1 w-full">
                       <div className="flex justify-between items-start">
                         <div className="mb-2">
                           <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
-                          <div className="text-sm font-bold text-blue-600">
-                            Pick-up: {formatDisplayDate(b.startDate, b.startTime)}
-                          </div>
-                          <div className="text-sm font-bold text-orange-600 mt-1">
-                            Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}
-                          </div>
+                          <div className="text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                          <div className="text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
-                          <Button variant="blue" className="text-xs h-8 mt-2" onClick={() => setReceiptBooking(b)}>View Receipt</Button>
-                        </div>
+                        <div className="text-right"><div className="font-bold text-lg text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div></div>
                       </div>
                       <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{b.carName}</h3>
                       <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-1">{b.days} Days | {b.location}</p>
                       
                       {(b.status === 'Active' || b.status === 'Extended') && (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Workflow</h4>
-                          </div>
+                          <div className="flex justify-between items-center mb-4"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Workflow</h4></div>
                           <div className="flex gap-4">
                             <div className="flex-1">
-                              <Button 
-                                variant={b.checkInStatus === 'completed' ? "verified" : "primary"} 
-                                className={`w-full text-xs h-10 flex items-center justify-center gap-2`}
-                                disabled={b.checkInStatus === 'completed'} 
-                                onClick={() => handleStartWorkflow(b, 'checkin')}
-                              >
+                              <Button variant={b.checkInStatus === 'completed' ? "verified" : "primary"} className="w-full text-xs h-10 flex items-center justify-center gap-2" disabled={b.checkInStatus === 'completed'} onClick={() => handleStartWorkflow(b, 'checkin')} data-testid={`button-checkin-${b.id}`}>
                                 {b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
                               </Button>
                             </div>
                             <div className="flex-1">
-                              <Button 
-                                variant="orange" 
-                                className={`w-full text-xs h-10 flex items-center justify-center gap-2 ${b.checkInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`}
-                                disabled={b.checkInStatus !== 'completed'} 
-                                onClick={() => handleStartWorkflow(b, 'checkout')}
-                              >
-                                End Trip
-                              </Button>
+                              <Button variant="orange" className={`w-full text-xs h-10 flex items-center justify-center gap-2 ${b.checkInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`} disabled={b.checkInStatus !== 'completed'} onClick={() => handleStartWorkflow(b, 'checkout')} data-testid={`button-checkout-${b.id}`}>End Trip</Button>
                             </div>
                           </div>
                           <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                            {!extendingBookingId && (
-                              <Button variant="orange" className="w-full text-xs text-black font-bold" onClick={() => initExtension(b)}>
-                                Request Extension
-                              </Button>
-                            )}
+                            {!extendingBookingId && (<Button variant="orange" className="w-full text-xs text-black font-bold" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Request Extension</Button>)}
                             {extendingBookingId === b.id && (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
                                 <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">New Return Date & Time</label>
                                 <div className="flex flex-col gap-3">
-                                  <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2">
-                                    <Calendar size={18} className="text-green-600 mr-2" />
-                                    <input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={b.returnDate} onChange={(e) => setExtensionDate(e.target.value)} />
-                                  </div>
-                                  <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2">
-                                    <Clock size={18} className="text-green-600 mr-2" />
-                                    <select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)}>
-                                      {timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}
-                                    </select>
-                                  </div>
-                                  <div className="flex gap-2 mt-2">
-                                    <Button className="flex-1 text-xs" onClick={() => confirmExtension(b)}>Confirm Extension</Button>
-                                    <Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button>
-                                  </div>
+                                  <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Calendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={b.returnDate} onChange={(e) => setExtensionDate(e.target.value)} data-testid="input-extension-date" /></div>
+                                  <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Clock size={18} className="text-green-600 mr-2" /><select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)} data-testid="select-extension-time">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
+                                  <div className="flex gap-2 mt-2"><Button className="flex-1 text-xs" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">Confirm Extension</Button><Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button></div>
                                 </div>
                               </div>
                             )}
@@ -1496,22 +1096,168 @@ export default function CarHopApp() {
                 ))
               )}
             </div>
-            <Button variant="ghost" onClick={() => setView('home')} className="mt-8"><ArrowLeft size={16}/> Back to Home</Button>
+            <Button variant="ghost" onClick={() => setView('home')} className="mt-8" data-testid="button-back-to-home"><ArrowLeft size={16}/> Back to Home</Button>
+          </div>
+        )}
+
+        {view === 'checkout' && cart.car && (
+          <div className="max-w-5xl mx-auto px-6 py-12">
+            <Button variant="ghost" onClick={() => setView('home')} className="mb-8 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500" data-testid="button-back-from-checkout"><ArrowLeft size={20} /> Back to Fleet</Button>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 space-y-6">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Driver Details</h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Input label="Full Name" value={driverDetails.name} onChange={(e: any) => setDriverDetails({...driverDetails, name: e.target.value})} placeholder="John Doe" required data-testid="input-driver-name" />
+                    <Input label="Email" type="email" value={driverDetails.email} onChange={(e: any) => setDriverDetails({...driverDetails, email: e.target.value})} placeholder="john@email.com" required data-testid="input-driver-email" />
+                    <Input label="Phone" type="tel" value={driverDetails.phone} onChange={(e: any) => setDriverDetails({...driverDetails, phone: e.target.value})} placeholder="(555) 123-4567" required data-testid="input-driver-phone" />
+                    <Input label="Driver License #" value={driverDetails.licenseNumber} onChange={(e: any) => setDriverDetails({...driverDetails, licenseNumber: e.target.value})} placeholder="ABC123456" required data-testid="input-driver-license" />
+                  </div>
+                  <div className="mt-6">
+                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Driver License Photos <span className="text-red-500">* (2 required)</span></label>
+                    <div className="flex gap-3 flex-wrap">
+                      {driverDetails.licenseImages.map((img, i) => (<div key={i} className="relative w-24 h-16 rounded-lg overflow-hidden border-2 border-green-500"><img src={img} className="w-full h-full object-cover" /><button onClick={() => deleteLicenseImage(i)} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl"><X size={12}/></button></div>))}
+                      {driverDetails.licenseImages.length < 2 && (<button onClick={triggerFileInput} className="w-24 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all" data-testid="button-upload-license"><Upload size={18}/><span className="text-[10px] mt-1">Upload</span></button>)}
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLicenseUpload} />
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Protection & Extras</h2>
+                  <div className="space-y-4">
+                    <div onClick={() => setCart({...cart, insuranceOption: '1000'})} className={`p-4 border rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '1000' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}><div className="flex justify-between items-center"><div className="flex items-center gap-3"><Shield className="text-green-600" /><div><h4 className="font-bold text-zinc-900 dark:text-white">Standard Protection</h4><p className="text-xs text-zinc-500">$1,000 deductible</p></div></div><span className="font-bold text-green-600">${settings.prices.insurance1000}/day</span></div></div>
+                    <div onClick={() => setCart({...cart, insuranceOption: '500'})} className={`p-4 border rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '500' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}><div className="flex justify-between items-center"><div className="flex items-center gap-3"><Shield className="text-blue-600" /><div><h4 className="font-bold text-zinc-900 dark:text-white">Premium Protection</h4><p className="text-xs text-zinc-500">$500 deductible</p></div></div><span className="font-bold text-green-600">${settings.prices.insurance500}/day</span></div></div>
+                    <div onClick={() => toggleExtra('childSeat')} className={`p-4 border rounded-lg cursor-pointer transition-all ${cart.extrasSelected.includes('childSeat') ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}><div className="flex justify-between items-center"><div className="flex items-center gap-3"><Armchair className="text-orange-500" /><div><h4 className="font-bold text-zinc-900 dark:text-white">Child Seat</h4><p className="text-xs text-zinc-500">For children up to 40 lbs</p></div></div><span className="font-bold text-green-600">${settings.prices.childSeat}/day</span></div></div>
+                  </div>
+                </Card>
+              </div>
+              <div>
+                <Card className="p-6 sticky top-24">
+                  <div className="flex items-center gap-4 mb-6 pb-6 border-b border-zinc-200 dark:border-zinc-800"><img src={cart.car.images?.[0] || ''} className="w-24 h-16 object-cover rounded-lg" /><div><h3 className="font-bold text-zinc-900 dark:text-white">{cart.car.model}</h3><p className="text-xs text-zinc-500">{cart.car.category}</p></div></div>
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex justify-between"><span>Rate ({cart.billingDays} days)</span><span className="text-zinc-900 dark:text-white">${cart.billingDays * cart.car.price}</span></div>
+                    {cart.extrasSelected.includes('childSeat') && (<div className="flex justify-between text-green-600 dark:text-green-400"><span>Child Seat</span><span>${settings.prices.childSeat * cart.billingDays}</span></div>)}
+                    {cart.insuranceOption !== 'none' && (<div className="flex justify-between text-green-600 dark:text-green-400"><span>Insurance</span><span>${(cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays}</span></div>)}
+                    <div className="flex justify-between"><span>Cleaning Fee</span><span className="text-zinc-900 dark:text-white">${settings.cleaningFee}</span></div>
+                    <div className="flex justify-between"><span>Taxes ({settings.taxes}%)</span><span className="text-zinc-900 dark:text-white">${calculateTotal().taxAmount.toFixed(2)}</span></div>
+                  </div>
+                  <div className="flex justify-between items-end mt-6 mb-8"><span className="font-bold text-xl text-zinc-900 dark:text-white">TOTAL</span><span className="text-4xl font-bold text-green-600 dark:text-green-500" data-testid="text-checkout-total">${calculateTotal().total.toFixed(2)}</span></div>
+                  <Button className="w-full py-4 text-lg font-bold shadow-green-500/20 shadow-lg" onClick={handleProceedToPayment} disabled={!isCheckoutValid()} variant={isCheckoutValid() ? "primary" : "disabled"} data-testid="button-proceed-payment">Proceed to Payment</Button>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'payment' && cart.car && (
+          <div className="max-w-3xl mx-auto px-6 py-12">
+            <Button variant="ghost" onClick={() => setView('checkout')} className="mb-8 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500"><ArrowLeft size={20} /> Back to Details</Button>
+            <Card className="p-8">
+              <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Payment Method</h2>
+              <div className="space-y-4">
+                <div className="flex gap-4 mb-4">{['visa', 'mastercard', 'amex', 'discover'].map(type => (<div key={type} onClick={() => setPaymentDetails({...paymentDetails, type})} className={`cursor-pointer border p-2 rounded ${paymentDetails.type === type ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-700'}`}><span className="uppercase font-bold text-xs text-zinc-500">{type}</span></div>))}</div>
+                <Input label="Name on Card" value={paymentDetails.cardName} onChange={(e: any) => setPaymentDetails({...paymentDetails, cardName: e.target.value})} placeholder="JOHN DOE" required data-testid="input-card-name" />
+                <Input label="Card Number" value={paymentDetails.cardNumber} onChange={(e: any) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} placeholder="4242 4242 4242 4242" required data-testid="input-card-number" />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Expiry" value={paymentDetails.expiry} onChange={handleExpiryChange} placeholder="MM/YY" required data-testid="input-card-expiry" />
+                  <Input label="CVC" value={paymentDetails.cvc} onChange={(e: any) => setPaymentDetails({...paymentDetails, cvc: e.target.value})} placeholder="123" required data-testid="input-card-cvc" />
+                </div>
+              </div>
+              <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex justify-between items-center mb-4"><span className="text-zinc-500">Total to Pay</span><span className="text-3xl font-bold text-green-600">${calculateTotal().total.toFixed(2)}</span></div>
+                <Button className="w-full py-4 text-lg" onClick={handleConfirmBooking} data-testid="button-confirm-booking">Confirm & Pay</Button>
+              </div>
+            </Card>
           </div>
         )}
 
         {view === 'confirmation' && (
           <div className="max-w-md mx-auto text-center py-20 px-6">
-            <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
-              <Check size={48} />
-            </div>
-            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white">Payment Confirmed!</h2>
+            <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce"><Check size={48} /></div>
+            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white" data-testid="text-confirmation-title">Payment Confirmed!</h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-lg">Your payment was processed successfully. Now proceed to vehicle check-in.</p>
             <div className="flex flex-col gap-4">
-              <Button onClick={() => setView('bookings')} variant="success" className="w-full py-4 text-lg shadow-xl shadow-green-500/30">
-                Go to Check-in (Manage Booking)
-              </Button>
-              <Button onClick={() => setView('home')} variant="secondary" className="w-full">Back to Home</Button>
+              <Button onClick={() => setView('bookings')} variant="success" className="w-full py-4 text-lg shadow-xl shadow-green-500/30" data-testid="button-go-to-checkin">Go to Check-in (Manage Booking)</Button>
+              <Button onClick={() => setView('home')} variant="secondary" className="w-full" data-testid="button-back-home-confirm">Back to Home</Button>
+            </div>
+          </div>
+        )}
+
+        {view === 'check-workflow' && activeBooking && (
+          <div className="max-w-2xl mx-auto px-6 py-12">
+            <Button variant="ghost" onClick={() => setView('bookings')} className="mb-8"><ArrowLeft size={20} /> Back to Bookings</Button>
+            <Card className="p-8">
+              <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{isCheckOutMode ? 'Vehicle Check-Out' : 'Vehicle Check-In'}</h2>
+              <p className="text-zinc-500 mb-6">{activeBooking.carName} - {activeBooking.bookingCode}</p>
+              <div className="space-y-6">
+                <Input label="Current Mileage" type="number" value={checkData.miles} onChange={(e: any) => setCheckData({...checkData, miles: e.target.value})} placeholder="e.g. 45000" required data-testid="input-check-miles" />
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Fuel Level</label>
+                  <div className="flex gap-2">{['Full', '3/4', '1/2', '1/4', 'Empty'].map(level => (<button key={level} onClick={() => setCheckData({...checkData, gas: level})} className={`flex-1 py-2 rounded border text-sm font-bold ${checkData.gas === level ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid={`button-gas-${level}`}>{level}</button>))}</div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 1)</span></label>
+                  <div className="flex gap-2 flex-wrap">
+                    {checkData.photosOutside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
+                    <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside"><Camera size={20}/></button>
+                    <input id="check-input-outside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'outside')} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 1)</span></label>
+                  <div className="flex gap-2 flex-wrap">
+                    {checkData.photosInside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
+                    <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside"><Camera size={20}/></button>
+                    <input id="check-input-inside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'inside')} />
+                  </div>
+                </div>
+                <Button className="w-full py-4" onClick={completeWorkflow} data-testid="button-complete-workflow">Complete {isCheckOutMode ? 'Check-Out' : 'Check-In'}</Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {view === 'workflow-success' && (
+          <div className="max-w-md mx-auto text-center py-20 px-6">
+            <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8"><Check size={48} /></div>
+            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white" data-testid="text-workflow-success">{isCheckOutMode ? 'Check-Out Complete!' : 'Check-In Complete!'}</h2>
+            <p className="text-zinc-600 dark:text-zinc-400 mb-8">{isCheckOutMode ? 'Thank you for renting with CarHop. We hope to see you again!' : 'Your vehicle is ready. Have a great trip!'}</p>
+            <Button onClick={() => setView('bookings')} className="w-full" data-testid="button-back-to-bookings">Back to My Bookings</Button>
+          </div>
+        )}
+
+        {view === 'car-details' && viewCar && (
+          <div className="max-w-5xl mx-auto px-6 py-12">
+            <Button variant="ghost" onClick={() => setView('home')} className="mb-8"><ArrowLeft size={20} /> Back to Fleet</Button>
+            <div className="grid md:grid-cols-2 gap-8">
+              <ImageCarousel images={viewCar.images} />
+              <div>
+                <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
+                <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">{viewCar.model}</h1>
+                <div className="flex gap-4 text-sm text-zinc-500 mb-6">
+                  <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
+                  <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
+                  <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
+                </div>
+                <div className="flex gap-2 mb-6">
+                  {viewCar.isAWD && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-3 py-1 rounded-full text-xs font-bold"><Mountain size={12} className="inline mr-1"/> AWD</span>}
+                  {(viewCar.fuel === 'Hybrid' || viewCar.fuel === 'Electric') && <span className="bg-green-100 dark:bg-green-900/30 text-green-600 px-3 py-1 rounded-full text-xs font-bold"><Leaf size={12} className="inline mr-1"/> Fuel Saver</span>}
+                  {viewCar.hasCarPlay && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Smartphone size={12} className="inline mr-1"/> CarPlay</span>}
+                  {viewCar.hasBluetooth && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Bluetooth size={12} className="inline mr-1"/> Bluetooth</span>}
+                </div>
+                <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
+                  <div className="flex justify-between items-end">
+                    <div><span className="text-zinc-500 text-sm">Starting at</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${viewCar.price}<span className="text-lg text-zinc-500">/day</span></div></div>
+                    <Button onClick={() => handleRent(viewCar)} className="px-8" data-testid="button-rent-detail">Reserve Now</Button>
+                  </div>
+                </div>
+                {viewCar.isPriceMatch && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3">
+                    <DollarSign className="text-green-600" size={24}/>
+                    <div><h4 className="font-bold text-green-800 dark:text-green-400">Price Match Guarantee</h4><p className="text-xs text-green-600 dark:text-green-500">Find a lower price? We'll match it!</p></div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
