@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 
@@ -1528,6 +1528,35 @@ export default function CarHopApp() {
                                 </div>
                               </div>
                             </div>
+                          </div>
+
+                          {/* Lease Agreement Section */}
+                          <div className={`p-4 rounded-lg border ${b.leaseAgreement ? 'bg-green-950/30 border-green-900/50' : 'bg-yellow-950/30 border-yellow-900/50'}`}>
+                            <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-2 ${b.leaseAgreement ? 'text-green-400' : 'text-yellow-400'}`}>
+                              <FileText size={14}/> Lease Agreement Status
+                            </h4>
+                            <div className="text-sm">
+                              {b.leaseAgreement ? (
+                                <div className="flex items-center gap-2 text-green-400">
+                                  <Check size={16} className="text-green-500"/>
+                                  <span>Lease Agreement <strong>ACCEPTED</strong></span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-yellow-400">
+                                  <AlertCircle size={16} className="text-yellow-500"/>
+                                  <span>Lease Agreement <strong>NOT SIGNED</strong></span>
+                                </div>
+                              )}
+                            </div>
+                            {b.leaseAgreement && (
+                              <button 
+                                onClick={() => setShowLeaseModal(true)}
+                                className="mt-3 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded transition-colors"
+                                data-testid="button-view-lease-agreement"
+                              >
+                                View Agreement
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
