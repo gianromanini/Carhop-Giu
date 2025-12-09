@@ -818,31 +818,33 @@ export default function CarHopApp() {
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {vehicles.filter(car => !showEco || car.fuel === 'Hybrid' || car.fuel === 'Electric').map((car) => (
-                  <Card key={car.id} className="group cursor-pointer" onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
-                    <div className="relative">
-                      <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
-                      {(car.fuel === 'Hybrid' || car.fuel === 'Electric') && (<div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"><Leaf size={12}/> Fuel Saver</div>)}
-                      {car.isAWD && (<div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"><Mountain size={12}/> AWD</div>)}
-                    </div>
-                    <div className="p-5">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-bold text-lg text-zinc-900 dark:text-white" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
-                          <span className="text-xs text-zinc-500 uppercase tracking-wider">{car.category}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
-                          <div className="text-xs text-zinc-500">/day</div>
-                        </div>
+                  <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
+                    <Card className="group cursor-pointer hover-elevate overflow-visible">
+                      <div className="relative overflow-hidden rounded-t-lg">
+                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                        {(car.fuel === 'Hybrid' || car.fuel === 'Electric') && (<div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"><Leaf size={12}/> Fuel Saver</div>)}
+                        {car.isAWD && (<div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"><Mountain size={12}/> AWD</div>)}
                       </div>
-                      <div className="flex gap-3 text-xs text-zinc-500 mb-4">
-                        <span className="flex items-center gap-1"><Users size={14}/> {car.seats}</span>
-                        <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
-                        <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
+                      <div className="p-5">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-bold text-lg text-zinc-900 dark:text-white" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
+                            <span className="text-xs text-zinc-500 uppercase tracking-wider">{car.category}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
+                            <div className="text-xs text-zinc-500">/day</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 text-xs text-zinc-500 mb-4">
+                          <span className="flex items-center gap-1"><Users size={14}/> {car.seats}</span>
+                          <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
+                          <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
+                        </div>
+                        <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Reserve Now</Button>
                       </div>
-                      <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Reserve Now</Button>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 ))}
               </div>
             </div>
@@ -873,53 +875,160 @@ export default function CarHopApp() {
 
             {adminTab === 'fleet' && (
               <div className="grid md:grid-cols-2 gap-6">
+                {/* Left Column - Add New Vehicle Form */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">{editingId ? 'Edit Vehicle' : 'Add New Vehicle'}</h3>
+                  <h3 className="text-lg font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Plus size={18} className="text-green-500"/>
+                    {editingId ? 'Edit Vehicle' : 'Add New Vehicle'}
+                  </h3>
                   <div className="space-y-4">
-                    <Input label="Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Toyota Camry" required data-testid="input-vehicle-model" />
-                    <Input label="Category" name="category" value={formData.category} onChange={handleInputChange} placeholder="e.g. Economy, SUV" required data-testid="input-vehicle-category" />
-                    <Input label="Price per Day" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="e.g. 45" required data-testid="input-vehicle-price" />
-                    <Input label="Fuel Type" name="fuel" value={formData.fuel} onChange={handleInputChange} placeholder="e.g. Gasoline, Hybrid" data-testid="input-vehicle-fuel" />
-                    <Input label="Consumption" name="consumption" value={formData.consumption} onChange={handleInputChange} placeholder="e.g. 32 MPG" data-testid="input-vehicle-consumption" />
-                    <Input label="Image URL" name="images" value={formData.images[0]} onChange={(e: any) => setFormData({...formData, images: [e.target.value]})} placeholder="https://..." data-testid="input-vehicle-image" />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Checkbox label="AWD" name="isAWD" checked={formData.isAWD} onChange={handleInputChange} />
-                      <Checkbox label="CarPlay" name="hasCarPlay" checked={formData.hasCarPlay} onChange={handleInputChange} />
-                      <Checkbox label="Bluetooth" name="hasBluetooth" checked={formData.hasBluetooth} onChange={handleInputChange} />
-                      <Checkbox label="Reverse Cam" name="hasReverseCamera" checked={formData.hasReverseCamera} onChange={handleInputChange} />
-                      <Checkbox label="Heated Seats" name="hasHeatedSeats" checked={formData.hasHeatedSeats} onChange={handleInputChange} />
-                      <Checkbox label="Price Match" name="isPriceMatch" checked={formData.isPriceMatch} onChange={handleInputChange} />
+                    <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-vehicle-model" />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="e.g. 45" required data-testid="input-vehicle-price" />
+                      <div className="mb-3">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
+                        <select name="fuel" value={formData.fuel} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-fuel">
+                          <option value="Gasoline">Gasoline</option>
+                          <option value="Hybrid">Hybrid</option>
+                          <option value="Electric">Electric</option>
+                          <option value="Diesel">Diesel</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button onClick={handleSaveVehicle} className="flex-1" data-testid="button-save-vehicle">{editingId ? 'Update' : 'Add'} Vehicle</Button>
-                      {editingId && <Button variant="ghost" onClick={() => { setFormData(initialFormState); setEditingId(null); }}>Cancel</Button>}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input label="Seats" name="seats" type="number" value={formData.seats} onChange={handleInputChange} placeholder="5" data-testid="input-vehicle-seats" />
+                      <div className="mb-3">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
+                        <select name="transmission" value={formData.transmission} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-transmission">
+                          <option value="Automatic">Automatic</option>
+                          <option value="Manual">Manual</option>
+                        </select>
+                      </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input label="Consumption / Range" name="consumption" value={formData.consumption} onChange={handleInputChange} placeholder="e.g. 300mi range" data-testid="input-vehicle-consumption" />
+                      <Input label="Category" name="category" value={formData.category} onChange={handleInputChange} placeholder="e.g. Sedan" required data-testid="input-vehicle-category" />
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Features</label>
+                      <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+                        <Checkbox label="AWD / 4x4" name="isAWD" checked={formData.isAWD} onChange={handleInputChange} />
+                        <Checkbox label="CarPlay / Auto" name="hasCarPlay" checked={formData.hasCarPlay} onChange={handleInputChange} />
+                        <Checkbox label="Bluetooth" name="hasBluetooth" checked={formData.hasBluetooth} onChange={handleInputChange} />
+                        <Checkbox label="Reverse Camera" name="hasReverseCamera" checked={formData.hasReverseCamera} onChange={handleInputChange} />
+                        <Checkbox label="Heated Seats" name="hasHeatedSeats" checked={formData.hasHeatedSeats} onChange={handleInputChange} />
+                        <Checkbox label="Heated Steering" name="hasHeatedSteering" checked={formData.hasHeatedSteering} onChange={handleInputChange} />
+                        <Checkbox label="Electric Seats" name="hasElectricSeats" checked={formData.hasElectricSeats} onChange={handleInputChange} />
+                        <Checkbox label="Paddle Shifters" name="hasPaddleShifters" checked={formData.hasPaddleShifters} onChange={handleInputChange} />
+                        <Checkbox label="Keyless Entry" name="hasKeylessEntry" checked={formData.hasKeylessEntry} onChange={handleInputChange} />
+                        <Checkbox label="Blind Spot Warning" name="hasBlindSpotWarning" checked={formData.hasBlindSpotWarning} onChange={handleInputChange} />
+                        <Checkbox label="Drive Assist" name="hasDriveAssist" checked={formData.hasDriveAssist} onChange={handleInputChange} />
+                        <Checkbox label="USB Charger" name="hasUSBCharger" checked={formData.hasUSBCharger} onChange={handleInputChange} />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vehicle Photos <span className="text-zinc-400 font-normal normal-case">{formData.images.filter(i => i).length} photos</span></label>
+                      <div className="flex gap-2 flex-wrap">
+                        {formData.images.filter(i => i).map((img, i) => (
+                          <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500">
+                            <img src={img} className="w-full h-full object-cover"/>
+                            <button onClick={() => setFormData({...formData, images: formData.images.filter((_, idx) => idx !== i)})} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl"><X size={10}/></button>
+                          </div>
+                        ))}
+                        <button onClick={() => carImageInputRef.current?.click()} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all" data-testid="button-upload-car-photo">
+                          <Upload size={16}/>
+                          <span className="text-[8px] mt-1 uppercase">Upload</span>
+                        </button>
+                      </div>
+                      <input type="file" ref={carImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setFormData(prev => ({...prev, images: [...prev.images.filter(i => i), reader.result as string]}));
+                          reader.readAsDataURL(file);
+                        }
+                        if (carImageInputRef.current) carImageInputRef.current.value = '';
+                      }} />
+                      <Input className="mt-3" placeholder="Or paste image URL..." value="" onChange={(e: any) => { if (e.target.value) setFormData({...formData, images: [...formData.images.filter(i => i), e.target.value]}); }} data-testid="input-vehicle-image-url" />
+                    </div>
+
+                    <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
+                      {editingId ? 'Update Vehicle' : 'Add Vehicle'}
+                    </Button>
+                    {editingId && <Button variant="ghost" onClick={() => { setFormData(initialFormState); setEditingId(null); }} className="w-full">Cancel</Button>}
                   </div>
                 </Card>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Fleet ({vehicles.length})</h3>
-                  {vehicles.map((car) => (
-                    <Card key={car.id} className="p-4" data-testid={`card-admin-vehicle-${car.id}`}>
-                      <div className="flex items-center gap-4">
-                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-20 h-20 object-cover rounded-lg" />
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{car.model}</h3>
-                          <p className="text-sm text-zinc-500">{car.category} | {car.fuel} | {car.seats} seats</p>
-                          <div className="flex gap-2 mt-2">
-                            {(car.fuel === 'Hybrid' || car.fuel === 'Electric') && <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 px-2 py-1 rounded">Fuel Saver</span>}
-                            {car.isAWD && <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded">AWD</span>}
+
+                {/* Right Column - Locations, Pricing, Inventory */}
+                <div className="space-y-6">
+                  {/* Pickup Locations */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <MapPin size={18} className="text-green-500"/>
+                      Pickup Locations
+                    </h3>
+                    <div className="flex gap-2 mb-4">
+                      <Input placeholder="New Location Name (e.g. Airport JFK)" value={newLocation} onChange={(e: any) => setNewLocation(e.target.value)} className="mb-0 flex-1" data-testid="input-new-location" />
+                      <Button onClick={addLocation} variant="secondary" data-testid="button-add-location">Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {settings.locations.map(loc => (
+                        <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm">
+                          {loc}
+                          <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
+                        </span>
+                      ))}
+                    </div>
+                    <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
+                  </Card>
+
+                  {/* Price Configuration */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <DollarSign size={18} className="text-green-500"/>
+                      Price Configuration
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <Input label="Sales Tax (%)" type="number" step="0.1" value={settings.taxes} onChange={(e: any) => updateSettingMutation.mutate({ key: 'taxes', value: parseFloat(e.target.value) })} data-testid="input-taxes" />
+                      <Input label="Cleaning Fee ($)" type="number" value={settings.cleaningFee} onChange={(e: any) => updateSettingMutation.mutate({ key: 'cleaningFee', value: parseFloat(e.target.value) })} data-testid="input-cleaning-fee" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <Input label="Included Miles / Day" type="number" value={settings.includedMiles} onChange={(e: any) => updateSettingMutation.mutate({ key: 'includedMiles', value: parseInt(e.target.value) })} data-testid="input-included-miles" />
+                      <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={settings.extraMileRate} onChange={(e: any) => updateSettingMutation.mutate({ key: 'extraMileRate', value: parseFloat(e.target.value) })} data-testid="input-extra-mile-rate" />
+                    </div>
+                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Daily Add-on Rates</label>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <Input label="Ins. $500" type="number" value={settings.prices.insurance500} onChange={(e: any) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance500: parseFloat(e.target.value)} })} data-testid="input-insurance-500" />
+                      <Input label="Ins. $1000" type="number" value={settings.prices.insurance1000} onChange={(e: any) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance1000: parseFloat(e.target.value)} })} data-testid="input-insurance-1000" />
+                      <Input label="Child Seat" type="number" value={settings.prices.childSeat} onChange={(e: any) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, childSeat: parseFloat(e.target.value)} })} data-testid="input-child-seat" />
+                    </div>
+                    <Button variant="primary" className="w-full" onClick={() => {}}>Update Global Settings</Button>
+                  </Card>
+
+                  {/* Inventory */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {vehicles.map((car) => (
+                        <div key={car.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer group" onClick={() => handleEditVehicle(car)} data-testid={`card-admin-vehicle-${car.id}`}>
+                          <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                            <p className="text-xs text-zinc-500">{car.fuel} · {car.category}</p>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={(e) => { e.stopPropagation(); handleEditVehicle(car); }} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded" data-testid={`button-edit-${car.id}`}><Edit size={14}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); deleteVehicleMutation.mutate(car.id); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" data-testid={`button-delete-${car.id}`}><Trash2 size={14}/></button>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">${car.price}</div>
-                          <div className="flex gap-2 mt-2">
-                            <button onClick={() => handleEditVehicle(car)} className="text-blue-500 hover:text-blue-700" data-testid={`button-edit-${car.id}`}><Edit size={16}/></button>
-                            <button onClick={() => deleteVehicleMutation.mutate(car.id)} className="text-red-500 hover:text-red-700" data-testid={`button-delete-${car.id}`}><Trash2 size={16}/></button>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                      ))}
+                    </div>
+                  </Card>
                 </div>
               </div>
             )}
@@ -1011,30 +1120,14 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'settings' && (
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="max-w-2xl mx-auto">
                 <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Pricing Settings</h3>
-                  <div className="space-y-4">
-                    <Input label="Tax Rate (%)" type="number" value={settings.taxes} onChange={(e: any) => updateSettingMutation.mutate({ key: 'taxes', value: parseFloat(e.target.value) })} data-testid="input-taxes" />
-                    <Input label="Cleaning Fee ($)" type="number" value={settings.cleaningFee} onChange={(e: any) => updateSettingMutation.mutate({ key: 'cleaningFee', value: parseFloat(e.target.value) })} data-testid="input-cleaning-fee" />
-                    <Input label="Included Miles/Day" type="number" value={settings.includedMiles} onChange={(e: any) => updateSettingMutation.mutate({ key: 'includedMiles', value: parseInt(e.target.value) })} data-testid="input-included-miles" />
-                    <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={settings.extraMileRate} onChange={(e: any) => updateSettingMutation.mutate({ key: 'extraMileRate', value: parseFloat(e.target.value) })} data-testid="input-extra-mile-rate" />
-                  </div>
-                </Card>
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Locations</h3>
-                  <div className="space-y-3 mb-4">
-                    {settings.locations.map(loc => (
-                      <div key={loc} className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                        <span className="font-medium text-zinc-900 dark:text-white">{loc}</span>
-                        <button onClick={() => removeLocation(loc)} className="text-red-500 hover:text-red-700" data-testid={`button-remove-location-${loc}`}><Trash2 size={16}/></button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input placeholder="New location..." value={newLocation} onChange={(e: any) => setNewLocation(e.target.value)} className="mb-0" data-testid="input-new-location" />
-                    <Button onClick={addLocation} data-testid="button-add-location"><Plus size={16}/></Button>
-                  </div>
+                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Settings size={18} className="text-green-500"/>
+                    Global Settings
+                  </h3>
+                  <p className="text-zinc-500 mb-6">All pricing and location settings are now available in the Fleet tab for easier access.</p>
+                  <Button variant="secondary" onClick={() => setAdminTab('fleet')}>Go to Fleet Tab</Button>
                 </Card>
               </div>
             )}
