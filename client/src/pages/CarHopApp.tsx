@@ -1468,7 +1468,7 @@ export default function CarHopApp() {
                             </div>
                           </div>
                           <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                            {!extendingBookingId && (<Button variant="orange" className="w-full text-xs text-black font-bold" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Request Extension</Button>)}
+                            {!extendingBookingId && (<button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Request Extension</button>)}
                             {extendingBookingId === b.id && (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
                                 <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">New Return Date & Time</label>
