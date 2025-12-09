@@ -1235,7 +1235,9 @@ export default function CarHopApp() {
               <div className="flex items-start gap-2 flex-shrink-0">
                 <Button variant="outline" className="text-xs px-2 py-1 h-6" data-testid="button-admin-signin">Sign In</Button>
                 <div className="flex flex-col items-center gap-0.5">
-                  <ThemeToggle className="h-6 w-6 p-0" iconSize={14} />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
+                    {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
                     <MessageCircle size={14}/>
                   </Button>
