@@ -396,9 +396,9 @@ export default function CarHopApp() {
 
   const [newLocation, setNewLocation] = useState('');
   
-  const [leaseAgreementAccepted, setLeaseAgreementAccepted] = useState(false);
-  const [showLeaseModal, setShowLeaseModal] = useState(false);
-  const [viewingLeaseOnly, setViewingLeaseOnly] = useState(false);
+  const [carRentalAgreementAccepted, setCarRentalAgreementAccepted] = useState(false);
+  const [showCarRentalModal, setShowCarRentalModal] = useState(false);
+  const [viewingCarRentalOnly, setViewingCarRentalOnly] = useState(false);
   
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatBookingId, setChatBookingId] = useState<number | null>(null);
@@ -612,7 +612,7 @@ export default function CarHopApp() {
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
       details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat * days : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: settings.cleaningFee, tax: totalData.taxAmount }, 
-      leaseAgreement: leaseAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
+      carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
       checkInData: null, 
@@ -1802,37 +1802,37 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* Lease Agreement Section */}
-                          <div className={`p-4 rounded-lg border ${b.leaseAgreement?.accepted ? 'bg-blue-950/30 border-blue-900/50' : 'bg-yellow-950/30 border-yellow-900/50'}`}>
-                            <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-2 ${b.leaseAgreement?.accepted ? 'text-blue-400' : 'text-yellow-400'}`}>
-                              <FileText size={14}/> Lease Agreement Status
+                          {/* Car Rental Agreement Section */}
+                          <div className={`p-4 rounded-lg border ${b.carRentalAgreement?.accepted ? 'bg-blue-950/30 border-blue-900/50' : 'bg-yellow-950/30 border-yellow-900/50'}`}>
+                            <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-2 ${b.carRentalAgreement?.accepted ? 'text-blue-400' : 'text-yellow-400'}`}>
+                              <FileText size={14}/> Car Rental Agreement Status
                             </h4>
                             <div className="text-sm">
-                              {b.leaseAgreement?.accepted ? (
+                              {b.carRentalAgreement?.accepted ? (
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2 text-blue-400">
                                     <Check size={16} className="text-blue-500"/>
                                     <span className="font-bold">ACCEPTED</span>
                                   </div>
-                                  <span className="text-xs text-zinc-500">By: {b.leaseAgreement.clientName}</span>
-                                  <span className="text-xs text-zinc-500">Date: {new Date(b.leaseAgreement.acceptedAt).toLocaleDateString()}</span>
+                                  <span className="text-xs text-zinc-500">By: {b.carRentalAgreement.clientName}</span>
+                                  <span className="text-xs text-zinc-500">Date: {new Date(b.carRentalAgreement.acceptedAt).toLocaleDateString()}</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2 text-yellow-400">
                                   <AlertCircle size={16} className="text-yellow-500"/>
-                                  <span>Lease Agreement <strong>NOT SIGNED</strong></span>
+                                  <span>Car Rental Agreement <strong>NOT SIGNED</strong></span>
                                 </div>
                               )}
                             </div>
-                            {b.leaseAgreement?.accepted && (
+                            {b.carRentalAgreement?.accepted && (
                               <button 
                                 onClick={() => {
-                                  setDriverDetails(prev => ({ ...prev, name: b.leaseAgreement?.clientName || b.driver.name }));
-                                  setViewingLeaseOnly(true);
-                                  setShowLeaseModal(true);
+                                  setDriverDetails(prev => ({ ...prev, name: b.carRentalAgreement?.clientName || b.driver.name }));
+                                  setViewingCarRentalOnly(true);
+                                  setShowCarRentalModal(true);
                                 }}
                                 className="mt-3 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1"
-                                data-testid="button-view-lease-agreement"
+                                data-testid="button-view-car-rental-agreement"
                               >
                                 <FileText size={12}/> View & Print Agreement
                               </button>
@@ -2075,12 +2075,12 @@ export default function CarHopApp() {
                       </div>
         )}
 
-        {showLeaseModal && (
+        {showCarRentalModal && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
               <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Lease Agreement</h2>
-                <button onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); setViewingLeaseOnly(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Car Rental Agreement</h2>
+                <button onClick={() => { setShowCarRentalModal(false); setCarRentalAgreementAccepted(false); setViewingCarRentalOnly(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
               </div>
 
               <div className="p-8 space-y-6">
@@ -2091,10 +2091,10 @@ export default function CarHopApp() {
                 </div>
 
                 <div className="prose dark:prose-invert max-w-none">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">VEHICLE LEASE AGREEMENT</h3>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">VEHICLE RENTAL AGREEMENT</h3>
                   
                   <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
-                    <p><strong>This Lease Agreement ("Agreement")</strong> is entered into on this date between <strong>CarHop Rental Services</strong> ("Lessor") and <strong>{driverDetails.name}</strong> ("Lessee").</p>
+                    <p><strong>This Car Rental Agreement ("Agreement")</strong> is entered into on this date between <strong>CarHop Rental Services</strong> ("Lessor") and <strong>{driverDetails.name}</strong> ("Lessee").</p>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">1. VEHICLE AND TERMS</h4>
@@ -2149,27 +2149,27 @@ export default function CarHopApp() {
                 </div>
 
                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3">
-                  {viewingLeaseOnly ? (
+                  {viewingCarRentalOnly ? (
                     <button 
                       onClick={() => window.print()} 
                       className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-                      data-testid="button-print-lease"
+                      data-testid="button-print-car-rental-agreement"
                     >
                       <FileText size={18}/> Print
                     </button>
                   ) : (
                     <>
                       <button 
-                        onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); }} 
+                        onClick={() => { setShowCarRentalModal(false); setCarRentalAgreementAccepted(false); }} 
                         className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
-                        data-testid="button-reject-lease"
+                        data-testid="button-reject-car-rental-agreement"
                       >
                         Reject
                       </button>
                       <button 
-                        onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(true); }} 
+                        onClick={() => { setShowCarRentalModal(false); setCarRentalAgreementAccepted(true); }} 
                         className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
-                        data-testid="button-accept-lease"
+                        data-testid="button-accept-car-rental-agreement"
                       >
                         I Accept
                       </button>
@@ -2720,22 +2720,22 @@ export default function CarHopApp() {
                       <div className="flex items-start gap-3 p-4 bg-zinc-800/50 rounded-lg">
                         <input 
                           type="checkbox" 
-                          checked={leaseAgreementAccepted} 
+                          checked={carRentalAgreementAccepted} 
                           onChange={(e) => {
-                            setLeaseAgreementAccepted(e.target.checked);
+                            setCarRentalAgreementAccepted(e.target.checked);
                             if (e.target.checked) {
-                              setViewingLeaseOnly(false);
-                              setShowLeaseModal(true);
+                              setViewingCarRentalOnly(false);
+                              setShowCarRentalModal(true);
                             }
                           }}
                           className="mt-1 w-5 h-5 cursor-pointer" 
-                          data-testid="checkbox-lease-agreement"
+                          data-testid="checkbox-car-rental-agreement"
                         />
                         <div className="flex-1">
                           <label className="text-sm font-bold text-white cursor-pointer block">
-                            I Accept the Lease Agreement <span className="text-red-500">* REQUIRED</span>
+                            I Accept the Car Rental Agreement <span className="text-red-500">* REQUIRED</span>
                           </label>
-                          <p className="text-xs text-zinc-400 mt-1">You must read and accept our lease agreement to proceed with payment</p>
+                          <p className="text-xs text-zinc-400 mt-1">You must read and accept our car rental agreement to proceed with payment</p>
                         </div>
                       </div>
                     </div>
@@ -2803,8 +2803,8 @@ export default function CarHopApp() {
                   {/* Proceed Button */}
                   <button 
                     onClick={handleProceedToPayment} 
-                    disabled={!isCheckoutValid() || !leaseAgreementAccepted} 
-                    className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() && leaseAgreementAccepted ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
+                    disabled={!isCheckoutValid() || !carRentalAgreementAccepted} 
+                    className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() && carRentalAgreementAccepted ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
                     data-testid="button-proceed-payment"
                   >
                     Proceed to Payment

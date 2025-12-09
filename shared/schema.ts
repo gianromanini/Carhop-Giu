@@ -77,7 +77,7 @@ export const bookings = pgTable("bookings", {
     extendedRate?: number;
     manualCharges?: { type: string; amount: number }[];
   }>().notNull(),
-  leaseAgreement: jsonb("lease_agreement").$type<{
+  carRentalAgreement: jsonb("car_rental_agreement").$type<{
     accepted: boolean;
     clientName: string;
     acceptedAt: string;

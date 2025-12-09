@@ -392,10 +392,10 @@ export class MemStorage implements IStorage {
         photosOutside: [...booking.checkOutData.photosOutside] as string[],
         photosInside: [...booking.checkOutData.photosInside] as string[],
       } : null,
-      leaseAgreement: booking.leaseAgreement ? {
-        accepted: booking.leaseAgreement.accepted,
-        clientName: booking.leaseAgreement.clientName,
-        acceptedAt: booking.leaseAgreement.acceptedAt,
+      carRentalAgreement: booking.carRentalAgreement ? {
+        accepted: booking.carRentalAgreement.accepted,
+        clientName: booking.carRentalAgreement.clientName,
+        acceptedAt: booking.carRentalAgreement.acceptedAt,
       } : null,
       extraPayments: (booking.extraPayments || []) as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[],
       extensionRequests: [],
