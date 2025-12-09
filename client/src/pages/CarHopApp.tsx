@@ -1192,20 +1192,21 @@ export default function CarHopApp() {
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="flex items-center justify-between mb-8 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-md bg-green-600 flex items-center justify-center">
-                  <Car className="h-6 w-6 text-white" />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="w-8 h-8 rounded-md bg-green-600 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">CarHop Admin</h1>
-                  <p className="text-xs text-zinc-500">Manage fleet, bookings and settings</p>
+                  <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">CarHop</h1>
+                  <p className="text-xs text-zinc-500">Admin</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => setView('home')} data-testid="button-back-home"><ArrowLeft size={16}/> Back</Button>
-                <Button variant="ghost" size="icon" data-testid="button-admin-chat"><MessageCircle size={18}/></Button>
+              <div className="flex items-start gap-3 ml-auto">
+                <div className="flex flex-col items-center gap-1">
+                  <ThemeToggle />
+                  <Button variant="ghost" size="icon" data-testid="button-admin-chat"><MessageCircle size={18}/></Button>
+                </div>
                 <Button variant="outline" size="sm" data-testid="button-admin-signin">Sign In</Button>
-                <ThemeToggle />
               </div>
             </div>
             
