@@ -37,15 +37,6 @@ export function VehicleCard({ vehicle, onSelect, onViewDetails }: VehicleCardPro
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           data-testid={`img-vehicle-${vehicle.id}`}
         />
-        {vehicle.fuelEfficient && (
-          <Badge 
-            className="absolute top-3 left-3 bg-green-600 text-white border-green-700"
-            data-testid={`badge-fuel-saver-${vehicle.id}`}
-          >
-            <Leaf className="h-3 w-3 mr-1" />
-            Fuel Saver
-          </Badge>
-        )}
         {savings > 0 && (
           <Badge 
             className="absolute top-3 right-3 bg-primary text-primary-foreground"

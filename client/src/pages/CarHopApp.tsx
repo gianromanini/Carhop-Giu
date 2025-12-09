@@ -409,7 +409,6 @@ export default function CarHopApp() {
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [showEco, setShowEco] = useState(false);
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ queryKey: ['/api/vehicles'] });
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
@@ -1148,13 +1147,10 @@ export default function CarHopApp() {
                   <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-fleet-title">Our Fleet</h2>
                   <p className="text-xs sm:text-sm text-zinc-500">Choose from our wide selection of vehicles</p>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button onClick={() => setShowEco(!showEco)} className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-all ${showEco ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid="button-fuel-saver"><Leaf size={14}/> Fuel Saver</button>
-                </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {vehicles.filter(car => !showEco || car.fuel === 'Hybrid' || car.fuel === 'Electric').map((car) => (
+                {vehicles.map((car) => (
                   <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
                       <div className="relative overflow-hidden rounded-t-lg">
@@ -3074,7 +3070,6 @@ export default function CarHopApp() {
                 </div>
                 <div className="flex gap-2 mb-6">
                   {viewCar.isAWD && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-3 py-1 rounded-full text-xs font-bold"><Mountain size={12} className="inline mr-1"/> AWD</span>}
-                  {(viewCar.fuel === 'Hybrid' || viewCar.fuel === 'Electric') && <span className="bg-green-100 dark:bg-green-900/30 text-green-600 px-3 py-1 rounded-full text-xs font-bold"><Leaf size={12} className="inline mr-1"/> Fuel Saver</span>}
                   {viewCar.hasCarPlay && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Smartphone size={12} className="inline mr-1"/> CarPlay</span>}
                   {viewCar.hasBluetooth && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Bluetooth size={12} className="inline mr-1"/> Bluetooth</span>}
                 </div>

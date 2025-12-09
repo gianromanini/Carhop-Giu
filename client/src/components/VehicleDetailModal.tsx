@@ -44,12 +44,6 @@ export function VehicleDetailModal({
           <DialogTitle className="flex items-center gap-2 flex-wrap">
             {vehicle.name}
             <Badge variant="secondary">{vehicle.category}</Badge>
-            {vehicle.fuelEfficient && (
-              <Badge className="bg-green-600 text-white border-green-700">
-                <Leaf className="h-3 w-3 mr-1" />
-                Fuel Saver
-              </Badge>
-            )}
           </DialogTitle>
         </DialogHeader>
 
