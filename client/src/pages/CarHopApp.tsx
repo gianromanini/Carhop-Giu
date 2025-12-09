@@ -1784,9 +1784,18 @@ export default function CarHopApp() {
           </div>
         )}
 
-        {view === 'payment' && cart.car && (
+        {view === 'payment' && cart.car && (() => {
+          const isCreditCardValid = paymentDetails.cardName && paymentDetails.cardNumber && paymentDetails.expiry && paymentDetails.cvc;
+          const isPayButtonEnabled = paymentMethod === 'paypal' || (paymentMethod === 'credit' && isCreditCardValid);
+          
+          return (
           <div className="max-w-3xl mx-auto px-6 py-12">
-            <button onClick={() => setView('checkout')} className="flex items-center gap-2 text-zinc-400 hover:text-green-500 mb-6 transition-colors">
+            {/* Back to Details Button - Above everything */}
+            <button 
+              onClick={() => setView('checkout')} 
+              className="flex items-center gap-2 mb-6 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors border border-zinc-700"
+              data-testid="button-back-to-details"
+            >
               <ArrowLeft size={18} /> Back to Details
             </button>
             
@@ -1905,8 +1914,14 @@ export default function CarHopApp() {
                 </div>
                 <button 
                   onClick={handleConfirmBooking} 
-                  disabled={isProcessingPayment || (paymentMethod === 'credit' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName))}
-                  className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${isProcessingPayment ? 'bg-zinc-700 text-zinc-400' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                  disabled={isProcessingPayment || !isPayButtonEnabled}
+                  className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+                    isProcessingPayment 
+                      ? 'bg-zinc-700 text-zinc-400 cursor-wait' 
+                      : isPayButtonEnabled 
+                        ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' 
+                        : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                  }`}
                   data-testid="button-confirm-booking"
                 >
                   {isProcessingPayment ? (
@@ -1921,10 +1936,13 @@ export default function CarHopApp() {
                     </>
                   )}
                 </button>
+                {paymentMethod === 'credit' && !isCreditCardValid && (
+                  <p className="text-center text-zinc-500 text-sm mt-3">Please fill all card details to continue</p>
+                )}
               </div>
             </div>
           </div>
-        )}
+        );})()}
 
         {view === 'confirmation' && (
           <div className="max-w-md mx-auto text-center py-20 px-6">
