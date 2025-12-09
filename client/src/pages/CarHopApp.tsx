@@ -455,6 +455,13 @@ export default function CarHopApp() {
     setSearchParams({ location: '', start: today, startTime: nextTime, end: returnDay, endTime: nextTime });
   }, []);
 
+  useEffect(() => {
+    if (view === 'checkout' && cart.car && searchParams.start && searchParams.end) {
+      const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime);
+      setCart(prev => ({ ...prev, billingDays }));
+    }
+  }, [searchParams.end, searchParams.endTime, view, cart.car]);
+
   const getMinReturnDate = () => {
     const today = getTodayString();
     const startTime = searchParams.startTime || getNext30MinSlot();
