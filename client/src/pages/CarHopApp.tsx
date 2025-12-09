@@ -1477,175 +1477,180 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'earnings' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Vehicle Expense Manager */}
-                <Card className="p-6 lg:col-span-1">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <Car size={20} className="text-green-500"/> Vehicle Expenses
-                  </h3>
-                  
-                  {/* Vehicle Selector */}
-                  <div className="mb-4">
-                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Select Vehicle</label>
-                    <select 
-                      className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm"
-                      value={selectedExpenseVehicleId || ''}
-                      onChange={(e) => {
-                        const id = parseInt(e.target.value);
-                        setSelectedExpenseVehicleId(id);
-                        const vehicle = vehicles.find(v => v.id === id);
-                        if (vehicle) {
-                          setExpenseForm(vehicle.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
-                        }
-                      }}
-                      data-testid="select-expense-vehicle"
-                    >
-                      <option value="">Select a vehicle...</option>
-                      {vehicles.map(v => (
-                        <option key={v.id} value={v.id}>{v.model}</option>
-                      ))}
-                    </select>
+              <div className="space-y-6">
+                {/* Top Section - Revenue & Finance Overview */}
+                <Card className="p-6">
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <TrendingUp size={20} className="text-green-500"/> Revenue & Finance Overview
+                    </h3>
+                    <div className="text-right">
+                      <span className="text-xs text-zinc-500">Monthly Fleet Fixed Cost: </span>
+                      <span className="text-sm font-bold text-orange-500">${(financialData?.fixedMonthly || 0).toLocaleString()}</span>
+                    </div>
                   </div>
                   
-                  {selectedExpenseVehicleId && (
-                    <div className="space-y-3 animate-in fade-in">
-                      <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Lease ($/month)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.lease || ''} onChange={(e) => setExpenseForm({...expenseForm, lease: parseFloat(e.target.value) || 0})} data-testid="input-expense-lease"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Insurance ($/month)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.insurance || ''} onChange={(e) => setExpenseForm({...expenseForm, insurance: parseFloat(e.target.value) || 0})} data-testid="input-expense-insurance"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Car Wash ($/month)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.carWash || ''} onChange={(e) => setExpenseForm({...expenseForm, carWash: parseFloat(e.target.value) || 0})} data-testid="input-expense-carwash"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Maintenance ($/month)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.maintenance || ''} onChange={(e) => setExpenseForm({...expenseForm, maintenance: parseFloat(e.target.value) || 0})} data-testid="input-expense-maintenance"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Track App ($/month)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.trackApp || ''} onChange={(e) => setExpenseForm({...expenseForm, trackApp: parseFloat(e.target.value) || 0})} data-testid="input-expense-trackapp"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Down Payment ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.downPayment || ''} onChange={(e) => setExpenseForm({...expenseForm, downPayment: parseFloat(e.target.value) || 0})} data-testid="input-expense-downpayment"/>
-                      </div>
-                      <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-sm font-bold text-zinc-500">Monthly Total:</span>
-                          <span className="text-lg font-bold text-red-500">${((expenseForm.lease || 0) + (expenseForm.insurance || 0) + (expenseForm.carWash || 0) + (expenseForm.maintenance || 0) + (expenseForm.trackApp || 0)).toFixed(2)}</span>
-                        </div>
-                        <Button className="w-full" onClick={() => {
-                          if (selectedExpenseVehicleId) {
-                            updateVehicleMutation.mutate({ id: selectedExpenseVehicleId, expenses: expenseForm });
-                          }
-                        }} data-testid="button-save-expenses">Save Expenses</Button>
-                      </div>
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-green-900/20 p-4 rounded-xl border border-green-800/30">
+                      <div className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Total Gross Revenue</div>
+                      <div className="text-3xl font-bold text-green-500">${Object.values(financialData?.monthly || {}).reduce((sum: number, m: any) => sum + (m.gross || 0) + (m.pending || 0), 0).toLocaleString()}</div>
                     </div>
-                  )}
+                    <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700/30">
+                      <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Completed Trips</div>
+                      <div className="text-3xl font-bold text-white">{bookings.filter(b => b.status === 'Completed').length}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Monthly Performance Chart */}
+                  <div>
+                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Monthly Financial Performance</h4>
+                    {financialData && <FinancialBarChart data={financialData.monthly} fixedExpenses={financialData.fixedMonthly} />}
+                    <div className="flex justify-center gap-6 mt-4">
+                      <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-orange-500 rounded"></span> Expenses</span>
+                      <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-green-500 rounded"></span> Gross Revenue</span>
+                      <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-emerald-400 rounded"></span> Net Profit</span>
+                    </div>
+                  </div>
                 </Card>
                 
-                {/* Right Column - Financial Overview */}
-                <Card className="p-6 lg:col-span-2">
-                  <h3 className="text-lg font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <BarChart3 size={20} className="text-green-500"/> Financial Overview
-                  </h3>
-                  
-                  {/* Summary Cards */}
-                  {financialData && (
-                    <div className="grid grid-cols-4 gap-3 mb-6">
-                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl">
-                        <div className="text-[10px] text-green-600 font-bold uppercase">Gross Revenue</div>
-                        <div className="text-xl font-bold text-green-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + (m.gross || 0), 0).toLocaleString()}</div>
+                {/* Bottom Section - Two Columns */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column - Monthly Vehicle Expenses */}
+                  <Card className="p-6">
+                    <h3 className="text-base font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <DollarSign size={18}/> Monthly Vehicle Expenses
+                    </h3>
+                    
+                    {/* Vehicle Selector */}
+                    <div className="mb-4">
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">Select Vehicle to Update</label>
+                      <select 
+                        className="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-white"
+                        value={selectedExpenseVehicleId || ''}
+                        onChange={(e) => {
+                          const id = parseInt(e.target.value);
+                          setSelectedExpenseVehicleId(id);
+                          const vehicle = vehicles.find(v => v.id === id);
+                          if (vehicle) {
+                            setExpenseForm(vehicle.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
+                          }
+                        }}
+                        data-testid="select-expense-vehicle"
+                      >
+                        <option value="">-- Select a Car --</option>
+                        {vehicles.map(v => (
+                          <option key={v.id} value={v.id}>{v.model}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Expense Form - Always visible */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Down Payment ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.downPayment || ''} onChange={(e) => setExpenseForm({...expenseForm, downPayment: parseFloat(e.target.value) || 0})} data-testid="input-expense-downpayment"/>
                       </div>
-                      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
-                        <div className="text-[10px] text-purple-600 font-bold uppercase">Pending</div>
-                        <div className="text-xl font-bold text-purple-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + (m.pending || 0), 0).toLocaleString()}</div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Lease / Financing ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.lease || ''} onChange={(e) => setExpenseForm({...expenseForm, lease: parseFloat(e.target.value) || 0})} data-testid="input-expense-lease"/>
                       </div>
-                      <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl">
-                        <div className="text-[10px] text-red-600 font-bold uppercase">Expenses</div>
-                        <div className="text-xl font-bold text-red-600">${(financialData.fixedMonthly || 0).toLocaleString()}/mo</div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Insurance ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.insurance || ''} onChange={(e) => setExpenseForm({...expenseForm, insurance: parseFloat(e.target.value) || 0})} data-testid="input-expense-insurance"/>
                       </div>
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
-                        <div className="text-[10px] text-blue-600 font-bold uppercase">Net Profit</div>
-                        <div className="text-xl font-bold text-blue-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + (m.net || 0), 0).toLocaleString()}</div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Car Wash ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.carWash || ''} onChange={(e) => setExpenseForm({...expenseForm, carWash: parseFloat(e.target.value) || 0})} data-testid="input-expense-carwash"/>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Maintenance ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.maintenance || ''} onChange={(e) => setExpenseForm({...expenseForm, maintenance: parseFloat(e.target.value) || 0})} data-testid="input-expense-maintenance"/>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Tracking / App ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.trackApp || ''} onChange={(e) => setExpenseForm({...expenseForm, trackApp: parseFloat(e.target.value) || 0})} data-testid="input-expense-trackapp"/>
                       </div>
                     </div>
-                  )}
+                    
+                    <Button 
+                      className="w-full mt-4" 
+                      disabled={!selectedExpenseVehicleId}
+                      onClick={() => {
+                        if (selectedExpenseVehicleId) {
+                          updateVehicleMutation.mutate({ id: selectedExpenseVehicleId, expenses: expenseForm });
+                        }
+                      }} 
+                      data-testid="button-save-expenses"
+                    >
+                      Save Expenses
+                    </Button>
+                  </Card>
                   
-                  {/* Stacked Progress Bars by Vehicle */}
-                  <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Revenue by Vehicle</h4>
-                  <div className="space-y-4">
-                    {financialData && Object.entries(financialData.byVehicle || {}).map(([carName, data]: [string, any]) => {
-                      const gross = data.gross || 0;
-                      const pending = data.pending || 0;
-                      const expenses = data.expenses || 0;
-                      const maxValue = Math.max(gross + pending + expenses, 1);
-                      const grossPercent = (gross / maxValue) * 100;
-                      const pendingPercent = (pending / maxValue) * 100;
-                      const expensesPercent = (expenses / maxValue) * 100;
-                      
-                      return (
-                        <div key={carName} className="bg-zinc-50 dark:bg-zinc-900 p-4 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-bold text-sm text-zinc-900 dark:text-white">{carName}</span>
-                            <span className="text-xs text-zinc-500">Net: ${(gross - expenses).toFixed(2)}</span>
-                          </div>
-                          
-                          {/* Stacked Bar */}
-                          <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden flex relative group">
-                            {/* Expenses - Red */}
-                            <div 
-                              className="bg-red-500 h-full transition-all relative group/exp cursor-pointer"
-                              style={{ width: `${expensesPercent}%` }}
-                              title={`Expenses: $${expenses.toFixed(2)}`}
-                            >
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/exp:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-bold text-white drop-shadow-lg">${expenses.toFixed(0)}</span>
+                  {/* Right Column - Financial Status by Vehicle */}
+                  <Card className="p-6">
+                    <h3 className="text-base font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <BarChart3 size={18}/> Financial Status by Vehicle
+                    </h3>
+                    
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                      {vehicles.map(vehicle => {
+                        const vehicleData = financialData?.byVehicle?.[vehicle.model] || { gross: 0, pending: 0, expenses: 0 };
+                        const gross = (vehicleData.gross || 0) + (vehicleData.pending || 0);
+                        const expenses = vehicleData.expenses || 0;
+                        const balance = gross - expenses;
+                        
+                        return (
+                          <div key={vehicle.id} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                            <div className="flex items-center gap-3">
+                              {/* Vehicle Image */}
+                              <div className="w-16 h-12 rounded overflow-hidden shrink-0">
+                                <img src={vehicle.images[0]} alt={vehicle.model} className="w-full h-full object-cover"/>
+                              </div>
+                              
+                              {/* Vehicle Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h4 className="font-bold text-sm text-white truncate">{vehicle.model}</h4>
+                                    <p className="text-[10px] text-zinc-500">{vehicle.category}</p>
+                                  </div>
+                                  <button 
+                                    className="text-xs text-zinc-400 hover:text-white border border-zinc-700 rounded px-2 py-1 shrink-0"
+                                    onClick={() => {
+                                      setSelectedExpenseVehicleId(vehicle.id);
+                                      setExpenseForm(vehicle.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                                
+                                {/* Financial Stats */}
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                  <div>
+                                    <div className="text-[9px] text-green-500 uppercase font-bold">Gross Revenue</div>
+                                    <div className="text-sm font-bold text-green-500">${gross.toFixed(0)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-[9px] text-orange-500 uppercase font-bold">Monthly Exp</div>
+                                    <div className="text-sm font-bold text-orange-500">${expenses.toFixed(0)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-[9px] text-zinc-400 uppercase font-bold">Net Balance</div>
+                                    <div className={`text-sm font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-500'}`}>
+                                      {balance >= 0 ? '' : '-'}${Math.abs(balance).toFixed(0)}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            {/* Gross Revenue - Green */}
-                            <div 
-                              className="bg-green-500 h-full transition-all relative group/gross cursor-pointer"
-                              style={{ width: `${grossPercent}%` }}
-                              title={`Gross Revenue: $${gross.toFixed(2)}`}
-                            >
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/gross:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-bold text-white drop-shadow-lg">${gross.toFixed(0)}</span>
-                              </div>
-                            </div>
-                            {/* Pending - Purple */}
-                            <div 
-                              className="bg-purple-500 h-full transition-all relative group/pend cursor-pointer"
-                              style={{ width: `${pendingPercent}%` }}
-                              title={`Pending: $${pending.toFixed(2)}`}
-                            >
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/pend:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-bold text-white drop-shadow-lg">${pending.toFixed(0)}</span>
-                              </div>
-                            </div>
                           </div>
-                          
-                          {/* Legend */}
-                          <div className="flex gap-4 mt-2 text-[10px]">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-red-500 rounded-full"></span> Expenses: ${expenses.toFixed(2)}</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span> Gross: ${gross.toFixed(2)}</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-500 rounded-full"></span> Pending: ${pending.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Monthly Chart */}
-                  <div className="mt-8">
-                    <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Monthly Breakdown</h4>
-                    {financialData && <FinancialBarChart data={financialData.monthly} fixedExpenses={financialData.fixedMonthly} />}
-                  </div>
-                </Card>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </div>
               </div>
             )}
 
