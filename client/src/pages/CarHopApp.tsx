@@ -1178,21 +1178,21 @@ export default function CarHopApp() {
 
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin Dashboard</h1>
-                <p className="text-zinc-500">Manage your fleet, bookings and settings</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin Dashboard</h1>
+                <p className="text-xs sm:text-sm text-zinc-500">Manage your fleet, bookings and settings</p>
               </div>
               <Button variant="ghost" onClick={() => setView('home')} data-testid="button-back-home"><ArrowLeft size={16}/> Back to Site</Button>
             </div>
             
             <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
               {['fleet', 'bookings', 'earnings'].map(tab => (
-                <button key={tab} onClick={() => setAdminTab(tab)} className={`px-4 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
-                  {tab === 'fleet' && <Car size={16} className="inline mr-2"/>}
-                  {tab === 'bookings' && <Briefcase size={16} className="inline mr-2"/>}
-                  {tab === 'earnings' && <TrendingUp size={16} className="inline mr-2"/>}
-                  {tab}
+                <button key={tab} onClick={() => setAdminTab(tab)} className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg font-bold text-xs sm:text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+                  {tab === 'fleet' && <Car size={14} className="inline mr-1 sm:mr-2"/>}
+                  {tab === 'bookings' && <Briefcase size={14} className="inline mr-1 sm:mr-2"/>}
+                  {tab === 'earnings' && <TrendingUp size={14} className="inline mr-1 sm:mr-2"/>}
+                  <span className="hidden sm:inline">{tab}</span>
                 </button>
               ))}
             </div>
@@ -1358,9 +1358,9 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'bookings' && (
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - All Bookings List */}
-                <Card className="p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
+                <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                   <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">All Bookings</h3>
                   <div className="space-y-2">
                     {bookings.map(b => {
@@ -1400,27 +1400,27 @@ export default function CarHopApp() {
                 </Card>
 
                 {/* Right Column - Booking Details */}
-                <Card className="p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
+                <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
                   {manageBookingId ? (
                     (() => {
                       const b = bookings.find(bk => bk.id === manageBookingId);
                       if (!b) return null;
                       return (
-                        <div className="space-y-6">
+                        <div className="space-y-4 sm:space-y-6">
                           {/* Header */}
-                          <div className="flex justify-between items-start">
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
                             <div>
-                              <h2 className="text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
-                              <p className="text-zinc-500 text-sm">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
+                              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
+                              <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
                             </div>
-                            <div className="text-right text-xs text-zinc-500">
+                            <div className="text-left sm:text-right text-[10px] sm:text-xs text-zinc-500">
                               <div>{b.date}</div>
                               <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
                             </div>
                           </div>
 
                           {/* Customer & Rental Info */}
-                          <div className="grid grid-cols-2 gap-6 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                             <div>
                               <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
@@ -1518,17 +1518,17 @@ export default function CarHopApp() {
                           </div>
 
                           {/* Manage Charges & Adjustments */}
-                          <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
                             
                             {/* Apply Discount */}
                             <div className="mb-4">
                               <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
-                              <div className="flex gap-2">
+                              <div className="flex flex-col sm:flex-row gap-2">
                                 <select 
                                   value={adjustment.type} 
                                   onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" 
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
                                   data-testid="select-discount-type"
                                 >
                                   <option value="fixed">Fixed Value ($)</option>
@@ -1539,11 +1539,11 @@ export default function CarHopApp() {
                                   type="number"
                                   value={adjustment.value}
                                   onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
-                                  className="flex-1 mb-0" 
+                                  className="flex-1 mb-0 text-xs" 
                                   data-testid="input-discount-value" 
                                 />
                                 <button 
-                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors" 
+                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
                                   onClick={() => handleApplyDiscount(b)}
                                   data-testid="button-apply-discount"
                                 >
@@ -1555,11 +1555,11 @@ export default function CarHopApp() {
                             {/* Charge Archived Card */}
                             <div>
                               <label className="text-xs text-zinc-500 mb-2 block">Charge Archived Card</label>
-                              <div className="flex gap-2">
+                              <div className="flex flex-col sm:flex-row gap-2">
                                 <select 
                                   value={extraCharge.type}
                                   onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" 
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
                                   data-testid="select-charge-type"
                                 >
                                   <option value="refuel">Refuel</option>
@@ -1573,11 +1573,11 @@ export default function CarHopApp() {
                                   type="number"
                                   value={extraCharge.amount}
                                   onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                  className="flex-1 mb-0" 
+                                  className="flex-1 mb-0 text-xs" 
                                   data-testid="input-charge-value" 
                                 />
                                 <button 
-                                  className="px-3 h-[38px] bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors" 
+                                  className="px-3 h-[38px] bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
                                   onClick={() => handleAddCharge(b)}
                                   data-testid="button-charge"
                                 >
