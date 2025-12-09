@@ -1,4 +1,4 @@
-import { Car, Menu, Phone, X, MessageCircle } from "lucide-react";
+import { Car, Menu, Phone, X, MessageCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useState } from "react";
@@ -6,11 +6,14 @@ import { Link } from "wouter";
 
 interface HeaderProps {
   onManageBooking?: () => void;
+  onSignIn?: () => void;
+  onChat?: () => void;
+  isLoggedIn?: boolean;
 }
 
-export function Header({ onManageBooking }: HeaderProps) {
+export function Header({ onManageBooking, onSignIn, onChat, isLoggedIn = false }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showChatLabel, setShowChatLabel] = useState(false);
+  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
@@ -50,29 +53,8 @@ export function Header({ onManageBooking }: HeaderProps) {
             <ThemeToggle />
           </div>
 
-          <div className="flex md:hidden items-center justify-between gap-2 flex-1 pl-2">
-            <div className="flex flex-col items-center gap-1">
-              <ThemeToggle />
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onMouseEnter={() => setShowChatLabel(true)}
-                  onMouseLeave={() => setShowChatLabel(false)}
-                  onClick={() => {}}
-                  data-testid="button-chat-mobile"
-                  className="hover-elevate"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                </Button>
-                {showChatLabel && (
-                  <div className="absolute top-full mt-1 right-0 bg-foreground text-background px-2 py-1 rounded text-xs font-medium whitespace-nowrap z-10">
-                    Chat / Support
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+          <div className="flex md:hidden items-center justify-end gap-2 flex-1">
+            {isLoggedIn && (
               <Button 
                 variant="ghost"
                 size="sm"
@@ -81,14 +63,45 @@ export function Header({ onManageBooking }: HeaderProps) {
               >
                 Bookings
               </Button>
-              <Button 
-                variant="outline"
-                size="sm"
-                data-testid="button-login-mobile"
-                className="flex-shrink-0"
+            )}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)}
+                data-testid="button-actions-menu"
+                className="h-8 w-8 p-0"
               >
-                Sign In
+                <MoreVertical className="h-5 w-5" />
               </Button>
+              {mobileActionsMenuOpen && (
+                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[150px] overflow-hidden">
+                  <button
+                    onClick={() => {
+                      onSignIn?.();
+                      setMobileActionsMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                    data-testid="button-menu-signin"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => {
+                      onChat?.();
+                      setMobileActionsMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800"
+                    data-testid="button-menu-chat"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Chat / Support
+                  </button>
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 p-2 flex items-center justify-center">
+                    <ThemeToggle className="h-6 w-6 p-0" iconSize={14} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

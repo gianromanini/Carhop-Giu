@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell, MoreVertical
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -409,6 +409,7 @@ export default function CarHopApp() {
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ queryKey: ['/api/vehicles'] });
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
@@ -1026,9 +1027,9 @@ export default function CarHopApp() {
             <div className="bg-green-600 p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white" size={20} /></div>
             <span className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop</span>
           </div>
-          <div className="flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            <div className="hidden md:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>(475) 449-8622</span></div>
-            <button onClick={handleManageBookingClick} className="hidden md:block hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <div className="flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>(475) 449-8622</span></div>
+            <button onClick={handleManageBookingClick} className="hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
             {clientUser ? (
               <div className="flex items-center gap-3">
                 <button onClick={() => setView('bookings')} className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Support Messages">
@@ -1049,7 +1050,30 @@ export default function CarHopApp() {
               </div>
             )}
             <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-            <button onClick={() => setView('admin')} className="hidden md:block text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
+            <button onClick={() => setView('admin')} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
+          </div>
+
+          <div className="flex md:hidden items-center justify-end gap-2 flex-1">
+            {clientUser && (
+              <button onClick={() => setView('bookings')} className="text-xs font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide relative" data-testid="button-bookings-mobile-header">
+                Bookings
+                {getClientUnreadCount() > 0 && (
+                  <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
+                )}
+              </button>
+            )}
+            <div className="relative">
+              <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
+                <MoreVertical className="h-5 w-5" />
+              </button>
+              {mobileActionsMenuOpen && (
+                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[150px] overflow-hidden">
+                  <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2" data-testid="button-menu-signin">Sign In</button>
+                  <button onClick={() => { setShowChatModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 p-2 flex items-center justify-center"><ThemeToggle className="h-6 w-6 p-0" iconSize={14} /></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
