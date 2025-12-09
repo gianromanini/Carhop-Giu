@@ -5,6 +5,7 @@ import {
   Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const generateTimeOptions = () => {
   const options = [];
@@ -1190,21 +1191,31 @@ export default function CarHopApp() {
 
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin Dashboard</h1>
-                <p className="text-xs sm:text-sm text-zinc-500">Manage your fleet, bookings and settings</p>
+            <div className="flex items-center justify-between mb-8 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-md bg-green-600 flex items-center justify-center">
+                  <Car className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">CarHop Admin</h1>
+                  <p className="text-xs text-zinc-500">Manage fleet, bookings and settings</p>
+                </div>
               </div>
-              <Button variant="ghost" onClick={() => setView('home')} data-testid="button-back-home"><ArrowLeft size={16}/> Back to Site</Button>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={() => setView('home')} data-testid="button-back-home"><ArrowLeft size={16}/> Back</Button>
+                <Button variant="ghost" size="icon" data-testid="button-admin-chat"><MessageCircle size={18}/></Button>
+                <Button variant="outline" size="sm" data-testid="button-admin-signin">Sign In</Button>
+                <ThemeToggle />
+              </div>
             </div>
             
-            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+            <div className="flex justify-center gap-4 mb-8 overflow-x-auto pb-2">
               {['fleet', 'bookings', 'earnings'].map(tab => (
-                <button key={tab} onClick={() => setAdminTab(tab)} className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg font-bold text-xs sm:text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
-                  {tab === 'fleet' && <Car size={14} className="inline mr-1 sm:mr-2"/>}
-                  {tab === 'bookings' && <Briefcase size={14} className="inline mr-1 sm:mr-2"/>}
-                  {tab === 'earnings' && <TrendingUp size={14} className="inline mr-1 sm:mr-2"/>}
-                  <span className="hidden sm:inline">{tab}</span>
+                <button key={tab} onClick={() => setAdminTab(tab)} className={`flex flex-col items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+                  {tab === 'fleet' && <Car size={28} />}
+                  {tab === 'bookings' && <Briefcase size={28} />}
+                  {tab === 'earnings' && <TrendingUp size={28} />}
+                  <span>{tab}</span>
                 </button>
               ))}
             </div>
