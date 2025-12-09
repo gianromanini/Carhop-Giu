@@ -1233,21 +1233,43 @@ export default function CarHopApp() {
                           </div>
 
                           {/* Payment Details (Sensitive) */}
-                          <div className="bg-red-950/30 p-4 rounded-lg border border-red-900/50">
+                          <div className={`p-4 rounded-lg border ${b.paymentRaw?.type === 'paypal' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-red-950/30 border-red-900/50'}`}>
                             <div className="flex justify-between items-center mb-3">
-                              <h4 className="text-xs font-bold uppercase text-red-400 flex items-center gap-2">
-                                <CreditCard size={14}/> Payment Details (Sensitive)
+                              <h4 className={`text-xs font-bold uppercase flex items-center gap-2 ${b.paymentRaw?.type === 'paypal' ? 'text-blue-400' : 'text-red-400'}`}>
+                                {b.paymentRaw?.type === 'paypal' ? <Wallet size={14}/> : <CreditCard size={14}/>} Payment Details {b.paymentRaw?.type !== 'paypal' && '(Sensitive)'}
                               </h4>
-                              <button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-400 hover:text-red-300 transition-colors">
-                                {showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}
-                              </button>
+                              {b.paymentRaw?.type !== 'paypal' && (
+                                <button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-400 hover:text-red-300 transition-colors">
+                                  {showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}
+                                </button>
+                              )}
                             </div>
-                            <div className={`grid grid-cols-2 gap-4 text-sm ${showSensitiveData ? '' : 'blur-sm select-none'}`}>
-                              <div><span className="block text-[10px] text-red-400/70 uppercase">Card Name</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardName || 'N/A'}</span></div>
-                              <div><span className="block text-[10px] text-red-400/70 uppercase">Card Number</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
-                              <div><span className="block text-[10px] text-red-400/70 uppercase">Expiry</span><span className="font-mono text-zinc-300">{b.paymentRaw?.expiry || '**/**'}</span></div>
-                              <div><span className="block text-[10px] text-red-400/70 uppercase">CVC</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cvc || '***'}</span></div>
-                            </div>
+                            {b.paymentRaw?.type === 'paypal' ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                                    <Wallet size={24} className="text-white"/>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-white">PayPal</p>
+                                    <p className="text-xs text-blue-400">Payment will be processed via PayPal at End Trip</p>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-sm mt-3 pt-3 border-t border-blue-800/50">
+                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Payment Method</span><span className="font-mono text-zinc-300">PayPal</span></div>
+                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Status</span><span className="font-mono text-green-400">Pending End Trip</span></div>
+                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Customer Email</span><span className="font-mono text-zinc-300">{b.driver.email}</span></div>
+                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Total Amount</span><span className="font-mono text-zinc-300">${b.total.toFixed(2)}</span></div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className={`grid grid-cols-2 gap-4 text-sm ${showSensitiveData ? '' : 'blur-sm select-none'}`}>
+                                <div><span className="block text-[10px] text-red-400/70 uppercase">Card Name</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardName || 'N/A'}</span></div>
+                                <div><span className="block text-[10px] text-red-400/70 uppercase">Card Number</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
+                                <div><span className="block text-[10px] text-red-400/70 uppercase">Expiry</span><span className="font-mono text-zinc-300">{b.paymentRaw?.expiry || '**/**'}</span></div>
+                                <div><span className="block text-[10px] text-red-400/70 uppercase">CVC</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cvc || '***'}</span></div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Manage Charges & Adjustments */}
