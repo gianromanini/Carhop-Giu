@@ -50,7 +50,7 @@ export function Header({ onManageBooking }: HeaderProps) {
             <ThemeToggle />
           </div>
 
-          <div className="flex md:hidden items-center gap-1">
+          <div className="flex md:hidden items-start justify-between gap-2 flex-1 pl-2">
             <div className="flex flex-col items-center gap-1">
               <ThemeToggle />
               <div className="relative">
@@ -76,7 +76,7 @@ export function Header({ onManageBooking }: HeaderProps) {
               variant="outline"
               size="sm"
               data-testid="button-login-mobile"
-              className="ml-1"
+              className="flex-shrink-0"
             >
               Sign In
             </Button>
