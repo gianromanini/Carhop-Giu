@@ -1160,14 +1160,14 @@ export default function CarHopApp() {
                         </div>
                         <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-4 flex-wrap">
                           <span className="flex items-center gap-1"><Users size={14}/> {car.seats} passengers</span>
-                          <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
-                          <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
-                          <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-500">
+                          <span className="flex items-center gap-1">
                             {car.driveType === 'AWD' && <Mountain size={14} title="AWD" />}
                             {car.driveType === 'FWD' && <Navigation size={14} title="FWD" />}
                             {car.driveType === 'RWD' && <Navigation size={14} title="RWD" className="transform rotate-180" />}
                             {car.driveType}
                           </span>
+                          <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
+                          <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
                         </div>
                         <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Book Now</Button>
                       </div>
