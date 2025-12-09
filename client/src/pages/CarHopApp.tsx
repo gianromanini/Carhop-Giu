@@ -649,7 +649,8 @@ export default function CarHopApp() {
 
   const completeWorkflow = async () => {
      if (!checkData.miles) { alert("Please enter current mileage."); return; }
-     if (checkData.photosOutside.length === 0 || checkData.photosInside.length === 0) { alert("Please upload at least one photo for both Inside and Outside."); return; }
+     const totalPhotos = checkData.photosOutside.length + checkData.photosInside.length;
+     if (totalPhotos === 0) { alert("Please upload at least one photo."); return; }
 
      if (!activeBooking) return;
 
