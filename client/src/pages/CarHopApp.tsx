@@ -1201,12 +1201,14 @@ export default function CarHopApp() {
                   <p className="text-xs text-zinc-500">Admin</p>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <div className="flex items-center gap-1">
-                  <ThemeToggle />
-                  <Button variant="ghost" size="icon" className="h-6 w-6 p-1" data-testid="button-admin-chat"><MessageCircle size={14}/></Button>
+              <div className="flex items-start gap-2 flex-shrink-0">
+                <Button variant="outline" className="text-xs px-2 py-1 h-6" data-testid="button-admin-signin">Sign In</Button>
+                <div className="flex flex-col items-center gap-0.5">
+                  <ThemeToggle className="h-6 w-6 p-0" iconSize={14} />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
+                    <MessageCircle size={14}/>
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" className="text-xs px-2 h-7" data-testid="button-admin-signin">Sign In</Button>
               </div>
             </div>
             

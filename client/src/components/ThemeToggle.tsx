@@ -2,7 +2,12 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  className?: string;
+  iconSize?: number;
+}
+
+export function ThemeToggle({ className, iconSize = 20 }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -10,12 +15,13 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
+      className={className}
       data-testid="button-theme-toggle"
     >
       {theme === "light" ? (
-        <Moon className="h-5 w-5" />
+        <Moon style={{ width: iconSize, height: iconSize }} />
       ) : (
-        <Sun className="h-5 w-5" />
+        <Sun style={{ width: iconSize, height: iconSize }} />
       )}
     </Button>
   );
