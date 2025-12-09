@@ -213,51 +213,89 @@ const Checkbox = ({ label, checked, onChange, name, ...props }: any) => (
 );
 
 const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>; fixedExpenses: number }) => {
-  const allValues = Object.values(data).flatMap((d: any) => [d.gross, d.expenses, Math.abs(d.net)]);
-  const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1000;
   const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const activeMonths = monthOrder.filter(label => data[label] && data[label].gross > 0);
+  const activeMonths = monthOrder.filter(label => data[label] && (data[label].gross > 0 || data[label].pending > 0 || fixedExpenses > 0));
+  
+  // Find max total for scaling
+  const maxTotal = Math.max(...activeMonths.map(label => {
+    const monthData = data[label] || { gross: 0, expenses: 0, pending: 0 };
+    const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
+    return (monthData.gross || 0) + (monthData.pending || 0) + expenses;
+  }), 1);
 
   return (
-    <div className="w-full mt-6 select-none overflow-x-auto">
-        <div className="flex items-end justify-start gap-4 h-64 w-full pb-0 border-b border-zinc-200 dark:border-zinc-800 min-w-[600px]">
-        {activeMonths.length > 0 ? (
-            activeMonths.map((label) => {
-                const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses };
-                const gross = monthData.gross || 0;
-                const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
-                const net = gross - expenses;
-                const hGross = Math.max((gross / maxVal) * 100, 2);
-                const hExpenses = Math.max((expenses / maxVal) * 100, 2);
-                const hNet = Math.max((Math.abs(net) / maxVal) * 100, 2);
-                return (
-                <div key={label} className="flex-1 flex flex-col items-center justify-end h-full group relative min-w-[40px] max-w-[100px]">
-                    <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/90 text-white text-[10px] p-2 rounded shadow-xl z-20 w-32 text-center backdrop-blur-sm border border-zinc-700">
-                        <div className="font-bold text-xs border-b border-zinc-700 pb-1 mb-1">{label} Financials</div>
-                        <div className="flex justify-between"><span className="text-red-400">Exp:</span> <span>${expenses.toLocaleString()}</span></div>
-                        <div className="flex justify-between"><span className="text-green-400">Gross:</span> <span>${gross.toLocaleString()}</span></div>
-                        <div className="flex justify-between font-bold"><span className="text-blue-400">Net:</span> <span>${net.toLocaleString()}</span></div>
+    <div className="w-full mt-4 select-none space-y-3">
+      {activeMonths.length > 0 ? (
+        activeMonths.map((label) => {
+          const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses, pending: 0 };
+          const gross = monthData.gross || 0;
+          const pending = monthData.pending || 0;
+          const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0);
+          const net = gross - expenses;
+          const total = gross + pending + expenses;
+          
+          const expPercent = total > 0 ? (expenses / total) * 100 : 0;
+          const grossPercent = total > 0 ? (gross / total) * 100 : 0;
+          const pendingPercent = total > 0 ? (pending / total) * 100 : 0;
+          
+          return (
+            <div key={label} className="group">
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-xs font-bold text-zinc-400 w-8">{label}</span>
+                <div className="flex-1 h-8 bg-zinc-800 rounded-lg overflow-hidden flex relative">
+                  {/* Expenses - Red/Orange */}
+                  {expPercent > 0 && (
+                    <div 
+                      className="bg-orange-500 h-full flex items-center justify-center relative cursor-pointer transition-all hover:brightness-125 group/exp"
+                      style={{ width: `${expPercent}%` }}
+                    >
+                      <span className="text-[10px] font-bold text-white drop-shadow-md truncate px-1">
+                        ${expenses > 999 ? `${(expenses/1000).toFixed(1)}k` : expenses.toFixed(0)}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/exp:block bg-zinc-900 text-white text-xs p-2 rounded shadow-xl z-30 whitespace-nowrap border border-orange-500">
+                        <span className="text-orange-400">Expenses:</span> ${expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </div>
                     </div>
-                    <div className="flex items-end gap-[2px] w-full h-full justify-center opacity-90 hover:opacity-100 transition-opacity">
-                        <div className="w-1/3 bg-red-500 rounded-t-sm transition-all" style={{ height: `${hExpenses}%` }}></div>
-                        <div className="w-1/3 bg-green-500 rounded-t-sm transition-all" style={{ height: `${hGross}%` }}></div>
-                        <div className={`w-1/3 rounded-t-sm transition-all ${net >= 0 ? 'bg-blue-500' : 'bg-orange-500'}`} style={{ height: `${hNet}%` }}></div>
+                  )}
+                  {/* Gross Revenue - Green */}
+                  {grossPercent > 0 && (
+                    <div 
+                      className="bg-green-500 h-full flex items-center justify-center relative cursor-pointer transition-all hover:brightness-125 group/gross"
+                      style={{ width: `${grossPercent}%` }}
+                    >
+                      <span className="text-[10px] font-bold text-white drop-shadow-md truncate px-1">
+                        ${gross > 999 ? `${(gross/1000).toFixed(1)}k` : gross.toFixed(0)}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/gross:block bg-zinc-900 text-white text-xs p-2 rounded shadow-xl z-30 whitespace-nowrap border border-green-500">
+                        <span className="text-green-400">Gross Revenue:</span> ${gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </div>
                     </div>
+                  )}
+                  {/* Pending - Purple */}
+                  {pendingPercent > 0 && (
+                    <div 
+                      className="bg-purple-500 h-full flex items-center justify-center relative cursor-pointer transition-all hover:brightness-125 group/pend"
+                      style={{ width: `${pendingPercent}%` }}
+                    >
+                      <span className="text-[10px] font-bold text-white drop-shadow-md truncate px-1">
+                        ${pending > 999 ? `${(pending/1000).toFixed(1)}k` : pending.toFixed(0)}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/pend:block bg-zinc-900 text-white text-xs p-2 rounded shadow-xl z-30 whitespace-nowrap border border-purple-500">
+                        <span className="text-purple-400">Pending:</span> ${pending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                );
-            })
-        ) : (
-            <div className="w-full flex items-center justify-center text-zinc-400 h-full">No revenue data available.</div>
-        )}
-        </div>
-        <div className="flex justify-center gap-6 mt-4 text-xs font-bold text-zinc-500">
-            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> Expenses</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div> Gross Revenue</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div> Net Profit</div>
-        </div>
-        <div className="flex justify-start gap-4 mt-2 min-w-[600px]">
-            {activeMonths.map(label => (<div key={label} className="flex-1 text-center max-w-[100px]"><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{label}</span></div>))}
-        </div>
+                <span className={`text-xs font-bold w-16 text-right ${net >= 0 ? 'text-green-400' : 'text-red-500'}`}>
+                  Net: ${net >= 0 ? '' : '-'}${Math.abs(net).toFixed(0)}
+                </span>
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        <div className="w-full flex items-center justify-center text-zinc-400 py-8">No revenue data available.</div>
+      )}
     </div>
   );
 };
@@ -359,7 +397,7 @@ export default function CarHopApp() {
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ queryKey: ['/api/vehicles'] });
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
-  const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, number>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
+  const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
 
   const settings: SettingsType = settingsData || { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
 
@@ -1509,7 +1547,7 @@ export default function CarHopApp() {
                     <div className="flex justify-center gap-6 mt-4">
                       <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-orange-500 rounded"></span> Expenses</span>
                       <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-green-500 rounded"></span> Gross Revenue</span>
-                      <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-emerald-400 rounded"></span> Net Profit</span>
+                      <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-purple-500 rounded"></span> Pending</span>
                     </div>
                   </div>
                 </Card>

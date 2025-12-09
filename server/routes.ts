@@ -129,18 +129,21 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
     vehicles.forEach(car => {
       const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 };
+      // Monthly expenses exclude downPayment (one-time cost)
+      const monthlyExpenses = (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0);
       vehicleExpenses[car.id] = {
         id: car.id,
         model: car.model,
         expenses: carExp,
-        totalExpenses: (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0) + (carExp.downPayment || 0)
+        totalExpenses: monthlyExpenses
       };
-      vehicleTotals[car.model] = { gross: 0, pending: 0, expenses: vehicleExpenses[car.id].totalExpenses };
+      vehicleTotals[car.model] = { gross: 0, pending: 0, expenses: monthlyExpenses };
     });
 
     const totalFleetFixedExpenses = vehicles.reduce((sum, car) => {
       const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 };
-      return sum + (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0) + (carExp.downPayment || 0);
+      // Down Payment is NOT included in monthly expenses (it's a one-time cost)
+      return sum + (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0);
     }, 0);
 
     bookings.forEach(b => {
