@@ -1231,14 +1231,13 @@ export default function CarHopApp() {
                                   className="flex-1 mb-0" 
                                   data-testid="input-discount-value" 
                                 />
-                                <Button 
-                                  variant="primary" 
-                                  className="px-6" 
+                                <button 
+                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors" 
                                   onClick={() => handleApplyDiscount(b)}
                                   data-testid="button-apply-discount"
                                 >
                                   Apply
-                                </Button>
+                                </button>
                               </div>
                             </div>
 
@@ -1266,14 +1265,13 @@ export default function CarHopApp() {
                                   className="flex-1 mb-0" 
                                   data-testid="input-charge-value" 
                                 />
-                                <Button 
-                                  variant="secondary" 
-                                  className="px-6" 
+                                <button 
+                                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" 
                                   onClick={() => handleAddCharge(b)}
                                   data-testid="button-charge"
                                 >
                                   Charge
-                                </Button>
+                                </button>
                               </div>
                             </div>
                           </div>
