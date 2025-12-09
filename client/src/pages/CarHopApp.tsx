@@ -1516,15 +1516,11 @@ export default function CarHopApp() {
                                   <div className="flex flex-col gap-2 mt-2">
                                     {b.paymentRaw?.type === 'paypal' && (
                                       <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 mb-2">
-                                        <p className="text-xs text-blue-400 mb-2">Extension fee will be charged via PayPal</p>
-                                        <p className="text-sm font-bold text-white">Additional: ${(Math.max(0, Math.ceil((new Date(extensionDate).getTime() - new Date(b.returnDate).getTime()) / (1000 * 60 * 60 * 24))) * (b.total / Math.ceil((new Date(b.returnDate).getTime() - new Date(b.startDate).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</p>
+                                        <p className="text-xs text-blue-400 flex items-center gap-2"><Wallet size={14}/> Extension will be charged when End Trip</p>
                                       </div>
                                     )}
                                     <div className="flex gap-2">
-                                      <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">
-                                        {b.paymentRaw?.type === 'paypal' && <Wallet size={14}/>}
-                                        {b.paymentRaw?.type === 'paypal' ? 'Pay Now (PayPal)' : 'Confirm Extension'}
-                                      </button>
+                                      <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">Confirm Extension</button>
                                       <Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button>
                                     </div>
                                   </div>
