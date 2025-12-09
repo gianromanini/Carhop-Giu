@@ -1149,13 +1149,13 @@ export default function CarHopApp() {
                         <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="p-4 sm:p-5">
-                        <div className="flex justify-between items-end mb-3 gap-2">
-                          <div className="min-w-0">
-                            <h3 className="font-bold text-sm sm:text-lg text-zinc-900 dark:text-white truncate" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
-                            <span className="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-wider">{car.category}</span>
+                        <div className="flex justify-between items-center mb-3 gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
+                            {car.isAWD && <Mountain size={16} className="text-blue-600 flex-shrink-0" title="AWD" />}
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
+                            <div className="text-lg sm:text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
                             <div className="text-[10px] sm:text-xs text-zinc-500">/day</div>
                           </div>
                         </div>
