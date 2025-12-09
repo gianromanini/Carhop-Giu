@@ -1,4 +1,4 @@
-import { Car, Menu, Phone, X } from "lucide-react";
+import { Car, Menu, Phone, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useState } from "react";
@@ -10,6 +10,7 @@ interface HeaderProps {
 
 export function Header({ onManageBooking }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showChatLabel, setShowChatLabel] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
@@ -49,15 +50,35 @@ export function Header({ onManageBooking }: HeaderProps) {
             <ThemeToggle />
           </div>
 
-          <div className="flex md:hidden items-center gap-2">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              data-testid="button-mobile-menu"
+          <div className="flex md:hidden items-center gap-1">
+            <div className="flex flex-col items-center gap-1">
+              <ThemeToggle />
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onMouseEnter={() => setShowChatLabel(true)}
+                  onMouseLeave={() => setShowChatLabel(false)}
+                  onClick={() => {}}
+                  data-testid="button-chat-mobile"
+                  className="hover-elevate"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                </Button>
+                {showChatLabel && (
+                  <div className="absolute top-full mt-1 right-0 bg-foreground text-background px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+                    Chat / Support
+                  </div>
+                )}
+              </div>
+            </div>
+            <Button 
+              variant="outline"
+              size="sm"
+              data-testid="button-login-mobile"
+              className="ml-1"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              Sign In
             </Button>
           </div>
         </div>
@@ -82,13 +103,6 @@ export function Header({ onManageBooking }: HeaderProps) {
               data-testid="button-manage-booking-mobile"
             >
               Manage Booking
-            </Button>
-            <Button 
-              variant="outline"
-              className="w-full"
-              data-testid="button-login-mobile"
-            >
-              Sign In
             </Button>
           </div>
         )}
