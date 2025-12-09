@@ -2356,9 +2356,11 @@ export default function CarHopApp() {
               ) : (
                 bookings.map((b) => (
                   <Card key={b.id} className="p-3 md:p-6" data-testid={`card-my-booking-${b.id}`}>
-                    <div className="flex items-center justify-center gap-3 mb-3">
-                      <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><Check size={14} className="md:w-6 md:h-6"/></div>
-                      <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><Check size={14} className="md:w-6 md:h-6"/></div>
+                        <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
+                      </div>
                       <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
                     </div>
                     <div className="flex-1 w-full">
