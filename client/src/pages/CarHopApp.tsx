@@ -929,7 +929,7 @@ export default function CarHopApp() {
             <span className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop</span>
           </div>
           <div className="flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            <div className="hidden md:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>1-800-CARHOP</span></div>
+            <div className="hidden md:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>(475) 449-8622</span></div>
             <button onClick={handleManageBookingClick} className="hidden md:block hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
             {clientUser ? (
               <div className="flex items-center gap-3">
@@ -1068,7 +1068,7 @@ export default function CarHopApp() {
                           <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
                           <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
                         </div>
-                        <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Reserve Now</Button>
+                        <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Book Now</Button>
                       </div>
                     </Card>
                   </div>
@@ -2728,7 +2728,7 @@ export default function CarHopApp() {
                 <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
                   <div className="flex justify-between items-end">
                     <div><span className="text-zinc-500 text-sm">Starting at</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${viewCar.price}<span className="text-lg text-zinc-500">/day</span></div></div>
-                    <Button onClick={() => handleRent(viewCar)} className="px-8" data-testid="button-rent-detail">Reserve Now</Button>
+                    <Button onClick={() => handleRent(viewCar)} className="px-8" data-testid="button-rent-detail">Book Now</Button>
                   </div>
                 </div>
                 {viewCar.isPriceMatch && (
