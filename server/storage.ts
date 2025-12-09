@@ -281,6 +281,7 @@ export class MemStorage implements IStorage {
       fuel: vehicle.fuel ?? 'Gasoline',
       seats: vehicle.seats ?? 5,
       transmission: vehicle.transmission ?? 'Automatic',
+      driveType: vehicle.driveType ?? 'AWD',
       images: vehicle.images ?? [],
       createdAt: new Date(),
       consumption: vehicle.consumption ?? null,
