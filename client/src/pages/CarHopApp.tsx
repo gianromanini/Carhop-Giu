@@ -70,7 +70,6 @@ const calculateBillingDays = (start: string, startTime: string, end: string, end
     const endH = convertTo24Hour(endTime);
     const startDate = new Date(`${start}T${startH}:00`);
     const endDate = new Date(`${end}T${endH}:00`);
-    startDate.setMinutes(startDate.getMinutes() + 30);
     const diffTime = endDate.getTime() - startDate.getTime();
     if (isNaN(diffTime) || diffTime <= 0) return 1;
     const diffHours = diffTime / (1000 * 60 * 60);
