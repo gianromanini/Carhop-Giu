@@ -34,6 +34,13 @@ export class MemStorage implements IStorage {
   private vehicleId = 1;
   private bookingId = 1;
   private settingsId = 1;
+  private bookingCodeCounter = 1;
+
+  private generateBookingCode(): string {
+    const code = `BK${String(this.bookingCodeCounter).padStart(4, '0')}`;
+    this.bookingCodeCounter++;
+    return code;
+  }
 
   constructor() {
     this.initializeDefaultData();
@@ -202,7 +209,7 @@ export class MemStorage implements IStorage {
 
     const mockBookings: InsertBooking[] = [
       {
-        bookingCode: 'BK-5582',
+        bookingCode: '',
         date: 'Nov 15, 2023',
         status: 'Completed',
         carName: 'Tesla Model 3',
@@ -227,10 +234,11 @@ export class MemStorage implements IStorage {
         checkInStatus: 'completed',
         checkOutStatus: 'completed',
         checkInData: { miles: '10000', gas: 'Full', photosOutside: [], photosInside: [] },
-        checkOutData: { miles: '10850', gas: '1/4', photosOutside: [], photosInside: [] }
+        checkOutData: { miles: '10850', gas: '1/4', photosOutside: [], photosInside: [] },
+        extraPayments: []
       },
       {
-        bookingCode: 'BK-5583',
+        bookingCode: '',
         date: 'Nov 20, 2023',
         status: 'Active',
         carName: 'Toyota RAV4',
@@ -255,7 +263,8 @@ export class MemStorage implements IStorage {
         checkInStatus: 'completed',
         checkOutStatus: 'pending',
         checkInData: { miles: '5000', gas: 'Full', photosOutside: [], photosInside: [] },
-        checkOutData: null
+        checkOutData: null,
+        extraPayments: []
       }
     ];
 
@@ -331,6 +340,7 @@ export class MemStorage implements IStorage {
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
     const id = this.bookingId++;
+    const bookingCode = booking.bookingCode || this.generateBookingCode();
     const driver = {
       name: booking.driver.name,
       phone: booking.driver.phone,
@@ -350,7 +360,7 @@ export class MemStorage implements IStorage {
     };
     const newBooking: Booking = { 
       id, 
-      bookingCode: booking.bookingCode,
+      bookingCode,
       date: booking.date,
       status: booking.status ?? 'Active',
       carName: booking.carName,
@@ -387,6 +397,9 @@ export class MemStorage implements IStorage {
         clientName: booking.leaseAgreement.clientName,
         acceptedAt: booking.leaseAgreement.acceptedAt,
       } : null,
+      extraPayments: (booking.extraPayments || []) as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[],
+      extensionRequests: [],
+      messages: [],
     };
     this.bookings.set(id, newBooking);
     return newBooking;
@@ -438,6 +451,9 @@ export class MemStorage implements IStorage {
         photosOutside: [...booking.checkOutData.photosOutside] as string[],
         photosInside: [...booking.checkOutData.photosInside] as string[],
       } : existing.checkOutData,
+      extensionRequests: booking.extensionRequests ? [...booking.extensionRequests] as { id: string; type: 'extension' | 'reduction'; requestedReturnDate: string; requestedReturnTime: string; reason: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; respondedAt?: string; }[] : existing.extensionRequests,
+      extraPayments: booking.extraPayments ? [...booking.extraPayments] as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[] : existing.extraPayments,
+      messages: booking.messages ? [...booking.messages] as { id: string; sender: 'client' | 'admin'; text: string; createdAt: string; read: boolean; }[] : existing.messages,
     };
     this.bookings.set(id, updated);
     return updated;

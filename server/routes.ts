@@ -168,6 +168,44 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json(updated);
   });
 
+  // ========== EXTRA PAYMENTS ==========
+  app.post("/api/bookings/:id/charge-extra", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { type, amount, description } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+    
+    const paymentMethod = booking.paymentMethod || 'Credit Card';
+    const newPayment = {
+      id: `pay-${Date.now()}`,
+      type: type || 'Extra Charge',
+      amount: parseFloat(amount),
+      description: description || '',
+      paymentMethod,
+      processedAt: new Date().toISOString(),
+      status: 'completed' as const,
+    };
+    
+    const extraPayments = [...(booking.extraPayments || []), newPayment];
+    const newTotal = (booking.total || 0) + parseFloat(amount);
+    
+    const updated = await storage.updateBooking(id, { 
+      extraPayments,
+      total: newTotal 
+    });
+    
+    res.json({ 
+      success: true, 
+      payment: newPayment,
+      booking: updated 
+    });
+  });
+
   app.put("/api/bookings/:id/messages/read", async (req, res) => {
     const id = parseInt(req.params.id);
     const { reader } = req.body; // 'client' or 'admin'

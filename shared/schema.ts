@@ -113,6 +113,15 @@ export const bookings = pgTable("bookings", {
     createdAt: string;
     read: boolean;
   }[]>().default([]),
+  extraPayments: jsonb("extra_payments").$type<{
+    id: string;
+    type: string;
+    amount: number;
+    description: string;
+    paymentMethod: string;
+    processedAt: string;
+    status: 'pending' | 'completed' | 'failed';
+  }[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

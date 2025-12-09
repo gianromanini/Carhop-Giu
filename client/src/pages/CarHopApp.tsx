@@ -916,20 +916,29 @@ export default function CarHopApp() {
       return;
     }
     
-    const currentCharges = booking.details.manualCharges || [];
-    const newCharge = { type: 'Extra Payment Trip', amount };
-    const newTotal = booking.total + amount;
-    
-    await updateBookingMutation.mutateAsync({
-      id: booking.id,
-      data: {
-        total: newTotal,
-        details: { ...booking.details, manualCharges: [...currentCharges, newCharge] }
+    try {
+      const response = await apiRequest('POST', `/api/bookings/${booking.id}/charge-extra`, {
+        type: 'Extra Payment Trip',
+        amount,
+        description: `Extra charge for booking ${booking.bookingCode} - Client: ${booking.driver.name}`
+      });
+      
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+        setExtraPaymentAmount('');
+        alert(`Payment of $${amount.toFixed(2)} charged successfully to ${booking.paymentMethod || 'Credit Card'}!\n\nClient: ${booking.driver.name}\nBooking: ${booking.bookingCode}`);
       }
-    });
-    
-    setExtraPaymentAmount('');
-    alert(`Extra payment of $${amount.toFixed(2)} charged successfully!`);
+    } catch (error) {
+      alert("Failed to process payment. Please try again.");
+    }
+  };
+
+  const calculateExtraChargesTotal = (booking: Booking): number => {
+    const manualCharges = booking.details.manualCharges || [];
+    const existingPayments = booking.extraPayments || [];
+    const chargedTotal = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+    const pendingCharges = manualCharges.reduce((sum, c) => sum + c.amount, 0);
+    return Math.max(0, pendingCharges - chargedTotal);
   };
 
   const handleSaveVehicle = () => {
@@ -1161,9 +1170,9 @@ export default function CarHopApp() {
                         <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-4 flex-wrap">
                           <span className="flex items-center gap-1"><Users size={14}/> {car.seats} passengers</span>
                           <span className="flex items-center gap-1">
-                            {car.driveType === 'AWD' && <Mountain size={14} title="AWD" />}
-                            {car.driveType === 'FWD' && <Navigation size={14} title="FWD" />}
-                            {car.driveType === 'RWD' && <Navigation size={14} title="RWD" className="transform rotate-180" />}
+                            {car.driveType === 'AWD' && <Mountain size={14} />}
+                            {car.driveType === 'FWD' && <Navigation size={14} />}
+                            {car.driveType === 'RWD' && <Navigation size={14} className="transform rotate-180" />}
                             {car.driveType}
                           </span>
                           <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
@@ -1643,6 +1652,21 @@ export default function CarHopApp() {
                                 </div>
                               ))}
                               
+                              {/* Extra Payments Already Processed */}
+                              {b.extraPayments && b.extraPayments.length > 0 && (
+                                <>
+                                  <div className="text-xs text-zinc-500 mt-3 mb-1">Processed Extra Payments:</div>
+                                  {b.extraPayments.map((p, i) => (
+                                    <div key={i} className="flex justify-between text-orange-400">
+                                      <span className="flex items-center gap-1">
+                                        <Check size={12}/> {p.type}
+                                      </span>
+                                      <span>+${p.amount.toFixed(2)}</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                              
                               <div className="flex justify-between border-t border-zinc-700 pt-3 mt-3 font-bold text-white">
                                 <span>Total Billed</span>
                                 <span>${b.total.toFixed(2)}</span>
@@ -1650,12 +1674,13 @@ export default function CarHopApp() {
                               
                               {/* Extra Payment Charge */}
                               <div className="mt-4 pt-4 border-t border-zinc-700">
+                                <div className="text-xs text-zinc-500 mb-2">Charge {b.paymentMethod || 'Credit Card'}</div>
                                 <div className="flex gap-2">
                                   <div className="relative flex-1">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
                                     <input
                                       type="number"
-                                      value={extraPaymentAmount}
+                                      value={extraPaymentAmount || calculateExtraChargesTotal(b).toFixed(2)}
                                       onChange={(e) => setExtraPaymentAmount(e.target.value)}
                                       placeholder="0.00"
                                       className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white"
@@ -2248,6 +2273,14 @@ export default function CarHopApp() {
                       <div key={idx} className="flex justify-between text-sm">
                         <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
                         <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {receiptBooking.extraPayments && receiptBooking.extraPayments.map((payment, idx) => (
+                      <div key={`ep-${idx}`} className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                          <Check size={12} className="text-green-500"/> {payment.type}
+                        </span>
+                        <span className="text-green-600 dark:text-green-400">+${payment.amount.toFixed(2)}</span>
                       </div>
                     ))}
                     {receiptBooking.details?.tax && (
