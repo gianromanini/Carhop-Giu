@@ -2355,20 +2355,22 @@ export default function CarHopApp() {
                 <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
               ) : (
                 bookings.map((b) => (
-                  <Card key={b.id} className="p-6 flex flex-col md:flex-row gap-6 items-start" data-testid={`card-my-booking-${b.id}`}>
-                    <div className={`p-4 rounded-full shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><Check size={32}/></div>
+                  <Card key={b.id} className="p-3 md:p-6 flex flex-col md:flex-row gap-3 md:gap-6 items-start" data-testid={`card-my-booking-${b.id}`}>
+                    <div className={`p-2 md:p-4 rounded-full shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><Check size={16} className="md:w-8 md:h-8 w-4 h-4"/></div>
                     <div className="flex-1 w-full">
-                      <div className="flex justify-between items-start">
-                        <div className="mb-2">
-                          <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
-                          <div className="text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
-                          <div className="text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
-                          <div className="text-xs text-zinc-500 mt-1 flex items-center gap-1"><Clock size={12} /> Grace period: +30 min</div>
+                      <div className="flex flex-col md:flex-row justify-between items-start gap-2 md:gap-0">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className={`text-xs font-bold uppercase tracking-wider ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
+                            <div className="font-bold text-sm md:text-lg text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
+                          </div>
+                          <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                          <div className="text-xs md:text-sm font-bold text-orange-600">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                          <div className="text-xs text-zinc-500 flex items-center gap-1"><Clock size={12} /> Grace period: +30 min</div>
                         </div>
-                        <div className="text-right"><div className="font-bold text-lg text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div></div>
                       </div>
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{b.carName}</h3>
-                      <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-1">{b.days} Days | {b.location}</p>
+                      <h3 className="text-lg md:text-xl font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-xs md:text-sm mt-1">{b.days} Days | {b.location}</p>
                       
                       {(b.status === 'Active' || b.status === 'Extended') ? (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
