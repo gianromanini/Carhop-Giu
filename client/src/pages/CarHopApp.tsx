@@ -999,12 +999,11 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-              {['fleet', 'bookings', 'earnings', 'settings'].map(tab => (
+              {['fleet', 'bookings', 'earnings'].map(tab => (
                 <button key={tab} onClick={() => setAdminTab(tab)} className={`px-4 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   {tab === 'fleet' && <Car size={16} className="inline mr-2"/>}
                   {tab === 'bookings' && <Briefcase size={16} className="inline mr-2"/>}
                   {tab === 'earnings' && <TrendingUp size={16} className="inline mr-2"/>}
-                  {tab === 'settings' && <Settings size={16} className="inline mr-2"/>}
                   {tab}
                 </button>
               ))}
@@ -1460,19 +1459,7 @@ export default function CarHopApp() {
               </Card>
             )}
 
-            {adminTab === 'settings' && (
-              <div className="max-w-2xl mx-auto">
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <Settings size={18} className="text-green-500"/>
-                    Global Settings
-                  </h3>
-                  <p className="text-zinc-500 mb-6">All pricing and location settings are now available in the Fleet tab for easier access.</p>
-                  <Button variant="secondary" onClick={() => setAdminTab('fleet')}>Go to Fleet Tab</Button>
-                </Card>
-              </div>
-            )}
-          </div>
+                      </div>
         )}
 
         {view === 'bookings' && (
@@ -1526,9 +1513,20 @@ export default function CarHopApp() {
                                 <div className="flex flex-col gap-3">
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Calendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={minDateStr} onChange={(e) => setExtensionDate(e.target.value)} data-testid="input-extension-date" /></div>
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Clock size={18} className="text-green-600 mr-2" /><select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)} data-testid="select-extension-time">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
-                                  <div className="flex gap-2 mt-2">
-                                    <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">Confirm Extension</button>
-                                    <Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button>
+                                  <div className="flex flex-col gap-2 mt-2">
+                                    {b.paymentRaw?.type === 'paypal' && (
+                                      <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 mb-2">
+                                        <p className="text-xs text-blue-400 mb-2">Extension fee will be charged via PayPal</p>
+                                        <p className="text-sm font-bold text-white">Additional: ${(Math.max(0, Math.ceil((new Date(extensionDate).getTime() - new Date(b.returnDate).getTime()) / (1000 * 60 * 60 * 24))) * (b.total / Math.ceil((new Date(b.returnDate).getTime() - new Date(b.startDate).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</p>
+                                      </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                      <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">
+                                        {b.paymentRaw?.type === 'paypal' && <Wallet size={14}/>}
+                                        {b.paymentRaw?.type === 'paypal' ? 'Pay Now (PayPal)' : 'Confirm Extension'}
+                                      </button>
+                                      <Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -2084,8 +2082,21 @@ export default function CarHopApp() {
                 
                 {(() => {
                   const canComplete = checkData.photosOutside.length >= 5 && checkData.photosInside.length >= 5 && checkData.miles && checkData.gas;
+                  const isPayPalBooking = activeBooking?.paymentRaw?.type === 'paypal';
+                  
                   return (
-                    <Button className={`w-full py-4 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">Complete {isCheckOutMode ? 'Check-Out' : 'Check-In'}</Button>
+                    <div className="space-y-3">
+                      {isCheckOutMode && isPayPalBooking && (
+                        <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
+                          <p className="text-xs text-blue-400 mb-2">Final payment via PayPal</p>
+                          <p className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18}/> Total: ${activeBooking?.total.toFixed(2)}</p>
+                        </div>
+                      )}
+                      <Button className={`w-full py-4 flex items-center justify-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">
+                        {isCheckOutMode && isPayPalBooking && <Wallet size={18}/>}
+                        {isCheckOutMode && isPayPalBooking ? 'Pay Now (PayPal)' : `Complete ${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
+                      </Button>
+                    </div>
                   );
                 })()}
               </div>
