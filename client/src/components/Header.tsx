@@ -50,7 +50,7 @@ export function Header({ onManageBooking }: HeaderProps) {
             <ThemeToggle />
           </div>
 
-          <div className="flex md:hidden items-start justify-between gap-2 flex-1 pl-2">
+          <div className="flex md:hidden items-center justify-between gap-2 flex-1 pl-2">
             <div className="flex flex-col items-center gap-1">
               <ThemeToggle />
               <div className="relative">
@@ -66,20 +66,30 @@ export function Header({ onManageBooking }: HeaderProps) {
                   <MessageCircle className="h-5 w-5" />
                 </Button>
                 {showChatLabel && (
-                  <div className="absolute top-full mt-1 right-0 bg-foreground text-background px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+                  <div className="absolute top-full mt-1 right-0 bg-foreground text-background px-2 py-1 rounded text-xs font-medium whitespace-nowrap z-10">
                     Chat / Support
                   </div>
                 )}
               </div>
             </div>
-            <Button 
-              variant="outline"
-              size="sm"
-              data-testid="button-login-mobile"
-              className="flex-shrink-0"
-            >
-              Sign In
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost"
+                size="sm"
+                onClick={onManageBooking}
+                data-testid="button-bookings-mobile"
+              >
+                Bookings
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                data-testid="button-login-mobile"
+                className="flex-shrink-0"
+              >
+                Sign In
+              </Button>
+            </div>
           </div>
         </div>
 
