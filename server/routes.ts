@@ -121,28 +121,47 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const vehicles = await storage.getVehicles();
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const monthlyData: Record<string, { gross: number; expenses: number; net: number }> = {};
-    const vehicleTotals: Record<string, number> = {};
+    const monthlyData: Record<string, { gross: number; expenses: number; net: number; pending: number }> = {};
+    const vehicleTotals: Record<string, { gross: number; pending: number; expenses: number }> = {};
+    const vehicleExpenses: Record<number, any> = {};
 
-    monthNames.forEach(m => monthlyData[m] = { gross: 0, expenses: 0, net: 0 });
+    monthNames.forEach(m => monthlyData[m] = { gross: 0, expenses: 0, net: 0, pending: 0 });
+
+    vehicles.forEach(car => {
+      const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 };
+      vehicleExpenses[car.id] = {
+        id: car.id,
+        model: car.model,
+        expenses: carExp,
+        totalExpenses: (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0) + (carExp.downPayment || 0)
+      };
+      vehicleTotals[car.model] = { gross: 0, pending: 0, expenses: vehicleExpenses[car.id].totalExpenses };
+    });
 
     const totalFleetFixedExpenses = vehicles.reduce((sum, car) => {
-      const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0 };
-      return sum + (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0);
+      const carExp = car.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 };
+      return sum + (carExp.lease || 0) + (carExp.insurance || 0) + (carExp.carWash || 0) + (carExp.maintenance || 0) + (carExp.trackApp || 0) + (carExp.downPayment || 0);
     }, 0);
 
     bookings.forEach(b => {
-      if (['Completed', 'Active', 'Extended'].includes(b.status)) {
-        const [y, m, d] = b.startDate.split('-').map(Number);
-        const monthIndex = m - 1;
-        if (monthIndex >= 0 && monthIndex < 12) {
-          const monthKey = monthNames[monthIndex];
-          monthlyData[monthKey].gross += b.total;
-        }
+      const [y, m, d] = b.startDate.split('-').map(Number);
+      const monthIndex = m - 1;
+      const monthKey = monthIndex >= 0 && monthIndex < 12 ? monthNames[monthIndex] : null;
+      const carKey = b.carName;
+      
+      if (!vehicleTotals[carKey]) {
+        vehicleTotals[carKey] = { gross: 0, pending: 0, expenses: 0 };
+      }
 
-        const carKey = b.carName;
-        if (!vehicleTotals[carKey]) vehicleTotals[carKey] = 0;
-        vehicleTotals[carKey] += b.total;
+      if (b.status === 'Completed' && b.checkOutStatus === 'completed') {
+        if (monthKey) monthlyData[monthKey].gross += b.total;
+        vehicleTotals[carKey].gross += b.total;
+      } else if (['Active', 'Extended'].includes(b.status) && b.checkInStatus === 'completed' && b.checkOutStatus !== 'completed') {
+        if (monthKey) monthlyData[monthKey].pending += b.total;
+        vehicleTotals[carKey].pending += b.total;
+      } else if (['Active', 'Extended'].includes(b.status)) {
+        if (monthKey) monthlyData[monthKey].pending += b.total;
+        vehicleTotals[carKey].pending += b.total;
       }
     });
 
@@ -154,6 +173,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json({ 
       monthly: monthlyData, 
       byVehicle: vehicleTotals, 
+      vehicleExpenses: Object.values(vehicleExpenses),
       fixedMonthly: totalFleetFixedExpenses 
     });
   });

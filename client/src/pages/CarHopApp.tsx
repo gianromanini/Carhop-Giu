@@ -338,6 +338,8 @@ export default function CarHopApp() {
   const [extensionDate, setExtensionDate] = useState('');
   const [extensionTime, setExtensionTime] = useState('10:00 AM');
   const [manageBookingId, setManageBookingId] = useState<number | null>(null);
+  const [selectedExpenseVehicleId, setSelectedExpenseVehicleId] = useState<number | null>(null);
+  const [expenseForm, setExpenseForm] = useState<{lease: number; insurance: number; carWash: number; maintenance: number; trackApp: number; downPayment: number}>({ lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
   
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [checkData, setCheckData] = useState(initialCheckState);
@@ -351,7 +353,6 @@ export default function CarHopApp() {
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState(initialFormState);
-  const [expenseForm, setExpenseForm] = useState(initialExpenseState);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showEco, setShowEco] = useState(false);
 
@@ -368,8 +369,16 @@ export default function CarHopApp() {
   });
 
   const updateVehicleMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/vehicles/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); setFormData(initialFormState); setEditingId(null); }
+    mutationFn: ({ id, data, expenses }: { id: number; data?: any; expenses?: any }) => {
+      if (expenses) return apiRequest('PUT', `/api/vehicles/${id}`, { expenses });
+      return apiRequest('PUT', `/api/vehicles/${id}`, data);
+    },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
+      setFormData(initialFormState); 
+      setEditingId(null); 
+    }
   });
 
   const deleteVehicleMutation = useMutation({
@@ -1468,17 +1477,176 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'earnings' && (
-              <Card className="p-6">
-                <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2"><BarChart3 size={20}/> Monthly Earnings Overview</h3>
-                {financialData && <FinancialBarChart data={financialData.monthly} fixedExpenses={financialData.fixedMonthly} />}
-                {financialData && (
-                  <div className="mt-8 grid grid-cols-3 gap-4">
-                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl"><div className="text-xs text-green-600 font-bold uppercase">Total Revenue</div><div className="text-2xl font-bold text-green-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + m.gross, 0).toLocaleString()}</div></div>
-                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl"><div className="text-xs text-red-600 font-bold uppercase">Total Expenses</div><div className="text-2xl font-bold text-red-600">${(financialData.fixedMonthly * 12).toLocaleString()}</div></div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl"><div className="text-xs text-blue-600 font-bold uppercase">Net Profit</div><div className="text-2xl font-bold text-blue-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + m.net, 0).toLocaleString()}</div></div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column - Vehicle Expense Manager */}
+                <Card className="p-6 lg:col-span-1">
+                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Car size={20} className="text-green-500"/> Vehicle Expenses
+                  </h3>
+                  
+                  {/* Vehicle Selector */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Select Vehicle</label>
+                    <select 
+                      className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm"
+                      value={selectedExpenseVehicleId || ''}
+                      onChange={(e) => {
+                        const id = parseInt(e.target.value);
+                        setSelectedExpenseVehicleId(id);
+                        const vehicle = vehicles.find(v => v.id === id);
+                        if (vehicle) {
+                          setExpenseForm(vehicle.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
+                        }
+                      }}
+                      data-testid="select-expense-vehicle"
+                    >
+                      <option value="">Select a vehicle...</option>
+                      {vehicles.map(v => (
+                        <option key={v.id} value={v.id}>{v.model}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
-              </Card>
+                  
+                  {selectedExpenseVehicleId && (
+                    <div className="space-y-3 animate-in fade-in">
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Lease ($/month)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.lease || ''} onChange={(e) => setExpenseForm({...expenseForm, lease: parseFloat(e.target.value) || 0})} data-testid="input-expense-lease"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Insurance ($/month)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.insurance || ''} onChange={(e) => setExpenseForm({...expenseForm, insurance: parseFloat(e.target.value) || 0})} data-testid="input-expense-insurance"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Car Wash ($/month)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.carWash || ''} onChange={(e) => setExpenseForm({...expenseForm, carWash: parseFloat(e.target.value) || 0})} data-testid="input-expense-carwash"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Maintenance ($/month)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.maintenance || ''} onChange={(e) => setExpenseForm({...expenseForm, maintenance: parseFloat(e.target.value) || 0})} data-testid="input-expense-maintenance"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Track App ($/month)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.trackApp || ''} onChange={(e) => setExpenseForm({...expenseForm, trackApp: parseFloat(e.target.value) || 0})} data-testid="input-expense-trackapp"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Down Payment ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-sm" value={expenseForm.downPayment || ''} onChange={(e) => setExpenseForm({...expenseForm, downPayment: parseFloat(e.target.value) || 0})} data-testid="input-expense-downpayment"/>
+                      </div>
+                      <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-sm font-bold text-zinc-500">Monthly Total:</span>
+                          <span className="text-lg font-bold text-red-500">${((expenseForm.lease || 0) + (expenseForm.insurance || 0) + (expenseForm.carWash || 0) + (expenseForm.maintenance || 0) + (expenseForm.trackApp || 0)).toFixed(2)}</span>
+                        </div>
+                        <Button className="w-full" onClick={() => {
+                          if (selectedExpenseVehicleId) {
+                            updateVehicleMutation.mutate({ id: selectedExpenseVehicleId, expenses: expenseForm });
+                          }
+                        }} data-testid="button-save-expenses">Save Expenses</Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+                
+                {/* Right Column - Financial Overview */}
+                <Card className="p-6 lg:col-span-2">
+                  <h3 className="text-lg font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <BarChart3 size={20} className="text-green-500"/> Financial Overview
+                  </h3>
+                  
+                  {/* Summary Cards */}
+                  {financialData && (
+                    <div className="grid grid-cols-4 gap-3 mb-6">
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl">
+                        <div className="text-[10px] text-green-600 font-bold uppercase">Gross Revenue</div>
+                        <div className="text-xl font-bold text-green-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + (m.gross || 0), 0).toLocaleString()}</div>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
+                        <div className="text-[10px] text-purple-600 font-bold uppercase">Pending</div>
+                        <div className="text-xl font-bold text-purple-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + (m.pending || 0), 0).toLocaleString()}</div>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl">
+                        <div className="text-[10px] text-red-600 font-bold uppercase">Expenses</div>
+                        <div className="text-xl font-bold text-red-600">${(financialData.fixedMonthly || 0).toLocaleString()}/mo</div>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
+                        <div className="text-[10px] text-blue-600 font-bold uppercase">Net Profit</div>
+                        <div className="text-xl font-bold text-blue-600">${Object.values(financialData.monthly).reduce((sum: number, m: any) => sum + (m.net || 0), 0).toLocaleString()}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Stacked Progress Bars by Vehicle */}
+                  <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Revenue by Vehicle</h4>
+                  <div className="space-y-4">
+                    {financialData && Object.entries(financialData.byVehicle || {}).map(([carName, data]: [string, any]) => {
+                      const gross = data.gross || 0;
+                      const pending = data.pending || 0;
+                      const expenses = data.expenses || 0;
+                      const maxValue = Math.max(gross + pending + expenses, 1);
+                      const grossPercent = (gross / maxValue) * 100;
+                      const pendingPercent = (pending / maxValue) * 100;
+                      const expensesPercent = (expenses / maxValue) * 100;
+                      
+                      return (
+                        <div key={carName} className="bg-zinc-50 dark:bg-zinc-900 p-4 rounded-lg">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-bold text-sm text-zinc-900 dark:text-white">{carName}</span>
+                            <span className="text-xs text-zinc-500">Net: ${(gross - expenses).toFixed(2)}</span>
+                          </div>
+                          
+                          {/* Stacked Bar */}
+                          <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden flex relative group">
+                            {/* Expenses - Red */}
+                            <div 
+                              className="bg-red-500 h-full transition-all relative group/exp cursor-pointer"
+                              style={{ width: `${expensesPercent}%` }}
+                              title={`Expenses: $${expenses.toFixed(2)}`}
+                            >
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/exp:opacity-100 transition-opacity">
+                                <span className="text-[10px] font-bold text-white drop-shadow-lg">${expenses.toFixed(0)}</span>
+                              </div>
+                            </div>
+                            {/* Gross Revenue - Green */}
+                            <div 
+                              className="bg-green-500 h-full transition-all relative group/gross cursor-pointer"
+                              style={{ width: `${grossPercent}%` }}
+                              title={`Gross Revenue: $${gross.toFixed(2)}`}
+                            >
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/gross:opacity-100 transition-opacity">
+                                <span className="text-[10px] font-bold text-white drop-shadow-lg">${gross.toFixed(0)}</span>
+                              </div>
+                            </div>
+                            {/* Pending - Purple */}
+                            <div 
+                              className="bg-purple-500 h-full transition-all relative group/pend cursor-pointer"
+                              style={{ width: `${pendingPercent}%` }}
+                              title={`Pending: $${pending.toFixed(2)}`}
+                            >
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/pend:opacity-100 transition-opacity">
+                                <span className="text-[10px] font-bold text-white drop-shadow-lg">${pending.toFixed(0)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Legend */}
+                          <div className="flex gap-4 mt-2 text-[10px]">
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-red-500 rounded-full"></span> Expenses: ${expenses.toFixed(2)}</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span> Gross: ${gross.toFixed(2)}</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-500 rounded-full"></span> Pending: ${pending.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Monthly Chart */}
+                  <div className="mt-8">
+                    <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Monthly Breakdown</h4>
+                    {financialData && <FinancialBarChart data={financialData.monthly} fixedExpenses={financialData.fixedMonthly} />}
+                  </div>
+                </Card>
+              </div>
             )}
 
                       </div>
