@@ -309,8 +309,8 @@ export default function CarHopApp() {
   const [checkData, setCheckData] = useState(initialCheckState);
   const [isCheckOutMode, setIsCheckOutMode] = useState(false);
 
-  const [adjustment, setAdjustment] = useState({ type: 'amount', value: '' });
-  const [extraCharge, setExtraCharge] = useState({ type: 'Gas Refill', amount: '' });
+  const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
+  const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
 
   const [newLocation, setNewLocation] = useState('');
 
@@ -616,6 +616,98 @@ export default function CarHopApp() {
     
     setExtendingBookingId(null);
     if (extraDays > 0) alert(`Rental updated by ${extraDays} days.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
+  };
+
+  const handleApplyDiscount = async (booking: Booking) => {
+    if (!adjustment.value || parseFloat(adjustment.value) <= 0) {
+      alert("Please enter a valid discount value.");
+      return;
+    }
+    
+    let discountAmount = parseFloat(adjustment.value);
+    
+    if (adjustment.type === 'percent') {
+      discountAmount = (booking.total * discountAmount) / 100;
+    }
+    
+    const currentDiscount = booking.details.discount || 0;
+    const newDiscount = currentDiscount + discountAmount;
+    const newTotal = booking.total - discountAmount;
+    
+    await updateBookingMutation.mutateAsync({
+      id: booking.id,
+      data: {
+        total: Math.max(0, newTotal),
+        details: { ...booking.details, discount: newDiscount }
+      }
+    });
+    
+    setAdjustment({ type: 'fixed', value: '' });
+    alert(`Discount of $${discountAmount.toFixed(2)} applied successfully!`);
+  };
+
+  const handleAddCharge = async (booking: Booking) => {
+    if (!extraCharge.amount || parseFloat(extraCharge.amount) <= 0) {
+      alert("Please enter a valid charge amount.");
+      return;
+    }
+    
+    const chargeAmount = parseFloat(extraCharge.amount);
+    const chargeTypeLabels: Record<string, string> = {
+      'refuel': 'Refuel',
+      'mileage': 'Excess Mileage',
+      'damage': 'Damage',
+      'cleaning': 'Extra Cleaning',
+      'other': 'Other Charge'
+    };
+    
+    const chargeLabel = chargeTypeLabels[extraCharge.type] || extraCharge.type;
+    const currentCharges = booking.details.manualCharges || [];
+    const newCharge = { type: chargeLabel, amount: chargeAmount };
+    const newTotal = booking.total + chargeAmount;
+    
+    await updateBookingMutation.mutateAsync({
+      id: booking.id,
+      data: {
+        total: newTotal,
+        details: { ...booking.details, manualCharges: [...currentCharges, newCharge] }
+      }
+    });
+    
+    setExtraCharge({ type: 'Refuel', amount: '' });
+    alert(`Charge of $${chargeAmount.toFixed(2)} (${chargeLabel}) added successfully!`);
+  };
+
+  const handleRemoveDiscount = async (booking: Booking) => {
+    const discountAmount = booking.details.discount || 0;
+    if (discountAmount <= 0) return;
+    
+    const newTotal = booking.total + discountAmount;
+    
+    await updateBookingMutation.mutateAsync({
+      id: booking.id,
+      data: {
+        total: newTotal,
+        details: { ...booking.details, discount: 0 }
+      }
+    });
+  };
+
+  const handleRemoveCharge = async (booking: Booking, chargeIndex: number) => {
+    const currentCharges = booking.details.manualCharges || [];
+    if (chargeIndex < 0 || chargeIndex >= currentCharges.length) return;
+    
+    const chargeToRemove = currentCharges[chargeIndex];
+    const newCharges = currentCharges.filter((_, i) => i !== chargeIndex);
+    const newTotal = booking.total - chargeToRemove.amount;
+    
+    await updateBookingMutation.mutateAsync({
+      id: booking.id,
+      data: {
+        total: Math.max(0, newTotal),
+        details: { ...booking.details, manualCharges: newCharges }
+      }
+    });
   };
 
   const handleSaveVehicle = () => {
@@ -1122,12 +1214,31 @@ export default function CarHopApp() {
                             <div className="mb-4">
                               <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
                               <div className="flex gap-2">
-                                <select className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" data-testid="select-discount-type">
+                                <select 
+                                  value={adjustment.type} 
+                                  onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" 
+                                  data-testid="select-discount-type"
+                                >
                                   <option value="fixed">Fixed Value ($)</option>
                                   <option value="percent">Percentage (%)</option>
                                 </select>
-                                <Input placeholder="Value" className="flex-1 mb-0" data-testid="input-discount-value" />
-                                <Button variant="primary" className="px-6" data-testid="button-apply-discount">Apply</Button>
+                                <Input 
+                                  placeholder="Value" 
+                                  type="number"
+                                  value={adjustment.value}
+                                  onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
+                                  className="flex-1 mb-0" 
+                                  data-testid="input-discount-value" 
+                                />
+                                <Button 
+                                  variant="primary" 
+                                  className="px-6" 
+                                  onClick={() => handleApplyDiscount(b)}
+                                  data-testid="button-apply-discount"
+                                >
+                                  Apply
+                                </Button>
                               </div>
                             </div>
 
@@ -1135,15 +1246,34 @@ export default function CarHopApp() {
                             <div>
                               <label className="text-xs text-zinc-500 mb-2 block">Charge Archived Card</label>
                               <div className="flex gap-2">
-                                <select className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" data-testid="select-charge-type">
+                                <select 
+                                  value={extraCharge.type}
+                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" 
+                                  data-testid="select-charge-type"
+                                >
                                   <option value="refuel">Refuel</option>
                                   <option value="mileage">Excess Mileage</option>
                                   <option value="damage">Damage</option>
                                   <option value="cleaning">Extra Cleaning</option>
                                   <option value="other">Other</option>
                                 </select>
-                                <Input placeholder="Value ($)" className="flex-1 mb-0" data-testid="input-charge-value" />
-                                <Button variant="secondary" className="px-6" data-testid="button-charge">Charge</Button>
+                                <Input 
+                                  placeholder="Value ($)" 
+                                  type="number"
+                                  value={extraCharge.amount}
+                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                  className="flex-1 mb-0" 
+                                  data-testid="input-charge-value" 
+                                />
+                                <Button 
+                                  variant="secondary" 
+                                  className="px-6" 
+                                  onClick={() => handleAddCharge(b)}
+                                  data-testid="button-charge"
+                                >
+                                  Charge
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -1160,14 +1290,32 @@ export default function CarHopApp() {
                               
                               {b.details.discount && b.details.discount > 0 && (
                                 <div className="flex justify-between text-green-500">
-                                  <span className="flex items-center gap-1">Discount Applied <button className="text-red-400 hover:text-red-300"><X size={12}/></button></span>
+                                  <span className="flex items-center gap-1">
+                                    Discount Applied 
+                                    <button 
+                                      onClick={() => handleRemoveDiscount(b)} 
+                                      className="text-red-400 hover:text-red-300"
+                                      data-testid="button-remove-discount"
+                                    >
+                                      <X size={12}/>
+                                    </button>
+                                  </span>
                                   <span>-${b.details.discount.toFixed(2)}</span>
                                 </div>
                               )}
                               
                               {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
                                 <div key={i} className="flex justify-between text-red-400">
-                                  <span className="flex items-center gap-1">{c.type} <button className="text-red-400 hover:text-red-300"><X size={12}/></button></span>
+                                  <span className="flex items-center gap-1">
+                                    {c.type} 
+                                    <button 
+                                      onClick={() => handleRemoveCharge(b, i)} 
+                                      className="text-red-400 hover:text-red-300"
+                                      data-testid={`button-remove-charge-${i}`}
+                                    >
+                                      <X size={12}/>
+                                    </button>
+                                  </span>
                                   <span>+${c.amount.toFixed(2)}</span>
                                 </div>
                               ))}
