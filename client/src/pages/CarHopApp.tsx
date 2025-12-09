@@ -1084,64 +1084,64 @@ export default function CarHopApp() {
       <main className="pt-20 pb-20">
         {view === 'home' && (
           <>
-            <div className="relative h-[600px] w-full overflow-hidden flex items-center justify-center">
+            <div className="relative h-auto min-h-[500px] sm:min-h-[600px] w-full overflow-visible flex items-center justify-center py-8 sm:py-0">
               <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1471479917193-f00955256257?auto=format&fit=crop&w=2000&q=80')` }}></div>
               <div className="absolute inset-0 bg-black/40 z-10"></div>
-              <div className="relative z-20 max-w-7xl w-full px-6 grid lg:grid-cols-2 gap-12 items-center">
-                <div className="text-left">
-                  <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">Price Match Guarantee</span>
-                  <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4" data-testid="text-hero-title">The Best price rental in Fairfield County <br/><span className="text-green-500">Up to $39/Day</span></h1>
-                  <p className="text-zinc-200 text-lg max-w-xl mb-8">Premium vehicles at unbeatable prices. Book your ride in just 3 simple steps.</p>
+              <div className="relative z-20 max-w-7xl w-full px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start lg:items-center">
+                <div className="text-left pt-6 sm:pt-0">
+                  <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-3 sm:mb-4">Price Match Guarantee</span>
+                  <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-3 sm:mb-4" data-testid="text-hero-title">The Best price rental in Fairfield County <br/><span className="text-green-500">Up to $39/Day</span></h1>
+                  <p className="text-xs sm:text-base lg:text-lg text-zinc-200 max-w-xl mb-6 sm:mb-8">Premium vehicles at unbeatable prices. Book your ride in just 3 simple steps.</p>
                 </div>
-                <Card className="p-6 bg-white/95 dark:bg-zinc-900/95 backdrop-blur">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Find Your Perfect Ride</h3>
-                  <div className="space-y-4">
+                <Card className="p-4 sm:p-6 bg-white/95 dark:bg-zinc-900/95 backdrop-blur w-full">
+                  <h3 className="text-base sm:text-lg font-bold mb-4 text-zinc-900 dark:text-white">Find Your Perfect Ride</h3>
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Pick-up Location</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Pick-up Location</label>
                       <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white">
-                        <div className="pl-3"><MapPin size={18} className="text-green-600" /></div>
-                        <select className="bg-transparent w-full p-3 outline-none text-sm" value={searchParams.location} onChange={(e) => handleSearchParamsChange('location', e.target.value)} data-testid="select-location">
+                        <div className="pl-2 sm:pl-3"><MapPin size={16} className="text-green-600" /></div>
+                        <select className="bg-transparent w-full p-2 sm:p-3 outline-none text-xs sm:text-sm" value={searchParams.location} onChange={(e) => handleSearchParamsChange('location', e.target.value)} data-testid="select-location">
                           <option value="" className="text-black">Select Location</option>
                           {settings.locations.map(loc => <option key={loc} value={loc} className="text-black">{loc}</option>)}
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Pick-up Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
-                          <Calendar size={18} className="text-green-600 mr-2" />
-                          <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" data-testid="input-start-date" />
+                        <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Pick-up Date</label>
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 sm:p-3">
+                          <Calendar size={16} className="text-green-600 mr-2 flex-shrink-0" />
+                          <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white" data-testid="input-start-date" />
                         </div>
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Return Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
-                          <Calendar size={18} className="text-green-600 mr-2" />
-                          <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" data-testid="input-end-date" />
+                        <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Return Date</label>
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 sm:p-3">
+                          <Calendar size={16} className="text-green-600 mr-2 flex-shrink-0" />
+                          <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white" data-testid="input-end-date" />
                         </div>
                       </div>
                     </div>
-                    <Button className="w-full py-4 text-lg" onClick={handleSearch} disabled={isSearching} data-testid="button-search">
-                      {isSearching ? <><Loader className="animate-spin" size={20}/> Searching...</> : <><Search size={20}/> Search Vehicles</>}
+                    <Button className="w-full py-2 sm:py-4 text-xs sm:text-sm" onClick={handleSearch} disabled={isSearching} data-testid="button-search">
+                      {isSearching ? <><Loader className="animate-spin" size={16} sm:size-20/> Searching...</> : <><Search size={16}/> Search Vehicles</>}
                     </Button>
                   </div>
                 </Card>
               </div>
             </div>
             
-            <div id="fleet" className="max-w-7xl mx-auto px-6 mt-16 scroll-mt-24">
-              <div className="flex justify-between items-center mb-8">
+            <div id="fleet" className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 scroll-mt-32">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
                 <div>
-                  <h2 className="text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-fleet-title">Our Fleet</h2>
-                  <p className="text-zinc-500">Choose from our wide selection of vehicles</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-fleet-title">Our Fleet</h2>
+                  <p className="text-xs sm:text-sm text-zinc-500">Choose from our wide selection of vehicles</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowEco(!showEco)} className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${showEco ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid="button-fuel-saver"><Leaf size={16}/> Fuel Saver</button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button onClick={() => setShowEco(!showEco)} className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-all ${showEco ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid="button-fuel-saver"><Leaf size={14}/> Fuel Saver</button>
                 </div>
               </div>
               
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {vehicles.filter(car => !showEco || car.fuel === 'Hybrid' || car.fuel === 'Electric').map((car) => (
                   <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
