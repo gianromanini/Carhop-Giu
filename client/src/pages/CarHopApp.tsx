@@ -44,9 +44,10 @@ const convertTo24Hour = (timeStr: string) => {
   try {
     const [time, modifier] = timeStr.split(' ');
     let [hours, minutes] = time.split(':');
-    if (hours === '12') hours = '00';
-    if (modifier === 'PM') hours = String(parseInt(hours, 10) + 12);
-    return `${hours}:${minutes}`;
+    let hourNum = parseInt(hours, 10);
+    if (modifier === 'AM' && hourNum === 12) hourNum = 0;
+    if (modifier === 'PM' && hourNum !== 12) hourNum += 12;
+    return `${String(hourNum).padStart(2, '0')}:${minutes}`;
   } catch (e) {
     return "10:00";
   }
