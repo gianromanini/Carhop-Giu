@@ -90,6 +90,102 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.status(204).send();
   });
 
+  // ========== EXTENSION REQUESTS ==========
+  app.post("/api/bookings/:id/extension-request", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { type, requestedReturnDate, requestedReturnTime, reason } = req.body;
+    const newRequest = {
+      id: `ext-${Date.now()}`,
+      type: type as 'extension' | 'reduction',
+      requestedReturnDate,
+      requestedReturnTime,
+      reason: reason || '',
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+    };
+    
+    const extensionRequests = [...(booking.extensionRequests || []), newRequest];
+    const updated = await storage.updateBooking(id, { extensionRequests });
+    res.json(updated);
+  });
+
+  app.put("/api/bookings/:id/extension-request/:requestId", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const requestId = req.params.requestId;
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { status } = req.body; // 'approved' or 'rejected'
+    const extensionRequests = (booking.extensionRequests || []).map(r => {
+      if (r.id === requestId) {
+        return { ...r, status, respondedAt: new Date().toISOString() };
+      }
+      return r;
+    });
+    
+    // If approved, update the booking dates
+    const approvedRequest = extensionRequests.find(r => r.id === requestId && r.status === 'approved');
+    let updateData: any = { extensionRequests };
+    
+    if (approvedRequest) {
+      updateData.returnDate = approvedRequest.requestedReturnDate;
+      updateData.returnTime = approvedRequest.requestedReturnTime;
+      // Recalculate days
+      const startDate = new Date(booking.startDate);
+      const newReturnDate = new Date(approvedRequest.requestedReturnDate);
+      const diffTime = newReturnDate.getTime() - startDate.getTime();
+      const newDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      updateData.days = Math.max(1, newDays);
+      // Recalculate total
+      const rate = booking.details?.rate || 0;
+      updateData.total = rate * updateData.days + (booking.details?.extras || 0) + (booking.details?.protection || 0) + (booking.details?.fees || 0) + (booking.details?.tax || 0) - (booking.details?.discount || 0);
+    }
+    
+    const updated = await storage.updateBooking(id, updateData);
+    res.json(updated);
+  });
+
+  // ========== CHAT MESSAGES ==========
+  app.post("/api/bookings/:id/messages", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { sender, text } = req.body;
+    const newMessage = {
+      id: `msg-${Date.now()}`,
+      sender: sender as 'client' | 'admin',
+      text,
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    
+    const messages = [...(booking.messages || []), newMessage];
+    const updated = await storage.updateBooking(id, { messages });
+    res.json(updated);
+  });
+
+  app.put("/api/bookings/:id/messages/read", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { reader } = req.body; // 'client' or 'admin'
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    // Mark all messages from the other party as read
+    const messages = (booking.messages || []).map(m => {
+      if (m.sender !== reader) {
+        return { ...m, read: true };
+      }
+      return m;
+    });
+    
+    const updated = await storage.updateBooking(id, { messages });
+    res.json(updated);
+  });
+
   // ========== SETTINGS ==========
   app.get("/api/settings", async (_req, res) => {
     const allSettings = await storage.getAllSettings();

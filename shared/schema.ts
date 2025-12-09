@@ -105,6 +105,13 @@ export const bookings = pgTable("bookings", {
     createdAt: string;
     respondedAt?: string;
   }[]>().default([]),
+  messages: jsonb("messages").$type<{
+    id: string;
+    sender: 'client' | 'admin';
+    text: string;
+    createdAt: string;
+    read: boolean;
+  }[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
