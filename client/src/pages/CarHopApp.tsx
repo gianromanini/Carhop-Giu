@@ -1997,27 +1997,37 @@ export default function CarHopApp() {
               <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{isCheckOutMode ? 'Vehicle Check-Out' : 'Vehicle Check-In'}</h2>
               <p className="text-zinc-500 mb-6">{activeBooking.carName} - {activeBooking.bookingCode}</p>
               <div className="space-y-6">
-                <Input label="Current Mileage" type="number" value={checkData.miles} onChange={(e: any) => setCheckData({...checkData, miles: e.target.value})} placeholder="e.g. 45000" required data-testid="input-check-miles" />
+                {/* 1. Outside Photos - First */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Fuel Level</label>
-                  <div className="flex gap-2">{['Full', '3/4', '1/2', '1/4', 'Empty'].map(level => (<button key={level} onClick={() => setCheckData({...checkData, gas: level})} className={`flex-1 py-2 rounded border text-sm font-bold ${checkData.gas === level ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid={`button-gas-${level}`}>{level}</button>))}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 1)</span></label>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 5 photos)</span></label>
                   <div className="flex gap-2 flex-wrap">
                     {checkData.photosOutside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
                     <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside"><Camera size={20}/></button>
                     <input id="check-input-outside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'outside')} />
                   </div>
+                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/5 photos uploaded</p>
                 </div>
+                
+                {/* 2. Inside Photos - Second */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 1)</span></label>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 5 photos)</span></label>
                   <div className="flex gap-2 flex-wrap">
                     {checkData.photosInside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
                     <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside"><Camera size={20}/></button>
                     <input id="check-input-inside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'inside')} />
                   </div>
+                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/5 photos uploaded</p>
                 </div>
+                
+                {/* 3. Current Mileage - Third */}
+                <Input label="Current Mileage" type="number" value={checkData.miles} onChange={(e: any) => setCheckData({...checkData, miles: e.target.value})} placeholder="e.g. 45000" required data-testid="input-check-miles" />
+                
+                {/* 4. Fuel Level - Fourth (Last) */}
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Fuel Level</label>
+                  <div className="flex gap-2">{['Full', '3/4', '1/2', '1/4', 'Empty'].map(level => (<button key={level} onClick={() => setCheckData({...checkData, gas: level})} className={`flex-1 py-2 rounded border text-sm font-bold ${checkData.gas === level ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid={`button-gas-${level}`}>{level}</button>))}</div>
+                </div>
+                
                 <Button className="w-full py-4" onClick={completeWorkflow} data-testid="button-complete-workflow">Complete {isCheckOutMode ? 'Check-Out' : 'Check-In'}</Button>
               </div>
             </Card>
