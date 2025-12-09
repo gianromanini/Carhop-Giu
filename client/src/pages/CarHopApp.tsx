@@ -1191,7 +1191,7 @@ export default function CarHopApp() {
 
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="flex items-center justify-between mb-8 gap-4">
+            <div className="flex items-start justify-between mb-8 gap-2">
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="w-8 h-8 rounded-md bg-green-600 flex items-center justify-center">
                   <Car className="h-5 w-5 text-white" />
@@ -1201,12 +1201,12 @@ export default function CarHopApp() {
                   <p className="text-xs text-zinc-500">Admin</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2 ml-auto">
-                <Button variant="outline" size="sm" data-testid="button-admin-signin">Sign In</Button>
-                <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1">
                   <ThemeToggle />
-                  <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="button-admin-chat"><MessageCircle size={16}/></Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-1" data-testid="button-admin-chat"><MessageCircle size={14}/></Button>
                 </div>
+                <Button variant="outline" size="sm" className="text-xs px-2 h-7" data-testid="button-admin-signin">Sign In</Button>
               </div>
             </div>
             
