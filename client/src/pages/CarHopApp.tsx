@@ -1216,6 +1216,9 @@ export default function CarHopApp() {
                   </div>
                 ))}
               </div>
+            <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-16 pt-8 pb-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Copyright © All Rights Reserved 2025
+            </footer>
             </div>
           </>
         )}
@@ -1223,25 +1226,14 @@ export default function CarHopApp() {
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="flex items-start justify-between mb-8 gap-2">
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="w-8 h-8 rounded-md bg-green-600 flex items-center justify-center">
-                  <Car className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">CarHop</h1>
-                  <p className="text-xs text-zinc-500">Admin</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 flex-shrink-0">
-                <Button variant="outline" className="text-xs px-2 py-1 h-6" data-testid="button-admin-signin">Sign In</Button>
-                <div className="flex flex-col items-center gap-0.5">
-                  <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
-                    {darkMode ? <Sun size={14} /> : <Moon size={14} />}
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
-                    <MessageCircle size={14}/>
-                  </Button>
-                </div>
+              <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin</h1>
+              <div className="flex flex-col items-center gap-0.5">
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
+                  {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
+                  <MessageCircle size={14}/>
+                </Button>
               </div>
             </div>
             
@@ -3124,6 +3116,9 @@ export default function CarHopApp() {
                 )}
               </div>
             </div>
+            <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-16 pt-8 pb-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Copyright © All Rights Reserved 2025
+            </footer>
           </div>
         )}
       </main>
