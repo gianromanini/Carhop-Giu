@@ -70,6 +70,7 @@ const calculateBillingDays = (start: string, startTime: string, end: string, end
     const endH = convertTo24Hour(endTime);
     const startDate = new Date(`${start}T${startH}:00`);
     const endDate = new Date(`${end}T${endH}:00`);
+    startDate.setMinutes(startDate.getMinutes() + 30);
     const diffTime = endDate.getTime() - startDate.getTime();
     if (isNaN(diffTime) || diffTime <= 0) return 1;
     const diffHours = diffTime / (1000 * 60 * 60);
@@ -1902,8 +1903,8 @@ export default function CarHopApp() {
                     </div>
                     {receiptBooking.details?.protection && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
-                        <span className="text-green-600 dark:text-green-400">+${receiptBooking.details.protection.toFixed(2)}</span>
+                        <span className="text-white">Protection</span>
+                        <span className="text-white">+${receiptBooking.details.protection.toFixed(2)}</span>
                       </div>
                     )}
                     {receiptBooking.details?.extras && (
@@ -2301,8 +2302,8 @@ export default function CarHopApp() {
                       <span className="text-white">${(cart.billingDays * cart.car.price).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-green-500">Protection</span>
-                      <span className="text-green-500">+${((cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays).toFixed(2)}</span>
+                      <span className="text-white">Protection</span>
+                      <span className="text-white">+${((cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays).toFixed(2)}</span>
                     </div>
                     {cart.extrasSelected.includes('childSeat') && (
                       <div className="flex justify-between">
