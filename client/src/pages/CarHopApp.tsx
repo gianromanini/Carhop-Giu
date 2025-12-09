@@ -396,6 +396,7 @@ export default function CarHopApp() {
   
   const [leaseAgreementAccepted, setLeaseAgreementAccepted] = useState(false);
   const [showLeaseModal, setShowLeaseModal] = useState(false);
+  const [viewingLeaseOnly, setViewingLeaseOnly] = useState(false);
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -1556,7 +1557,7 @@ export default function CarHopApp() {
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2 text-blue-400">
                                     <Check size={16} className="text-blue-500"/>
-                                    <span className="font-bold">AGREED</span>
+                                    <span className="font-bold">ACCEPTED</span>
                                   </div>
                                   <span className="text-xs text-zinc-500">By: {b.leaseAgreement.clientName}</span>
                                   <span className="text-xs text-zinc-500">Date: {new Date(b.leaseAgreement.acceptedAt).toLocaleDateString()}</span>
@@ -1572,6 +1573,7 @@ export default function CarHopApp() {
                               <button 
                                 onClick={() => {
                                   setDriverDetails(prev => ({ ...prev, name: b.leaseAgreement?.clientName || b.driver.name }));
+                                  setViewingLeaseOnly(true);
                                   setShowLeaseModal(true);
                                 }}
                                 className="mt-3 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1"
@@ -1780,7 +1782,7 @@ export default function CarHopApp() {
             <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
               <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Lease Agreement</h2>
-                <button onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
+                <button onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); setViewingLeaseOnly(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
               </div>
 
               <div className="p-8 space-y-6">
@@ -1849,20 +1851,32 @@ export default function CarHopApp() {
                 </div>
 
                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3">
-                  <button 
-                    onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); }} 
-                    className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
-                    data-testid="button-reject-lease"
-                  >
-                    Reject
-                  </button>
-                  <button 
-                    onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(true); }} 
-                    className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
-                    data-testid="button-accept-lease"
-                  >
-                    I Accept
-                  </button>
+                  {viewingLeaseOnly ? (
+                    <button 
+                      onClick={() => window.print()} 
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      data-testid="button-print-lease"
+                    >
+                      <FileText size={18}/> Print
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(false); }} 
+                        className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
+                        data-testid="button-reject-lease"
+                      >
+                        Reject
+                      </button>
+                      <button 
+                        onClick={() => { setShowLeaseModal(false); setLeaseAgreementAccepted(true); }} 
+                        className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                        data-testid="button-accept-lease"
+                      >
+                        I Accept
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -2331,7 +2345,10 @@ export default function CarHopApp() {
                           checked={leaseAgreementAccepted} 
                           onChange={(e) => {
                             setLeaseAgreementAccepted(e.target.checked);
-                            if (e.target.checked) setShowLeaseModal(true);
+                            if (e.target.checked) {
+                              setViewingLeaseOnly(false);
+                              setShowLeaseModal(true);
+                            }
                           }}
                           className="mt-1 w-5 h-5 cursor-pointer" 
                           data-testid="checkbox-lease-agreement"
