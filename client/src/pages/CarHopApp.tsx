@@ -1245,13 +1245,13 @@ export default function CarHopApp() {
               </div>
             </div>
             
-            <div className="flex justify-center gap-4 mb-8 overflow-x-auto pb-2">
+            <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2">
               {['fleet', 'bookings', 'earnings'].map(tab => (
-                <button key={tab} onClick={() => setAdminTab(tab)} className={`flex flex-col items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
-                  {tab === 'fleet' && <Car size={28} />}
-                  {tab === 'bookings' && <Briefcase size={28} />}
-                  {tab === 'earnings' && <TrendingUp size={28} />}
-                  <span>{tab}</span>
+                <button key={tab} onClick={() => setAdminTab(tab)} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+                  {tab === 'fleet' && <Car size={18} />}
+                  {tab === 'bookings' && <Briefcase size={18} />}
+                  {tab === 'earnings' && <TrendingUp size={18} />}
+                  <span className="md:text-xs text-xs">{tab}</span>
                 </button>
               ))}
             </div>
