@@ -637,8 +637,7 @@ export default function CarHopApp() {
       const reader = new FileReader();
       reader.onloadend = () => setCheckData(prev => {
         const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
-        const totalPhotos = prev.photosOutside.length + prev.photosInside.length;
-        if (totalPhotos >= 1) return prev;
+        if (currentList.length >= 1) return prev;
         return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, reader.result as string] };
       });
       reader.readAsDataURL(file);
@@ -650,8 +649,8 @@ export default function CarHopApp() {
 
   const completeWorkflow = async () => {
      if (!checkData.miles) { alert("Please enter current mileage."); return; }
-     const totalPhotos = checkData.photosOutside.length + checkData.photosInside.length;
-     if (totalPhotos !== 1) { alert("Please upload exactly 1 photo."); return; }
+     if (checkData.photosOutside.length !== 1) { alert("Please upload 1 outside photo."); return; }
+     if (checkData.photosInside.length !== 1) { alert("Please upload 1 inside photo."); return; }
 
      if (!activeBooking) return;
 
@@ -2603,24 +2602,24 @@ export default function CarHopApp() {
               <div className="space-y-6">
                 {/* 1. Outside Photos - First */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 5 photos)</span></label>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 1 photo)</span></label>
                   <div className="flex gap-2 flex-wrap">
                     {checkData.photosOutside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
-                    <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside"><Camera size={20}/></button>
+                    {checkData.photosOutside.length < 1 && <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside"><Camera size={20}/></button>}
                     <input id="check-input-outside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'outside')} />
                   </div>
-                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/5 photos uploaded</p>
+                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/1 photo uploaded</p>
                 </div>
                 
                 {/* 2. Inside Photos - Second */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 5 photos)</span></label>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 1 photo)</span></label>
                   <div className="flex gap-2 flex-wrap">
                     {checkData.photosInside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
-                    <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside"><Camera size={20}/></button>
+                    {checkData.photosInside.length < 1 && <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside"><Camera size={20}/></button>}
                     <input id="check-input-inside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'inside')} />
                   </div>
-                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/5 photos uploaded</p>
+                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/1 photo uploaded</p>
                 </div>
                 
                 {/* 3. Current Mileage - Third */}
@@ -2633,7 +2632,7 @@ export default function CarHopApp() {
                 </div>
                 
                 {(() => {
-                  const canComplete = checkData.photosOutside.length >= 5 && checkData.photosInside.length >= 5 && checkData.miles && checkData.gas;
+                  const canComplete = checkData.photosOutside.length === 1 && checkData.photosInside.length === 1 && checkData.miles && checkData.gas;
                   const isPayPalBooking = activeBooking?.paymentRaw?.type === 'paypal';
                   
                   return (
