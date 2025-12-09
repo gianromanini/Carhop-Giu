@@ -295,6 +295,7 @@ export default function CarHopApp() {
   const carImageInputRef = useRef<HTMLInputElement>(null);
 
   const [paymentDetails, setPaymentDetails] = useState({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
+  const [paymentMethod, setPaymentMethod] = useState<'credit' | 'paypal'>('credit');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -461,10 +462,21 @@ export default function CarHopApp() {
   const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2;
 
   const handleConfirmBooking = async () => { 
-    if (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName) { alert("Please enter valid payment details."); return; } 
+    if (paymentMethod === 'credit' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName)) { 
+      alert("Please enter valid payment details."); 
+      return; 
+    } 
     setIsProcessingPayment(true); 
+    
+    // Simulate payment processing animation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     const totalData = calculateTotal(); 
     const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
+    
+    const paymentMethodDisplay = paymentMethod === 'paypal' 
+      ? 'PayPal' 
+      : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
     
     const newBooking = { 
       bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
@@ -481,8 +493,8 @@ export default function CarHopApp() {
       total: totalData.total, 
       image: cart.car!.images?.[0] || '', 
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
-      paymentRaw: { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
-      paymentMethod: `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`, 
+      paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
+      paymentMethod: paymentMethodDisplay, 
       details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat * days : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: settings.cleaningFee, tax: totalData.taxAmount }, 
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -1774,34 +1786,188 @@ export default function CarHopApp() {
 
         {view === 'payment' && cart.car && (
           <div className="max-w-3xl mx-auto px-6 py-12">
-            <Button variant="ghost" onClick={() => setView('checkout')} className="mb-8 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500"><ArrowLeft size={20} /> Back to Details</Button>
-            <Card className="p-8">
-              <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Payment Method</h2>
-              <div className="space-y-4">
-                <div className="flex gap-4 mb-4">{['visa', 'mastercard', 'amex', 'discover'].map(type => (<div key={type} onClick={() => setPaymentDetails({...paymentDetails, type})} className={`cursor-pointer border p-2 rounded ${paymentDetails.type === type ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-700'}`}><span className="uppercase font-bold text-xs text-zinc-500">{type}</span></div>))}</div>
-                <Input label="Name on Card" value={paymentDetails.cardName} onChange={(e: any) => setPaymentDetails({...paymentDetails, cardName: e.target.value})} placeholder="JOHN DOE" required data-testid="input-card-name" />
-                <Input label="Card Number" value={paymentDetails.cardNumber} onChange={(e: any) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} placeholder="4242 4242 4242 4242" required data-testid="input-card-number" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input label="Expiry" value={paymentDetails.expiry} onChange={handleExpiryChange} placeholder="MM/YY" required data-testid="input-card-expiry" />
-                  <Input label="CVC" value={paymentDetails.cvc} onChange={(e: any) => setPaymentDetails({...paymentDetails, cvc: e.target.value})} placeholder="123" required data-testid="input-card-cvc" />
+            <button onClick={() => setView('checkout')} className="flex items-center gap-2 text-zinc-400 hover:text-green-500 mb-6 transition-colors">
+              <ArrowLeft size={18} /> Back to Details
+            </button>
+            
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+              <h2 className="text-2xl font-bold mb-6 text-white">Payment Method</h2>
+              
+              {/* Payment Method Tabs */}
+              <div className="flex mb-8 border-b border-zinc-700">
+                <button 
+                  onClick={() => setPaymentMethod('credit')}
+                  className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'credit' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  data-testid="tab-credit-card"
+                >
+                  <CreditCard size={20} className="inline mr-2" />
+                  Credit Card
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('paypal')}
+                  className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'paypal' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  data-testid="tab-paypal"
+                >
+                  <Wallet size={20} className="inline mr-2" />
+                  PayPal
+                </button>
+              </div>
+
+              {/* Credit Card Form */}
+              {paymentMethod === 'credit' && (
+                <div className="space-y-4">
+                  <div className="flex gap-3 mb-6">
+                    {['visa', 'mastercard', 'amex', 'discover'].map(type => (
+                      <div 
+                        key={type} 
+                        onClick={() => setPaymentDetails({...paymentDetails, type})} 
+                        className={`cursor-pointer border px-3 py-2 rounded-lg transition-all ${paymentDetails.type === type ? 'border-green-500 bg-green-900/20' : 'border-zinc-700 hover:border-zinc-600'}`}
+                      >
+                        <span className="uppercase font-bold text-xs text-zinc-400">{type}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">NAME ON CARD</label>
+                    <input 
+                      type="text"
+                      value={paymentDetails.cardName} 
+                      onChange={(e: any) => setPaymentDetails({...paymentDetails, cardName: e.target.value})} 
+                      placeholder="JOHN DOE"
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                      data-testid="input-card-name" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
+                    <input 
+                      type="text"
+                      value={paymentDetails.cardNumber} 
+                      onChange={(e: any) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} 
+                      placeholder="4242 4242 4242 4242"
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                      data-testid="input-card-number" 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY</label>
+                      <input 
+                        type="text"
+                        value={paymentDetails.expiry} 
+                        onChange={handleExpiryChange} 
+                        placeholder="MM/YY"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-card-expiry" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CVC</label>
+                      <input 
+                        type="text"
+                        value={paymentDetails.cvc} 
+                        onChange={(e: any) => setPaymentDetails({...paymentDetails, cvc: e.target.value})} 
+                        placeholder="123"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-card-cvc" 
+                      />
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* PayPal Form */}
+              {paymentMethod === 'paypal' && (
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Wallet size={36} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Pay with PayPal</h3>
+                  <p className="text-zinc-400 mb-6">You will be redirected to PayPal to complete your payment securely.</p>
+                  <div className="bg-zinc-800 rounded-lg p-4 text-left max-w-sm mx-auto">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-zinc-400">Amount:</span>
+                      <span className="text-white font-bold">${calculateTotal().total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-400">Vehicle:</span>
+                      <span className="text-white">{cart.car.model}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Total and Pay Button */}
+              <div className="mt-8 pt-6 border-t border-zinc-700">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-zinc-400 text-lg">Total to Pay</span>
+                  <span className="text-4xl font-bold text-green-500">${calculateTotal().total.toFixed(2)}</span>
+                </div>
+                <button 
+                  onClick={handleConfirmBooking} 
+                  disabled={isProcessingPayment || (paymentMethod === 'credit' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName))}
+                  className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${isProcessingPayment ? 'bg-zinc-700 text-zinc-400' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                  data-testid="button-confirm-booking"
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader size={20} className="animate-spin" />
+                      Processing Payment...
+                    </>
+                  ) : (
+                    <>
+                      {paymentMethod === 'credit' ? <CreditCard size={20} /> : <Wallet size={20} />}
+                      {paymentMethod === 'credit' ? 'Pay with Card' : 'Pay with PayPal'}
+                    </>
+                  )}
+                </button>
               </div>
-              <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="flex justify-between items-center mb-4"><span className="text-zinc-500">Total to Pay</span><span className="text-3xl font-bold text-green-600">${calculateTotal().total.toFixed(2)}</span></div>
-                <Button className="w-full py-4 text-lg" onClick={handleConfirmBooking} data-testid="button-confirm-booking">Confirm & Pay</Button>
-              </div>
-            </Card>
+            </div>
           </div>
         )}
 
         {view === 'confirmation' && (
           <div className="max-w-md mx-auto text-center py-20 px-6">
-            <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce"><Check size={48} /></div>
-            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white" data-testid="text-confirmation-title">Payment Confirmed!</h2>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-lg">Your payment was processed successfully. Now proceed to vehicle check-in.</p>
-            <div className="flex flex-col gap-4">
-              <Button onClick={() => setView('bookings')} variant="success" className="w-full py-4 text-lg shadow-xl shadow-green-500/30" data-testid="button-go-to-checkin">Go to Check-in (Manage Booking)</Button>
-              <Button onClick={() => setView('home')} variant="secondary" className="w-full" data-testid="button-back-home-confirm">Back to Home</Button>
+            {/* Success Animation */}
+            <div className="relative mb-8">
+              <div className="w-28 h-28 bg-green-500/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+                  <Check size={40} className="text-white" />
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-36 h-36 border-4 border-green-500/30 rounded-full animate-ping"></div>
+              </div>
+            </div>
+            
+            <h2 className="text-3xl font-bold mb-4 text-white" data-testid="text-confirmation-title">Payment Confirmed!</h2>
+            <p className="text-zinc-400 mb-10 text-lg">Your payment was processed successfully. Your booking is now confirmed.</p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => setView('bookings')} 
+                className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/30" 
+                data-testid="button-go-to-bookings"
+              >
+                <Briefcase size={20} />
+                Go to My Bookings
+              </button>
+              <button 
+                onClick={() => setView('home')} 
+                className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2 border border-zinc-700" 
+                data-testid="button-back-home-confirm"
+              >
+                <ArrowLeft size={20} />
+                Back to Home
+              </button>
+              <button 
+                onClick={() => { setView('home'); setCart({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' }); }} 
+                className="w-full py-3 text-zinc-500 hover:text-zinc-300 font-medium transition-all flex items-center justify-center gap-2" 
+                data-testid="button-close-confirmation"
+              >
+                <X size={18} />
+                Close
+              </button>
             </div>
           </div>
         )}
