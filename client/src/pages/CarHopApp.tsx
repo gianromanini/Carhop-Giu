@@ -1078,7 +1078,7 @@ export default function CarHopApp() {
                   ) : (
                     <>
                       <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-center text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center gap-2" data-testid="button-menu-signin">Sign In</button>
-                      <button onClick={() => { setShowChatModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
+                      <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
                       <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
                     </>
                   )}
