@@ -1055,7 +1055,7 @@ export default function CarHopApp() {
 
           <div className="flex md:hidden items-center justify-end gap-2 flex-1">
             {clientUser && (
-              <button onClick={() => setView('bookings')} className="text-xs font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide relative" data-testid="button-bookings-mobile-header">
+              <button onClick={() => setView('bookings')} className="text-sm font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide relative" data-testid="button-bookings-mobile-header">
                 Bookings
                 {getClientUnreadCount() > 0 && (
                   <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
@@ -1069,7 +1069,7 @@ export default function CarHopApp() {
               {mobileActionsMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[150px] overflow-hidden">
                   <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-center text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center gap-2" data-testid="button-menu-signin">Sign In</button>
-                  <button onClick={() => { setShowChatModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
+                  <button onClick={() => { clientUser ? setView('bookings') : setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
                   <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
                 </div>
               )}
