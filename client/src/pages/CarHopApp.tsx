@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 
@@ -397,6 +397,11 @@ export default function CarHopApp() {
   const [leaseAgreementAccepted, setLeaseAgreementAccepted] = useState(false);
   const [showLeaseModal, setShowLeaseModal] = useState(false);
   const [viewingLeaseOnly, setViewingLeaseOnly] = useState(false);
+  
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatBookingId, setChatBookingId] = useState<number | null>(null);
+  const [chatMessage, setChatMessage] = useState('');
+  const [extensionRequestReason, setExtensionRequestReason] = useState('');
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -715,7 +720,20 @@ export default function CarHopApp() {
     
     const diffTime = newReturn.getTime() - oldReturn.getTime();
     
-    if (diffTime < 0) { alert("New return time cannot be before current return time."); return; }
+    // If reduction (new date is before current), create a request for admin approval
+    if (diffTime < 0) {
+      await apiRequest('POST', `/api/bookings/${booking.id}/extension-request`, {
+        type: 'reduction',
+        requestedReturnDate: extensionDate,
+        requestedReturnTime: extensionTime,
+        reason: extensionRequestReason || 'Reduction request'
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      setExtendingBookingId(null);
+      setExtensionRequestReason('');
+      alert("Reduction request submitted for admin approval.");
+      return;
+    }
     
     const diffMinutes = diffTime / (1000 * 60);
     let extraDays = 0;
@@ -751,6 +769,49 @@ export default function CarHopApp() {
     
     setExtendingBookingId(null);
     if (extraDays > 0) alert(`Rental updated by ${extraDays} days.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
+  };
+
+  const sendChatMessage = async (bookingId: number, sender: 'client' | 'admin') => {
+    if (!chatMessage.trim()) return;
+    await apiRequest('POST', `/api/bookings/${bookingId}/messages`, { sender, text: chatMessage });
+    queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+    setChatMessage('');
+  };
+
+  const handleExtensionRequestResponse = async (bookingId: number, requestId: string, status: 'approved' | 'rejected') => {
+    await apiRequest('PUT', `/api/bookings/${bookingId}/extension-request/${requestId}`, { status });
+    queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] });
+  };
+
+  const markMessagesAsRead = async (bookingId: number, reader: 'client' | 'admin') => {
+    await apiRequest('PUT', `/api/bookings/${bookingId}/messages/read`, { reader });
+    queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+  };
+
+  const getUnreadMessagesCount = (booking: Booking, reader: 'client' | 'admin') => {
+    const messages = booking.messages || [];
+    return messages.filter(m => m.sender !== reader && !m.read).length;
+  };
+
+  const getPendingRequestsCount = (booking: Booking) => {
+    const requests = booking.extensionRequests || [];
+    return requests.filter(r => r.status === 'pending').length;
+  };
+
+  const getTotalPendingNotifications = () => {
+    return bookings.reduce((acc, b) => {
+      const pendingRequests = (b.extensionRequests || []).filter(r => r.status === 'pending').length;
+      const unreadMessages = (b.messages || []).filter(m => m.sender === 'client' && !m.read).length;
+      return acc + pendingRequests + unreadMessages;
+    }, 0);
+  };
+
+  const getClientUnreadCount = () => {
+    return bookings.filter(b => clientUser && b.driver.email === clientUser.email).reduce((acc, b) => {
+      const unread = (b.messages || []).filter(m => m.sender === 'admin' && !m.read).length;
+      return acc + unread;
+    }, 0);
   };
 
   const handleApplyDiscount = async (booking: Booking) => {
@@ -933,11 +994,22 @@ export default function CarHopApp() {
             <button onClick={handleManageBookingClick} className="hidden md:block hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
             {clientUser ? (
               <div className="flex items-center gap-3">
+                <button onClick={() => setView('bookings')} className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Support Messages">
+                  <MessageCircle size={18}/>
+                  {getClientUnreadCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
+                  )}
+                </button>
                 <span className="text-green-600 font-bold" data-testid="text-username">Hi, {clientUser.name}</span>
                 <button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800" data-testid="button-signout"><LogOut size={12}/></button>
               </div>
             ) : (
-              <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider" data-testid="button-signin">Sign In</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowLoginModal(true)} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support-guest" title="Support">
+                  <MessageCircle size={18}/>
+                </button>
+                <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider" data-testid="button-signin">Sign In</button>
+              </div>
             )}
             <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
             <button onClick={() => setView('admin')} className="hidden md:block text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
@@ -1268,14 +1340,33 @@ export default function CarHopApp() {
                     {bookings.map(b => {
                       const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
                       const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
+                      const pendingRequests = getPendingRequestsCount(b);
+                      const unreadMessages = getUnreadMessagesCount(b, 'admin');
+                      const hasNotifications = pendingRequests > 0 || unreadMessages > 0;
                       return (
                         <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
                           <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                            <div className="flex items-center gap-2">
+                              {hasNotifications && (
+                                <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
+                                  <AlertCircle size={14}/>
+                                </span>
+                              )}
+                              <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                              <span className="text-[10px] text-zinc-500">{b.startDate}</span>
+                            </div>
                             <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                           </div>
                           <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
                           <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
+                          {hasNotifications && (
+                            <div className="mt-2 text-[10px] text-yellow-400 flex items-center gap-1">
+                              <Bell size={10}/>
+                              {pendingRequests > 0 && <span>{pendingRequests} request{pendingRequests > 1 ? 's' : ''}</span>}
+                              {pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}
+                              {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1582,6 +1673,92 @@ export default function CarHopApp() {
                                 <FileText size={12}/> View & Print Agreement
                               </button>
                             )}
+                          </div>
+
+                          {/* Pending Extension/Reduction Requests */}
+                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
+                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
+                                <AlertCircle size={14}/> Pending Requests
+                              </h4>
+                              <div className="space-y-3">
+                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
+                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                          {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
+                                        </span>
+                                        <div className="text-sm text-zinc-300 mt-1">
+                                          New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                        </div>
+                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                      </div>
+                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                    <div className="flex gap-2 mt-3">
+                                      <button 
+                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
+                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                        data-testid={`button-approve-${req.id}`}
+                                      >
+                                        Approve
+                                      </button>
+                                      <button 
+                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
+                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                        data-testid={`button-reject-${req.id}`}
+                                      >
+                                        Reject
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Chat Messages */}
+                          <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
+                            <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                              <MessageCircle size={14}/> Customer Messages
+                              {getUnreadMessagesCount(b, 'admin') > 0 && (
+                                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{getUnreadMessagesCount(b, 'admin')} new</span>
+                              )}
+                            </h4>
+                            <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
+                              {(b.messages || []).length === 0 ? (
+                                <div className="text-xs text-zinc-600 text-center py-4">No messages yet</div>
+                              ) : (
+                                (b.messages || []).map(msg => (
+                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
+                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-zinc-300">{msg.text}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={chatMessage}
+                                onChange={(e) => setChatMessage(e.target.value)}
+                                placeholder="Type a message..."
+                                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                data-testid="input-admin-message"
+                                onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
+                              />
+                              <button 
+                                onClick={() => sendChatMessage(b.id, 'admin')}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                data-testid="button-send-admin-message"
+                              >
+                                <Send size={16}/>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -2072,34 +2249,106 @@ export default function CarHopApp() {
                             </div>
                           </div>
                           <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                            {!extendingBookingId && (<button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Request Extension</button>)}
+                            {!extendingBookingId && (<button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Modify Return Date</button>)}
                             {extendingBookingId === b.id && (() => {
                               const today = new Date();
-                              const minDate = new Date(today);
-                              minDate.setDate(minDate.getDate() + 1);
-                              const minDateStr = minDate.toISOString().split('T')[0];
+                              const minDateStr = today.toISOString().split('T')[0];
+                              const isReduction = extensionDate < b.returnDate;
                               
                               return (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
                                 <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">New Return Date & Time</label>
-                                <p className="text-xs text-zinc-500 mb-3">You can extend or adjust your return date (minimum 1 day from today)</p>
+                                <p className="text-xs text-zinc-500 mb-3">Extend or reduce your booking. Reductions require admin approval.</p>
                                 <div className="flex flex-col gap-3">
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Calendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={minDateStr} onChange={(e) => setExtensionDate(e.target.value)} data-testid="input-extension-date" /></div>
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Clock size={18} className="text-green-600 mr-2" /><select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)} data-testid="select-extension-time">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
+                                  {isReduction && (
+                                    <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-3">
+                                      <p className="text-xs text-orange-400 mb-2"><AlertCircle size={12} className="inline mr-1"/> This is a reduction and requires admin approval</p>
+                                      <input 
+                                        type="text" 
+                                        placeholder="Reason for reduction (optional)" 
+                                        value={extensionRequestReason}
+                                        onChange={(e) => setExtensionRequestReason(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-white"
+                                        data-testid="input-reduction-reason"
+                                      />
+                                    </div>
+                                  )}
                                   <div className="flex flex-col gap-2 mt-2">
-                                    {b.paymentRaw?.type === 'paypal' && (
+                                    {b.paymentRaw?.type === 'paypal' && !isReduction && (
                                       <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 mb-2">
                                         <p className="text-xs text-blue-400 flex items-center gap-2"><Wallet size={14}/> Extension will be charged when End Trip</p>
                                       </div>
                                     )}
                                     <div className="flex gap-2">
-                                      <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">Confirm Extension</button>
-                                      <Button variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button>
+                                      <button className={`flex-1 py-2 px-4 ${isReduction ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'} text-white text-xs font-bold rounded-lg transition-colors`} onClick={() => confirmExtension(b)} data-testid="button-confirm-extension">{isReduction ? 'Submit Reduction Request' : 'Confirm Extension'}</button>
+                                      <Button variant="ghost" className="flex-1 text-xs" onClick={() => { setExtendingBookingId(null); setExtensionRequestReason(''); }}>Cancel</Button>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             );})()}
+                          </div>
+                          
+                          {/* Pending Requests Status */}
+                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
+                            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                              <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 text-sm">
+                                <AlertCircle size={16}/>
+                                <span className="font-bold">Pending Requests</span>
+                              </div>
+                              <div className="mt-2 space-y-2">
+                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
+                                  <div key={req.id} className="text-xs text-yellow-600 dark:text-yellow-500">
+                                    {req.type === 'extension' ? 'Extension' : 'Reduction'} to {req.requestedReturnDate} - Awaiting approval
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Client Chat Section */}
+                          <div className="mt-4 p-4 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                            <h5 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                              <MessageCircle size={14}/> Support Chat
+                              {getUnreadMessagesCount(b, 'client') > 0 && (
+                                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{getUnreadMessagesCount(b, 'client')} new</span>
+                              )}
+                            </h5>
+                            <div className="max-h-32 overflow-y-auto space-y-2 mb-3" onClick={() => markMessagesAsRead(b.id, 'client')}>
+                              {(b.messages || []).length === 0 ? (
+                                <div className="text-xs text-zinc-500 text-center py-2">Send a message to our support team</div>
+                              ) : (
+                                (b.messages || []).map(msg => (
+                                  <div key={msg.id} className={`p-2 rounded text-xs ${msg.sender === 'client' ? 'bg-blue-100 dark:bg-blue-900/30 border-l-2 border-blue-500 ml-2' : 'bg-green-100 dark:bg-green-900/30 border-l-2 border-green-500 mr-2'}`}>
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className={`font-bold ${msg.sender === 'client' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}>{msg.sender === 'client' ? 'You' : 'CarHop Support'}</span>
+                                      <span className="text-zinc-400 text-[10px]">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                    </div>
+                                    <p className="text-zinc-700 dark:text-zinc-300">{msg.text}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={chatMessage}
+                                onChange={(e) => setChatMessage(e.target.value)}
+                                placeholder="Type your message..."
+                                className="flex-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 text-sm"
+                                data-testid="input-client-message"
+                                onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'client')}
+                              />
+                              <button 
+                                onClick={() => sendChatMessage(b.id, 'client')}
+                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                                data-testid="button-send-client-message"
+                              >
+                                <Send size={14}/>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ) : null}
