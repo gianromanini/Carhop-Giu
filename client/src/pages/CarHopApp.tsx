@@ -667,11 +667,23 @@ export default function CarHopApp() {
        const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
        const refuelingFee = gasDiff * 10;
        
+       const newCharges: { type: string; amount: number }[] = [];
+       if (excessMileageFee > 0) {
+         newCharges.push({ type: 'Extra Mileage Fee', amount: excessMileageFee });
+       }
+       if (refuelingFee > 0) {
+         newCharges.push({ type: 'Refuel Fee', amount: refuelingFee });
+       }
+       
        updateData = {
          checkOutStatus: 'completed',
          checkOutData: checkData,
          status: 'Completed',
          total: activeBooking.total + excessMileageFee + refuelingFee,
+         details: {
+           ...activeBooking.details,
+           manualCharges: [...(activeBooking.details.manualCharges || []), ...newCharges]
+         }
        };
      } else {
        updateData = {
@@ -1535,15 +1547,19 @@ export default function CarHopApp() {
                           </div>
 
                           {/* Lease Agreement Section */}
-                          <div className={`p-4 rounded-lg border ${b.leaseAgreement ? 'bg-green-950/30 border-green-900/50' : 'bg-yellow-950/30 border-yellow-900/50'}`}>
-                            <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-2 ${b.leaseAgreement ? 'text-green-400' : 'text-yellow-400'}`}>
+                          <div className={`p-4 rounded-lg border ${b.leaseAgreement?.accepted ? 'bg-blue-950/30 border-blue-900/50' : 'bg-yellow-950/30 border-yellow-900/50'}`}>
+                            <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-2 ${b.leaseAgreement?.accepted ? 'text-blue-400' : 'text-yellow-400'}`}>
                               <FileText size={14}/> Lease Agreement Status
                             </h4>
                             <div className="text-sm">
-                              {b.leaseAgreement ? (
-                                <div className="flex items-center gap-2 text-green-400">
-                                  <Check size={16} className="text-green-500"/>
-                                  <span>Lease Agreement <strong>ACCEPTED</strong></span>
+                              {b.leaseAgreement?.accepted ? (
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2 text-blue-400">
+                                    <Check size={16} className="text-blue-500"/>
+                                    <span className="font-bold">AGREED</span>
+                                  </div>
+                                  <span className="text-xs text-zinc-500">By: {b.leaseAgreement.clientName}</span>
+                                  <span className="text-xs text-zinc-500">Date: {new Date(b.leaseAgreement.acceptedAt).toLocaleDateString()}</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2 text-yellow-400">
@@ -1552,13 +1568,16 @@ export default function CarHopApp() {
                                 </div>
                               )}
                             </div>
-                            {b.leaseAgreement && (
+                            {b.leaseAgreement?.accepted && (
                               <button 
-                                onClick={() => setShowLeaseModal(true)}
-                                className="mt-3 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded transition-colors"
+                                onClick={() => {
+                                  setDriverDetails(prev => ({ ...prev, name: b.leaseAgreement?.clientName || b.driver.name }));
+                                  setShowLeaseModal(true);
+                                }}
+                                className="mt-3 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1"
                                 data-testid="button-view-lease-agreement"
                               >
-                                View Agreement
+                                <FileText size={12}/> View & Print Agreement
                               </button>
                             )}
                           </div>
