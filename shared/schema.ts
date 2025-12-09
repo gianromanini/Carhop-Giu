@@ -95,6 +95,16 @@ export const bookings = pgTable("bookings", {
     photosOutside: string[];
     photosInside: string[];
   }>(),
+  extensionRequests: jsonb("extension_requests").$type<{
+    id: string;
+    type: 'extension' | 'reduction';
+    requestedReturnDate: string;
+    requestedReturnTime: string;
+    reason: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: string;
+    respondedAt?: string;
+  }[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
