@@ -1480,49 +1480,293 @@ export default function CarHopApp() {
         )}
 
         {view === 'checkout' && cart.car && (
-          <div className="max-w-5xl mx-auto px-6 py-12">
-            <Button variant="ghost" onClick={() => setView('home')} className="mb-8 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500" data-testid="button-back-from-checkout"><ArrowLeft size={20} /> Back to Fleet</Button>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="md:col-span-2 space-y-6">
-                <Card className="p-6">
-                  <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Driver Details</h2>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <Input label="Full Name" value={driverDetails.name} onChange={(e: any) => setDriverDetails({...driverDetails, name: e.target.value})} placeholder="John Doe" required data-testid="input-driver-name" />
-                    <Input label="Email" type="email" value={driverDetails.email} onChange={(e: any) => setDriverDetails({...driverDetails, email: e.target.value})} placeholder="john@email.com" required data-testid="input-driver-email" />
-                    <Input label="Phone" type="tel" value={driverDetails.phone} onChange={(e: any) => setDriverDetails({...driverDetails, phone: e.target.value})} placeholder="(555) 123-4567" required data-testid="input-driver-phone" />
-                    <Input label="Driver License #" value={driverDetails.licenseNumber} onChange={(e: any) => setDriverDetails({...driverDetails, licenseNumber: e.target.value})} placeholder="ABC123456" required data-testid="input-driver-license" />
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <button onClick={() => setView('home')} className="flex items-center gap-2 text-zinc-400 hover:text-green-500 mb-6 transition-colors" data-testid="button-back-from-checkout">
+              <ArrowLeft size={18} /> Back to Fleet
+            </button>
+            
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Left Column - Forms */}
+              <div className="lg:col-span-2 space-y-6">
+                
+                {/* Rental Period Section */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
+                    <Calendar size={18} /> Rental Period
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">PICKUP</label>
+                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3 mb-2">
+                        <Calendar size={16} className="text-zinc-500" />
+                        <input 
+                          type="date" 
+                          value={searchParams.start} 
+                          onChange={e => handleSearchParamsChange('start', e.target.value)} 
+                          min={getTodayString()} 
+                          className="bg-transparent w-full outline-none text-sm text-white" 
+                          data-testid="input-checkout-start-date" 
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3">
+                        <Clock size={16} className="text-zinc-500" />
+                        <select 
+                          value={searchParams.startTime} 
+                          onChange={e => handleSearchParamsChange('startTime', e.target.value)} 
+                          className="bg-transparent w-full outline-none text-sm text-white"
+                          data-testid="select-checkout-start-time"
+                        >
+                          {timeOptions.map(t => <option key={t} value={t} className="bg-zinc-900">{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">RETURN</label>
+                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3 mb-2">
+                        <Calendar size={16} className="text-zinc-500" />
+                        <input 
+                          type="date" 
+                          value={searchParams.end} 
+                          onChange={e => handleSearchParamsChange('end', e.target.value)} 
+                          min={searchParams.start || getTodayString()} 
+                          className="bg-transparent w-full outline-none text-sm text-white" 
+                          data-testid="input-checkout-end-date" 
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3">
+                        <Clock size={16} className="text-zinc-500" />
+                        <select 
+                          value={searchParams.endTime} 
+                          onChange={e => handleSearchParamsChange('endTime', e.target.value)} 
+                          className="bg-transparent w-full outline-none text-sm text-white"
+                          data-testid="select-checkout-end-time"
+                        >
+                          {timeOptions.map(t => <option key={t} value={t} className="bg-zinc-900">{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-6">
-                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Driver License Photos <span className="text-red-500">* (2 required)</span></label>
-                    <div className="flex gap-3 flex-wrap">
-                      {driverDetails.licenseImages.map((img, i) => (<div key={i} className="relative w-24 h-16 rounded-lg overflow-hidden border-2 border-green-500"><img src={img} className="w-full h-full object-cover" /><button onClick={() => deleteLicenseImage(i)} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl"><X size={12}/></button></div>))}
-                      {driverDetails.licenseImages.length < 2 && (<button onClick={triggerFileInput} className="w-24 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all" data-testid="button-upload-license"><Upload size={18}/><span className="text-[10px] mt-1">Upload</span></button>)}
+                  <p className="text-sm text-zinc-400 mt-4">Duration: <span className="text-green-500 font-semibold">{cart.billingDays} Days Charged</span></p>
+                </div>
+
+                {/* Protection Plan Section */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
+                    <Shield size={18} /> Protection Plan (Daily)
+                  </h2>
+                  <div className="space-y-3">
+                    <div 
+                      onClick={() => setCart({...cart, insuranceOption: '500'})} 
+                      className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '500' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                      data-testid="option-protection-gold"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <h4 className="font-semibold text-white flex items-center gap-2">
+                              Gold Protection 
+                              {cart.insuranceOption === '500' && <Check size={16} className="text-green-500" />}
+                            </h4>
+                            <p className="text-xs text-zinc-500">Franchise of $500</p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-white">+${settings.prices.insurance500}/day</span>
+                      </div>
+                    </div>
+                    <div 
+                      onClick={() => setCart({...cart, insuranceOption: '1000'})} 
+                      className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '1000' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                      data-testid="option-protection-standard"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <h4 className="font-semibold text-white flex items-center gap-2">
+                              Standard Protection 
+                              {cart.insuranceOption === '1000' && <Check size={16} className="text-green-500" />}
+                            </h4>
+                            <p className="text-xs text-zinc-500">Franchise of $1,000</p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-white">+${settings.prices.insurance1000}/day</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Extras Section */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
+                    <Plus size={18} /> Extras
+                  </h2>
+                  <div 
+                    onClick={() => toggleExtra('childSeat')} 
+                    className={`p-4 rounded-lg cursor-pointer transition-all flex justify-between items-center ${cart.extrasSelected.includes('childSeat') ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                    data-testid="option-child-seat"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${cart.extrasSelected.includes('childSeat') ? 'bg-green-500 border-green-500' : 'border-zinc-500'}`}>
+                        {cart.extrasSelected.includes('childSeat') && <Check size={12} className="text-white" />}
+                      </div>
+                      <span className="text-white">Child Safety Seat</span>
+                    </div>
+                    <span className="font-bold text-white">+${settings.prices.childSeat}/day</span>
+                  </div>
+                </div>
+
+                {/* Driver Details Section */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h2 className="flex items-center gap-2 text-zinc-300 font-semibold mb-6">
+                    <User size={18} /> Driver Details
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">FULL NAME *</label>
+                      <input 
+                        type="text"
+                        value={driverDetails.name} 
+                        onChange={(e: any) => setDriverDetails({...driverDetails, name: e.target.value})} 
+                        placeholder="Google User"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-driver-name" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EMAIL *</label>
+                      <input 
+                        type="email"
+                        value={driverDetails.email} 
+                        onChange={(e: any) => setDriverDetails({...driverDetails, email: e.target.value})} 
+                        placeholder="user@gmail.com"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-driver-email" 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">PHONE *</label>
+                      <input 
+                        type="tel"
+                        value={driverDetails.phone} 
+                        onChange={(e: any) => setDriverDetails({...driverDetails, phone: e.target.value})} 
+                        placeholder="(555) 123-4567"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-driver-phone" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">DRIVER LICENSE NUMBER *</label>
+                      <input 
+                        type="text"
+                        value={driverDetails.licenseNumber} 
+                        onChange={(e: any) => setDriverDetails({...driverDetails, licenseNumber: e.target.value})} 
+                        placeholder="CNH-12345678"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-driver-license" 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">
+                      DRIVER LICENSE PHOTOS (FRONT AND BACK) <span className="text-red-500">* REQUIRED</span>
+                    </label>
+                    <div className="flex gap-4 flex-wrap">
+                      {driverDetails.licenseImages.map((img, i) => (
+                        <div key={i} className="relative w-28 h-20 rounded-lg overflow-hidden border-2 border-green-500">
+                          <img src={img} className="w-full h-full object-cover" alt={`License ${i + 1}`} />
+                          <button 
+                            onClick={() => deleteLicenseImage(i)} 
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                          >
+                            <X size={10}/>
+                          </button>
+                        </div>
+                      ))}
+                      {driverDetails.licenseImages.length < 2 && (
+                        <button 
+                          onClick={triggerFileInput} 
+                          className="w-28 h-20 border-2 border-dashed border-zinc-600 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all" 
+                          data-testid="button-upload-license"
+                        >
+                          <Plus size={20}/>
+                          <span className="text-[10px] mt-1">Add {driverDetails.licenseImages.length === 0 ? 'Front' : 'Back'}</span>
+                        </button>
+                      )}
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLicenseUpload} />
                     </div>
                   </div>
-                </Card>
-                <Card className="p-6">
-                  <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Protection & Extras</h2>
-                  <div className="space-y-4">
-                    <div onClick={() => setCart({...cart, insuranceOption: '1000'})} className={`p-4 border rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '1000' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}><div className="flex justify-between items-center"><div className="flex items-center gap-3"><Shield className="text-green-600" /><div><h4 className="font-bold text-zinc-900 dark:text-white">Standard Protection</h4><p className="text-xs text-zinc-500">$1,000 deductible</p></div></div><span className="font-bold text-green-600">${settings.prices.insurance1000}/day</span></div></div>
-                    <div onClick={() => setCart({...cart, insuranceOption: '500'})} className={`p-4 border rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '500' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}><div className="flex justify-between items-center"><div className="flex items-center gap-3"><Shield className="text-blue-600" /><div><h4 className="font-bold text-zinc-900 dark:text-white">Premium Protection</h4><p className="text-xs text-zinc-500">$500 deductible</p></div></div><span className="font-bold text-green-600">${settings.prices.insurance500}/day</span></div></div>
-                    <div onClick={() => toggleExtra('childSeat')} className={`p-4 border rounded-lg cursor-pointer transition-all ${cart.extrasSelected.includes('childSeat') ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}><div className="flex justify-between items-center"><div className="flex items-center gap-3"><Armchair className="text-orange-500" /><div><h4 className="font-bold text-zinc-900 dark:text-white">Child Seat</h4><p className="text-xs text-zinc-500">For children up to 40 lbs</p></div></div><span className="font-bold text-green-600">${settings.prices.childSeat}/day</span></div></div>
-                  </div>
-                </Card>
+                </div>
               </div>
-              <div>
-                <Card className="p-6 sticky top-24">
-                  <div className="flex items-center gap-4 mb-6 pb-6 border-b border-zinc-200 dark:border-zinc-800"><img src={cart.car.images?.[0] || ''} className="w-24 h-16 object-cover rounded-lg" /><div><h3 className="font-bold text-zinc-900 dark:text-white">{cart.car.model}</h3><p className="text-xs text-zinc-500">{cart.car.category}</p></div></div>
-                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400 pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                    <div className="flex justify-between"><span>Rate ({cart.billingDays} days)</span><span className="text-zinc-900 dark:text-white">${cart.billingDays * cart.car.price}</span></div>
-                    {cart.extrasSelected.includes('childSeat') && (<div className="flex justify-between text-green-600 dark:text-green-400"><span>Child Seat</span><span>${settings.prices.childSeat * cart.billingDays}</span></div>)}
-                    {cart.insuranceOption !== 'none' && (<div className="flex justify-between text-green-600 dark:text-green-400"><span>Insurance</span><span>${(cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays}</span></div>)}
-                    <div className="flex justify-between"><span>Cleaning Fee</span><span className="text-zinc-900 dark:text-white">${settings.cleaningFee}</span></div>
-                    <div className="flex justify-between"><span>Taxes ({settings.taxes}%)</span><span className="text-zinc-900 dark:text-white">${calculateTotal().taxAmount.toFixed(2)}</span></div>
+
+              {/* Right Column - Summary Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 sticky top-24">
+                  {/* Car Image */}
+                  <div className="rounded-lg overflow-hidden mb-4">
+                    <img src={cart.car.images?.[0] || ''} className="w-full h-40 object-cover" alt={cart.car.model} />
                   </div>
-                  <div className="flex justify-between items-end mt-6 mb-8"><span className="font-bold text-xl text-zinc-900 dark:text-white">TOTAL</span><span className="text-4xl font-bold text-green-600 dark:text-green-500" data-testid="text-checkout-total">${calculateTotal().total.toFixed(2)}</span></div>
-                  <Button className="w-full py-4 text-lg font-bold shadow-green-500/20 shadow-lg" onClick={handleProceedToPayment} disabled={!isCheckoutValid()} variant={isCheckoutValid() ? "primary" : "disabled"} data-testid="button-proceed-payment">Proceed to Payment</Button>
-                </Card>
+                  
+                  {/* Car Name */}
+                  <h3 className="text-xl font-bold text-white mb-2">{cart.car.model}</h3>
+                  <div className="flex gap-2 mb-4">
+                    <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{cart.car.category}</span>
+                    <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{cart.car.fuel}</span>
+                  </div>
+
+                  {/* Mileage Policy */}
+                  <div className="bg-zinc-800 rounded-lg p-3 mb-6">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Route size={16} className="text-green-500" />
+                      <span className="text-zinc-300 font-medium">Mileage Policy</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1 ml-6">200 miles/day included</p>
+                    <p className="text-xs text-zinc-500 ml-6">Excess: $0.30/mile</p>
+                  </div>
+
+                  {/* Price Breakdown */}
+                  <div className="space-y-3 text-sm border-t border-zinc-800 pt-4">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Rate ({cart.billingDays} days)</span>
+                      <span className="text-white">${(cart.billingDays * cart.car.price).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-500">Protection</span>
+                      <span className="text-green-500">+${((cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays).toFixed(2)}</span>
+                    </div>
+                    {cart.extrasSelected.includes('childSeat') && (
+                      <div className="flex justify-between">
+                        <span className="text-green-500">Child Seat</span>
+                        <span className="text-green-500">+${(settings.prices.childSeat * cart.billingDays).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Cleaning Fee</span>
+                      <span className="text-white">${settings.cleaningFee.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Taxes ({settings.taxes}%)</span>
+                      <span className="text-white">${calculateTotal().taxAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center mt-6 pt-4 border-t border-zinc-800">
+                    <span className="font-bold text-zinc-400">TOTAL</span>
+                    <span className="text-3xl font-bold text-green-500" data-testid="text-checkout-total">${calculateTotal().total.toFixed(2)}</span>
+                  </div>
+
+                  {/* Proceed Button */}
+                  <button 
+                    onClick={handleProceedToPayment} 
+                    disabled={!isCheckoutValid()} 
+                    className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
+                    data-testid="button-proceed-payment"
+                  >
+                    Proceed to Payment
+                  </button>
+                </div>
               </div>
             </div>
           </div>
