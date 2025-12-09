@@ -391,6 +391,7 @@ export default function CarHopApp() {
 
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
   const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
+  const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
 
   const [newLocation, setNewLocation] = useState('');
   
@@ -774,6 +775,8 @@ export default function CarHopApp() {
   const sendChatMessage = async (bookingId: number, sender: 'client' | 'admin') => {
     if (!chatMessage.trim()) return;
     await apiRequest('POST', `/api/bookings/${bookingId}/messages`, { sender, text: chatMessage });
+    // Mark messages as read when admin/client sends a message (they've seen the conversation)
+    await apiRequest('PUT', `/api/bookings/${bookingId}/messages/read`, { reader: sender });
     queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
     setChatMessage('');
   };
@@ -904,6 +907,29 @@ export default function CarHopApp() {
         details: { ...booking.details, manualCharges: newCharges }
       }
     });
+  };
+
+  const handleChargeExtraPayment = async (booking: Booking) => {
+    const amount = parseFloat(extraPaymentAmount);
+    if (!amount || amount <= 0) {
+      alert("Please enter a valid amount to charge.");
+      return;
+    }
+    
+    const currentCharges = booking.details.manualCharges || [];
+    const newCharge = { type: 'Extra Payment Trip', amount };
+    const newTotal = booking.total + amount;
+    
+    await updateBookingMutation.mutateAsync({
+      id: booking.id,
+      data: {
+        total: newTotal,
+        details: { ...booking.details, manualCharges: [...currentCharges, newCharge] }
+      }
+    });
+    
+    setExtraPaymentAmount('');
+    alert(`Extra payment of $${amount.toFixed(2)} charged successfully!`);
   };
 
   const handleSaveVehicle = () => {
@@ -1608,6 +1634,30 @@ export default function CarHopApp() {
                               <div className="flex justify-between border-t border-zinc-700 pt-3 mt-3 font-bold text-white">
                                 <span>Total Billed</span>
                                 <span>${b.total.toFixed(2)}</span>
+                              </div>
+                              
+                              {/* Extra Payment Charge */}
+                              <div className="mt-4 pt-4 border-t border-zinc-700">
+                                <div className="flex gap-2">
+                                  <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
+                                    <input
+                                      type="number"
+                                      value={extraPaymentAmount}
+                                      onChange={(e) => setExtraPaymentAmount(e.target.value)}
+                                      placeholder="0.00"
+                                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white"
+                                      data-testid="input-extra-payment-amount"
+                                    />
+                                  </div>
+                                  <button 
+                                    onClick={() => handleChargeExtraPayment(b)}
+                                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap"
+                                    data-testid="button-charge-extra-payment"
+                                  >
+                                    Charge extra payment Trip
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
