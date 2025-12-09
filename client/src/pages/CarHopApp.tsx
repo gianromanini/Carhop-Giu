@@ -301,6 +301,39 @@ export default function CarHopApp() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showSensitiveData, setShowSensitiveData] = useState(false);
   
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
+  
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxZoom(1);
+    setLightboxOpen(true);
+  };
+  
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setLightboxImages([]);
+    setLightboxIndex(0);
+    setLightboxZoom(1);
+  };
+  
+  const nextImage = () => {
+    setLightboxIndex((prev) => (prev + 1) % lightboxImages.length);
+    setLightboxZoom(1);
+  };
+  
+  const prevImage = () => {
+    setLightboxIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length);
+    setLightboxZoom(1);
+  };
+  
+  const toggleZoom = () => {
+    setLightboxZoom((prev) => prev === 1 ? 2 : 1);
+  };
+  
   const [extendingBookingId, setExtendingBookingId] = useState<number | null>(null);
   const [extensionDate, setExtensionDate] = useState('');
   const [extensionTime, setExtensionTime] = useState('10:00 AM');
@@ -1347,7 +1380,7 @@ export default function CarHopApp() {
                                 <div className="flex gap-2">
                                   {b.driver.licenseImages && b.driver.licenseImages.length > 0 ? (
                                     b.driver.licenseImages.map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-zinc-700">
+                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(b.driver.licenseImages || [], i)}>
                                         <img src={img} alt={`License ${i+1}`} className="w-full h-full object-cover" />
                                       </div>
                                     ))
@@ -1360,15 +1393,20 @@ export default function CarHopApp() {
                               {/* Check-in Photos */}
                               <div>
                                 <label className="text-xs text-green-500 mb-2 block">Check-in (Start)</label>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
                                   {b.checkInData?.photosOutside && b.checkInData.photosOutside.length > 0 ? (
-                                    b.checkInData.photosOutside.slice(0, 2).map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-green-700">
+                                    [...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].slice(0, 4).map((img, i, allPhotos) => (
+                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-green-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox([...(b.checkInData?.photosOutside || []), ...(b.checkInData?.photosInside || [])], i)}>
                                         <img src={img} alt={`Check-in ${i+1}`} className="w-full h-full object-cover" />
                                       </div>
                                     ))
                                   ) : (
                                     <div className="text-xs text-zinc-600">No images</div>
+                                  )}
+                                  {b.checkInData?.photosOutside && ([...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].length > 4) && (
+                                    <div className="w-16 h-12 rounded overflow-hidden border border-green-700 bg-green-900/50 flex items-center justify-center cursor-pointer hover:bg-green-900 transition-colors" onClick={() => openLightbox([...(b.checkInData?.photosOutside || []), ...(b.checkInData?.photosInside || [])], 4)}>
+                                      <span className="text-xs text-green-400 font-bold">+{[...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].length - 4}</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -1376,15 +1414,20 @@ export default function CarHopApp() {
                               {/* Check-out Photos */}
                               <div>
                                 <label className="text-xs text-orange-500 mb-2 block">Check-out (End)</label>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
                                   {b.checkOutData?.photosOutside && b.checkOutData.photosOutside.length > 0 ? (
-                                    b.checkOutData.photosOutside.slice(0, 2).map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-orange-700">
+                                    [...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].slice(0, 4).map((img, i) => (
+                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-orange-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox([...(b.checkOutData?.photosOutside || []), ...(b.checkOutData?.photosInside || [])], i)}>
                                         <img src={img} alt={`Check-out ${i+1}`} className="w-full h-full object-cover" />
                                       </div>
                                     ))
                                   ) : (
                                     <div className="text-xs text-zinc-600">No images</div>
+                                  )}
+                                  {b.checkOutData?.photosOutside && ([...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].length > 4) && (
+                                    <div className="w-16 h-12 rounded overflow-hidden border border-orange-700 bg-orange-900/50 flex items-center justify-center cursor-pointer hover:bg-orange-900 transition-colors" onClick={() => openLightbox([...(b.checkOutData?.photosOutside || []), ...(b.checkOutData?.photosInside || [])], 4)}>
+                                      <span className="text-xs text-orange-400 font-bold">+{[...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].length - 4}</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -2039,7 +2082,12 @@ export default function CarHopApp() {
                   <div className="flex gap-2">{['Full', '3/4', '1/2', '1/4', 'Empty'].map(level => (<button key={level} onClick={() => setCheckData({...checkData, gas: level})} className={`flex-1 py-2 rounded border text-sm font-bold ${checkData.gas === level ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid={`button-gas-${level}`}>{level}</button>))}</div>
                 </div>
                 
-                <Button className="w-full py-4" onClick={completeWorkflow} data-testid="button-complete-workflow">Complete {isCheckOutMode ? 'Check-Out' : 'Check-In'}</Button>
+                {(() => {
+                  const canComplete = checkData.photosOutside.length >= 5 && checkData.photosInside.length >= 5 && checkData.miles && checkData.gas;
+                  return (
+                    <Button className={`w-full py-4 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">Complete {isCheckOutMode ? 'Check-Out' : 'Check-In'}</Button>
+                  );
+                })()}
               </div>
             </Card>
           </div>
@@ -2090,6 +2138,59 @@ export default function CarHopApp() {
           </div>
         )}
       </main>
+
+      {/* Photo Lightbox Modal */}
+      {lightboxOpen && lightboxImages.length > 0 && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center" onClick={closeLightbox} data-testid="modal-lightbox">
+          <button onClick={closeLightbox} className="absolute top-4 right-4 text-white hover:text-zinc-300 transition-colors z-10" data-testid="button-lightbox-close">
+            <X size={32}/>
+          </button>
+          
+          <div className="absolute top-4 left-4 text-white text-sm">
+            {lightboxIndex + 1} / {lightboxImages.length}
+          </div>
+          
+          <div className="relative max-w-4xl max-h-[80vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={lightboxImages[lightboxIndex]} 
+              alt={`Photo ${lightboxIndex + 1}`} 
+              className="max-w-full max-h-[80vh] object-contain transition-transform duration-200"
+              style={{ transform: `scale(${lightboxZoom})` }}
+              onClick={toggleZoom}
+              data-testid="img-lightbox"
+            />
+          </div>
+          
+          {lightboxImages.length > 1 && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); prevImage(); }} 
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors"
+                data-testid="button-lightbox-prev"
+              >
+                <ChevronLeft size={24}/>
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); nextImage(); }} 
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors"
+                data-testid="button-lightbox-next"
+              >
+                <ChevronRight size={24}/>
+              </button>
+            </>
+          )}
+          
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            <button 
+              onClick={(e) => { e.stopPropagation(); toggleZoom(); }} 
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+              data-testid="button-lightbox-zoom"
+            >
+              <ZoomIn size={16}/> {lightboxZoom === 1 ? 'Zoom In' : 'Zoom Out'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
     </div>
   );
