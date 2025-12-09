@@ -637,7 +637,8 @@ export default function CarHopApp() {
       const reader = new FileReader();
       reader.onloadend = () => setCheckData(prev => {
         const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
-        if (currentList.length >= 10) return prev;
+        const totalPhotos = prev.photosOutside.length + prev.photosInside.length;
+        if (totalPhotos >= 1) return prev;
         return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, reader.result as string] };
       });
       reader.readAsDataURL(file);
@@ -650,7 +651,7 @@ export default function CarHopApp() {
   const completeWorkflow = async () => {
      if (!checkData.miles) { alert("Please enter current mileage."); return; }
      const totalPhotos = checkData.photosOutside.length + checkData.photosInside.length;
-     if (totalPhotos === 0) { alert("Please upload at least one photo."); return; }
+     if (totalPhotos !== 1) { alert("Please upload exactly 1 photo."); return; }
 
      if (!activeBooking) return;
 
