@@ -1953,10 +1953,10 @@ export default function CarHopApp() {
                       <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({receiptBooking.days} days)</span>
                       <span className="text-zinc-900 dark:text-white font-medium">${receiptBooking.details?.rate?.toFixed(2) || '0.00'}</span>
                     </div>
-                    {receiptBooking.details?.protection && (
+                    {receiptBooking.details?.protection > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-white">Protection</span>
-                        <span className="text-white">+${receiptBooking.details.protection.toFixed(2)}</span>
+                        <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
+                        <span className="text-zinc-900 dark:text-white">+${receiptBooking.details.protection.toFixed(2)}</span>
                       </div>
                     )}
                     {receiptBooking.details?.extras && (
@@ -1977,6 +1977,12 @@ export default function CarHopApp() {
                         <span className="text-blue-600 dark:text-blue-400">+${receiptBooking.details.extendedRate.toFixed(2)}</span>
                       </div>
                     )}
+                    {receiptBooking.details?.manualCharges && receiptBooking.details.manualCharges.map((charge, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
+                        <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
                     {receiptBooking.details?.tax && (
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
