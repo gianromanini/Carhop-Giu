@@ -1,0 +1,1802 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, updateDoc, setDoc } from 'firebase/firestore';
+import { LucideCar, LucideSettings, LucidePlus, LucideTrash2, LucideCheck, LucideCalendar, LucideLeaf, LucideDollarSign, LucideArrowLeft, LucideShield, LucideMountain, LucideSmartphone, LucideGauge, LucideZap, LucideEdit, LucideX, LucideImage, LucideChevronRight, LucideChevronLeft, LucideInfo, LucideSearch, LucideMapPin, LucideUser, LucideMenu, LucideUsers, LucideActivity, LucidePhone, LucideSun, LucideMoon, LucideClock, LucideLogOut, LucideMap, LucideBluetooth, LucideCamera, LucideRoute, LucideUpload, LucideMail, LucideFileText, LucideDownload, LucideCreditCard, LucideAlertTriangle, LucideCalendarClock, LucideLock, LucideFuel, LucideLoader, LucideBriefcase, LucideList, LucideEye, LucideEyeOff, LucideMaximize2, LucideZoomIn, LucideZoomOut, LucideMove, LucideThermometer, LucideUnlock, LucideBatteryCharging, LucideArmchair, LucideNavigation, LucideBarChart3, LucideTrendingUp, LucideWallet, LucideReceipt, LucideMoreHorizontal } from 'lucide-react';
+
+// --- FIREBASE CONFIGURATION ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'carhop-demo';
+
+// --- IMAGE VIEWER COMPONENT (ZOOM & PAN) ---
+const ImageViewer = ({ src, onClose }) => {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const imgRef = useRef(null);
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const newScale = Math.min(Math.max(1, scale - e.deltaY * 0.01), 4);
+    setScale(newScale);
+    if (newScale === 1) setPosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e) => {
+    if (scale > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging && scale > 1) {
+      setPosition({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+    }
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+  
+  const toggleZoom = () => {
+    if (scale === 1) setScale(2.5);
+    else {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center overflow-hidden select-none"
+      onWheel={handleWheel}
+    >
+       <div 
+         className="flex-1 w-full flex items-center justify-center overflow-hidden cursor-move active:cursor-grabbing"
+         onMouseDown={handleMouseDown}
+         onMouseMove={handleMouseMove}
+         onMouseUp={handleMouseUp}
+         onMouseLeave={handleMouseUp}
+         onDoubleClick={toggleZoom}
+       >
+         <img 
+           ref={imgRef}
+           src={src} 
+           style={{ 
+             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+             transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+           }}
+           className="max-w-full max-h-[85vh] object-contain"
+           draggable={false}
+         />
+       </div>
+
+       <div className="absolute bottom-8 flex items-center gap-4 bg-zinc-900/80 backdrop-blur p-3 rounded-full border border-zinc-700 text-white">
+          <button onClick={() => {setScale(Math.max(1, scale - 0.5)); if(scale<=1.5) setPosition({x:0,y:0});}} className="p-2 hover:bg-zinc-700 rounded-full"><LucideZoomOut size={20}/></button>
+          <span className="text-xs font-mono w-12 text-center">{(scale * 100).toFixed(0)}%</span>
+          <button onClick={() => setScale(Math.min(4, scale + 0.5))} className="p-2 hover:bg-zinc-700 rounded-full"><LucideZoomIn size={20}/></button>
+          <div className="w-px h-4 bg-zinc-700 mx-1"></div>
+          <button onClick={() => { setScale(1); setPosition({x:0,y:0}); }} className="p-2 hover:bg-zinc-700 rounded-full" title="Reset"><LucideMaximize2 size={18}/></button>
+       </div>
+
+       <button 
+         className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all z-50"
+         onClick={onClose}
+       >
+         <LucideX size={32} />
+       </button>
+    </div>
+  );
+};
+
+// --- CAROUSEL COMPONENT ---
+const ImageCarousel = ({ images }) => {
+  const [idx, setIdx] = useState(0);
+  if (!images || images.length === 0) return <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-600"><LucideImage size={48}/></div>;
+  
+  return (
+    <div className="relative w-full h-56 md:h-96 bg-zinc-100 dark:bg-zinc-950 group">
+      <img src={images[idx]} alt="Car" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+      {images.length > 1 && (
+        <>
+          <button onClick={(e) => {e.stopPropagation(); setIdx((prev) => (prev - 1 + images.length) % images.length)}} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-green-600 z-10"><LucideChevronLeft size={18}/></button>
+          <button onClick={(e) => {e.stopPropagation(); setIdx((prev) => (prev + 1) % images.length)}} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-green-600 z-10"><LucideChevronRight size={18}/></button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {images.map((_, i) => (
+                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === idx ? 'bg-white' : 'bg-white/50'}`}></div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// --- HELPER: TIME OPTIONS ---
+const generateTimeOptions = () => {
+  const options = [];
+  for (let i = 6; i <= 22; i++) {
+    const hour = i;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12; 
+    options.push(`${displayHour}:00 ${ampm}`);
+    if (i < 22) {
+      options.push(`${displayHour}:30 ${ampm}`);
+    }
+  }
+  return options;
+};
+const timeOptions = generateTimeOptions();
+
+// --- HELPER: DATE & TIME UTILS ---
+const getTodayString = () => {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+};
+
+const getNext30MinSlot = () => {
+  const now = new Date();
+  let minutes = now.getMinutes();
+  let hour = now.getHours();
+  
+  if (minutes < 30) { minutes = 30; } else { minutes = 0; hour += 1; }
+  
+  if (hour < 6) { hour = 6; minutes = 0; }
+  if (hour >= 22) { hour = 22; minutes = 0; } 
+
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  const displayMinutes = minutes === 0 ? "00" : "30";
+  return `${displayHour}:${displayMinutes} ${ampm}`;
+};
+
+const convertTo24Hour = (timeStr) => {
+  if (!timeStr) return "10:00";
+  try {
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') hours = '00';
+    if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+    return `${hours}:${minutes}`;
+  } catch (e) {
+    return "10:00";
+  }
+};
+
+const addDaysToDate = (dateStr, days) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  const date = new Date(parts[0], parts[1] - 1, parts[2]); 
+  date.setDate(date.getDate() + parseInt(days));
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const calculateBillingDays = (start, startTime, end, endTime) => {
+    if (!start || !end || !startTime || !endTime) return 1;
+    try {
+        const startH = convertTo24Hour(startTime);
+        const endH = convertTo24Hour(endTime);
+        const startDate = new Date(`${start}T${startH}:00`);
+        const endDate = new Date(`${end}T${endH}:00`);
+        
+        const diffTime = endDate - startDate;
+        if (isNaN(diffTime) || diffTime <= 0) return 1;
+        
+        const diffHours = diffTime / (1000 * 60 * 60);
+        const days = Math.ceil(diffHours / 24);
+        return Math.max(1, days);
+    } catch (e) {
+        return 1;
+    }
+};
+
+const formatDisplayDate = (dateStr, timeStr) => {
+  if (!dateStr) return "";
+  const displayTime = timeStr || "10:00 AM";
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const monthName = date.toLocaleString('en-US', { month: 'short' });
+  return `${monthName} ${day}, ${displayTime}, ${year}`;
+};
+
+const getGasValue = (level) => {
+  switch(level) {
+    case 'Full': return 4;
+    case '3/4': return 3;
+    case '1/2': return 2;
+    case '1/4': return 1;
+    case 'Empty': return 0;
+    default: return 4;
+  }
+};
+
+// --- STYLES & COMPONENTS ---
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white/80 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-lg hover:shadow-green-900/20 hover:border-green-500/30 transition-all duration-300 ${className}`}>{children}</div>
+);
+
+const Button = ({ children, onClick, variant = "primary", className = "", disabled, type = "button", ...props }) => {
+  const baseStyle = "px-4 py-3 rounded-lg font-bold transition-all duration-200 flex items-center justify-center gap-2 tracking-wide text-sm disabled:opacity-50 disabled:cursor-not-allowed";
+  const variants = {
+    primary: "bg-green-600 text-white hover:bg-green-500 shadow-lg shadow-green-900/20",
+    secondary: "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700",
+    danger: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900 border border-red-200 dark:border-red-800",
+    success: "bg-green-600 text-white hover:bg-green-500",
+    outline: "border-2 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-green-500 hover:text-green-600 dark:hover:text-white bg-transparent",
+    ghost: "bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800",
+    google: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50",
+    apple: "bg-black text-white hover:bg-gray-900",
+    yahoo: "bg-[#410093] text-white hover:bg-[#5000b8]",
+    microsoft: "bg-[#00a4ef] text-white hover:bg-[#0089c7]",
+    blue: "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-900/20",
+    orange: "bg-orange-500 text-black hover:bg-orange-400 shadow-lg shadow-orange-500/20",
+    verified: "bg-zinc-200 dark:bg-zinc-800 text-green-600 dark:text-green-500 border border-transparent cursor-default",
+    disabled: "bg-zinc-300 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-600 cursor-not-allowed border border-transparent"
+  };
+  const variantClass = disabled ? variants.disabled : variants[variant];
+  return (
+    <button onClick={disabled ? undefined : onClick} type={type} className={`${baseStyle} ${variantClass} ${className}`} disabled={disabled} {...props}>
+      {children}
+    </button>
+  );
+};
+
+const Input = ({ label, required, className="", ...props }) => (
+  <div className="mb-3 w-full">
+    {label && <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">{label} {required && <span className="text-red-500">*</span>}</label>}
+    <input className={`w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all placeholder-zinc-400 dark:placeholder-zinc-600 ${className}`} {...props} />
+  </div>
+);
+
+const Checkbox = ({ label, checked, onChange, name, ...props }) => (
+  <div className="flex items-center gap-3 mb-3 cursor-pointer group" onClick={() => onChange({ target: { name: name, type: 'checkbox', checked: !checked } })}>
+    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${checked ? 'bg-green-600 border-green-600' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 group-hover:border-zinc-500'}`}>
+      {checked && <LucideCheck size={14} className="text-white" />}
+    </div>
+    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white cursor-pointer select-none">{label}</label>
+    <input type="checkbox" className="hidden" name={name} checked={checked} onChange={(e) => onChange(e)} {...props} />
+  </div>
+);
+
+// --- UPDATED: TRIPLE BAR CHART (Expenses, Gross, Net) ---
+const FinancialBarChart = ({ data, fixedExpenses }) => {
+  // Determine max value for scaling (Gross is usually the highest, unless huge losses)
+  const allValues = Object.values(data).flatMap(d => [d.gross, d.expenses, Math.abs(d.net)]);
+  const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1000;
+  
+  const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  return (
+    <div className="w-full mt-6 select-none overflow-x-auto">
+        <div className="flex items-end justify-between gap-4 h-64 w-full pb-0 border-b border-zinc-200 dark:border-zinc-800 min-w-[600px]">
+        {monthOrder.map((label) => {
+            // Get data for month, fallback to 0 gross / fixed expenses
+            const monthData = data[label] || { gross: 0, expenses: fixedExpenses, net: -fixedExpenses };
+            const gross = monthData.gross || 0;
+            const expenses = fixedExpenses > 0 ? fixedExpenses : (monthData.expenses || 0); 
+            const net = gross - expenses;
+
+            // Calculate heights percentage
+            const hGross = Math.max((gross / maxVal) * 100, 2);
+            const hExpenses = Math.max((expenses / maxVal) * 100, 2);
+            const hNet = Math.max((Math.abs(net) / maxVal) * 100, 2);
+
+            return (
+            <div key={label} className="flex-1 flex flex-col items-center justify-end h-full group relative min-w-[40px]">
+                {/* Tooltip Group */}
+                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/90 text-white text-[10px] p-2 rounded shadow-xl z-20 w-32 text-center backdrop-blur-sm border border-zinc-700">
+                    <div className="font-bold text-xs border-b border-zinc-700 pb-1 mb-1">{label} Financials</div>
+                    <div className="flex justify-between"><span className="text-red-400">Exp:</span> <span>${expenses.toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-green-400">Gross:</span> <span>${gross.toLocaleString()}</span></div>
+                    <div className="flex justify-between font-bold"><span className="text-blue-400">Net:</span> <span>${net.toLocaleString()}</span></div>
+                </div>
+
+                {/* The 3 Bars Container - FIXED HEIGHT */}
+                <div className="flex items-end gap-[2px] w-full h-full justify-center opacity-90 hover:opacity-100 transition-opacity">
+                    {/* Expenses Bar (Red) */}
+                    <div className="w-1/3 bg-red-500 rounded-t-sm transition-all relative group/bar" style={{ height: `${hExpenses}%` }}></div>
+                    
+                    {/* Gross Revenue Bar (Green) */}
+                    <div className="w-1/3 bg-green-500 rounded-t-sm transition-all relative group/bar" style={{ height: `${hGross}%` }}></div>
+                    
+                    {/* Net Profit Bar (Blue - Positive / Orange - Negative) */}
+                    <div className={`w-1/3 rounded-t-sm transition-all relative group/bar ${net >= 0 ? 'bg-blue-500' : 'bg-orange-500'}`} style={{ height: `${hNet}%` }}></div>
+                </div>
+            </div>
+            );
+        })}
+        </div>
+        {/* Legend */}
+        <div className="flex justify-center gap-6 mt-4 text-xs font-bold text-zinc-500">
+            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> Expenses</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div> Gross Revenue</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div> Net Profit</div>
+        </div>
+        {/* X-Axis Labels */}
+        <div className="flex justify-between gap-4 mt-2 min-w-[600px]">
+            {monthOrder.map(label => (
+                <div key={label} className="flex-1 text-center">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{label}</span>
+                </div>
+            ))}
+        </div>
+    </div>
+  );
+};
+
+const initialFormState = { 
+  model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', images: [''], features: '', consumption: '', 
+  isPriceMatch: false, 
+  isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false,
+  hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false,
+  hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false 
+};
+const initialCheckState = { photosOutside: [], photosInside: [], miles: '', gas: 'Full' };
+const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
+
+// --- MAIN APP ---
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('home'); 
+  const [cars, setCars] = useState([]);
+  const [darkMode, setDarkMode] = useState(true);
+  const [adminTab, setAdminTab] = useState('fleet'); 
+  
+  const [clientUser, setClientUser] = useState(null); 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '', phone: '' });
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  const [searchParams, setSearchParams] = useState({ location: '', start: '', startTime: '10:00 AM', end: '', endTime: '10:00 AM' });
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [driverDetails, setDriverDetails] = useState({ name: '', email: '', phone: '', licenseNumber: '', licenseImages: [] });
+  const fileInputRef = useRef(null);
+  const checkInInputRef = useRef(null);
+  const carImageInputRef = useRef(null);
+
+  const [paymentDetails, setPaymentDetails] = useState({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false); 
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showSensitiveData, setShowSensitiveData] = useState(false); 
+  
+  const [bookings, setBookings] = useState([
+    { 
+      id: 'BK-5582', 
+      date: 'Nov 15, 2023', 
+      status: 'Completed', 
+      carName: 'Tesla Model 3', 
+      location: 'JFK Airport Drop-off', 
+      startDate: '2023-11-15',
+      startTime: '10:00 AM', 
+      returnDate: '2023-11-18', 
+      returnTime: '10:00 AM', 
+      days: 3, 
+      total: 583.50, 
+      image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=500&q=60', 
+      driver: { 
+        name: "Carlos Silva", 
+        phone: "(203) 555-0123", 
+        email: "carlos.silva@email.com",
+        licenseNumber: "CT-99887766",
+        licenseImages: ["https://images.unsplash.com/photo-1562564055-71e051d33c19?w=500&q=80", "https://images.unsplash.com/photo-1562564055-71e051d33c19?w=500&q=80"]
+      }, 
+      paymentRaw: { cardName: "CARLOS SILVA", cardNumber: "4242 4242 4242 4242", expiry: "12/28", cvc: "123", type: "visa" },
+      paymentMethod: "Credit Card (Visa **** 4242)", 
+      details: { rate: 450, extras: 24, protection: 45, fees: 25, tax: 39.5, manualCharges: [{ type: "Gas Refill", amount: 30 }, { type: "Excess Mileage", amount: 22.5 }] },
+      checkInStatus: 'completed', 
+      checkOutStatus: 'completed',
+      checkInData: { miles: 10000, gas: 'Full', photosOutside: ['https://images.unsplash.com/photo-1542362567-b07e54358753?w=100&q=80'], photosInside: ['https://images.unsplash.com/photo-1563720223185-11003d516935?w=100&q=80'] },
+      checkOutData: { miles: 10850, gas: '1/4', photosOutside: ['https://images.unsplash.com/photo-1542362567-b07e54358753?w=100&q=80'], photosInside: ['https://images.unsplash.com/photo-1563720223185-11003d516935?w=100&q=80'] } 
+    },
+    // MOCK DATA: 4 MORE BOOKINGS
+    {
+      id: 'BK-5583', date: 'Nov 20, 2023', status: 'Active', carName: 'Toyota RAV4', location: 'Downtown Center',
+      startDate: '2023-11-20', startTime: '09:00 AM', returnDate: '2023-11-25', returnTime: '09:00 AM', days: 5, total: 450.00,
+      image: 'https://images.unsplash.com/photo-1503376763036-066120622c74?auto=format&fit=crop&w=500&q=60',
+      driver: { name: "Ana Pereira", phone: "(212) 555-9988", email: "ana.p@email.com", licenseNumber: "NY-11223344", licenseImages: [] },
+      paymentRaw: { cardName: "ANA PEREIRA", cardNumber: "5555 4444 3333 2222", expiry: "10/25", cvc: "456", type: "mastercard" },
+      paymentMethod: "Credit Card (Mastercard **** 2222)",
+      details: { rate: 325, extras: 0, protection: 75, fees: 25, tax: 25, manualCharges: [] },
+      checkInStatus: 'completed', checkOutStatus: 'pending', checkInData: { miles: 5000, gas: 'Full', photosOutside: [], photosInside: [] }, checkOutData: null
+    },
+    {
+      id: 'BK-5584', date: 'Oct 10, 2023', status: 'Completed', carName: 'Ford Mustang', location: 'JFK Airport',
+      startDate: '2023-10-10', startTime: '12:00 PM', returnDate: '2023-10-12', returnTime: '12:00 PM', days: 2, total: 300.00,
+      image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=500&q=60',
+      driver: { name: "John Smith", phone: "(303) 555-1111", email: "john.s@email.com", licenseNumber: "CA-88776655", licenseImages: [] },
+      paymentRaw: { cardName: "JOHN SMITH", cardNumber: "3782 82246 31000", expiry: "01/24", cvc: "321", type: "amex" },
+      paymentMethod: "Credit Card (Amex **** 1000)",
+      details: { rate: 220, extras: 0, protection: 30, fees: 25, tax: 25, manualCharges: [] },
+      checkInStatus: 'completed', checkOutStatus: 'completed', checkInData: { miles: 20000, gas: 'Full', photosOutside: [], photosInside: [] }, checkOutData: { miles: 20200, gas: 'Full', photosOutside: [], photosInside: [] }
+    },
+    {
+      id: 'BK-5585', date: 'Dec 01, 2023', status: 'Completed', carName: 'Chevrolet Tahoe', location: 'Fairfield County',
+      startDate: '2023-12-01', startTime: '08:00 AM', returnDate: '2023-12-05', returnTime: '08:00 AM', days: 4, total: 600.00,
+      image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=500&q=60',
+      driver: { name: "Maria Garcia", phone: "(404) 555-2222", email: "maria.g@email.com", licenseNumber: "FL-44332211", licenseImages: [] },
+      paymentRaw: { cardName: "MARIA GARCIA", cardNumber: "4111 1111 1111 1111", expiry: "05/26", cvc: "789", type: "visa" },
+      paymentMethod: "Credit Card (Visa **** 1111)",
+      details: { rate: 480, extras: 40, protection: 40, fees: 25, tax: 15, manualCharges: [] },
+      checkInStatus: 'completed', checkOutStatus: 'completed', checkInData: { miles: 500, gas: 'Full', photosOutside: [], photosInside: [] }, checkOutData: { miles: 900, gas: 'Full', photosOutside: [], photosInside: [] }
+    },
+    {
+      id: 'BK-5586', date: 'Nov 05, 2023', status: 'Completed', carName: 'BMW 3 Series', location: 'Downtown Center',
+      startDate: '2023-11-05', startTime: '14:00 PM', returnDate: '2023-11-07', returnTime: '14:00 PM', days: 2, total: 400.00,
+      image: 'https://images.unsplash.com/photo-1555215696-99ac45e43d34?auto=format&fit=crop&w=500&q=60',
+      driver: { name: "Robert Brown", phone: "(202) 555-3333", email: "robert.b@email.com", licenseNumber: "TX-99001122", licenseImages: [] },
+      paymentRaw: { cardName: "ROBERT BROWN", cardNumber: "4242 4242 4242 9999", expiry: "11/27", cvc: "999", type: "visa" },
+      paymentMethod: "Credit Card (Visa **** 9999)",
+      details: { rate: 300, extras: 0, protection: 50, fees: 25, tax: 25, manualCharges: [] },
+      checkInStatus: 'completed', checkOutStatus: 'completed', checkInData: { miles: 15000, gas: 'Full', photosOutside: [], photosInside: [] }, checkOutData: { miles: 15300, gas: 'Full', photosOutside: [], photosInside: [] }
+    }
+  ]);
+
+  const [receiptBooking, setReceiptBooking] = useState(null);
+  const [extendingBookingId, setExtendingBookingId] = useState(null);
+  const [extensionDate, setExtensionDate] = useState('');
+  const [extensionTime, setExtensionTime] = useState('10:00 AM'); 
+  const [manageBookingId, setManageBookingId] = useState(null);
+  
+  const [activeBooking, setActiveBooking] = useState(null);
+  const [checkData, setCheckData] = useState(initialCheckState);
+  const [isCheckOutMode, setIsCheckOutMode] = useState(false);
+
+  const [adjustment, setAdjustment] = useState({ type: 'amount', value: '' }); 
+  const [extraCharge, setExtraCharge] = useState({ type: 'Gas Refill', amount: '' });
+
+  const [settings, setSettings] = useState({ 
+    taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, 
+    prices: { insurance500: 25, insurance1000: 15, childSeat: 8 },
+    locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] 
+  }); 
+  const [newLocation, setNewLocation] = useState('');
+
+  const [cart, setCart] = useState({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
+  const [viewCar, setViewCar] = useState(null); 
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState(initialFormState);
+  const [expenseForm, setExpenseForm] = useState(initialExpenseState); 
+  const [editingId, setEditingId] = useState(null);
+  const [showEco, setShowEco] = useState(false);
+
+  // --- EARNINGS DATA CALCULATION ---
+  const earningsData = useMemo(() => {
+    const monthlyData = {};
+    const vehicleTotals = {};
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Initialize months
+    monthNames.forEach(m => monthlyData[m] = { gross: 0, expenses: 0, net: 0 });
+
+    // 1. Calculate Total Fixed Monthly Expenses for the whole fleet
+    // (Assuming these expenses apply to every month for simplicity in this view)
+    const totalFleetFixedExpenses = cars.reduce((sum, car) => {
+        const carExp = car.expenses || {};
+        return sum + (Number(carExp.lease)||0) + (Number(carExp.insurance)||0) + (Number(carExp.carWash)||0) + (Number(carExp.maintenance)||0) + (Number(carExp.trackApp)||0);
+    }, 0);
+
+    bookings.forEach(b => {
+      if (['Completed', 'Active', 'Extended'].includes(b.status)) {
+         const [y, m, d] = b.startDate.split('-').map(Number);
+         const monthIndex = m - 1; 
+         if (monthIndex >= 0 && monthIndex < 12) {
+             const monthKey = monthNames[monthIndex];
+             monthlyData[monthKey].gross += b.total;
+         }
+
+         const carKey = b.carName;
+         if (!vehicleTotals[carKey]) vehicleTotals[carKey] = 0;
+         vehicleTotals[carKey] += b.total;
+      }
+    });
+    
+    // Calculate Net for each month (Gross - Fixed Expenses)
+    // Note: This assumes fixed expenses are constant every month.
+    monthNames.forEach(m => {
+        monthlyData[m].expenses = totalFleetFixedExpenses;
+        monthlyData[m].net = monthlyData[m].gross - totalFleetFixedExpenses;
+    });
+
+    return { monthly: monthlyData, byVehicle: vehicleTotals, fixedMonthly: totalFleetFixedExpenses };
+  }, [bookings, cars]);
+
+  // --- AUTH & INIT ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+        else await signInAnonymously(auth);
+      } catch (error) { console.error("Auth Error:", error); }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    const today = getTodayString();
+    const nextTime = getNext30MinSlot();
+    const returnDay = addDaysToDate(today, 3);
+    setSearchParams({ location: '', start: today, startTime: nextTime, end: returnDay, endTime: nextTime });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const qCars = query(collection(db, 'artifacts', appId, 'public', 'data', 'cars'));
+    const unsubCars = onSnapshot(qCars, (snapshot) => {
+      // If empty snapshot, populate mock data for demo purposes
+      if (snapshot.empty) {
+         console.log("Using Mock Data because DB is empty");
+         setCars([
+           { id: '1', model: 'Tesla Model 3', category: 'Sedan', price: 89, fuel: 'Electric', seats: 5, isAWD: true, images: ['https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=500&q=60'], expenses: { lease: 800, insurance: 150, carWash: 40, maintenance: 50, trackApp: 10, downPayment: 2000 } },
+           { id: '2', model: 'Toyota RAV4', category: 'SUV', price: 65, fuel: 'Hybrid', seats: 5, isAWD: true, images: ['https://images.unsplash.com/photo-1503376763036-066120622c74?auto=format&fit=crop&w=500&q=60'], expenses: { lease: 600, insurance: 120, carWash: 30, maintenance: 60, trackApp: 10, downPayment: 1500 } },
+           { id: '3', model: 'Ford Mustang', category: 'Convertible', price: 110, fuel: 'Gasoline', seats: 4, isAWD: false, images: ['https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=500&q=60'], expenses: { lease: 750, insurance: 180, carWash: 40, maintenance: 80, trackApp: 10, downPayment: 3000 } },
+           { id: '4', model: 'Chevrolet Tahoe', category: 'SUV', price: 120, fuel: 'Gasoline', seats: 7, isAWD: true, images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=500&q=60'], expenses: { lease: 900, insurance: 200, carWash: 50, maintenance: 100, trackApp: 10, downPayment: 4000 } },
+           { id: '5', model: 'BMW 3 Series', category: 'Luxury', price: 95, fuel: 'Gasoline', seats: 5, isAWD: false, images: ['https://images.unsplash.com/photo-1555215696-99ac45e43d34?auto=format&fit=crop&w=500&q=60'], expenses: { lease: 850, insurance: 170, carWash: 40, maintenance: 90, trackApp: 10, downPayment: 2500 } }
+         ]);
+      } else {
+          const carsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            if (data.image && !data.images) data.images = [data.image];
+            return { id: doc.id, ...data };
+          });
+          setCars(carsData);
+      }
+      setLoading(false);
+    }, (error) => {
+       console.log("Error fetching cars, using mock");
+       setLoading(false);
+    });
+    
+    const qSettings = query(collection(db, 'artifacts', appId, 'public', 'data', 'settings'));
+    const unsubSettings = onSnapshot(qSettings, (snapshot) => {
+      if (!snapshot.empty) setSettings(prev => ({ ...prev, ...snapshot.docs[0].data() }));
+    }, (error) => console.log("Using default settings"));
+    
+    return () => { unsubCars(); unsubSettings(); };
+  }, [user]);
+
+  // --- HANDLERS ---
+  const handleClientLogin = (e) => {
+    e.preventDefault();
+    if (loginForm.email) {
+      const newUser = { name: isRegistering ? loginForm.name : "Client User", email: loginForm.email, phone: loginForm.phone };
+      setClientUser(newUser);
+      setDriverDetails(prev => ({ ...prev, name: newUser.name, email: newUser.email, phone: newUser.phone }));
+      setShowLoginModal(false);
+      if (view === 'manage-redirect') setView('bookings');
+    }
+  };
+
+  const handleSocialLogin = (provider) => {
+    const mockUsers = { google: { name: "Google User", email: "user@gmail.com" }, apple: { name: "Apple User", email: "user@icloud.com" }, yahoo: { name: "Yahoo User", email: "user@yahoo.com" }, microsoft: { name: "Microsoft User", email: "user@hotmail.com" } };
+    const newUser = mockUsers[provider];
+    setClientUser(newUser);
+    setDriverDetails(prev => ({ ...prev, name: newUser.name, email: newUser.email }));
+    setShowLoginModal(false);
+    if (view === 'manage-redirect') setView('bookings');
+  };
+
+  const handleAdminLogin = () => { setShowLoginModal(false); setView('admin'); };
+  const handleManageBookingClick = () => { if (clientUser) { setView('bookings'); } else { setView('manage-redirect'); setShowLoginModal(true); } };
+  const handleSignOut = () => { setClientUser(null); setDriverDetails({ name: '', email: '', phone: '', licenseNumber: '', licenseImages: [] }); setView('home'); };
+  const handleSearch = () => { if (!searchParams.location) { alert("Please select a Pick-up Location."); return; } setIsSearching(true); setTimeout(() => { setIsSearching(false); const fleetSection = document.getElementById('fleet'); if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); }, 1500); };
+  
+  // --- CAR DETAILS HANDLER ---
+  const handleViewDetails = (car) => {
+    setViewCar(car);
+    setView('car-details');
+    window.scrollTo(0, 0);
+  };
+
+  // --- IMAGE HANDLERS ---
+  const handleImageClick = (src) => { setSelectedImage(src); };
+
+  const handleLicenseUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setDriverDetails(prev => { if (prev.licenseImages.length >= 2) return prev; return { ...prev, licenseImages: [...prev.licenseImages, reader.result] }; });
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+  const deleteLicenseImage = (index) => setDriverDetails(prev => ({ ...prev, licenseImages: prev.licenseImages.filter((_, i) => i !== index) }));
+  const triggerFileInput = () => fileInputRef.current.click();
+
+  const handleDurationChange = (e) => { const newDays = Number(e.target.value); setCart({ ...cart, days: newDays }); if (searchParams.start) { const newReturnDate = addDaysToDate(searchParams.start, newDays); setSearchParams(prev => ({ ...prev, end: newReturnDate })); } };
+  const handleSearchParamsChange = (field, value) => { const newParams = { ...searchParams, [field]: value }; if (field === 'startTime') newParams.endTime = value; if (field === 'start') if (newParams.end < value) newParams.end = value; setSearchParams(newParams); if (view === 'checkout' || view === 'payment') { const billingDays = calculateBillingDays(newParams.start, newParams.startTime, newParams.end, newParams.endTime); setCart(prev => ({ ...prev, billingDays })); } };
+  const handleInputChange = (e) => { const { name, value, type, checked } = e.target; setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value })); };
+  const handleImageChange = (index, value) => { const newImages = [...formData.images]; newImages[index] = value; setFormData({ ...formData, images: newImages }); };
+  const addImageField = () => setFormData({ ...formData, images: [...formData.images, ''] });
+  const removeImageField = (index) => setFormData({ ...formData, images: formData.images.filter((_, i) => i !== index) });
+  
+  // --- NEW: HANDLE CAR IMAGE UPLOAD ---
+  const handleCarImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    Promise.all(files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    })).then(base64Images => {
+      setFormData(prev => {
+        // Remove strings vazias iniciais se houver e adiciona as novas
+        const currentImages = prev.images.filter(img => img.trim() !== '');
+        return { ...prev, images: [...currentImages, ...base64Images] };
+      });
+    });
+    
+    e.target.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo novamente se necessario
+  };
+
+  const handleSaveCar = async (e) => { e.preventDefault(); if (!user) { alert("System Error: You are not authenticated. Please refresh."); return; } const carData = { ...formData, price: Number(formData.price), seats: Number(formData.seats) || 5, images: formData.images.filter(img => img.trim() !== ''), features: formData.features.split(',').map(f => f.trim()).filter(f => f !== ''), updatedAt: new Date() }; if (carData.images.length === 0) carData.images = ["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60"]; try { if (editingId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'cars', editingId), carData); else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cars'), { ...carData, createdAt: new Date() }); setEditingId(null); setFormData(initialFormState); alert("Vehicle saved successfully!"); } catch (error) { alert("Error saving vehicle. Check permissions."); } };
+  const handleDeleteCar = async (id) => { if (!user || !confirm("Delete?")) return; try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'cars', id)); } catch (e) {} };
+  
+  const handleEditClick = (car) => { 
+    setEditingId(car.id); 
+    setFormData({ 
+      ...car, 
+      features: car.features ? (Array.isArray(car.features) ? car.features.join(', ') : car.features) : '', 
+      seats: car.seats || 5, 
+      transmission: car.transmission || 'Automatic', 
+      hasBluetooth: car.hasBluetooth || false, 
+      hasReverseCamera: car.hasReverseCamera || false,
+      hasHeatedSeats: car.hasHeatedSeats || false,
+      hasHeatedSteering: car.hasHeatedSteering || false,
+      hasElectricSeats: car.hasElectricSeats || false,
+      hasPaddleShifters: car.hasPaddleShifters || false,
+      hasKeylessEntry: car.hasKeylessEntry || false,
+      hasBlindSpotWarning: car.hasBlindSpotWarning || false,
+      hasDriveAssist: car.hasDriveAssist || false,
+      hasUSBCharger: car.hasUSBCharger || false
+    }); 
+    document.querySelector('.admin-form')?.scrollIntoView({ behavior: 'smooth' }); 
+  };
+
+  // --- NEW: EXPENSE HANDLERS ---
+  const handleExpenseChange = (e) => {
+    const { name, value } = e.target;
+    setExpenseForm(prev => ({ ...prev, [name]: value }));
+    
+    // Auto-populate if carId changes
+    if (name === 'carId') {
+        const selectedCar = cars.find(c => c.id === value);
+        if (selectedCar && selectedCar.expenses) {
+            setExpenseForm(prev => ({
+                ...prev,
+                carId: value,
+                lease: selectedCar.expenses.lease || '',
+                insurance: selectedCar.expenses.insurance || '',
+                carWash: selectedCar.expenses.carWash || '',
+                maintenance: selectedCar.expenses.maintenance || '',
+                trackApp: selectedCar.expenses.trackApp || '',
+                downPayment: selectedCar.expenses.downPayment || ''
+            }));
+        } else {
+            // Reset fields if no expenses saved or new car selected
+            setExpenseForm(prev => ({ ...initialExpenseState, carId: value }));
+        }
+    }
+  };
+
+  const handleSaveExpenses = async () => {
+    if (!expenseForm.carId) { alert("Please select a vehicle first."); return; }
+    try {
+        // FIX: Persist ALL cars currently in state to ensure mock data doesn't disappear
+        // when switching to real database data. This converts the entire current fleet list 
+        // to real database entries.
+        
+        const savePromises = cars.map(car => {
+            let dataToSave = { ...car };
+            
+            // If this is the car being edited, apply the new expenses
+            if (car.id === expenseForm.carId) {
+                dataToSave.expenses = {
+                    lease: Number(expenseForm.lease),
+                    insurance: Number(expenseForm.insurance),
+                    carWash: Number(expenseForm.carWash),
+                    maintenance: Number(expenseForm.maintenance),
+                    trackApp: Number(expenseForm.trackApp),
+                    downPayment: Number(expenseForm.downPayment)
+                };
+            }
+            
+            // Remove ID as it is used as the document key
+            const docId = dataToSave.id;
+            delete dataToSave.id;
+
+            return setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'cars', docId), dataToSave, { merge: true });
+        });
+
+        await Promise.all(savePromises);
+        
+        alert("Monthly expenses updated successfully!");
+        // No need to manually update state here as onSnapshot will reflect the changes
+        // for all cars now present in the database.
+    } catch (e) {
+        console.error("Error saving expenses:", e);
+        alert("Failed to save expenses.");
+    }
+  };
+  
+  // Helper to set form for editing from the list
+  const handleEditExpensesFromList = (car) => {
+      setExpenseForm({
+        carId: car.id,
+        lease: car.expenses?.lease || '',
+        insurance: car.expenses?.insurance || '',
+        carWash: car.expenses?.carWash || '',
+        maintenance: car.expenses?.maintenance || '',
+        trackApp: car.expenses?.trackApp || '',
+        downPayment: car.expenses?.downPayment || ''
+      });
+      // Scroll to top of form
+      document.querySelector('.expense-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => { setEditingId(null); setFormData(initialFormState); };
+  const handleSettingsChange = (field, value, isNested = false) => { if (isNested) setSettings(prev => ({ ...prev, prices: { ...prev.prices, [field]: Number(value) } })); else setSettings(prev => ({ ...prev, [field]: Number(value) })); };
+  const addLocation = () => { if (newLocation.trim()) { setSettings(prev => ({ ...prev, locations: [...(prev.locations || []), newLocation.trim()] })); setNewLocation(''); } };
+  const removeLocation = (locToRemove) => { setSettings(prev => ({ ...prev, locations: prev.locations.filter(l => l !== locToRemove) })); };
+  const saveSettings = async () => { try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global_settings'), settings).catch(async () => await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'settings'), settings)); alert("Global Settings & Locations Saved!"); } catch (e) { console.error(e); } };
+
+  // --- CHECK-IN / CHECK-OUT LOGIC ---
+  const handleStartWorkflow = (booking, mode) => {
+    setActiveBooking(booking);
+    setCheckData(initialCheckState);
+    setIsCheckOutMode(mode === 'checkout');
+    setView('check-workflow');
+  };
+
+  const handleCheckUpload = (e, section) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setCheckData(prev => {
+        const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
+        if (currentList.length >= 10) return prev;
+        return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, reader.result] };
+      });
+      reader.readAsDataURL(file);
+    }
+    if (checkInInputRef.current) checkInInputRef.current.value = '';
+  };
+
+  const triggerCheckInput = (section) => document.getElementById(`check-input-${section}`).click();
+
+  const completeWorkflow = () => {
+     if (!checkData.miles) { alert("Please enter current mileage."); return; }
+     if (checkData.photosOutside.length === 0 || checkData.photosInside.length === 0) { alert("Please upload at least one photo for both Inside and Outside."); return; }
+
+     const updatedBookings = bookings.map(b => {
+       if (b.id === activeBooking.id) {
+         let updatedB = { ...b };
+         if (isCheckOutMode) {
+           const checkInMiles = parseInt(b.checkInData.miles || 0);
+           const checkOutMiles = parseInt(checkData.miles || 0);
+           const allowedMiles = settings.includedMiles * b.days;
+           const milesDriven = checkOutMiles - checkInMiles;
+           const excessMiles = Math.max(0, milesDriven - allowedMiles);
+           const excessMileageFee = excessMiles * settings.extraMileRate;
+           const gasInLevel = getGasValue(b.checkInData.gas);
+           const gasOutLevel = getGasValue(checkData.gas);
+           const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
+           const refuelingFee = gasDiff * 10; 
+           updatedB.checkOutStatus = 'completed';
+           updatedB.checkOutData = checkData;
+           updatedB.status = 'Completed';
+           const safeExcess = isNaN(excessMileageFee) ? 0 : excessMileageFee;
+           const safeRefuel = isNaN(refuelingFee) ? 0 : refuelingFee;
+           updatedB.details = { ...updatedB.details, excessMileageFee: safeExcess, refuelingFee: safeRefuel };
+           updatedB.total += safeExcess + safeRefuel;
+         } else {
+           updatedB.checkInStatus = 'completed'; updatedB.checkInData = checkData;
+         }
+         return updatedB;
+       }
+       return b;
+     });
+     setBookings(updatedBookings);
+     setView('workflow-success');
+  };
+
+  // --- EXTENSION LOGIC ---
+  const initExtension = (booking) => { 
+    setExtendingBookingId(booking.id); 
+    setExtensionDate(booking.returnDate); 
+    setExtensionTime('10:00 AM'); // Default extension time
+  };
+  const confirmExtension = (booking) => {
+    if (!extensionDate) return;
+    
+    // Parse Dates correctly considering Time
+    const oldTimeStr = booking.returnTime || "10:00 AM";
+    const oldDateTimeStr = `${booking.returnDate}T${convertTo24Hour(oldTimeStr)}:00`;
+    const newDateTimeStr = `${extensionDate}T${convertTo24Hour(extensionTime)}:00`;
+    
+    const oldReturn = new Date(oldDateTimeStr);
+    const newReturn = new Date(newDateTimeStr);
+    
+    // Difference in milliseconds
+    const diffTime = newReturn - oldReturn;
+    
+    if (diffTime < 0) {
+        alert("O novo horário de devolução não pode ser anterior ao horário atual.");
+        return;
+    }
+    
+    // Calculate extra days (ceil).
+    const diffMinutes = diffTime / (1000 * 60);
+    let extraDays = 0;
+
+    if (diffMinutes > 30) {
+       // If more than 30 minutes, charge.
+       const diffHours = diffTime / (1000 * 60 * 60);
+       extraDays = Math.ceil(diffHours / 24);
+       if (extraDays === 0) extraDays = 1; // Minimum charge for extension > 30min
+    } else {
+       // Courtesy period
+       alert("Extensão concedida como cortesia (período de tolerância de 30 min).");
+       // Proceed to update date but 0 extra cost
+    }
+
+    const baseRate = parseFloat(booking.details.rate) || 0;
+    const currentExtended = parseFloat(booking.details.extendedRate) || 0;
+    const currentDays = parseInt(booking.days) || 1;
+    
+    // Calculate daily rate based on total car cost so far divided by total days so far to keep consistency
+    const dailyRate = (baseRate + currentExtended) / currentDays;
+    
+    const extraCost = dailyRate * extraDays;
+    const extraTax = extraCost * (settings.taxes / 100);
+    const totalExtra = extraCost + extraTax;
+    
+    const updatedBookings = bookings.map(b => {
+      if (b.id === booking.id) {
+        const currentTotal = parseFloat(b.total) || 0;
+        return {
+          ...b,
+          returnDate: extensionDate,
+          returnTime: extensionTime, // Update time as well
+          days: currentDays + extraDays,
+          total: currentTotal + totalExtra,
+          status: 'Extended',
+          details: { 
+              ...b.details, 
+              extendedRate: (b.details.extendedRate || 0) + extraCost,
+              tax: (b.details.tax || 0) + extraTax 
+          }
+        };
+      }
+      return b;
+    });
+    setBookings(updatedBookings); setExtendingBookingId(null); 
+    if (extraDays > 0) {
+       alert(`Rental updated by ${extraDays} days until ${extensionDate} at ${extensionTime}.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
+    }
+  };
+  
+  const handleExpiryChange = (e) => { let val = e.target.value.replace(/\D/g, ''); if (val.length > 4) val = val.slice(0, 4); if (val.length > 2) { val = val.slice(0, 2) + '/' + val.slice(2); } setPaymentDetails({ ...paymentDetails, expiry: val }); };
+  const handleRent = (car) => { if (!clientUser) { alert("Please sign in to make a reservation."); setShowLoginModal(true); return; } const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime); setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '1000' }); if (clientUser) setDriverDetails(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' })); setView('checkout'); };
+  const toggleExtra = (extraType) => { if (cart.extrasSelected.includes(extraType)) setCart({ ...cart, extrasSelected: cart.extrasSelected.filter(e => e !== extraType) }); else setCart({ ...cart, extrasSelected: [...cart.extrasSelected, extraType] }); };
+  const calculateTotal = () => { 
+      if (!cart.car) return { subtotal: 0, taxAmount: 0, total: 0 }; 
+      const days = isNaN(cart.billingDays) ? 1 : cart.billingDays; // Fix NaN issue
+      let runningTotal = cart.car.price * days; 
+      if (cart.extrasSelected.includes('childSeat')) runningTotal += (settings.prices.childSeat * days); 
+      if (cart.insuranceOption === '500') runningTotal += (settings.prices.insurance500 * days); 
+      if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days); 
+      runningTotal += settings.cleaningFee; 
+      const taxAmount = runningTotal * (settings.taxes / 100); 
+      return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount }; 
+  };
+  const handleProceedToPayment = () => { if (!isCheckoutValid()) { alert("Please complete all mandatory fields and upload driver license photos."); return; } setView('payment'); };
+  const isCheckoutValid = () => { return ( driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2 ); };
+  const handleConfirmBooking = () => { 
+      if (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName) { alert("Please enter valid payment details."); return; } 
+      setIsProcessingPayment(true); 
+      const totalData = calculateTotal(); 
+      const days = isNaN(cart.billingDays) ? 1 : cart.billingDays; // Fix NaN for new booking
+      
+      const newBooking = { 
+          id: 'BK-' + Math.floor(Math.random() * 10000), 
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
+          status: 'Active', 
+          carName: cart.car.model, 
+          location: searchParams.location || 'Main Office', 
+          startDate: searchParams.start, 
+          startTime: searchParams.startTime, 
+          returnDate: searchParams.end, 
+          returnTime: searchParams.endTime, 
+          days: days, 
+          total: totalData.total, 
+          image: cart.car.images ? cart.car.images[0] : cart.car.image, 
+          driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
+          paymentRaw: { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
+          paymentMethod: `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`, 
+          details: { 
+              rate: cart.car.price * days, 
+              extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat * days : 0), 
+              protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, 
+              fees: settings.cleaningFee, 
+              tax: totalData.taxAmount 
+          }, 
+          checkInStatus: 'pending', 
+          checkOutStatus: 'pending', 
+          checkInData: null, 
+          checkOutData: null 
+      }; 
+      setTimeout(() => { setBookings([newBooking, ...bookings]); setIsProcessingPayment(false); setView('confirmation'); window.scrollTo(0, 0); }, 3000); 
+  };
+  const handlePrintReceipt = () => { window.print(); };
+
+  const handleApplyDiscount = (bookingId) => {
+      const updatedBookings = bookings.map(b => {
+          if (b.id === bookingId) {
+              const val = parseFloat(adjustment.value);
+              if (isNaN(val) || val <= 0) return b;
+              let discountAmount = 0;
+              if (adjustment.type === 'amount') discountAmount = val;
+              else discountAmount = b.total * (val / 100);
+              return { ...b, total: b.total - discountAmount, details: { ...b.details, discount: (b.details.discount || 0) + discountAmount } };
+          }
+          return b;
+      });
+      setBookings(updatedBookings); setAdjustment({ type: 'amount', value: '' }); alert("Discount Applied!");
+  };
+  const handleAddCharge = (bookingId) => {
+      const updatedBookings = bookings.map(b => {
+          if (b.id === bookingId) {
+              const val = parseFloat(extraCharge.amount);
+              if (isNaN(val) || val <= 0) return b;
+              const newTotal = b.total + val;
+              const newDetails = { ...b.details, manualCharges: [...(b.details.manualCharges || []), { type: extraCharge.type, amount: val }] };
+              return { ...b, total: newTotal, details: newDetails };
+          }
+          return b;
+      });
+      setBookings(updatedBookings); setExtraCharge({ type: 'Gas Refill', amount: '' }); alert(`Charged $${extraCharge.amount} for ${extraCharge.type} to card on file.`);
+  };
+
+  const handleRemoveCharge = (bookingId, chargeIndex) => {
+      const updatedBookings = bookings.map(b => {
+          if (b.id === bookingId && b.details.manualCharges) {
+              const chargeToRemove = b.details.manualCharges[chargeIndex];
+              const newTotal = b.total - chargeToRemove.amount; // Remove valor do total
+              const newCharges = b.details.manualCharges.filter((_, index) => index !== chargeIndex);
+              
+              const newDetails = { ...b.details, manualCharges: newCharges };
+              return { ...b, total: newTotal, details: newDetails };
+          }
+          return b;
+      });
+      setBookings(updatedBookings);
+  };
+
+  const handleRemoveDiscount = (bookingId) => {
+      const updatedBookings = bookings.map(b => {
+          if (b.id === bookingId && b.details.discount) {
+              const newTotal = b.total + b.details.discount;
+              const newDetails = { ...b.details };
+              delete newDetails.discount;
+              return { ...b, total: newTotal, details: newDetails };
+          }
+          return b;
+      });
+      setBookings(updatedBookings);
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600">Loading CarHop...</div>;
+
+  return (
+    <div className={darkMode ? "dark" : ""}>
+      <style>{` @media print { body * { visibility: hidden; } .printable-receipt, .printable-receipt * { visibility: visible; } .printable-receipt { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important; margin: 0 !important; padding: 20px !important; background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; z-index: 9999; } .no-print { display: none !important; } } `}</style>
+    <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300">
+      
+      <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}><div className="bg-green-600 p-1.5 rounded-lg flex items-center justify-center"><LucideCar className="text-white" size={20} fill="white" /></div><span className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop</span></div>
+          <div className="flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <div className="hidden md:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><LucidePhone size={16} /> <span>1-800-CARHOP</span></div>
+            <button onClick={handleManageBookingClick} className="hidden md:block hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide">Manage Booking</button>
+            {clientUser ? (<div className="flex items-center gap-3"><span className="text-green-600 font-bold">Hi, {clientUser.name}</span><button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800"><LucideLogOut size={12}/></button></div>) : (<button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider">Sign In</button>)}
+            <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme">{darkMode ? <LucideSun size={20} /> : <LucideMoon size={20} />}</button>
+            <button onClick={() => setView('admin')} className="hidden md:block text-zinc-400 hover:text-white"><LucideLock size={16}/></button>
+          </div>
+        </div>
+      </header>
+
+      {/* --- IMAGE VIEWER MODAL (LIGHTBOX) --- */}
+      {selectedImage && <ImageViewer src={selectedImage} onClose={() => setSelectedImage(null)} />}
+
+      {/* --- PROCESSING OVERLAY --- */}
+      {isProcessingPayment && (<div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4 text-center"><LucideCar size={64} className="text-green-600 animate-bounce mb-6" /><div className="flex items-center gap-3 text-white text-xl font-bold mb-2"><LucideLoader className="animate-spin"/> Pagamento efetuado e está sendo processado...</div><p className="text-zinc-400 text-sm">Please wait while we secure your vehicle.</p></div>)}
+      
+      {/* --- RECEIPT MODAL --- */}
+      {receiptBooking && (
+        <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg p-0 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 overflow-hidden printable-receipt">
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-black/50 flex justify-between items-center"><div className="flex items-center gap-2 text-green-600"><LucideCheck size={24} /><span className="font-bold text-xl">Booking Receipt</span></div><button onClick={() => setReceiptBooking(null)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white no-print"><LucideX/></button></div>
+            <div className="p-8 space-y-6">
+              <div className="flex justify-between items-start"><div><h3 className="text-2xl font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3><p className="text-zinc-500 dark:text-zinc-400">Ref: {receiptBooking.id}</p></div><div className="text-right"><div className="text-sm font-bold text-zinc-500 uppercase">Total Paid</div><div className="text-2xl font-bold text-green-600">${receiptBooking.total.toFixed(2)}</div></div></div>
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg border border-zinc-100 dark:border-zinc-800"><div className="text-xs uppercase font-bold text-zinc-500 mb-3 border-b border-zinc-200 dark:border-zinc-700 pb-2">Customer Details</div><div className="grid grid-cols-2 gap-4 text-sm"><div><span className="block text-zinc-500 text-xs">Name</span><span className="font-medium text-zinc-900 dark:text-white">{receiptBooking.driver?.name}</span></div><div><span className="block text-zinc-500 text-xs">Phone</span><span className="font-medium text-zinc-900 dark:text-white">{receiptBooking.driver?.phone}</span></div><div><span className="block text-zinc-500 text-xs">Email</span><span className="font-medium text-zinc-900 dark:text-white">{receiptBooking.driver?.email}</span></div><div><span className="block text-zinc-500 text-xs">Payment</span><span className="font-medium text-zinc-900 dark:text-white flex items-center gap-1"><LucideCreditCard size={12} /> {receiptBooking.paymentMethod}</span></div></div></div>
+              <div className="grid grid-cols-2 gap-4 text-sm"><div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800"><span className="block text-zinc-500 text-xs uppercase font-bold mb-1">Pick-up Date</span><span className="font-medium">{receiptBooking.startDate || receiptBooking.date}</span></div><div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800"><span className="block text-zinc-500 text-xs uppercase font-bold mb-1">Return Date</span><span className="font-medium">{receiptBooking.returnDate || 'N/A'}</span></div><div className="col-span-2 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800"><span className="block text-zinc-500 text-xs uppercase font-bold mb-1">Location</span><span className="font-medium">{receiptBooking.location}</span></div></div>
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                <div className="flex justify-between"><span>Base Rate</span><span>${receiptBooking.details?.rate.toFixed(2)}</span></div>
+                {/* NEW: Extended Rate Line */}
+                {receiptBooking.details?.extendedRate > 0 && (
+                    <div className="flex justify-between text-blue-600 font-medium"><span>Extended Rate</span><span>${receiptBooking.details.extendedRate.toFixed(2)}</span></div>
+                )}
+                <div className="flex justify-between"><span>Extras</span><span>${receiptBooking.details?.extras.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Protection</span><span>${receiptBooking.details?.protection.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Fees</span><span>${receiptBooking.details?.fees.toFixed(2)}</span></div>
+                <div className="flex justify-between text-zinc-400"><span>Tax</span><span>${receiptBooking.details?.tax.toFixed(2)}</span></div>
+                {receiptBooking.details?.discount && (<div className="flex justify-between text-green-500 items-center"><span>Discount Applied</span><span>-${receiptBooking.details.discount.toFixed(2)}</span></div>)}
+                {receiptBooking.details?.manualCharges && receiptBooking.details.manualCharges.map((c, i) => (<div key={i} className="flex justify-between text-red-500"><span>{c.type}</span><span>+${c.amount.toFixed(2)}</span></div>))}
+              </div>
+              <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex gap-3 text-sm"><LucideAlertTriangle className="text-yellow-600 dark:text-yellow-500 shrink-0" size={20} /><p className="text-yellow-800 dark:text-yellow-200 text-xs leading-relaxed"><strong>Security Deposit Refund Policy:</strong> Refundable within <strong>2 business days</strong> after vehicle inspection.</p></div>
+            </div>
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex gap-3 no-print"><Button className="w-full" variant="outline" onClick={handlePrintReceipt}><LucideFileText size={16}/> Print</Button><Button className="w-full" onClick={() => setReceiptBooking(null)}>Close</Button></div>
+          </div>
+        </div>
+      )}
+
+      {/* --- LOGIN MODAL --- */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-red-500 transition-colors"><LucideX/></button>
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
+            <div className="space-y-3 mb-6"><Button variant="google" className="w-full flex items-center justify-center gap-2" onClick={() => handleSocialLogin('google')}><span className="font-bold">Continue with Google</span></Button><Button variant="apple" className="w-full flex items-center justify-center gap-2" onClick={() => handleSocialLogin('apple')}><span className="font-bold">Continue with Apple</span></Button><div className="grid grid-cols-2 gap-3"><Button variant="yahoo" className="w-full flex items-center justify-center gap-2 text-xs" onClick={() => handleSocialLogin('yahoo')}><span>Yahoo</span></Button><Button variant="microsoft" className="w-full flex items-center justify-center gap-2 text-xs" onClick={() => handleSocialLogin('microsoft')}><span>Microsoft</span></Button></div></div>
+            <div className="relative mb-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-300 dark:border-zinc-700"></span></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500">Or continue with email</span></div></div>
+            <form onSubmit={handleClientLogin} className="space-y-4"><Input label="Full Name" value={loginForm.name} onChange={e => setLoginForm({...loginForm, name: e.target.value})} placeholder="Your Name" required /><Input label="Email Address" type="email" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} placeholder="you@example.com" required /><Input label="Phone Number" type="tel" value={loginForm.phone} onChange={e => setLoginForm({...loginForm, phone: e.target.value})} placeholder="(555) 000-0000" /><Input label="Password" type="password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} placeholder="••••••" required /><Button className="w-full mt-4" type="submit">{isRegistering ? 'Sign Up' : 'Sign In'}</Button></form>
+            <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center"><button onClick={handleAdminLogin} className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto"><LucideSettings size={10}/> Admin / Owner Login</button></div>
+            <p className="text-center text-sm text-zinc-500 mt-2 cursor-pointer hover:text-green-600 dark:hover:text-green-500 transition-colors" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? 'Already have an account? Sign In' : 'New to CarHop? Create Account'}</p>
+          </div>
+        </div>
+      )}
+
+      <main className="pt-20 pb-20">
+        {/* --- HOME VIEW --- */}
+        {view === 'home' && (
+          <>
+             <div className="relative h-[600px] w-full overflow-hidden flex items-center justify-center"><div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1471479917193-f00955256257?auto=format&fit=crop&w=2000&q=80')` }}></div><div className="absolute inset-0 bg-black/40 z-10"></div><div className="relative z-20 max-w-7xl w-full px-6 grid lg:grid-cols-2 gap-12 items-center"><div className="text-left"><span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">Price Match Guarantee</span><h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4">The Best price rental in Fairfield County <br/><span className="text-green-500">Up to $39/Day</span></h1><p className="text-zinc-200 text-lg max-w-lg mb-6">Fuel-efficient rentals with no hidden fees. Save more with our pay-now discounts.</p><div className="flex gap-4 text-xs font-bold text-white/80 uppercase tracking-wider"><span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Free Cancellation</span><span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> No Hidden Fees</span></div></div><div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl shadow-2xl w-full max-w-md ml-auto"><h3 className="text-xl font-bold text-white mb-4">Find Your Perfect Ride</h3><div className="space-y-4"><div><label className="text-xs font-bold text-zinc-400 uppercase mb-1 block">Pick-up Location</label><div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg text-white"><div className="pl-3"><LucideMapPin size={18} className="text-zinc-400" /></div><select value={searchParams.location} onChange={e => setSearchParams({...searchParams, location: e.target.value})} className="bg-transparent w-full p-3 outline-none text-sm text-white"><option value="" disabled className="text-zinc-500">Select Location</option>{settings.locations && settings.locations.length > 0 ? (settings.locations.map((loc, idx) => (<option key={idx} value={loc} className="text-black">{loc}</option>))) : (<option value="Main" className="text-black">Main Headquarters</option>)}</select></div></div><div className="grid grid-cols-2 gap-4"><div><label className="text-xs font-bold text-zinc-400 uppercase mb-1 block">Pick-up Date & Time</label><div className="flex flex-col gap-2"><div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white"><LucideCalendar size={18} className="text-zinc-400 mr-2" /><input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-sm [color-scheme:dark]" /></div><div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg text-white"><div className="pl-3"><LucideClock size={18} className="text-zinc-400" /></div><select value={searchParams.startTime} onChange={e => handleSearchParamsChange('startTime', e.target.value)} className="bg-transparent w-full p-3 outline-none text-sm text-white appearance-none">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div></div></div><div><label className="text-xs font-bold text-zinc-400 uppercase mb-1 block">Return Date & Time</label><div className="flex flex-col gap-2"><div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white"><LucideCalendar size={18} className="text-zinc-400 mr-2" /><input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-sm [color-scheme:dark]" /></div><div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg text-white"><div className="pl-3"><LucideClock size={18} className="text-zinc-400" /></div><select value={searchParams.endTime} onChange={e => handleSearchParamsChange('endTime', e.target.value)} className="bg-transparent w-full p-3 outline-none text-sm text-white appearance-none">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div></div></div></div><Button className="w-full py-4 text-base relative" onClick={handleSearch} disabled={isSearching}>{isSearching ? (<span className="flex items-center gap-2"><LucideCar className="animate-bounce"/> Checking Availability...</span>) : (<span className="flex items-center gap-2"><LucideSearch size={18} /> Search Available</span>)}</Button></div></div></div></div>
+            <div id="fleet" className="max-w-7xl mx-auto px-6 mt-16 scroll-mt-24">
+              <div className="flex justify-between items-end mb-8"><div><h2 className="text-3xl font-bold text-zinc-900 dark:text-white">Popular Economy Cars</h2><p className="text-zinc-500 dark:text-zinc-400 mt-1">Fuel-efficient vehicles at unbeatable prices.</p></div><div className="flex items-center gap-4"><div onClick={() => setShowEco(!showEco)} className={`cursor-pointer px-4 py-2 rounded-lg border transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${showEco ? 'bg-green-600 border-green-600 text-white' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-black/40 text-zinc-600 dark:text-zinc-400'}`}><LucideLeaf size={14} /> {showEco ? 'Eco Active' : 'Fuel Savers Available'}</div><div className="px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-black/40 text-zinc-600 dark:text-zinc-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><LucideDollarSign size={14}/> Price Match</div></div></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cars.length === 0 ? (<div className="col-span-full py-20 text-center border border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl"><p className="text-zinc-500 text-lg">No vehicles available.</p></div>) : (
+                  cars.filter(c => !showEco || (c.fuel === 'Hybrid' || c.fuel === 'Electric')).map(car => (
+                    <Card key={car.id} className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                      <div className="relative w-full h-48 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-4"><img src={car.images[0]} className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal" /></div>
+                      <div className="p-5 flex flex-col flex-grow">
+                        <div className="flex justify-between items-start mb-2"><div><h3 className="text-lg font-bold text-zinc-900 dark:text-white">{car.model}</h3><span className="text-xs font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded uppercase">{car.category}</span></div><div className="text-right"><div className="text-xs text-zinc-400 line-through">${(car.price * 1.3).toFixed(0)}</div><div className="text-xl font-bold text-green-600 dark:text-green-500">${car.price}<span className="text-xs text-zinc-500">/day</span></div></div></div>
+                        <div className="grid grid-cols-4 gap-2 text-[10px] text-zinc-500 dark:text-zinc-400 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800"><div className="flex flex-col items-center gap-1"><LucideUsers size={14}/> {car.seats || 5} Seats</div><div className="flex flex-col items-center gap-1"><LucideActivity size={14}/> {car.transmission || 'Auto'}</div><div className="flex flex-col items-center gap-1"><LucideMountain size={14}/> {car.isAWD ? 'AWD' : 'FWD'}</div><div className="flex flex-col items-center gap-1"><LucideSmartphone size={14}/> {car.hasCarPlay ? 'CarPlay' : 'BT'}</div></div>
+                        <div className="grid grid-cols-2 gap-3 mt-6"><Button variant="outline" className="w-full py-2 text-xs" onClick={() => handleViewDetails(car)}>View Details</Button><Button className="w-full py-2 text-xs" onClick={() => handleRent(car)}>Select</Button></div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* --- CAR DETAILS VIEW --- */}
+        {view === 'car-details' && viewCar && (
+          <div className="max-w-6xl mx-auto px-6 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <Button variant="ghost" onClick={() => setView('home')} className="mb-6 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500"><LucideArrowLeft size={20}/> Back to Fleet</Button>
+             
+             <div className="grid lg:grid-cols-2 gap-12 mb-12">
+               {/* Images Column */}
+               <div>
+                 <div className="rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 mb-4 bg-zinc-100 dark:bg-zinc-900">
+                   <ImageCarousel images={viewCar.images} />
+                 </div>
+                 <div className="grid grid-cols-4 gap-3">
+                    {viewCar.images && viewCar.images.map((img, i) => (
+                      <div key={i} className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-green-500 transition-all" onClick={() => setSelectedImage(img)}>
+                        <img src={img} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                 </div>
+               </div>
+
+               {/* Info Column */}
+               <div className="flex flex-col h-full">
+                 <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <span className="text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full uppercase tracking-wider">{viewCar.category}</span>
+                      <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white mt-3 tracking-tight">{viewCar.model}</h1>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-500">${viewCar.price}<span className="text-sm text-zinc-500 dark:text-zinc-400 font-normal">/day</span></div>
+                      <div className="text-xs text-zinc-400 line-through mt-1">${(viewCar.price * 1.3).toFixed(0)}</div>
+                    </div>
+                 </div>
+
+                 <p className="text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed text-lg">
+                   Experience the ultimate comfort and performance with our {viewCar.model}. 
+                   Perfect for city driving or weekend getaways. This {viewCar.category} is equipped with modern features to ensure a safe and enjoyable ride for you and your passengers.
+                 </p>
+
+                 <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-4">
+                      <div className="bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg text-zinc-600 dark:text-zinc-300"><LucideFuel size={24}/></div>
+                      <div><div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Fuel Type</div><div className="font-bold text-zinc-900 dark:text-white">{viewCar.fuel}</div></div>
+                    </div>
+                    <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-4">
+                      <div className="bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg text-zinc-600 dark:text-zinc-300"><LucideUsers size={24}/></div>
+                      <div><div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Capacity</div><div className="font-bold text-zinc-900 dark:text-white">{viewCar.seats} People</div></div>
+                    </div>
+                    <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-4">
+                      <div className="bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg text-zinc-600 dark:text-zinc-300"><LucideActivity size={24}/></div>
+                      <div><div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Transmission</div><div className="font-bold text-zinc-900 dark:text-white">{viewCar.transmission}</div></div>
+                    </div>
+                    <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-4">
+                      <div className="bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg text-zinc-600 dark:text-zinc-300"><LucideGauge size={24}/></div>
+                      <div><div className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Range/MPG</div><div className="font-bold text-zinc-900 dark:text-white">{viewCar.consumption || 'Standard'}</div></div>
+                    </div>
+                 </div>
+
+                 <div className="mt-auto bg-zinc-50 dark:bg-zinc-900/30 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                    <h3 className="font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2"><LucidePlus size={18} className="text-green-500"/> Included Features</h3>
+                    <div className="flex flex-wrap gap-2 mb-8">
+                      {viewCar.isAWD && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideCheck size={14} className="text-green-500"/> AWD / 4x4</span>}
+                      {viewCar.hasCarPlay && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideSmartphone size={14} className="text-green-500"/> Apple CarPlay</span>}
+                      {viewCar.hasBluetooth && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideBluetooth size={14} className="text-green-500"/> Bluetooth</span>}
+                      {viewCar.hasReverseCamera && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideCamera size={14} className="text-green-500"/> Reverse Camera</span>}
+                      
+                      {/* --- NEW FEATURES DISPLAY --- */}
+                      {viewCar.hasHeatedSeats && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideThermometer size={14} className="text-green-500"/> Heated Seats</span>}
+                      {viewCar.hasHeatedSteering && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideThermometer size={14} className="text-green-500"/> Heated Steering</span>}
+                      {viewCar.hasElectricSeats && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideArmchair size={14} className="text-green-500"/> Electric Seats</span>}
+                      {viewCar.hasPaddleShifters && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideZap size={14} className="text-green-500"/> Paddle Shifters</span>}
+                      {viewCar.hasKeylessEntry && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideUnlock size={14} className="text-green-500"/> Keyless Entry</span>}
+                      {viewCar.hasBlindSpotWarning && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideEye size={14} className="text-green-500"/> Blind Spot Warning</span>}
+                      {viewCar.hasDriveAssist && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideNavigation size={14} className="text-green-500"/> Drive Assist</span>}
+                      {viewCar.hasUSBCharger && <span className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideBatteryCharging size={14} className="text-green-500"/> USB Charger</span>}
+                      {/* --- END NEW FEATURES DISPLAY --- */}
+
+                      {viewCar.features && (Array.isArray(viewCar.features) ? viewCar.features : viewCar.features.toString().split(',')).map((f, i) => (
+                         <span key={i} className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-bold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"><LucideCheck size={14} className="text-green-500"/> {f.trim()}</span>
+                      ))}
+                    </div>
+
+                    <Button className="w-full py-4 text-lg shadow-xl shadow-green-500/20 hover:shadow-green-500/40" onClick={() => handleRent(viewCar)}>
+                      Select This Car & Continue
+                    </Button>
+                 </div>
+               </div>
+             </div>
+          </div>
+        )}
+
+        {/* --- BOOKINGS VIEW --- */}
+        {view === 'bookings' && (
+          <div className="max-w-4xl mx-auto px-6 py-12">
+            <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">My Bookings</h2>
+            <div className="space-y-6">
+              {bookings.length === 0 ? (<div className="text-center text-zinc-500 py-12">No active bookings found.</div>) : (
+                bookings.map((b) => (
+                  <Card key={b.id} className="p-6 flex flex-col md:flex-row gap-6 items-start">
+                    <div className={`p-4 rounded-full shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><LucideCheck size={32}/></div>
+                    <div className="flex-1 w-full">
+                      <div className="flex justify-between items-start">
+                        <div className="mb-2">
+                          <div className={`text-xs font-bold uppercase tracking-wider mb-2 ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600 dark:text-green-500' : 'text-blue-600 dark:text-blue-400'}`}>{b.status}</div>
+                          {/* NEW: Date/Time in Blue/Orange */}
+                          <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                             Pick-up: {formatDisplayDate(b.startDate, b.startTime)}
+                          </div>
+                          <div className="text-sm font-bold text-orange-600 dark:text-orange-400 mt-1">
+                             Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}
+                          </div>
+                        </div>
+                        <div className="text-right"><div className="font-bold text-lg text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div><div className="flex flex-col gap-2 mt-2"><Button variant="blue" className="text-xs h-8" onClick={() => setReceiptBooking(b)}>View Receipt</Button></div></div>
+                      </div>
+                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{b.carName}</h3>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-1">{b.days} Days • {b.location}</p>
+                      
+                      {(b.status === 'Active' || b.status === 'Extended') && (
+                        <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                           <div className="flex justify-between items-center mb-4"><h4 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Rental Workflow</h4></div>
+                           <div className="flex gap-4"><div className="flex-1"><Button variant={b.checkInStatus === 'completed' ? "verified" : "primary"} className={`w-full text-xs h-10 flex items-center justify-center gap-2 ${b.checkInStatus === 'completed' ? 'bg-zinc-100 dark:bg-zinc-800 text-green-600 dark:text-green-500 border border-green-600 dark:border-green-500 hover:bg-zinc-200 cursor-default' : ''}`} disabled={b.checkInStatus === 'completed'} onClick={() => handleStartWorkflow(b, 'checkin')}>{b.checkInStatus === 'completed' ? <><LucideCheck size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}</Button>{b.checkInStatus === 'completed' && <div className="text-[10px] text-green-500 text-center mt-1">Ready to start</div>}</div><div className="flex-1"><Button variant="orange" className={`w-full text-xs h-10 flex items-center justify-center gap-2 ${b.checkInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'} text-black font-bold`} disabled={b.checkInStatus !== 'completed'} onClick={() => handleStartWorkflow(b, 'checkout')}>End Trip</Button></div></div>
+                           <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">{!extendingBookingId && (<Button variant="orange" className="w-full text-xs text-black font-bold" onClick={() => initExtension(b)}>Request Extension</Button>)}{extendingBookingId === b.id && (<div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg"><label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">New Return Date & Time</label><div className="flex flex-col gap-3"><div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><LucideCalendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={b.returnDate} onChange={(e) => setExtensionDate(e.target.value)} /></div><div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><LucideClock size={18} className="text-green-600 mr-2" /><select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)}>{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div><div className="flex gap-2 mt-2"><Button size="sm" className="flex-1 text-xs" onClick={() => confirmExtension(b)}>Confirm Extension</Button><Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={() => setExtendingBookingId(null)}>Cancel</Button></div></div></div>)}</div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+            <Button variant="ghost" onClick={() => setView('home')} className="mt-8"><LucideArrowLeft size={16}/> Back to Home</Button>
+          </div>
+        )}
+
+        {/* ... Other views unchanged ... */}
+        {view === 'check-workflow' && activeBooking && (
+          <div className="max-w-2xl mx-auto px-6 py-12">
+          <Button variant="ghost" onClick={() => setView('bookings')} className="mb-6 pl-0"><LucideArrowLeft size={20} /> Back</Button>
+          <Card className="p-8">
+             <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-3">{isCheckOutMode ? <LucideLogOut className="text-blue-600"/> : <LucideCheck className="text-green-600"/>} Vehicle {isCheckOutMode ? 'Check-out (Return)' : 'Check-in (Pick-up)'}</h2>
+             <p className="mb-6 text-zinc-500 text-sm">Please document the vehicle condition.</p>
+             <div className="space-y-6">
+               <div><div className="flex justify-between mb-2"><label className="font-bold text-sm text-zinc-700 dark:text-zinc-300">Exterior Photos (Max 10)</label><span className="text-xs text-zinc-500">{checkData.photosOutside.length}/10</span></div><div className="flex flex-wrap gap-3">{checkData.photosOutside.map((src, i) => <img key={i} src={src} className="w-20 h-20 object-cover rounded border dark:border-zinc-700 cursor-pointer hover:scale-105 transition-transform" onClick={() => handleImageClick(src)} />)}{checkData.photosOutside.length < 10 && (<div className="w-20 h-20 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded flex items-center justify-center cursor-pointer hover:border-green-500" onClick={() => triggerCheckInput('outside')}><LucideCamera className="text-zinc-400"/></div>)}<input type="file" id="check-input-outside" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} /></div></div>
+               <div><div className="flex justify-between mb-2"><label className="font-bold text-sm text-zinc-700 dark:text-zinc-300">Interior Photos (Max 10)</label><span className="text-xs text-zinc-500">{checkData.photosInside.length}/10</span></div><div className="flex flex-wrap gap-3">{checkData.photosInside.map((src, i) => <img key={i} src={src} className="w-20 h-20 object-cover rounded border dark:border-zinc-700 cursor-pointer hover:scale-105 transition-transform" onClick={() => handleImageClick(src)} />)}{checkData.photosInside.length < 10 && (<div className="w-20 h-20 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded flex items-center justify-center cursor-pointer hover:border-green-500" onClick={() => triggerCheckInput('inside')}><LucideCamera className="text-zinc-400"/></div>)}<input type="file" id="check-input-inside" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} /></div></div>
+               <div className="grid grid-cols-2 gap-6"><Input label="Current Mileage" type="number" placeholder="e.g. 12050" value={checkData.miles} onChange={(e) => setCheckData({...checkData, miles: e.target.value})} /><div><label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Gas Level</label><div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"><div className="pl-3"><LucideFuel size={18} className="text-zinc-400" /></div><select className="bg-transparent w-full p-3 outline-none text-sm" value={checkData.gas} onChange={(e) => setCheckData({...checkData, gas: e.target.value})}>{['Full', '3/4', '1/2', '1/4', 'Empty'].map(opt => <option key={opt} value={opt} className="text-black">{opt}</option>)}</select></div></div></div>
+               <Button className="w-full mt-4 py-4 text-lg" onClick={completeWorkflow}>{isCheckOutMode ? "Complete Return" : "Start Trip"}</Button>
+             </div>
+          </Card>
+        </div>
+      )}
+      {view === 'workflow-success' && (
+         <div className="max-w-md mx-auto text-center py-20 px-6">
+            <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce"><LucideCar size={48} /></div>
+            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white">{isCheckOutMode ? "Return Completed!" : "You're All Set!"}</h2>
+            <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-lg">{isCheckOutMode ? "Thank you for riding with us. Your final receipt has been updated." : "Thanks, We can Start the Trip Right now. Drive safely!"}</p>
+            <Button onClick={() => setView('bookings')} className="w-full">Close & View Bookings</Button>
+         </div>
+      )}
+        {view === 'checkout' && cart.car && (
+          <div className="max-w-5xl mx-auto px-6 py-12">
+            <Button variant="ghost" onClick={() => setView('home')} className="mb-8 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500"><LucideArrowLeft size={20} /> Back to Fleet</Button>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 space-y-6">
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-green-600 dark:text-green-500"><LucideCalendar/> Rental Period</h2>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div><label className="text-xs font-bold text-zinc-400 uppercase mb-1 block">Pick-up</label><div className="flex flex-col gap-2"><div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3"><LucideCalendar size={18} className="text-zinc-400 mr-2" /><input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white [color-scheme:dark]" /></div><div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"><div className="pl-3"><LucideClock size={18} className="text-zinc-400" /></div><select value={searchParams.startTime} onChange={e => handleSearchParamsChange('startTime', e.target.value)} className="bg-transparent w-full p-3 outline-none text-sm text-zinc-900 dark:text-white appearance-none">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div></div></div>
+                    <div><label className="text-xs font-bold text-zinc-400 uppercase mb-1 block">Return</label><div className="flex flex-col gap-2"><div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3"><LucideCalendar size={18} className="text-zinc-400 mr-2" /><input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white [color-scheme:dark]" /></div><div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white"><div className="pl-3"><LucideClock size={18} className="text-zinc-400" /></div><select value={searchParams.endTime} onChange={e => handleSearchParamsChange('endTime', e.target.value)} className="bg-transparent w-full p-3 outline-none text-sm text-zinc-900 dark:text-white appearance-none">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div></div></div>
+                  </div>
+                  <div className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Duration: <span className="font-bold text-zinc-900 dark:text-white">{cart.billingDays} Days Charged</span>{calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime) > Math.ceil((new Date(searchParams.end) - new Date(searchParams.start))/(1000*60*60*24)) && <span className="ml-2 text-green-600 dark:text-green-500 text-xs">{'(Extra day added due to time > 30min)'}</span>}</div>
+                </Card>
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-green-600 dark:text-green-500"><LucideShield/> Protection Plan (Daily)</h2>
+                  <div className="space-y-4">
+                    {[{ id: '500', title: 'Gold Protection', subtitle: '$500 Deductible', price: settings.prices.insurance500 }, { id: '1000', title: 'Standard Protection', subtitle: '$1000 Deductible', price: settings.prices.insurance1000 }].map(opt => (
+                      <div key={opt.id} onClick={() => setCart({ ...cart, insuranceOption: opt.id })} className={`flex justify-between items-center p-4 rounded-lg border cursor-pointer transition-all ${cart.insuranceOption === opt.id ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'}`}>
+                        <div><div className="font-bold flex items-center gap-2 text-zinc-900 dark:text-white">{opt.title}{cart.insuranceOption === opt.id && <LucideCheck size={16} className="text-green-600 dark:text-green-500"/>}</div><div className="text-xs text-zinc-500">{opt.subtitle}</div></div><div className="font-bold text-zinc-700 dark:text-zinc-300">{opt.price > 0 ? `+$${opt.price}/day` : '$0'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-green-600 dark:text-green-500"><LucidePlus/> Add-ons</h2>
+                  <div onClick={() => toggleExtra('childSeat')} className={`flex justify-between items-center p-4 rounded-lg border cursor-pointer transition-all ${cart.extrasSelected.includes('childSeat') ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'}`}>
+                    <div className="flex items-center gap-3"><div className={`w-5 h-5 rounded border flex items-center justify-center ${cart.extrasSelected.includes('childSeat') ? 'bg-green-600 border-green-600' : 'border-zinc-400 dark:border-zinc-600'}`}>{cart.extrasSelected.includes('childSeat') && <LucideCheck size={14} className="text-white"/>}</div><span className="font-medium text-zinc-900 dark:text-white">Child Safety Seat</span></div><span className="font-bold text-zinc-700 dark:text-zinc-300">+${settings.prices.childSeat}/day</span>
+                  </div>
+                </Card>
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-4 text-green-600 dark:text-green-500">Driver Details</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Full Name" required placeholder="Ex: John Doe" value={driverDetails.name} onChange={e => setDriverDetails({...driverDetails, name: e.target.value})} />
+                    <Input label="Email" required type="email" placeholder="john@email.com" value={driverDetails.email} onChange={e => setDriverDetails({...driverDetails, email: e.target.value})} />
+                    <Input label="Phone" required placeholder="(555) 123-4567" value={driverDetails.phone} onChange={e => setDriverDetails({...driverDetails, phone: e.target.value})} />
+                    <Input label="Driver License Number" required placeholder="DL-12345678" value={driverDetails.licenseNumber} onChange={e => setDriverDetails({...driverDetails, licenseNumber: e.target.value})} />
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Driver License Photos (Front & Back) <span className="text-red-500">* Mandatory</span></label>
+                    <div className="flex flex-wrap gap-4">
+                      {driverDetails.licenseImages.map((img, idx) => (<div key={idx} className="relative w-32 h-20 rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-700 group"><img src={img} alt={`License ${idx + 1}`} className="w-full h-full object-cover" /><button onClick={() => deleteLicenseImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><LucideX size={12} /></button></div>))}
+                      {driverDetails.licenseImages.length < 2 && (<Button variant="outline" className="h-20 w-32 border-dashed flex flex-col gap-1 items-center justify-center text-xs" onClick={triggerFileInput}><LucideCamera size={16} /> <span>{driverDetails.licenseImages.length === 0 ? 'Add Front' : 'Add Back'}</span></Button>)}
+                    </div>
+                    <input type="file" ref={fileInputRef} onChange={handleLicenseUpload} className="hidden" accept="image/*" capture="environment" />
+                  </div>
+                </Card>
+              </div>
+              <div className="md:col-span-1">
+                <Card className="p-6 sticky top-24 border-zinc-200 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/90 backdrop-blur">
+                  <img src={cart.car.images ? cart.car.images[0] : cart.car.image} className="w-full h-40 object-cover rounded-lg mb-6 border border-zinc-200 dark:border-zinc-800" />
+                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white">{cart.car.model}</h3>
+                  <div className="flex gap-2 text-xs text-zinc-500 dark:text-zinc-400 mb-6 mt-2"><span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{cart.car.category}</span><span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{cart.car.fuel}</span></div>
+                  <div className="mb-4 text-xs font-medium text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 p-3 rounded flex items-center gap-2"><LucideRoute size={16} className="text-green-600 dark:text-green-500"/><div><div className="font-bold">Mileage Policy</div><div>{settings.includedMiles} miles/day included</div><div className="text-zinc-500">Excess: ${settings.extraMileRate}/mile</div></div></div>
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex justify-between"><span>Rate ({cart.billingDays} days)</span><span className="text-zinc-900 dark:text-white">${cart.days * cart.car.price}</span></div>
+                    {cart.extrasSelected.includes('childSeat') && (<div className="flex justify-between text-green-600 dark:text-green-400"><span>Child Seat</span><span>${settings.prices.childSeat * cart.billingDays}</span></div>)}
+                    {cart.insuranceOption !== 'none' && (<div className="flex justify-between text-green-600 dark:text-green-400"><span>Insurance</span><span>${(cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays}</span></div>)}
+                    <div className="flex justify-between"><span>Cleaning Fee</span><span className="text-zinc-900 dark:text-white">${settings.cleaningFee}</span></div>
+                    <div className="flex justify-between"><span>Taxes ({settings.taxes}%)</span><span className="text-zinc-900 dark:text-white">${calculateTotal().taxAmount.toFixed(2)}</span></div>
+                  </div>
+                  <div className="flex justify-between items-end mt-6 mb-8"><span className="font-bold text-xl text-zinc-900 dark:text-white">TOTAL</span><span className="text-4xl font-bold text-green-600 dark:text-green-500">${calculateTotal().total.toFixed(2)}</span></div>
+                  <Button 
+                    className="w-full py-4 text-lg font-bold shadow-green-500/20 shadow-lg" 
+                    onClick={handleProceedToPayment} 
+                    disabled={!isCheckoutValid()}
+                    variant={isCheckoutValid() ? "primary" : "disabled"}
+                  >
+                    Proceed to Payment
+                  </Button>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
+        {view === 'payment' && (
+          <div className="max-w-3xl mx-auto px-6 py-12">
+              <Button variant="ghost" onClick={() => setView('checkout')} className="mb-8 pl-0 hover:bg-transparent hover:text-green-600 dark:hover:text-green-500"><LucideArrowLeft size={20} /> Back to Details</Button>
+              <div className="grid gap-8">
+                <Card className="p-8">
+                  <h2 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">Booking Summary</h2>
+                  <div className="space-y-2 text-zinc-600 dark:text-zinc-400 text-sm mb-6 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex justify-between"><span>Vehicle</span><span className="font-bold text-zinc-900 dark:text-white">{cart.car.model}</span></div>
+                    <div className="flex justify-between"><span>Dates</span><span>{searchParams.start} to {searchParams.end}</span></div>
+                    <div className="flex justify-between"><span>Total Amount</span><span className="font-bold text-green-600 dark:text-green-500 text-lg">${calculateTotal().total.toFixed(2)}</span></div>
+                  </div>
+                  <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-white">Payment Method</h2>
+                  <div className="space-y-4">
+                     <div className="flex gap-4 mb-4">{['visa', 'mastercard', 'amex', 'discover'].map(type => (<div key={type} onClick={() => setPaymentDetails({...paymentDetails, type})} className={`cursor-pointer border p-2 rounded ${paymentDetails.type === type ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-700'}`}><span className="uppercase font-bold text-xs text-zinc-500">{type}</span></div>))}</div>
+                     <Input label="Cardholder Name" value={paymentDetails.cardName} onChange={e => setPaymentDetails({...paymentDetails, cardName: e.target.value})} placeholder="Name on Card" />
+                     <Input label="Card Number" value={paymentDetails.cardNumber} onChange={e => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} placeholder="0000 0000 0000 0000" maxLength={19} />
+                     <div className="grid grid-cols-2 gap-4"><Input label="Expiry Date" value={paymentDetails.expiry} onChange={handleExpiryChange} placeholder="MM/YY" maxLength={5} /><Input label="CVC" value={paymentDetails.cvc} onChange={e => setPaymentDetails({...paymentDetails, cvc: e.target.value})} placeholder="123" maxLength={4} /></div>
+                  </div>
+                  <Button className="w-full mt-8 py-4 text-lg" onClick={handleConfirmBooking} disabled={!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName} variant={(!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName) ? "disabled" : "primary"}>Pay & Book ${calculateTotal().total.toFixed(2)}</Button>
+                </Card>
+              </div>
+          </div>
+        )}
+        {view === 'confirmation' && (
+           <div className="max-w-md mx-auto text-center py-20 px-6">
+             <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce"><LucideCheck size={48} /></div>
+             <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white">Pagamento Confirmado!</h2>
+             <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-lg">Seu pagamento foi processado com sucesso. Agora você precisa realizar o Check-in do veículo.</p>
+             <div className="flex flex-col gap-4">
+               <Button onClick={() => setView('bookings')} variant="success" className="w-full py-4 text-lg shadow-xl shadow-green-500/30">Ir para Check-in (Manage Booking)</Button>
+               <div className="grid grid-cols-2 gap-4"><Button onClick={() => setView('home')} variant="secondary" className="w-full">Back to Home</Button><Button onClick={() => setView('home')} variant="ghost" className="w-full">Close</Button></div>
+             </div>
+           </div>
+        )}
+        {view === 'admin' && (
+          <div className="max-w-7xl mx-auto px-6 py-12">
+            <div className="flex justify-between items-center mb-8"><h1 className="text-3xl font-bold text-zinc-900 dark:text-white flex items-center gap-3"><LucideSettings className="text-green-600 dark:text-green-500" /> Admin Dashboard</h1>
+            <div className="flex gap-2">
+                <Button variant={adminTab === 'fleet' ? 'primary' : 'secondary'} onClick={() => setAdminTab('fleet')} className="text-xs"><LucideCar size={14} className="mr-1"/> Fleet</Button>
+                <Button variant={adminTab === 'bookings' ? 'primary' : 'secondary'} onClick={() => setAdminTab('bookings')} className="text-xs"><LucideList size={14} className="mr-1"/> Bookings</Button>
+                {/* NEW EARNINGS TAB BUTTON */}
+                <Button variant={adminTab === 'earnings' ? 'primary' : 'secondary'} onClick={() => setAdminTab('earnings')} className="text-xs"><LucideBarChart3 size={14} className="mr-1"/> Earnings</Button>
+                <Button variant="outline" onClick={() => setView('home')}>Exit</Button>
+            </div>
+            </div>
+            
+            {/* TAB: FLEET MANAGEMENT */}
+            {adminTab === 'fleet' && (
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Copied from previous response for brevity - FLEET FORM & LIST */}
+                    <Card className="p-8 admin-form border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/50">
+                    <div className="flex justify-between items-center mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-4"><h3 className="text-xl font-bold flex items-center gap-2 text-zinc-900 dark:text-white">{editingId ? <LucideEdit className="text-green-600 dark:text-green-500" /> : <LucidePlus className="text-green-600 dark:text-green-500" />}{editingId ? 'Edit Vehicle' : 'Add New Vehicle'}</h3>{editingId && <Button variant="ghost" onClick={handleCancelEdit} size="sm"><LucideX size={16}/> Cancel</Button>}</div>
+                    <form onSubmit={handleSaveCar} className="space-y-4">
+                    <Input name="model" value={formData.model} onChange={handleInputChange} label="Car Model" placeholder="e.g. Tesla Model 3" required />
+                    <div className="grid grid-cols-2 gap-4"><Input name="price" value={formData.price} onChange={handleInputChange} label="Daily Rate ($)" type="number" required /><div><label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label><select name="fuel" value={formData.fuel} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-green-500"><option value="Gasoline">Gasoline</option><option value="Flex">Flex</option><option value="Diesel">Diesel</option><option value="Hybrid">Hybrid</option><option value="Electric">Electric</option></select></div></div>
+                    <div className="grid grid-cols-2 gap-4"><Input name="seats" value={formData.seats} onChange={handleInputChange} label="Seats" type="number" placeholder="e.g. 5" required /><div><label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label><select name="transmission" value={formData.transmission} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-green-500"><option value="Automatic">Automatic</option><option value="Manual">Manual</option></select></div></div>
+                    <div className="grid grid-cols-2 gap-4"><Input name="consumption" value={formData.consumption} onChange={handleInputChange} label="Consumption" placeholder="e.g. 300mi range" /><Input name="category" value={formData.category} onChange={handleInputChange} label="Category" placeholder="e.g. Sedan" required /></div>
+                    <div className="bg-zinc-50 dark:bg-black/20 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800"><label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Features</label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Checkbox name="isAWD" checked={formData.isAWD} onChange={handleInputChange} label="AWD / 4x4" />
+                        <Checkbox name="hasCarPlay" checked={formData.hasCarPlay} onChange={handleInputChange} label="CarPlay / Auto" />
+                        <Checkbox name="hasBluetooth" checked={formData.hasBluetooth} onChange={handleInputChange} label="Bluetooth" />
+                        <Checkbox name="hasReverseCamera" checked={formData.hasReverseCamera} onChange={handleInputChange} label="Reverse Camera" />
+                        
+                        {/* New Features */}
+                        <Checkbox name="hasHeatedSeats" checked={formData.hasHeatedSeats} onChange={handleInputChange} label="Heated Seats" />
+                        <Checkbox name="hasHeatedSteering" checked={formData.hasHeatedSteering} onChange={handleInputChange} label="Heated Steering" />
+                        <Checkbox name="hasElectricSeats" checked={formData.hasElectricSeats} onChange={handleInputChange} label="Electric Seats" />
+                        <Checkbox name="hasPaddleShifters" checked={formData.hasPaddleShifters} onChange={handleInputChange} label="Paddle Shifters" />
+                        <Checkbox name="hasKeylessEntry" checked={formData.hasKeylessEntry} onChange={handleInputChange} label="Keyless Entry" />
+                        <Checkbox name="hasBlindSpotWarning" checked={formData.hasBlindSpotWarning} onChange={handleInputChange} label="Blind Spot" />
+                        <Checkbox name="hasDriveAssist" checked={formData.hasDriveAssist} onChange={handleInputChange} label="Drive Assist" />
+                        <Checkbox name="hasUSBCharger" checked={formData.hasUSBCharger} onChange={handleInputChange} label="USB Charger" />
+                      </div>
+                    </div>
+                    
+                    {/* --- NEW IMAGE UPLOAD SECTION --- */}
+                    <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Vehicle Photos</label>
+                        <span className="text-xs text-zinc-400">{formData.images.filter(i => i).length} photos</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        {formData.images.filter(img => img.trim() !== '').map((img, index) => (
+                          <div key={index} className="relative aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden group border border-zinc-200 dark:border-zinc-700">
+                             <img src={img} className="w-full h-full object-cover" />
+                             <button type="button" onClick={() => removeImageField(index)} className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white p-1 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                               <LucideX size={14} />
+                             </button>
+                          </div>
+                        ))}
+                        
+                        <div 
+                          onClick={() => carImageInputRef.current.click()} 
+                          className="aspect-square rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center cursor-pointer hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors text-zinc-400 hover:text-green-600"
+                        >
+                          <LucideUpload size={24} className="mb-2"/>
+                          <span className="text-xs font-bold uppercase">Upload</span>
+                        </div>
+                      </div>
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*"
+                        ref={carImageInputRef} 
+                        className="hidden" 
+                        onChange={handleCarImageUpload} 
+                      />
+                    </div>
+                    {/* --- END IMAGE UPLOAD SECTION --- */}
+
+                    <Input name="features" value={formData.features} onChange={handleInputChange} label="Other Features (Comma separated)" placeholder="Sunroof, Leather..." />
+                    <Button type="submit" className="w-full mt-4" variant={editingId ? "warning" : "success"}>{editingId ? "Save Changes" : "Add Vehicle"}</Button>
+                    </form>
+                    </Card>
+                    <div className="space-y-8">
+                        <Card className="p-6 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/50"><h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-zinc-900 dark:text-white"><LucideMap size={18} className="text-green-600 dark:text-green-500"/> Pick-up Locations</h3><div className="space-y-4"><div className="flex gap-2"><Input placeholder="New Location Name (e.g. JFK Airport)" value={newLocation} onChange={e => setNewLocation(e.target.value)} /><Button onClick={addLocation} variant="secondary" className="h-[50px] mt-6">Add</Button></div><div className="flex flex-wrap gap-2">{settings.locations && settings.locations.map((loc, idx) => (<div key={idx} className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-3 py-2 rounded text-sm text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">{loc}<button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500"><LucideX size={14}/></button></div>))}</div><Button onClick={saveSettings} className="w-full mt-4">Save Locations</Button></div></Card>
+                        <Card className="p-6 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/50"><h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-zinc-900 dark:text-white"><LucideDollarSign className="text-green-600 dark:text-green-500"/> Pricing Configuration</h3><div className="space-y-4"><div className="grid grid-cols-2 gap-4"><Input label="Sales Tax (%)" type="number" value={settings.taxes} onChange={(e) => handleSettingsChange('taxes', e.target.value)} /><Input label="Cleaning Fee ($)" type="number" value={settings.cleaningFee} onChange={(e) => handleSettingsChange('cleaningFee', e.target.value)} /></div><div className="grid grid-cols-2 gap-4 pt-2 pb-2 border-t border-b border-zinc-200 dark:border-zinc-800"><Input label="Included Miles / Day" type="number" value={settings.includedMiles} onChange={(e) => handleSettingsChange('includedMiles', e.target.value)} /><Input label="Extra Mile Rate ($)" type="number" value={settings.extraMileRate} onChange={(e) => handleSettingsChange('extraMileRate', e.target.value)} /></div><div className="pt-2"><label className="block text-xs font-bold text-zinc-500 dark:text-zinc-500 mb-4 uppercase">Daily Add-on Rates</label><div className="grid grid-cols-3 gap-2"><Input label="Ins. $500" type="number" value={settings.prices.insurance500} onChange={(e) => handleSettingsChange('insurance500', e.target.value, true)} /><Input label="Ins. $1000" type="number" value={settings.prices.insurance1000} onChange={(e) => handleSettingsChange('insurance1000', e.target.value, true)} /><Input label="Child Seat" type="number" value={settings.prices.childSeat} onChange={(e) => handleSettingsChange('childSeat', e.target.value, true)} /></div></div><Button onClick={saveSettings} className="w-full">Update Global Settings</Button></div></Card>
+                        <Card className="p-6 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/50"><h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Inventory ({cars.length})</h3><div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">{cars.map(car => (<div key={car.id} className={`flex justify-between items-center p-3 border rounded-lg transition-colors ${editingId === car.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-black/40 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}><div className="flex items-center gap-3"><img src={car.images ? car.images[0] : car.image} className="w-12 h-12 rounded object-cover border border-zinc-200 dark:border-zinc-700" /><div><p className="font-bold text-sm text-zinc-900 dark:text-white">{car.model}</p><p className="text-xs text-zinc-500">{car.fuel} • {car.category}</p></div></div><div className="flex gap-2"><button onClick={() => handleEditClick(car)} className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded"><LucideEdit size={16} /></button><button onClick={() => handleDeleteCar(car.id)} className="p-2 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"><LucideTrash2 size={16} /></button></div></div>))}</div></Card>
+                    </div>
+                </div>
+            )}
+
+             {/* TAB: EARNINGS MANAGEMENT (UPDATED LAYOUT) */}
+             {adminTab === 'earnings' && (
+                <div className="space-y-8">
+                    {/* TOP SECTION: REVENUE OVERVIEW (FULL WIDTH) */}
+                    <Card className="p-6 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/50">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2 text-zinc-900 dark:text-white"><LucideTrendingUp size={18} className="text-green-600"/> Revenue & Financial Overview</h3>
+                            <div className="flex gap-2">
+                                <div className="text-xs font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                                    Fixed Monthly Cost: <span className="text-red-500 font-bold">${earningsData.fixedMonthly.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-800 col-span-2 md:col-span-1">
+                                <div className="text-xs font-bold text-green-600 dark:text-green-400 uppercase mb-1">Total Gross Revenue</div>
+                                <div className="text-3xl font-bold text-zinc-900 dark:text-white">
+                                    ${Object.values(earningsData.monthly).reduce((a, b) => a + b.gross, 0).toLocaleString()}
+                                </div>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 col-span-2 md:col-span-1">
+                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Completed Trips</div>
+                                <div className="text-3xl font-bold text-zinc-900 dark:text-white">
+                                    {bookings.filter(b => b.status === 'Completed').length}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase mb-4">Monthly Financial Performance</h4>
+                            {/* Updated Chart Component */}
+                            <FinancialBarChart data={earningsData.monthly} fixedExpenses={earningsData.fixedMonthly} />
+                        </div>
+                    </Card>
+
+                    {/* BOTTOM SECTION: EXPENSES & LIST (GRID) */}
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* LEFT: EXPENSE MANAGEMENT FORM */}
+                        <Card className="p-6 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/50 expense-form h-fit">
+                            <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-zinc-900 dark:text-white">
+                                <LucideReceipt size={18} className="text-green-600 dark:text-green-500"/> Vehicle Monthly Expenses
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Select Vehicle to Update</label>
+                                    <select 
+                                        name="carId" 
+                                        value={expenseForm.carId} 
+                                        onChange={handleExpenseChange} 
+                                        className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-green-500 outline-none transition-all"
+                                    >
+                                        <option value="">-- Choose a Car --</option>
+                                        {cars.map(c => <option key={c.id} value={c.id}>{c.model} ({c.category})</option>)}
+                                    </select>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input label="Down Payment ($)" name="downPayment" type="number" value={expenseForm.downPayment} onChange={handleExpenseChange} placeholder="0.00" />
+                                    <Input label="Lease / Finance ($)" name="lease" type="number" value={expenseForm.lease} onChange={handleExpenseChange} placeholder="0.00" />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input label="Insurance ($)" name="insurance" type="number" value={expenseForm.insurance} onChange={handleExpenseChange} placeholder="0.00" />
+                                    <Input label="Car Wash ($)" name="carWash" type="number" value={expenseForm.carWash} onChange={handleExpenseChange} placeholder="0.00" />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input label="Maintenance ($)" name="maintenance" type="number" value={expenseForm.maintenance} onChange={handleExpenseChange} placeholder="0.00" />
+                                    <Input label="Track / Diagnose App ($)" name="trackApp" type="number" value={expenseForm.trackApp} onChange={handleExpenseChange} placeholder="0.00" />
+                                </div>
+
+                                <Button onClick={handleSaveExpenses} className="w-full" disabled={!expenseForm.carId}>Save Expenses</Button>
+                            </div>
+                        </Card>
+
+                        {/* RIGHT: FLEET FINANCIAL LIST */}
+                        <div>
+                            <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2"><LucideWallet size={18} className="text-green-600"/> Financial Status per Vehicle</h3>
+                            <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                                {cars.map(car => {
+                                    const grossIncome = earningsData.byVehicle[car.model] || 0;
+                                    const totalExpenses = 
+                                        (car.expenses?.lease || 0) +
+                                        (car.expenses?.insurance || 0) +
+                                        (car.expenses?.carWash || 0) +
+                                        (car.expenses?.maintenance || 0) +
+                                        (car.expenses?.trackApp || 0); // Down payment is usually one-off, so maybe not in monthly total, but let's keep consistent with request if needed. For monthly cashflow, usually downpayment is separate. I will sum monthly recurrent here.
+                                    
+                                    const balance = grossIncome - totalExpenses;
+
+                                    return (
+                                        <Card key={car.id} className="p-4 flex flex-col gap-4 border-zinc-200 dark:border-zinc-800 hover:border-green-500 transition-colors">
+                                            <div className="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                                                <img src={car.images ? car.images[0] : car.image} className="w-12 h-12 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700" />
+                                                <div className="flex-1">
+                                                    <h4 className="font-bold text-zinc-900 dark:text-white text-sm">{car.model}</h4>
+                                                    <p className="text-xs text-zinc-500">{car.category}</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleEditExpensesFromList(car)} 
+                                                    className="text-xs bg-zinc-100 dark:bg-zinc-800 hover:bg-green-100 dark:hover:bg-green-900/30 text-zinc-600 dark:text-zinc-300 hover:text-green-600 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+                                                >
+                                                    <LucideEdit size={12}/> Edit
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2 text-xs">
+                                                <div className="bg-green-50 dark:bg-green-900/10 p-2 rounded">
+                                                    <span className="block text-green-600/70 dark:text-green-400/70 uppercase text-[9px] font-bold mb-0.5">Gross Income</span>
+                                                    <span className="font-bold text-green-700 dark:text-green-400 text-sm">${grossIncome.toLocaleString()}</span>
+                                                </div>
+                                                <div className="bg-red-50 dark:bg-red-900/10 p-2 rounded">
+                                                    <span className="block text-red-500/70 dark:text-red-400/70 uppercase text-[9px] font-bold mb-0.5">Monthly Exp.</span>
+                                                    <span className="font-bold text-red-600 dark:text-red-400 text-sm">${totalExpenses.toLocaleString()}</span>
+                                                </div>
+                                                <div className="bg-zinc-50 dark:bg-zinc-800 p-2 rounded">
+                                                    <span className="block text-zinc-500/70 dark:text-zinc-400/70 uppercase text-[9px] font-bold mb-0.5">Net Balance</span>
+                                                    <span className={`font-bold text-sm ${balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-500'}`}>${balance.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB: BOOKINGS MANAGEMENT (NEW) */}
+            {adminTab === 'bookings' && (
+                <div className="grid md:grid-cols-3 gap-6">
+                    {/* LEFT: LIST OF BOOKINGS */}
+                    <Card className="p-6 md:col-span-1 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                        <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2"><LucideBriefcase size={18}/> All Bookings</h3>
+                        <div className="space-y-3">
+                            {bookings.map(b => {
+                                const statusColor = 
+                                  b.status === 'Completed' ? 'bg-green-100 text-green-700' : // VERDE PARA COMPLETED
+                                  (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-100 text-green-700' : 
+                                  'bg-zinc-100 text-zinc-500';
+                                return (
+                                <div 
+                                    key={b.id} 
+                                    onClick={() => setManageBookingId(b.id)}
+                                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
+                                >
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="font-bold text-sm text-zinc-900 dark:text-white">{b.id}</span>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${statusColor}`}>{b.status}</span>
+                                    </div>
+                                    <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">{b.carName}</div>
+                                    <div className="text-xs text-zinc-500 mt-1">{b.driver.name}</div>
+                                </div>
+                            )})}
+                        </div>
+                    </Card>
+
+                    {/* RIGHT: DETAILS & ACTIONS */}
+                    <Card className="p-8 md:col-span-2">
+                        {manageBookingId ? (
+                           (() => {
+                             const b = bookings.find(bk => bk.id === manageBookingId);
+                             return (
+                                <div className="space-y-8">
+                                    {/* HEADER */}
+                                    <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-700 pb-4">
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Booking {b.id}</h2>
+                                            <p className="text-zinc-500 text-sm">Total: <span className="text-green-600 font-bold text-lg">${b.total.toFixed(2)}</span></p>
+                                        </div>
+                                        <div className="text-right text-xs text-zinc-500">
+                                            <div>{b.date}</div>
+                                            <div>{b.paymentMethod}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* DETAILS GRID */}
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
+                                            <div className="text-sm font-medium text-zinc-900 dark:text-white">
+                                                <p>{b.driver.name}</p>
+                                                <p>{b.driver.phone}</p>
+                                                <p>{b.driver.email}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Info</h4>
+                                            <div className="text-sm font-medium text-zinc-900 dark:text-white">
+                                                <p>{b.carName}</p>
+                                                <p>{b.startDate} to {b.returnDate}</p>
+                                                <p>{b.location}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* NEW: SENSITIVE PAYMENT INFO */}
+                                    <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-800/30">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="text-xs font-bold uppercase text-red-500 flex items-center gap-2"><LucideCreditCard size={14}/> Payment Details (Sensitive)</h4>
+                                            <button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-500 hover:text-red-700 transition-colors">
+                                                {showSensitiveData ? <LucideEyeOff size={16}/> : <LucideEye size={16}/>}
+                                            </button>
+                                        </div>
+                                        <div className={`grid grid-cols-2 gap-4 text-sm ${showSensitiveData ? '' : 'blur-sm select-none'}`}>
+                                            <div><span className="block text-[10px] text-red-400 uppercase">Card Name</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cardName || 'N/A'}</span></div>
+                                            <div><span className="block text-[10px] text-red-400 uppercase">Card Number</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
+                                            <div><span className="block text-[10px] text-red-400 uppercase">Expiry</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.expiry || '**/**'}</span></div>
+                                            <div><span className="block text-[10px] text-red-400 uppercase">CVC</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cvc || '***'}</span></div>
+                                        </div>
+                                    </div>
+
+                                    {/* ACTIONS SECTION */}
+                                    <div className="bg-zinc-50 dark:bg-black/30 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                        <h4 className="text-sm font-bold uppercase text-zinc-500 mb-4">Manage Charges & Adjustments</h4>
+                                        
+                                        {/* APPLY DISCOUNT */}
+                                        <div className="mb-6">
+                                            <label className="text-xs font-bold text-zinc-400 mb-2 block">Apply Discount</label>
+                                            <div className="flex gap-2">
+                                                <select 
+                                                  className="p-2 rounded border dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-700 dark:text-zinc-300"
+                                                  value={adjustment.type}
+                                                  onChange={e => setAdjustment({...adjustment, type: e.target.value})}
+                                                >
+                                                    <option value="amount">Fixed Amount ($)</option>
+                                                    <option value="percent">Percentage (%)</option>
+                                                </select>
+                                                <Input 
+                                                  placeholder="Value" 
+                                                  type="number" 
+                                                  value={adjustment.value} 
+                                                  onChange={e => setAdjustment({...adjustment, value: e.target.value})}
+                                                  className="mb-0 text-blue-400 dark:text-blue-400 font-bold border-blue-200 dark:border-blue-900" // LIGHT BLUE TEXT
+                                                />
+                                                <Button size="sm" onClick={() => handleApplyDiscount(b.id)}>Apply</Button>
+                                            </div>
+                                        </div>
+
+                                        {/* CHARGE CARD */}
+                                        <div>
+                                            <label className="text-xs font-bold text-zinc-400 mb-2 block">Charge Card on File</label>
+                                            <div className="flex gap-2">
+                                                <select 
+                                                   className="p-2 rounded border dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm w-1/3 text-zinc-700 dark:text-zinc-300"
+                                                   value={extraCharge.type}
+                                                   onChange={e => setExtraCharge({...extraCharge, type: e.target.value})}
+                                                >
+                                                    <option value="Gas Refill">Gas Refill</option>
+                                                    <option value="Extra Miles">Extra Miles</option>
+                                                    <option value="Tolls">Tolls</option>
+                                                    <option value="Traffic Violation">Traffic Violation</option>
+                                                    <option value="Cleaning Fee">Cleaning Fee</option>
+                                                    <option value="Insurance Deductible">Insurance Deductible</option>
+                                                    <option value="Damage Repair">Damage Repair</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                <Input 
+                                                  placeholder="Amount ($)" 
+                                                  type="number" 
+                                                  value={extraCharge.amount} 
+                                                  onChange={e => setExtraCharge({...extraCharge, amount: e.target.value})}
+                                                  className="mb-0 text-blue-400 dark:text-blue-400 font-bold border-blue-200 dark:border-blue-900" // LIGHT BLUE TEXT
+                                                />
+                                                <Button size="sm" variant="danger" onClick={() => handleAddCharge(b.id)}>Charge Card</Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* FINANCIAL BREAKDOWN */}
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Financial Breakdown</h4>
+                                        <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+                                            <div className="flex justify-between"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
+                                            {b.details.extendedRate > 0 && (
+                                                <div className="flex justify-between text-blue-500"><span>Extended Rate</span><span>${b.details.extendedRate.toFixed(2)}</span></div>
+                                            )}
+                                            <div className="flex justify-between"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
+                                            <div className="flex justify-between"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
+                                            <div className="flex justify-between"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
+                                            <div className="flex justify-between"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
+                                            {b.details.discount && (
+                                                <div className="flex justify-between text-green-500 items-center">
+                                                    <span className="flex items-center gap-1">
+                                                        Discount Applied
+                                                        <button 
+                                                            onClick={() => handleRemoveDiscount(b.id)} 
+                                                            className="ml-1 p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition-colors" 
+                                                            title="Remove Discount"
+                                                        >
+                                                            <LucideX size={12}/>
+                                                        </button>
+                                                    </span>
+                                                    <span>-${b.details.discount.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                            {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
+                                                <div key={i} className="flex justify-between text-red-500 items-center">
+                                                    <span className="flex items-center gap-1">
+                                                        {c.type}
+                                                        <button 
+                                                            onClick={() => handleRemoveCharge(b.id, i)}
+                                                            className="ml-1 p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500 transition-colors"
+                                                            title="Remove Charge"
+                                                        >
+                                                            <LucideX size={12}/>
+                                                        </button>
+                                                    </span>
+                                                    <span>+${c.amount.toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                            <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-700 pt-2 mt-2 font-bold text-zinc-900 dark:text-white">
+                                                <span>Total Billed</span>
+                                                <span>${b.total.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* EVIDENCE PHOTOS */}
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {b.driver.licenseImages && (
+                                                <div><h5 className="text-xs font-bold text-zinc-500 mb-2">Driver License</h5><div className="flex gap-2 overflow-x-auto pb-2">{b.driver.licenseImages.map((src, i) => <img key={i} src={src} className="w-24 h-16 object-cover rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:scale-105 transition-transform" onClick={() => handleImageClick(src)} />)}</div></div>
+                                            )}
+                                            {b.checkInData && (
+                                                <div><h5 className="text-xs font-bold text-green-600 mb-2">Check-in (Start)</h5><div className="flex flex-wrap gap-2">{[...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].map((src, i) => <img key={i} src={src} className="w-16 h-16 object-cover rounded border border-green-500/30 cursor-pointer hover:scale-105 transition-transform" onClick={() => handleImageClick(src)} />)}</div></div>
+                                            )}
+                                            {b.checkOutData && (
+                                                <div><h5 className="text-xs font-bold text-blue-600 mb-2">Check-out (End)</h5><div className="flex flex-wrap gap-2">{[...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].map((src, i) => <img key={i} src={src} className="w-16 h-16 object-cover rounded border border-blue-500/30 cursor-pointer hover:scale-105 transition-transform" onClick={() => handleImageClick(src)} />)}</div></div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+                             );
+                            })()
+                         ) : (
+                             <div className="h-full flex flex-col items-center justify-center text-zinc-400">
+                                 <LucideList size={48} className="mb-4 opacity-20"/>
+                                 <p>Select a booking from the list to manage details.</p>
+                             </div>
+                         )}
+                    </Card>
+                </div>
+            )}
+
+          </div>
+        )}
+      </main>
+    </div>
+    </div>
+  );
+}
