@@ -1232,7 +1232,7 @@ export default function CarHopApp() {
                                   data-testid="input-discount-value" 
                                 />
                                 <button 
-                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors" 
+                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors" 
                                   onClick={() => handleApplyDiscount(b)}
                                   data-testid="button-apply-discount"
                                 >
@@ -1266,7 +1266,7 @@ export default function CarHopApp() {
                                   data-testid="input-charge-value" 
                                 />
                                 <button 
-                                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" 
+                                  className="px-3 h-[38px] bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors" 
                                   onClick={() => handleAddCharge(b)}
                                   data-testid="button-charge"
                                 >
