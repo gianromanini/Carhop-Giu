@@ -1035,71 +1035,211 @@ export default function CarHopApp() {
 
             {adminTab === 'bookings' && (
               <div className="grid md:grid-cols-3 gap-6">
-                <Card className="p-6 md:col-span-1 max-h-[80vh] overflow-y-auto">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2"><Briefcase size={18}/> All Bookings</h3>
-                  <div className="space-y-3">
+                {/* Left Column - All Bookings List */}
+                <Card className="p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
+                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">All Bookings</h3>
+                  <div className="space-y-2">
                     {bookings.map(b => {
-                      const statusColor = b.status === 'Completed' ? 'bg-green-100 text-green-700' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-500';
+                      const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
+                      const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
                       return (
-                        <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`} data-testid={`card-booking-${b.id}`}>
+                        <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
                           <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-sm text-zinc-900 dark:text-white">{b.bookingCode}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${statusColor}`}>{b.status}</span>
+                            <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                            <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                           </div>
-                          <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">{b.carName}</div>
-                          <div className="text-xs text-zinc-500 mt-1">{b.driver.name}</div>
+                          <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
+                          <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
                         </div>
                       );
                     })}
                   </div>
                 </Card>
 
-                <Card className="p-8 md:col-span-2">
+                {/* Right Column - Booking Details */}
+                <Card className="p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
                   {manageBookingId ? (
                     (() => {
                       const b = bookings.find(bk => bk.id === manageBookingId);
                       if (!b) return null;
                       return (
                         <div className="space-y-6">
-                          <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-700 pb-4">
+                          {/* Header */}
+                          <div className="flex justify-between items-start">
                             <div>
-                              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
-                              <p className="text-zinc-500 text-sm">Total: <span className="text-green-600 font-bold text-lg">${b.total.toFixed(2)}</span></p>
+                              <h2 className="text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
+                              <p className="text-zinc-500 text-sm">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
                             </div>
-                            <div className="text-right text-xs text-zinc-500"><div>{b.date}</div><div>{b.paymentMethod}</div></div>
+                            <div className="text-right text-xs text-zinc-500">
+                              <div>{b.date}</div>
+                              <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-6">
-                            <div><h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4><div className="text-sm font-medium text-zinc-900 dark:text-white"><p>{b.driver.name}</p><p>{b.driver.phone}</p><p>{b.driver.email}</p></div></div>
-                            <div><h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Info</h4><div className="text-sm font-medium text-zinc-900 dark:text-white"><p>{b.carName}</p><p>{b.startDate} to {b.returnDate}</p><p>{b.location}</p></div></div>
+
+                          {/* Customer & Rental Info */}
+                          <div className="grid grid-cols-2 gap-6 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                <p className="font-medium">{b.driver.name}</p>
+                                <p className="text-zinc-500">{b.driver.phone}</p>
+                                <p className="text-zinc-500">{b.driver.email}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                <p className="font-medium">{b.carName}</p>
+                                <p className="text-zinc-500">{b.startDate} to {b.returnDate}</p>
+                                <p className="text-zinc-500">{b.location}</p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-800/30">
-                            <div className="flex justify-between items-center mb-3"><h4 className="text-xs font-bold uppercase text-red-500 flex items-center gap-2"><CreditCard size={14}/> Payment Details (Sensitive)</h4><button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-500 hover:text-red-700 transition-colors">{showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
+
+                          {/* Payment Details (Sensitive) */}
+                          <div className="bg-red-950/30 p-4 rounded-lg border border-red-900/50">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="text-xs font-bold uppercase text-red-400 flex items-center gap-2">
+                                <CreditCard size={14}/> Payment Details (Sensitive)
+                              </h4>
+                              <button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-400 hover:text-red-300 transition-colors">
+                                {showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}
+                              </button>
+                            </div>
                             <div className={`grid grid-cols-2 gap-4 text-sm ${showSensitiveData ? '' : 'blur-sm select-none'}`}>
-                              <div><span className="block text-[10px] text-red-400 uppercase">Card Name</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cardName || 'N/A'}</span></div>
-                              <div><span className="block text-[10px] text-red-400 uppercase">Card Number</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
-                              <div><span className="block text-[10px] text-red-400 uppercase">Expiry</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.expiry || '**/**'}</span></div>
-                              <div><span className="block text-[10px] text-red-400 uppercase">CVC</span><span className="font-mono text-zinc-900 dark:text-zinc-200">{b.paymentRaw?.cvc || '***'}</span></div>
+                              <div><span className="block text-[10px] text-red-400/70 uppercase">Card Name</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardName || 'N/A'}</span></div>
+                              <div><span className="block text-[10px] text-red-400/70 uppercase">Card Number</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
+                              <div><span className="block text-[10px] text-red-400/70 uppercase">Expiry</span><span className="font-mono text-zinc-300">{b.paymentRaw?.expiry || '**/**'}</span></div>
+                              <div><span className="block text-[10px] text-red-400/70 uppercase">CVC</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cvc || '***'}</span></div>
                             </div>
                           </div>
+
+                          {/* Manage Charges & Adjustments */}
+                          <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
+                            
+                            {/* Apply Discount */}
+                            <div className="mb-4">
+                              <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
+                              <div className="flex gap-2">
+                                <select className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" data-testid="select-discount-type">
+                                  <option value="fixed">Fixed Value ($)</option>
+                                  <option value="percent">Percentage (%)</option>
+                                </select>
+                                <Input placeholder="Value" className="flex-1 mb-0" data-testid="input-discount-value" />
+                                <Button variant="primary" className="px-6" data-testid="button-apply-discount">Apply</Button>
+                              </div>
+                            </div>
+
+                            {/* Charge Archived Card */}
+                            <div>
+                              <label className="text-xs text-zinc-500 mb-2 block">Charge Archived Card</label>
+                              <div className="flex gap-2">
+                                <select className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white w-32" data-testid="select-charge-type">
+                                  <option value="refuel">Refuel</option>
+                                  <option value="mileage">Excess Mileage</option>
+                                  <option value="damage">Damage</option>
+                                  <option value="cleaning">Extra Cleaning</option>
+                                  <option value="other">Other</option>
+                                </select>
+                                <Input placeholder="Value ($)" className="flex-1 mb-0" data-testid="input-charge-value" />
+                                <Button variant="secondary" className="px-6" data-testid="button-charge">Charge</Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Financial Details */}
                           <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Financial Breakdown</h4>
-                            <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
-                              <div className="flex justify-between"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
-                              {b.details.extendedRate && b.details.extendedRate > 0 && (<div className="flex justify-between text-blue-500"><span>Extended Rate</span><span>${b.details.extendedRate.toFixed(2)}</span></div>)}
-                              <div className="flex justify-between"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
-                              <div className="flex justify-between"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
-                              <div className="flex justify-between"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
-                              <div className="flex justify-between"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
-                              {b.details.discount && (<div className="flex justify-between text-green-500"><span>Discount Applied</span><span>-${b.details.discount.toFixed(2)}</span></div>)}
-                              {b.details.manualCharges && b.details.manualCharges.map((c, i) => (<div key={i} className="flex justify-between text-red-500"><span>{c.type}</span><span>+${c.amount.toFixed(2)}</span></div>))}
-                              <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-700 pt-2 mt-2 font-bold text-zinc-900 dark:text-white"><span>Total Billed</span><span>${b.total.toFixed(2)}</span></div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Financial Details</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
+                              
+                              {b.details.discount && b.details.discount > 0 && (
+                                <div className="flex justify-between text-green-500">
+                                  <span className="flex items-center gap-1">Discount Applied <button className="text-red-400 hover:text-red-300"><X size={12}/></button></span>
+                                  <span>-${b.details.discount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              
+                              {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
+                                <div key={i} className="flex justify-between text-red-400">
+                                  <span className="flex items-center gap-1">{c.type} <button className="text-red-400 hover:text-red-300"><X size={12}/></button></span>
+                                  <span>+${c.amount.toFixed(2)}</span>
+                                </div>
+                              ))}
+                              
+                              <div className="flex justify-between border-t border-zinc-700 pt-3 mt-3 font-bold text-white">
+                                <span>Total Billed</span>
+                                <span>${b.total.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Vehicle & License Evidence */}
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
+                            <div className="grid grid-cols-3 gap-4">
+                              {/* Driver's License */}
+                              <div>
+                                <label className="text-xs text-zinc-500 mb-2 block">Driver's License</label>
+                                <div className="flex gap-2">
+                                  {b.driver.licenseImages && b.driver.licenseImages.length > 0 ? (
+                                    b.driver.licenseImages.map((img, i) => (
+                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-zinc-700">
+                                        <img src={img} alt={`License ${i+1}`} className="w-full h-full object-cover" />
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="text-xs text-zinc-600">No images</div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Check-in Photos */}
+                              <div>
+                                <label className="text-xs text-green-500 mb-2 block">Check-in (Start)</label>
+                                <div className="flex gap-2">
+                                  {b.checkInData?.photosOutside && b.checkInData.photosOutside.length > 0 ? (
+                                    b.checkInData.photosOutside.slice(0, 2).map((img, i) => (
+                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-green-700">
+                                        <img src={img} alt={`Check-in ${i+1}`} className="w-full h-full object-cover" />
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="text-xs text-zinc-600">No images</div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Check-out Photos */}
+                              <div>
+                                <label className="text-xs text-orange-500 mb-2 block">Check-out (End)</label>
+                                <div className="flex gap-2">
+                                  {b.checkOutData?.photosOutside && b.checkOutData.photosOutside.length > 0 ? (
+                                    b.checkOutData.photosOutside.slice(0, 2).map((img, i) => (
+                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-orange-700">
+                                        <img src={img} alt={`Check-out ${i+1}`} className="w-full h-full object-cover" />
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="text-xs text-zinc-600">No images</div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       );
                     })()
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-zinc-400"><List size={48} className="mb-4 opacity-20"/><p>Select a booking from the list to manage details.</p></div>
+                    <div className="h-full flex flex-col items-center justify-center text-zinc-500 py-20">
+                      <List size={48} className="mb-4 opacity-30"/>
+                      <p>Select a booking from the list to manage details.</p>
+                    </div>
                   )}
                 </Card>
               </div>
