@@ -411,7 +411,22 @@ export default function CarHopApp() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
 
-  const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ queryKey: ['/api/vehicles'] });
+  // Load vehicles with availability filter based on search dates
+  const vehicleQueryKey = searchParams.start && searchParams.end 
+    ? ['/api/vehicles', searchParams.start, searchParams.end]
+    : ['/api/vehicles'];
+  
+  const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ 
+    queryKey: vehicleQueryKey,
+    queryFn: async () => {
+      if (searchParams.start && searchParams.end) {
+        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}`);
+        return response.json();
+      }
+      const response = await fetch('/api/vehicles');
+      return response.json();
+    }
+  });
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });

@@ -276,6 +276,31 @@ export class MemStorage implements IStorage {
     return Array.from(this.vehicles.values());
   }
 
+  // Get available vehicles for specific date range (filters out booked vehicles)
+  async getAvailableVehicles(startDate: string, endDate: string): Promise<Vehicle[]> {
+    const allVehicles = Array.from(this.vehicles.values());
+    const allBookings = Array.from(this.bookings.values());
+    
+    // Filter out vehicles with conflicting bookings
+    return allVehicles.filter(vehicle => {
+      const hasConflict = allBookings.some(booking => {
+        // Skip cancelled/completed bookings
+        if (booking.status === 'Completed' || booking.status === 'Cancelled') return false;
+        
+        // Check for date overlap
+        const bookingStart = new Date(booking.startDate).getTime();
+        const bookingEnd = new Date(booking.returnDate).getTime();
+        const queryStart = new Date(startDate).getTime();
+        const queryEnd = new Date(endDate).getTime();
+        
+        // Overlap exists if: queryStart < bookingEnd AND queryEnd > bookingStart
+        return queryStart < bookingEnd && queryEnd > bookingStart;
+      });
+      
+      return !hasConflict;
+    });
+  }
+
   async getVehicle(id: number): Promise<Vehicle | undefined> {
     return this.vehicles.get(id);
   }

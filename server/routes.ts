@@ -5,7 +5,18 @@ import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
 
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
   // ========== VEHICLES ==========
-  app.get("/api/vehicles", async (_req, res) => {
+  app.get("/api/vehicles", async (req, res) => {
+    // If startDate and endDate query params provided, return only available vehicles
+    const { startDate, endDate } = req.query;
+    
+    if (startDate && endDate) {
+      const available = await storage.getAvailableVehicles(
+        startDate as string,
+        endDate as string
+      );
+      return res.json(available);
+    }
+    
     const vehicles = await storage.getVehicles();
     res.json(vehicles);
   });
