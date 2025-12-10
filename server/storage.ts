@@ -2,10 +2,15 @@ import {
   vehicles, bookings, settings,
   type Vehicle, type InsertVehicle,
   type Booking, type InsertBooking,
-  type Settings, type InsertSettings
+  type Settings, type InsertSettings,
+  type User, type UpsertUser
 } from "@shared/schema";
 
 export interface IStorage {
+  // Users (required for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+
   // Vehicles
   getVehicles(): Promise<Vehicle[]>;
   getVehicle(id: number): Promise<Vehicle | undefined>;
@@ -31,10 +36,41 @@ export class MemStorage implements IStorage {
   private vehicles: Map<number, Vehicle> = new Map();
   private bookings: Map<number, Booking> = new Map();
   private settings: Map<string, Settings> = new Map();
+  private users: Map<string, User> = new Map();
   private vehicleId = 1;
   private bookingId = 1;
   private settingsId = 1;
   private bookingCodeCounter = 1;
+
+  // Users (required for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existing = this.users.get(userData.id!);
+    if (existing) {
+      const updated: User = {
+        ...existing,
+        ...userData,
+        updatedAt: new Date(),
+      };
+      this.users.set(userData.id!, updated);
+      return updated;
+    }
+    const newUser: User = {
+      id: userData.id!,
+      email: userData.email ?? null,
+      firstName: userData.firstName ?? null,
+      lastName: userData.lastName ?? null,
+      profileImageUrl: userData.profileImageUrl ?? null,
+      isAdmin: userData.isAdmin ?? false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(userData.id!, newUser);
+    return newUser;
+  }
 
   private generateBookingCode(): string {
     const code = `BK${String(this.bookingCodeCounter).padStart(4, '0')}`;

@@ -2,8 +2,24 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
+  // ========== AUTHENTICATION ==========
+  await setupAuth(app);
+
+  // Auth routes - get current authenticated user
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // ========== VEHICLES ==========
   app.get("/api/vehicles", async (req, res) => {
     // If startDate and endDate query params provided, return only available vehicles
