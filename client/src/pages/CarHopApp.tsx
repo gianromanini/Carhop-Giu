@@ -329,16 +329,22 @@ export default function CarHopApp() {
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [signupForm, setSignupForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
+  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '' });
+  const [signupMessage, setSignupMessage] = useState('');
   
   useEffect(() => {
     if (isAuthenticated && authUser) {
       const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
       setClientUser({ name: fullName, email: authUser.email || '' });
       setDriverDetails(prev => ({ ...prev, name: fullName, email: authUser.email || '' }));
+      setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '' });
       setShowLoginModal(false);
     }
   }, [isAuthenticated, authUser]);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '', phone: '' });
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isRegistering, setIsRegistering] = useState(false);
 
   const [searchParams, setSearchParams] = useState({ location: '', start: '', startTime: '10:00 AM', end: '', endTime: '10:00 AM' });
@@ -511,9 +517,9 @@ export default function CarHopApp() {
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loginForm.email) {
-      const newUser = { name: isRegistering ? loginForm.name : "Client User", email: loginForm.email, phone: loginForm.phone };
+      const newUser = { name: "Client User", email: loginForm.email };
       setClientUser(newUser);
-      setDriverDetails(prev => ({ ...prev, name: newUser.name, email: newUser.email, phone: newUser.phone || '' }));
+      setDriverDetails(prev => ({ ...prev, name: newUser.name, email: newUser.email }));
       setShowLoginModal(false);
       if (view === 'manage-redirect') setView('bookings');
     }
@@ -1078,12 +1084,15 @@ export default function CarHopApp() {
 
           <div className="flex md:hidden items-center justify-end gap-2 flex-1">
             {clientUser && (
-              <button onClick={() => setView('bookings')} className="text-sm font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide relative" data-testid="button-bookings-mobile-header">
-                Bookings
-                {getClientUnreadCount() > 0 && (
-                  <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
-                )}
-              </button>
+              <>
+                <button onClick={() => setView('bookings')} className="text-sm font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide relative" data-testid="button-bookings-mobile-header">
+                  Bookings
+                  {getClientUnreadCount() > 0 && (
+                    <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
+                  )}
+                </button>
+                <button onClick={() => setShowProfileModal(true)} className="text-sm font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide" data-testid="button-profile-mobile-header">Profile</button>
+              </>
             )}
             <div className="relative">
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
@@ -1095,6 +1104,7 @@ export default function CarHopApp() {
                     <>
                       <div className="w-full px-4 py-2 text-center text-sm text-green-600 font-bold flex items-center justify-center gap-2">Hi, {clientUser.name.split(' ')[0]}</div>
                       <button onClick={() => { setView('bookings'); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat-logged"><MessageCircle className="h-4 w-4" />Chat / Support</button>
+                      <button onClick={() => { setShowProfileModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-profile"><User className="h-4 w-4" />Edit Profile</button>
                       <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
                       <button onClick={() => { handleSignOut(); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 text-red-600 dark:text-red-400" data-testid="button-menu-logout"><LogOut className="h-4 w-4" />Logout</button>
                     </>
@@ -1124,138 +1134,124 @@ export default function CarHopApp() {
       
       {showLoginModal && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
             <button onClick={() => setShowLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-modal"><X size={20}/></button>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-              {/* Login Section */}
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold mb-2 text-center text-zinc-900 dark:text-white">Sign In</h2>
-                <p className="text-center text-xs sm:text-sm text-zinc-500 mb-4">Already have an account?</p>
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Sign In to CarHop</h2>
+            
+            <div className="space-y-3 mb-6">
+              <Button 
+                variant="secondary" 
+                className="w-full flex items-center justify-center gap-3 text-sm py-3 border-2" 
+                onClick={() => window.location.href = '/api/auth/google'} 
+                data-testid="button-google-login"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                <span className="font-bold">Continue with Google</span>
+              </Button>
+              <Button 
+                variant="secondary" 
+                className="w-full flex items-center justify-center gap-3 text-sm py-3 border-2 bg-black text-white hover:bg-zinc-800" 
+                onClick={() => window.location.href = '/api/auth/apple'} 
+                data-testid="button-apple-login"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.38-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.38C2.79 15.25 3.51 7.59 9.05 7.31c1.35.05 2.29.89 3.04.89.9 0 2.29-1.16 3.86-1.04.64.03 2.46.25 3.64 1.84-3.38 2.08-2.81 6.48.28 7.74-.95 1.78-2.27 2.97-4.52 3.74z"/>
+                </svg>
+                <span className="font-bold">Continue with Apple</span>
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700"></div>
+              <span className="text-xs text-zinc-500 font-semibold">OR</span>
+              <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700"></div>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const response = await fetch('/api/auth/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: loginForm.email,
+                    password: loginForm.password,
+                  }),
+                });
+                if (response.ok) {
+                  window.location.href = '/';
+                } else {
+                  const error = await response.json();
+                  alert(error.message || 'Login failed');
+                }
+              } catch (err) {
+                alert('Error logging in');
+              }
+            }} className="space-y-3 mb-6">
+              <input 
+                type="email" 
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                placeholder="Email Address" 
+                required 
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                data-testid="input-login-email" 
+              />
+              <input 
+                type="password" 
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                placeholder="Password" 
+                required 
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                data-testid="input-login-password" 
+              />
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-login-submit">Sign In</Button>
+            </form>
+
+            <div className="text-center">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Don't have an account? <button onClick={() => { setShowLoginModal(false); setShowSignupModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-create-account-link">Create Account</button></p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
+              <button onClick={handleAdminLogin} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSignupModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => setShowSignupModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-signup-modal"><X size={20}/></button>
+            
+            {signupMessage ? (
+              <div className="text-center py-8">
+                <Check size={48} className="mx-auto mb-4 text-green-600" />
+                <h2 className="text-2xl font-bold mb-4 text-zinc-900 dark:text-white">Account Created!</h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">{signupMessage}</p>
+                <Button onClick={() => { setShowSignupModal(false); setSignupForm({ firstName: '', lastName: '', email: '', phone: '', password: '' }); setSignupMessage(''); }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-signup-success">Got It</Button>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Create Account</h2>
                 
-                <div className="space-y-2 mb-4">
-                  <Button 
-                    variant="secondary" 
-                    className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm py-2 border-2" 
-                    onClick={() => window.location.href = '/api/auth/google'} 
-                    data-testid="button-google-login"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    <span className="font-bold">Google</span>
-                  </Button>
-                  <Button 
-                    variant="secondary" 
-                    className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm py-2 border-2 bg-black text-white hover:bg-zinc-800" 
-                    onClick={() => window.location.href = '/api/auth/apple'} 
-                    data-testid="button-apple-login"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.38-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.38C2.79 15.25 3.51 7.59 9.05 7.31c1.35.05 2.29.89 3.04.89.9 0 2.29-1.16 3.86-1.04.64.03 2.46.25 3.64 1.84-3.38 2.08-2.81 6.48.28 7.74-.95 1.78-2.27 2.97-4.52 3.74z"/>
-                    </svg>
-                    <span className="font-bold">Apple</span>
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700"></div>
-                  <span className="text-[10px] text-zinc-500 font-semibold">OR</span>
-                  <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700"></div>
-                </div>
-
                 <form onSubmit={async (e) => {
                   e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  try {
-                    const response = await fetch('/api/auth/login', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        email: formData.get('email'),
-                        password: formData.get('password'),
-                      }),
-                    });
-                    if (response.ok) {
-                      window.location.href = '/';
-                    } else {
-                      const error = await response.json();
-                      alert(error.message || 'Login failed');
-                    }
-                  } catch (err) {
-                    alert('Error logging in');
-                  }
-                }} className="space-y-2">
-                  <input type="email" name="email" placeholder="Email Address" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-login-email" />
-                  <input type="password" name="password" placeholder="Password" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-login-password" />
-                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-3" data-testid="button-login-submit">Sign In</Button>
-                </form>
-              </div>
-
-              {/* Divider */}
-              <div className="hidden sm:flex items-center">
-                <div className="h-full w-px bg-zinc-300 dark:bg-zinc-700"></div>
-              </div>
-
-              {/* Create Account Section */}
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold mb-2 text-center text-zinc-900 dark:text-white">Create Account</h2>
-                <p className="text-center text-xs sm:text-sm text-zinc-500 mb-4">Join CarHop today</p>
-                
-                <div className="space-y-2 mb-4">
-                  <Button 
-                    variant="secondary" 
-                    className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm py-2 border-2" 
-                    onClick={() => window.location.href = '/api/auth/google'} 
-                    data-testid="button-google-signup"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    <span className="font-bold">Google</span>
-                  </Button>
-                  <Button 
-                    variant="secondary" 
-                    className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm py-2 border-2 bg-black text-white hover:bg-zinc-800" 
-                    onClick={() => window.location.href = '/api/auth/apple'} 
-                    data-testid="button-apple-signup"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.38-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.38C2.79 15.25 3.51 7.59 9.05 7.31c1.35.05 2.29.89 3.04.89.9 0 2.29-1.16 3.86-1.04.64.03 2.46.25 3.64 1.84-3.38 2.08-2.81 6.48.28 7.74-.95 1.78-2.27 2.97-4.52 3.74z"/>
-                    </svg>
-                    <span className="font-bold">Apple</span>
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700"></div>
-                  <span className="text-[10px] text-zinc-500 font-semibold">OR</span>
-                  <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700"></div>
-                </div>
-
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
                   try {
                     const response = await fetch('/api/auth/signup', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        firstName: formData.get('firstName'),
-                        lastName: formData.get('lastName'),
-                        email: formData.get('email'),
-                        phone: formData.get('phone'),
-                        password: formData.get('password'),
-                      }),
+                      body: JSON.stringify(signupForm),
                     });
                     if (response.ok) {
-                      window.location.href = '/';
+                      setSignupMessage(`Welcome! A confirmation email has been sent to ${signupForm.email} with your account details.`);
                     } else {
                       const error = await response.json();
                       alert(error.message || 'Signup failed');
@@ -1263,22 +1259,124 @@ export default function CarHopApp() {
                   } catch (err) {
                     alert('Error signing up');
                   }
-                }} className="space-y-2">
+                }} className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="text" name="firstName" placeholder="First Name" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-first-name" />
-                    <input type="text" name="lastName" placeholder="Last Name" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-last-name" />
+                    <input 
+                      type="text" 
+                      value={signupForm.firstName}
+                      onChange={(e) => setSignupForm({...signupForm, firstName: e.target.value})}
+                      placeholder="First Name" 
+                      required 
+                      className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                      data-testid="input-signup-first-name" 
+                    />
+                    <input 
+                      type="text" 
+                      value={signupForm.lastName}
+                      onChange={(e) => setSignupForm({...signupForm, lastName: e.target.value})}
+                      placeholder="Last Name" 
+                      required 
+                      className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                      data-testid="input-signup-last-name" 
+                    />
                   </div>
-                  <input type="email" name="email" placeholder="Email Address" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-email" />
-                  <input type="tel" name="phone" placeholder="Phone Number" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-phone" />
-                  <input type="password" name="password" placeholder="Password (min 6 chars)" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-password" />
-                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-3" data-testid="button-signup-submit">Create Account</Button>
+                  <input 
+                    type="email" 
+                    value={signupForm.email}
+                    onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+                    placeholder="Email Address" 
+                    required 
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-signup-email" 
+                  />
+                  <input 
+                    type="tel" 
+                    value={signupForm.phone}
+                    onChange={(e) => setSignupForm({...signupForm, phone: e.target.value})}
+                    placeholder="Phone Number" 
+                    required 
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-signup-phone" 
+                  />
+                  <input 
+                    type="password" 
+                    value={signupForm.password}
+                    onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
+                    placeholder="Password (min 6 chars)" 
+                    required 
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-signup-password" 
+                  />
+                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-signup-submit">Create Account</Button>
                 </form>
-              </div>
-            </div>
 
-            <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
-              <button onClick={handleAdminLogin} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
-            </div>
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Already have an account? <button onClick={() => { setShowSignupModal(false); setShowLoginModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-signin-link">Sign In</button></p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-profile-modal"><X size={20}/></button>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Edit Profile</h2>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const response = await fetch('/api/auth/profile', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(profileForm),
+                });
+                if (response.ok) {
+                  alert('Profile updated successfully!');
+                  setShowProfileModal(false);
+                  window.location.href = '/';
+                } else {
+                  const error = await response.json();
+                  alert(error.message || 'Update failed');
+                }
+              } catch (err) {
+                alert('Error updating profile');
+              }
+            }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <input 
+                  type="text" 
+                  value={profileForm.firstName}
+                  onChange={(e) => setProfileForm({...profileForm, firstName: e.target.value})}
+                  placeholder="First Name" 
+                  required 
+                  className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-profile-first-name" 
+                />
+                <input 
+                  type="text" 
+                  value={profileForm.lastName}
+                  onChange={(e) => setProfileForm({...profileForm, lastName: e.target.value})}
+                  placeholder="Last Name" 
+                  required 
+                  className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-profile-last-name" 
+                />
+              </div>
+              <input 
+                type="tel" 
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                placeholder="Phone Number" 
+                required 
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                data-testid="input-profile-phone" 
+              />
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-profile-save">Save Changes</Button>
+            </form>
           </div>
         </div>
       )}
