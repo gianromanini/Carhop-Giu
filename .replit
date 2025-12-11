@@ -15,6 +15,10 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
+localPort = 34255
+externalPort = 4200
+
+[[ports]]
 localPort = 34339
 externalPort = 3001
 
@@ -61,7 +65,7 @@ integrations = ["javascript_mem_db:1.0.0", "stripe:2.0.0"]
 
 [userenv.shared]
 EMAIL_USER = "carhopcompany@gmail.com"
-EMAIL_PASS = "positivoI7"
+EMAIL_PASS = "xskp hdwe ecbq sbts"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = "587"
 EMAIL_FROM = "carhopcompany@gmail.com"
