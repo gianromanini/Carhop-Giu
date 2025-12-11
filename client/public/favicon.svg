@@ -1,34 +1,38 @@
-<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <!-- Carrinho maior com contorno branco e verde -->
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Carrinho verde com contorno branco - estilo simples e limpo -->
   <g>
-    <!-- Contorno branco exterior (mais espesso) -->
-    <path d="M 15 52 L 22 35 L 38 28 L 62 28 L 78 35 L 85 52 L 80 70 L 20 70 Z" 
-          fill="none" stroke="white" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- Contorno branco exterior -->
+    <path d="M 60 140 Q 50 140 50 130 L 60 90 Q 65 75 80 75 L 176 75 Q 191 75 196 90 L 206 130 Q 206 140 196 140 Z" 
+          fill="none" stroke="white" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
     
-    <!-- Contorno verde interior -->
-    <path d="M 15 52 L 22 35 L 38 28 L 62 28 L 78 35 L 85 52 L 80 70 L 20 70 Z" 
-          fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- Corpo do carro verde -->
+    <path d="M 60 140 Q 50 140 50 130 L 60 90 Q 65 75 80 75 L 176 75 Q 191 75 196 90 L 206 130 Q 206 140 196 140 Z" 
+          fill="#22c55e" stroke="white" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
     
-    <!-- Janelas com contorno duplo -->
-    <rect x="28" y="36" width="18" height="14" fill="none" stroke="white" stroke-width="3" rx="1"/>
-    <rect x="28" y="36" width="18" height="14" fill="none" stroke="#22c55e" stroke-width="1.5" rx="1"/>
+    <!-- Janela frontal esquerda - contorno branco -->
+    <rect x="75" y="92" width="32" height="28" fill="none" stroke="white" stroke-width="4" rx="3"/>
+    <!-- Janela frontal esquerda - verde -->
+    <rect x="75" y="92" width="32" height="28" fill="none" stroke="#22c55e" stroke-width="2" rx="3"/>
     
-    <rect x="54" y="36" width="18" height="14" fill="none" stroke="white" stroke-width="3" rx="1"/>
-    <rect x="54" y="36" width="18" height="14" fill="none" stroke="#22c55e" stroke-width="1.5" rx="1"/>
+    <!-- Janela frontal direita - contorno branco -->
+    <rect x="149" y="92" width="32" height="28" fill="none" stroke="white" stroke-width="4" rx="3"/>
+    <!-- Janela frontal direita - verde -->
+    <rect x="149" y="92" width="32" height="28" fill="none" stroke="#22c55e" stroke-width="2" rx="3"/>
     
-    <!-- Rodas externas brancas -->
-    <circle cx="30" cy="73" r="8.5" fill="none" stroke="white" stroke-width="4"/>
-    <circle cx="70" cy="73" r="8.5" fill="none" stroke="white" stroke-width="4"/>
+    <!-- Roda esquerda - aro branco externo -->
+    <circle cx="85" cy="165" r="22" fill="none" stroke="white" stroke-width="5"/>
+    <!-- Roda esquerda - aro verde -->
+    <circle cx="85" cy="165" r="22" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <!-- Centro roda esquerda -->
+    <circle cx="85" cy="165" r="8" fill="none" stroke="white" stroke-width="3"/>
+    <circle cx="85" cy="165" r="8" fill="none" stroke="#22c55e" stroke-width="1.5"/>
     
-    <!-- Rodas internas verdes -->
-    <circle cx="30" cy="73" r="8.5" fill="none" stroke="#22c55e" stroke-width="2"/>
-    <circle cx="70" cy="73" r="8.5" fill="none" stroke="#22c55e" stroke-width="2"/>
-    
-    <!-- Centro das rodas -->
-    <circle cx="30" cy="73" r="3.5" fill="none" stroke="white" stroke-width="2"/>
-    <circle cx="30" cy="73" r="3.5" fill="none" stroke="#22c55e" stroke-width="1"/>
-    
-    <circle cx="70" cy="73" r="3.5" fill="none" stroke="white" stroke-width="2"/>
-    <circle cx="70" cy="73" r="3.5" fill="none" stroke="#22c55e" stroke-width="1"/>
+    <!-- Roda direita - aro branco externo -->
+    <circle cx="171" cy="165" r="22" fill="none" stroke="white" stroke-width="5"/>
+    <!-- Roda direita - aro verde -->
+    <circle cx="171" cy="165" r="22" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <!-- Centro roda direita -->
+    <circle cx="171" cy="165" r="8" fill="none" stroke="white" stroke-width="3"/>
+    <circle cx="171" cy="165" r="8" fill="none" stroke="#22c55e" stroke-width="1.5"/>
   </g>
 </svg>
