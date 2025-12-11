@@ -114,6 +114,32 @@ export async function setupAuth(app: Express) {
   }
 
   if (hasGoogle) {
+    // Dynamic callback URL based on request host
+    app.get("/api/auth/google", (req, res, next) => {
+      const strategy = new GoogleStrategy(
+        {
+          clientID: googleClientID!,
+          clientSecret: googleClientSecret!,
+          callbackURL: `${req.protocol}://${req.get('host')}/api/auth/google/callback`,
+          scope: ["profile", "email"],
+        },
+        async (_accessToken, _refreshToken, profile, done) => {
+          try {
+            const user = await upsertGoogleUser(profile);
+            done(null, user);
+          } catch (error) {
+            done(error as Error);
+          }
+        }
+      );
+      
+      passport.use("google-dynamic", strategy);
+      passport.authenticate("google-dynamic", {
+        scope: ["profile", "email"],
+        prompt: "select_account",
+      })(req, res, next);
+    });
+
     passport.use(new GoogleStrategy(
       {
         clientID: googleClientID!,
@@ -131,10 +157,6 @@ export async function setupAuth(app: Express) {
       }
     ));
 
-    app.get("/api/auth/google", passport.authenticate("google", {
-      scope: ["profile", "email"],
-      prompt: "select_account",
-    }));
 
     app.get("/api/auth/google/callback", 
       passport.authenticate("google", {
