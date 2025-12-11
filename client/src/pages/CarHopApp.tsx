@@ -508,14 +508,6 @@ export default function CarHopApp() {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    const mockUsers: Record<string, { name: string; email: string }> = { google: { name: "Google User", email: "user@gmail.com" }, apple: { name: "Apple User", email: "user@icloud.com" } };
-    const newUser = mockUsers[provider] || { name: "User", email: "user@email.com" };
-    setClientUser(newUser);
-    setDriverDetails(prev => ({ ...prev, name: newUser.name, email: newUser.email }));
-    setShowLoginModal(false);
-    if (view === 'manage-redirect') setView('bookings');
-  };
 
   const handleAdminLogin = () => { setShowLoginModal(false); setView('admin'); };
   const handleManageBookingClick = () => { if (clientUser) { setView('bookings'); } else { setView('manage-redirect'); setShowLoginModal(true); } };
@@ -1120,8 +1112,8 @@ export default function CarHopApp() {
             <button onClick={() => setShowLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-modal"><X size={20}/></button>
             <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-5 text-center text-zinc-900 dark:text-white">{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
             <div className="space-y-2 mb-4">
-              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm" onClick={() => handleSocialLogin('google')} data-testid="button-google-login"><span className="font-bold">Continue with Google</span></Button>
-              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 bg-black text-white text-xs sm:text-sm" onClick={() => handleSocialLogin('apple')} data-testid="button-apple-login"><span className="font-bold">Continue with Apple</span></Button>
+              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm" onClick={() => window.location.href = '/api/login'} data-testid="button-google-login"><span className="font-bold">Continue with Google</span></Button>
+              <Button variant="secondary" className="w-full flex items-center justify-center gap-2 bg-black text-white text-xs sm:text-sm" onClick={() => window.location.href = '/api/login'} data-testid="button-apple-login"><span className="font-bold">Continue with Replit Auth</span></Button>
             </div>
             <div className="relative mb-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-300 dark:border-zinc-700"></span></div>
