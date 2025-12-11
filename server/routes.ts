@@ -5,6 +5,17 @@ import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.EMAIL_PORT || "587"),
+  secure: process.env.EMAIL_SECURE === "true",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const signupSchema = z.object({
   firstName: z.string().min(2, "First name required"),
@@ -62,6 +73,62 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         phone,
         passwordHash,
       });
+
+      // Send confirmation email
+      const baseUrl = process.env.BASE_URL || `http://${req.get('host')}`;
+      const loginUrl = `${baseUrl}/`;
+      
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: email,
+          subject: "Welcome to CarHop - Account Confirmation",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="margin: 0; font-size: 28px;">Welcome to CarHop!</h1>
+              </div>
+              
+              <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+                <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${firstName} ${lastName}</strong>,</p>
+                
+                <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                  Your CarHop account has been successfully created! Here are your account details:
+                </p>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                  <p style="margin: 0 0 10px 0; color: #6b7280;">
+                    <strong style="color: #1f2937;">Name:</strong> ${firstName} ${lastName}
+                  </p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;">
+                    <strong style="color: #1f2937;">Email:</strong> ${email}
+                  </p>
+                  <p style="margin: 0; color: #6b7280;">
+                    <strong style="color: #1f2937;">Phone:</strong> ${phone}
+                  </p>
+                </div>
+                
+                <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                  You're all set! Click the button below to log in to your account and start booking your perfect ride.
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${loginUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                    Sign In to CarHop
+                  </a>
+                </div>
+                
+                <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                  If you did not create this account, please ignore this email. If you have any questions, please contact us at (475) 449-8622.
+                </p>
+              </div>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+        // Don't fail the signup if email fails, just log it
+      }
 
       // Set session
       req.login(user, (err) => {
