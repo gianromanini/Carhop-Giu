@@ -1,22 +1,21 @@
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <!-- Fundo verde -->
-  <rect width="100" height="100" fill="#22c55e"/>
+  <!-- Fundo transparente (sem elemento de fundo) -->
   
-  <!-- Carrinho com contorno branco e preenchimento verde -->
+  <!-- Carrinho com contorno verde -->
   <g>
     <!-- Corpo do carro -->
     <path d="M 20 55 L 25 40 L 40 35 L 60 35 L 75 40 L 80 55 L 75 65 L 25 65 Z" 
-          fill="#22c55e" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+          fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round"/>
     
     <!-- Janelas -->
-    <rect x="32" y="38" width="16" height="12" fill="none" stroke="white" stroke-width="1.5" rx="1"/>
-    <rect x="52" y="38" width="16" height="12" fill="none" stroke="white" stroke-width="1.5" rx="1"/>
+    <rect x="32" y="38" width="16" height="12" fill="none" stroke="#22c55e" stroke-width="1.5" rx="1"/>
+    <rect x="52" y="38" width="16" height="12" fill="none" stroke="#22c55e" stroke-width="1.5" rx="1"/>
     
     <!-- Rodas -->
-    <circle cx="32" cy="68" r="7" fill="#22c55e" stroke="white" stroke-width="2"/>
-    <circle cx="32" cy="68" r="4" fill="white"/>
+    <circle cx="32" cy="68" r="7" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <circle cx="32" cy="68" r="3" fill="none" stroke="#22c55e" stroke-width="1"/>
     
-    <circle cx="68" cy="68" r="7" fill="#22c55e" stroke="white" stroke-width="2"/>
-    <circle cx="68" cy="68" r="4" fill="white"/>
+    <circle cx="68" cy="68" r="7" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <circle cx="68" cy="68" r="3" fill="none" stroke="#22c55e" stroke-width="1"/>
   </g>
 </svg>
