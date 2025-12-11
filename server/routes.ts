@@ -2,17 +2,16 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./googleAuth";
 
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
-  // ========== AUTHENTICATION ==========
+  // ========== AUTHENTICATION (Google OAuth) ==========
   await setupAuth(app);
 
   // Auth routes - get current authenticated user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user;
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
