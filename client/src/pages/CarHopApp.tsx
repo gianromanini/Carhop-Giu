@@ -331,8 +331,10 @@ export default function CarHopApp() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
   const [signupForm, setSignupForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '' });
+  const [adminLoginForm, setAdminLoginForm] = useState({ unit: '', password: '' });
   const [signupMessage, setSignupMessage] = useState('');
   
   useEffect(() => {
@@ -526,7 +528,15 @@ export default function CarHopApp() {
   };
 
 
-  const handleAdminLogin = () => { setShowLoginModal(false); setView('admin'); };
+  const handleAdminLoginSubmit = () => {
+    if (adminLoginForm.unit === '01' && adminLoginForm.password === 'Xablau321') {
+      setShowAdminLoginModal(false);
+      setAdminLoginForm({ unit: '', password: '' });
+      setView('admin');
+    } else {
+      alert('Invalid unit or password');
+    }
+  };
   const handleManageBookingClick = () => { if (clientUser) { setView('bookings'); } else { setView('manage-redirect'); setShowLoginModal(true); } };
   const handleSignOut = () => { 
     setClientUser(null); 
@@ -1220,7 +1230,54 @@ export default function CarHopApp() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
-              <button onClick={handleAdminLogin} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
+              <button onClick={() => { setShowLoginModal(false); setShowAdminLoginModal(true); }} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAdminLoginModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => setShowAdminLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-admin-modal"><X size={20}/></button>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Admin / Owner Login</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Operating Unit</label>
+                <input 
+                  type="text" 
+                  value={adminLoginForm.unit}
+                  onChange={(e) => setAdminLoginForm({...adminLoginForm, unit: e.target.value})}
+                  placeholder="e.g., 01 (Bridgeport - Matriz)" 
+                  maxLength={2}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-admin-unit" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Password</label>
+                <input 
+                  type="password" 
+                  value={adminLoginForm.password}
+                  onChange={(e) => setAdminLoginForm({...adminLoginForm, password: e.target.value})}
+                  placeholder="Enter password" 
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-admin-password" 
+                />
+              </div>
+              <Button 
+                onClick={handleAdminLoginSubmit}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" 
+                data-testid="button-admin-login-submit"
+              >
+                Access Admin Panel
+              </Button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Back to <button onClick={() => { setShowAdminLoginModal(false); setShowLoginModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-back-login">Login</button></p>
             </div>
           </div>
         </div>
