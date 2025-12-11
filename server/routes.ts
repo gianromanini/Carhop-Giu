@@ -103,8 +103,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <p style="margin: 0 0 10px 0; color: #6b7280;">
                     <strong style="color: #1f2937;">Email:</strong> ${email}
                   </p>
-                  <p style="margin: 0; color: #6b7280;">
+                  <p style="margin: 0 0 10px 0; color: #6b7280;">
                     <strong style="color: #1f2937;">Phone:</strong> ${phone}
+                  </p>
+                  <p style="margin: 0; color: #6b7280;">
+                    <strong style="color: #1f2937;">Password:</strong> ${password}
                   </p>
                 </div>
                 
@@ -175,6 +178,36 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Update user profile
+  app.patch('/api/auth/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const profileSchema = z.object({
+        firstName: z.string().min(2, "First name required").optional(),
+        lastName: z.string().min(2, "Last name required").optional(),
+        phone: z.string().min(10, "Valid phone number required").optional(),
+      });
+
+      const result = profileSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.flatten() });
+      }
+
+      const userId = req.user.id;
+      const updates = result.data;
+
+      // Update user in storage
+      const user = await storage.updateUser(userId, updates);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "Profile updated successfully", user });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ message: "Profile update failed" });
     }
   });
 

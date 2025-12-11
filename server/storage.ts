@@ -12,6 +12,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<UpsertUser>): Promise<User | undefined>;
 
   // Vehicles
   getVehicles(): Promise<Vehicle[]>;
@@ -102,6 +103,26 @@ export class MemStorage implements IStorage {
     };
     this.users.set(userData.id!, newUser);
     return newUser;
+  }
+
+  async updateUser(id: string, updates: Partial<UpsertUser>): Promise<User | undefined> {
+    const existing = this.users.get(id);
+    if (!existing) {
+      return undefined;
+    }
+    const updated: User = {
+      ...existing,
+      firstName: updates.firstName ?? existing.firstName,
+      lastName: updates.lastName ?? existing.lastName,
+      phone: updates.phone ?? existing.phone,
+      email: updates.email ?? existing.email,
+      profileImageUrl: updates.profileImageUrl ?? existing.profileImageUrl,
+      passwordHash: updates.passwordHash ?? existing.passwordHash,
+      isAdmin: updates.isAdmin ?? existing.isAdmin,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updated);
+    return updated;
   }
 
   private generateBookingCode(): string {
