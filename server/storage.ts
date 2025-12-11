@@ -9,7 +9,9 @@ import {
 export interface IStorage {
   // Users (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: UpsertUser): Promise<User>;
 
   // Vehicles
   getVehicles(): Promise<Vehicle[]>;
@@ -47,6 +49,34 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const users = Array.from(this.users.values());
+    for (const user of users) {
+      if (user.email?.toLowerCase() === email.toLowerCase()) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async createUser(userData: UpsertUser): Promise<User> {
+    const id = crypto.randomUUID();
+    const newUser: User = {
+      id,
+      email: userData.email ?? null,
+      firstName: userData.firstName ?? null,
+      lastName: userData.lastName ?? null,
+      phone: userData.phone ?? null,
+      passwordHash: userData.passwordHash ?? null,
+      profileImageUrl: userData.profileImageUrl ?? null,
+      isAdmin: userData.isAdmin ?? false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(id, newUser);
+    return newUser;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const existing = this.users.get(userData.id!);
     if (existing) {
@@ -63,6 +93,8 @@ export class MemStorage implements IStorage {
       email: userData.email ?? null,
       firstName: userData.firstName ?? null,
       lastName: userData.lastName ?? null,
+      phone: userData.phone ?? null,
+      passwordHash: userData.passwordHash ?? null,
       profileImageUrl: userData.profileImageUrl ?? null,
       isAdmin: userData.isAdmin ?? false,
       createdAt: new Date(),

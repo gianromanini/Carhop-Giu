@@ -3,6 +3,21 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  firstName: z.string().min(2, "First name required"),
+  lastName: z.string().min(2, "Last name required"),
+  email: z.string().email("Invalid email"),
+  phone: z.string().min(10, "Valid phone number required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(1, "Password required"),
+});
 
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
   // ========== AUTHENTICATION (Google OAuth) ==========
@@ -16,6 +31,83 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Traditional signup route
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const result = signupSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.flatten() });
+      }
+
+      const { firstName, lastName, email, phone, password } = result.data;
+
+      // Check if user already exists
+      const existing = await storage.getUserByEmail(email);
+      if (existing) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
+
+      // Create user
+      const user = await storage.createUser({
+        firstName,
+        lastName,
+        email,
+        phone,
+        passwordHash,
+      });
+
+      // Set session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        res.status(201).json({ message: "Account created successfully", user });
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Signup failed" });
+    }
+  });
+
+  // Traditional login route
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.flatten() });
+      }
+
+      const { email, password } = result.data;
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Verify password
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Set session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        res.json({ message: "Logged in successfully", user });
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
     }
   });
 
