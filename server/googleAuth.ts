@@ -1,6 +1,10 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy, Profile } from "passport-google-oauth20";
+import { Strategy as AppleStrategy } from "passport-apple";
 import session from "express-session";
+
+// @ts-ignore - passport-apple doesn't have types
+declare module 'passport-apple';
 import type { Express, RequestHandler } from "express";
 import createMemoryStore from "memorystore";
 import { storage } from "./storage";
@@ -39,7 +43,7 @@ interface GoogleUser {
   profileImageUrl: string;
 }
 
-async function upsertUser(profile: Profile): Promise<GoogleUser> {
+async function upsertGoogleUser(profile: Profile): Promise<GoogleUser> {
   const email = profile.emails?.[0]?.value;
   if (!email) {
     throw new Error("Google account must have an email address");
@@ -57,23 +61,48 @@ async function upsertUser(profile: Profile): Promise<GoogleUser> {
   return userData;
 }
 
+async function upsertAppleUser(profile: any): Promise<GoogleUser> {
+  const email = profile.email;
+  if (!email) {
+    throw new Error("Apple account must have an email address");
+  }
+  
+  const name = profile.name || {};
+  const userData = {
+    id: profile.id,
+    email: email.toLowerCase().trim(),
+    firstName: (name.firstName || 'User').trim(),
+    lastName: (name.lastName || '').trim(),
+    profileImageUrl: '',
+  };
+  
+  await storage.upsertUser(userData);
+  return userData;
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const clientID = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const googleClientID = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const appleTeamId = process.env.APPLE_TEAM_ID;
+  const appleKeyId = process.env.APPLE_KEY_ID;
+  const applePrivateKey = process.env.APPLE_PRIVATE_KEY;
   
-  if (!clientID || !clientSecret) {
-    console.warn("Google OAuth credentials not set. Authentication disabled.");
-    console.warn("Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable Google login.");
+  const hasGoogle = googleClientID && googleClientSecret;
+  const hasApple = appleTeamId && appleKeyId && applePrivateKey;
+  
+  if (!hasGoogle && !hasApple) {
+    console.warn("No OAuth credentials configured. Authentication disabled.");
+    console.warn("Set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET for Google login or APPLE_TEAM_ID + APPLE_KEY_ID + APPLE_PRIVATE_KEY for Apple login.");
     
     app.get("/api/login", (_req, res) => {
       res.status(503).json({ 
         message: "Authentication not configured",
-        hint: "Please configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET" 
+        hint: "Please configure OAuth credentials" 
       });
     });
     
@@ -84,22 +113,71 @@ export async function setupAuth(app: Express) {
     return;
   }
 
-  passport.use(new GoogleStrategy(
-    {
-      clientID,
-      clientSecret,
-      callbackURL: "/api/auth/google/callback",
-      scope: ["profile", "email"],
-    },
-    async (_accessToken, _refreshToken, profile, done) => {
-      try {
-        const user = await upsertUser(profile);
-        done(null, user);
-      } catch (error) {
-        done(error as Error);
+  if (hasGoogle) {
+    passport.use(new GoogleStrategy(
+      {
+        clientID: googleClientID!,
+        clientSecret: googleClientSecret!,
+        callbackURL: "/api/auth/google/callback",
+        scope: ["profile", "email"],
+      },
+      async (_accessToken, _refreshToken, profile, done) => {
+        try {
+          const user = await upsertGoogleUser(profile);
+          done(null, user);
+        } catch (error) {
+          done(error as Error);
+        }
       }
-    }
-  ));
+    ));
+
+    app.get("/api/auth/google", passport.authenticate("google", {
+      scope: ["profile", "email"],
+      prompt: "select_account",
+    }));
+
+    app.get("/api/auth/google/callback", 
+      passport.authenticate("google", {
+        failureRedirect: "/?error=auth_failed",
+      }),
+      (_req, res) => {
+        res.redirect("/");
+      }
+    );
+  }
+
+  if (hasApple) {
+    passport.use(new AppleStrategy(
+      {
+        teamID: appleTeamId!,
+        keyID: appleKeyId!,
+        privateKeyString: applePrivateKey!,
+        callbackURL: "/api/auth/apple/callback",
+        passReqToCallback: true,
+      },
+      async (_req: any, _accessToken: any, _refreshToken: any, profile: any, done: any) => {
+        try {
+          const user = await upsertAppleUser(profile);
+          done(null, user);
+        } catch (error) {
+          done(error as Error);
+        }
+      }
+    ));
+
+    app.get("/api/auth/apple", passport.authenticate("apple", {
+      scope: ["email", "name"],
+    }));
+
+    app.post("/api/auth/apple/callback",
+      passport.authenticate("apple", {
+        failureRedirect: "/?error=auth_failed",
+      }),
+      (_req, res) => {
+        res.redirect("/");
+      }
+    );
+  }
 
   passport.serializeUser((user: Express.User, done) => {
     done(null, user);
@@ -109,19 +187,19 @@ export async function setupAuth(app: Express) {
     done(null, user);
   });
 
-  app.get("/api/login", passport.authenticate("google", {
-    scope: ["profile", "email"],
-    prompt: "select_account", // This forces the account selection screen
-  }));
-
-  app.get("/api/auth/google/callback", 
-    passport.authenticate("google", {
-      failureRedirect: "/?error=auth_failed",
-    }),
-    (_req, res) => {
-      res.redirect("/");
+  app.get("/api/login", (req, res) => {
+    if (hasGoogle) {
+      return passport.authenticate("google", {
+        scope: ["profile", "email"],
+        prompt: "select_account",
+      })(req, res);
+    } else if (hasApple) {
+      return passport.authenticate("apple", {
+        scope: ["email", "name"],
+      })(req, res);
     }
-  );
+    res.status(503).json({ message: "No authentication methods available" });
+  });
 
   app.get("/api/logout", (req, res) => {
     req.logout((err) => {
