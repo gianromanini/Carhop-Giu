@@ -12,16 +12,20 @@ export function getSession() {
     checkPeriod: 86400000, // prune expired entries every 24h
   });
   
-  const sessionSecret = process.env.SESSION_SECRET || 'carhop-dev-secret-key-change-in-production';
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    console.warn("SESSION_SECRET not set. Using fallback for development only.");
+  }
   
   return session({
-    secret: sessionSecret,
+    secret: sessionSecret || 'carhop-dev-secret-key-change-in-production',
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       maxAge: sessionTtl,
     },
   });
@@ -36,11 +40,16 @@ interface GoogleUser {
 }
 
 async function upsertUser(profile: Profile): Promise<GoogleUser> {
+  const email = profile.emails?.[0]?.value;
+  if (!email) {
+    throw new Error("Google account must have an email address");
+  }
+  
   const userData = {
     id: profile.id,
-    email: profile.emails?.[0]?.value || '',
-    firstName: profile.name?.givenName || profile.displayName?.split(' ')[0] || '',
-    lastName: profile.name?.familyName || profile.displayName?.split(' ').slice(1).join(' ') || '',
+    email: email.toLowerCase().trim(),
+    firstName: (profile.name?.givenName || profile.displayName?.split(' ')[0] || 'User').trim(),
+    lastName: (profile.name?.familyName || profile.displayName?.split(' ').slice(1).join(' ') || '').trim(),
     profileImageUrl: profile.photos?.[0]?.value || '',
   };
   
