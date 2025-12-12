@@ -307,7 +307,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000 };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -1054,6 +1054,8 @@ export default function CarHopApp() {
       hasBlindSpotWarning: car.hasBlindSpotWarning || false,
       hasDriveAssist: car.hasDriveAssist || false,
       hasUSBCharger: car.hasUSBCharger || false,
+      commission: car.commission || 10,
+      deductible: car.deductible || 1000,
     });
     setEditingId(car.id);
   };
@@ -1660,61 +1662,110 @@ export default function CarHopApp() {
           {hostTab === 'fleet' && (() => {
             const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
             return (
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const vehicleData = {
-                      ...formData,
-                      price: parseFloat(formData.price) || 0,
-                      hostId: String(currentHost.id),
-                      commission: 15
-                    };
-                    createVehicleMutation.mutate(vehicleData);
-                  }} className="space-y-4">
-                    <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Vehicle Model *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
-                    <div className="grid grid-cols-2 gap-3">
-                      <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="select-host-vehicle-category">
-                        <option value="">Category</option>
-                        <option value="Economy">Economy</option>
-                        <option value="Standard">Standard</option>
-                        <option value="SUV">SUV</option>
-                        <option value="Luxury">Luxury</option>
-                      </select>
-                      <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Price/Day *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                        <option value="Gasoline">Gasoline</option>
-                        <option value="Diesel">Diesel</option>
-                        <option value="Electric">Electric</option>
-                        <option value="Hybrid">Hybrid</option>
-                      </select>
-                      <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                        <option value="Automatic">Automatic</option>
-                        <option value="Manual">Manual</option>
-                      </select>
-                    </div>
-                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">Add Vehicle</Button>
-                  </form>
-                </Card>
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {hostVehicles.length > 0 ? hostVehicles.map((car) => (
-                      <div key={car.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group" data-testid={`card-host-vehicle-${car.id}`}>
-                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                          <p className="text-xs text-zinc-500">${car.price}/day | {car.commission || 15}% commission</p>
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const vehicleData = {
+                        ...formData,
+                        price: parseFloat(formData.price) || 0,
+                        hostId: String(currentHost.id),
+                        commission: formData.commission || 10,
+                        deductible: formData.deductible || 1000
+                      };
+                      createVehicleMutation.mutate(vehicleData);
+                    }} className="space-y-4">
+                      <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Vehicle Model *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
+                      <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="Category *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" />
+                      <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Price/Day *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
+                      
+                      <div className="border-t pt-4">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
+                        <div className="space-y-2">
+                          <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 10, deductible: 1000})}>
+                            <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: 1000})} className="w-4 h-4" />
+                            <div className="ml-3">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white">10% Commission</p>
+                              <p className="text-xs text-zinc-500">$1,000 Deductible</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 20, deductible: 500})}>
+                            <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 500})} className="w-4 h-4" />
+                            <div className="ml-3">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white">20% Commission</p>
+                              <p className="text-xs text-zinc-500">$500 Deductible</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    )) : (
-                      <p className="text-sm text-zinc-500 text-center py-4">No vehicles added yet</p>
-                    )}
-                  </div>
-                </Card>
+
+                      <div className="border-t pt-4">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Specifications</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="Gasoline">Gasoline</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Hybrid">Hybrid</option>
+                          </select>
+                          <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                          </select>
+                          <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="5">5 Seats</option>
+                            <option value="7">7 Seats</option>
+                            <option value="4">4 Seats</option>
+                          </select>
+                          <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="AWD">AWD</option>
+                            <option value="FWD">FWD</option>
+                            <option value="RWD">RWD</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">Add Vehicle</Button>
+                    </form>
+                  </Card>
+                </div>
+                <div className="lg:col-span-2 space-y-6">
+                  {/* My Vehicles */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {hostVehicles.length > 0 ? hostVehicles.map((car) => (
+                        <div key={car.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
+                          <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 object-cover rounded-lg" />
+                          <div className="flex-1">
+                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{car.model}</h4>
+                            <p className="text-xs text-zinc-500">{car.fuel} · {car.category} · {car.seats} seats</p>
+                            <p className="text-xs font-bold text-green-600 mt-1">${car.price}/day | {car.commission || 10}% commission | ${car.deductible || 1000} deductible</p>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-sm text-zinc-500 text-center py-8">No vehicles added yet</p>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Locations & Settings */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <MapPin size={18} className="text-green-500"/>
+                      Pickup Locations
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {settings.locations.map(loc => (
+                        <span key={loc} className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-xs font-bold">
+                          <MapPin size={12}/> {loc}
+                        </span>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
               </div>
             );
           })()}
@@ -1754,26 +1805,43 @@ export default function CarHopApp() {
 
           {hostTab === 'earnings' && (() => {
             const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
+            const hostVehicleMap = Object.fromEntries(vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => [v.id, v]));
             const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId) && b.status === 'Completed');
-            const grossEarnings = hostBookings.reduce((sum, b) => sum + b.total, 0);
-            const avgCommission = 15; // Default commission
-            const commission = grossEarnings * (avgCommission / 100);
-            const netEarnings = grossEarnings - commission;
+            
+            let totalGross = 0;
+            let totalCommission = 0;
+            let totalDeductible = 0;
+            
+            hostBookings.forEach(b => {
+              const vehicle = hostVehicleMap[b.vehicleId as unknown as number];
+              const commission = vehicle ? (b.total * (vehicle.commission || 10) / 100) : (b.total * 0.10);
+              const deductible = vehicle?.deductible || 1000;
+              totalGross += b.total;
+              totalCommission += commission;
+              totalDeductible += deductible;
+            });
+            
+            const netEarnings = totalGross - totalCommission - totalDeductible;
             return (
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-4 gap-6">
                 <Card className="p-6 text-center">
                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Gross Earnings</h4>
-                  <p className="text-3xl font-bold text-zinc-900 dark:text-white">${grossEarnings.toFixed(2)}</p>
-                  <p className="text-xs text-zinc-500 mt-1">Total before commission</p>
+                  <p className="text-3xl font-bold text-zinc-900 dark:text-white">${totalGross.toFixed(2)}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Total before deductions</p>
                 </Card>
                 <Card className="p-6 text-center">
-                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Commission ({avgCommission}%)</h4>
-                  <p className="text-3xl font-bold text-red-500">-${commission.toFixed(2)}</p>
+                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Commission</h4>
+                  <p className="text-3xl font-bold text-orange-500">-${totalCommission.toFixed(2)}</p>
                   <p className="text-xs text-zinc-500 mt-1">Platform fee</p>
                 </Card>
                 <Card className="p-6 text-center">
+                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Deductible</h4>
+                  <p className="text-3xl font-bold text-red-500">-${totalDeductible.toFixed(2)}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Insurance deductible</p>
+                </Card>
+                <Card className="p-6 text-center">
                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Net Earnings</h4>
-                  <p className="text-3xl font-bold text-green-500">${netEarnings.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-green-500">${Math.max(0, netEarnings).toFixed(2)}</p>
                   <p className="text-xs text-zinc-500 mt-1">Your profit</p>
                 </Card>
               </div>

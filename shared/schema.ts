@@ -58,6 +58,7 @@ export const vehicles = pgTable("vehicles", {
   hasUSBCharger: boolean("has_usb_charger").default(false),
   hostId: varchar("host_id"),
   commission: integer("commission").default(10),
+  deductible: integer("deductible").default(1000),
   expenses: jsonb("expenses").$type<{
     lease: number;
     insurance: number;
