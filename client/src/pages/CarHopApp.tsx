@@ -335,9 +335,18 @@ export default function CarHopApp() {
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [showHostRegisterModal, setShowHostRegisterModal] = useState(false);
+  const [showHostLoginModal, setShowHostLoginModal] = useState(false);
   const [signupForm, setSignupForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '' });
   const [adminLoginForm, setAdminLoginForm] = useState({ unit: '', password: '' });
+  const [hostLoginForm, setHostLoginForm] = useState({ username: '', password: '' });
+  const [hostRegisterForm, setHostRegisterForm] = useState({
+    firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '',
+    licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', username: '', password: '', confirmPassword: ''
+  });
+  const [hostRegisterMessage, setHostRegisterMessage] = useState('');
+  const [currentHost, setCurrentHost] = useState<any>(null);
   const [signupMessage, setSignupMessage] = useState('');
   
   useEffect(() => {
@@ -452,6 +461,9 @@ export default function CarHopApp() {
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
+  const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
+  const [hostTab, setHostTab] = useState('fleet');
+  const [editingHost, setEditingHost] = useState<any>(null);
 
   const settings: SettingsType = settingsData || { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
 
@@ -1222,8 +1234,9 @@ export default function CarHopApp() {
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Don't have an account? <button onClick={() => { setShowLoginModal(false); setShowSignupModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-create-account-link">Create Account</button></p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
+            <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center space-y-2">
               <button onClick={() => { setShowLoginModal(false); setShowAdminLoginModal(true); }} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
+              <button onClick={() => { setShowLoginModal(false); setShowHostRegisterModal(true); }} className="text-[10px] sm:text-xs text-green-500 hover:text-green-400 flex items-center justify-center gap-1 mx-auto font-bold" data-testid="button-become-host"><Building2 size={10}/> Become a Host</button>
             </div>
           </div>
         </div>
@@ -1258,9 +1271,205 @@ export default function CarHopApp() {
               </Button>
             </div>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Back to <button onClick={() => { setShowAdminLoginModal(false); setShowLoginModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-back-login">Login</button></p>
+              <p className="text-sm"><button onClick={() => { setShowAdminLoginModal(false); setShowHostLoginModal(true); }} className="text-green-500 hover:text-green-400 font-bold flex items-center justify-center gap-1 mx-auto" data-testid="button-host-login-link"><Building2 size={12}/> Host Login</button></p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showHostLoginModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => setShowHostLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-host-login-modal"><X size={20}/></button>
+            
+            <div className="text-center mb-6">
+              <Building2 size={32} className="mx-auto mb-2 text-green-500" />
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Host Login</h2>
+            </div>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const response = await fetch('/api/hosts/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(hostLoginForm),
+                });
+                if (response.ok) {
+                  const data = await response.json();
+                  setCurrentHost(data.host);
+                  setShowHostLoginModal(false);
+                  setHostLoginForm({ username: '', password: '' });
+                  setView('host-dashboard');
+                } else {
+                  const error = await response.json();
+                  alert(error.message || 'Login failed');
+                }
+              } catch (err) {
+                alert('Error logging in');
+              }
+            }} className="space-y-4">
+              <input 
+                type="text" 
+                value={hostLoginForm.username}
+                onChange={(e) => setHostLoginForm({...hostLoginForm, username: e.target.value})}
+                placeholder="Username" 
+                required 
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                data-testid="input-host-username" 
+              />
+              <input 
+                type="password" 
+                value={hostLoginForm.password}
+                onChange={(e) => setHostLoginForm({...hostLoginForm, password: e.target.value})}
+                placeholder="Password" 
+                required 
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                data-testid="input-host-password" 
+              />
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-host-login-submit">Access Host Panel</Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Don't have a host account? <button onClick={() => { setShowHostLoginModal(false); setShowHostRegisterModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-become-host-link">Become a Host</button></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showHostRegisterModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 my-4">
+            <button onClick={() => setShowHostRegisterModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-host-register-modal"><X size={20}/></button>
+            
+            {hostRegisterMessage ? (
+              <div className="text-center py-8">
+                <Check size={48} className="mx-auto mb-4 text-green-600" />
+                <h2 className="text-2xl font-bold mb-4 text-zinc-900 dark:text-white">Registration Successful!</h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">{hostRegisterMessage}</p>
+                <Button onClick={() => { 
+                  setShowHostRegisterModal(false); 
+                  setHostRegisterForm({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '', licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', username: '', password: '', confirmPassword: '' }); 
+                  setHostRegisterMessage(''); 
+                  setShowHostLoginModal(true);
+                }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-host-register-success">Login Now</Button>
+              </div>
+            ) : (
+              <>
+                <div className="text-center mb-6">
+                  <Building2 size={32} className="mx-auto mb-2 text-green-500" />
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Become a Host</h2>
+                  <p className="text-sm text-zinc-500 mt-1">Register to list your vehicles and earn money</p>
+                </div>
+                
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (hostRegisterForm.password !== hostRegisterForm.confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                  }
+                  try {
+                    const response = await fetch('/api/hosts/register', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        firstName: hostRegisterForm.firstName,
+                        lastName: hostRegisterForm.lastName,
+                        email: hostRegisterForm.email,
+                        phone: hostRegisterForm.phone,
+                        address: hostRegisterForm.address,
+                        city: hostRegisterForm.city,
+                        state: hostRegisterForm.state,
+                        zipCode: hostRegisterForm.zipCode,
+                        licenseNumber: hostRegisterForm.licenseNumber,
+                        licenseFrontImage: hostRegisterForm.licenseFrontImage,
+                        licenseBackImage: hostRegisterForm.licenseBackImage,
+                        username: hostRegisterForm.username,
+                        password: hostRegisterForm.password,
+                      }),
+                    });
+                    if (response.ok) {
+                      setHostRegisterMessage(`Welcome ${hostRegisterForm.firstName}! Your host account has been created. You can now login with username: ${hostRegisterForm.username}`);
+                    } else {
+                      const error = await response.json();
+                      alert(error.message || 'Registration failed');
+                    }
+                  } catch (err) {
+                    alert('Error registering');
+                  }
+                }} className="space-y-4">
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Personal Information</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" value={hostRegisterForm.firstName} onChange={(e) => setHostRegisterForm({...hostRegisterForm, firstName: e.target.value})} placeholder="First Name *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-first-name" />
+                      <input type="text" value={hostRegisterForm.lastName} onChange={(e) => setHostRegisterForm({...hostRegisterForm, lastName: e.target.value})} placeholder="Last Name *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-last-name" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <input type="email" value={hostRegisterForm.email} onChange={(e) => setHostRegisterForm({...hostRegisterForm, email: e.target.value})} placeholder="Email *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-email" />
+                      <input type="tel" value={hostRegisterForm.phone} onChange={(e) => setHostRegisterForm({...hostRegisterForm, phone: e.target.value})} placeholder="Phone *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-phone" />
+                    </div>
+                  </div>
+
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Address</h3>
+                    <input type="text" value={hostRegisterForm.address} onChange={(e) => setHostRegisterForm({...hostRegisterForm, address: e.target.value})} placeholder="Street Address" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-address" />
+                    <div className="grid grid-cols-3 gap-3">
+                      <input type="text" value={hostRegisterForm.city} onChange={(e) => setHostRegisterForm({...hostRegisterForm, city: e.target.value})} placeholder="City" className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-city" />
+                      <input type="text" value={hostRegisterForm.state} onChange={(e) => setHostRegisterForm({...hostRegisterForm, state: e.target.value})} placeholder="State" maxLength={2} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-state" />
+                      <input type="text" value={hostRegisterForm.zipCode} onChange={(e) => setHostRegisterForm({...hostRegisterForm, zipCode: e.target.value})} placeholder="ZIP Code" className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-zip" />
+                    </div>
+                  </div>
+
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Driver's License</h3>
+                    <input type="text" value={hostRegisterForm.licenseNumber} onChange={(e) => setHostRegisterForm({...hostRegisterForm, licenseNumber: e.target.value})} placeholder="License Number *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-license" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Front of License</label>
+                        <input type="file" accept="image/*" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, licenseFrontImage: reader.result as string});
+                            reader.readAsDataURL(file);
+                          }
+                        }} className="w-full text-xs text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-front" />
+                        {hostRegisterForm.licenseFrontImage && <img src={hostRegisterForm.licenseFrontImage} alt="Front" className="mt-2 w-full h-24 object-cover rounded border" />}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Back of License</label>
+                        <input type="file" accept="image/*" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, licenseBackImage: reader.result as string});
+                            reader.readAsDataURL(file);
+                          }
+                        }} className="w-full text-xs text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-back" />
+                        {hostRegisterForm.licenseBackImage && <img src={hostRegisterForm.licenseBackImage} alt="Back" className="mt-2 w-full h-24 object-cover rounded border" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Account Credentials</h3>
+                    <input type="text" value={hostRegisterForm.username} onChange={(e) => setHostRegisterForm({...hostRegisterForm, username: e.target.value})} placeholder="Username *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-username-register" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="password" value={hostRegisterForm.password} onChange={(e) => setHostRegisterForm({...hostRegisterForm, password: e.target.value})} placeholder="Password *" required minLength={6} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-password-register" />
+                      <input type="password" value={hostRegisterForm.confirmPassword} onChange={(e) => setHostRegisterForm({...hostRegisterForm, confirmPassword: e.target.value})} placeholder="Confirm Password *" required minLength={6} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-confirm-password" />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-host-register-submit">Register as Host</Button>
+                </form>
+
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Already a host? <button onClick={() => { setShowHostRegisterModal(false); setShowHostLoginModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-host-login-link-2">Login</button></p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1417,6 +1626,159 @@ export default function CarHopApp() {
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-profile-save">Save Changes</Button>
             </form>
           </div>
+        </div>
+      )}
+
+      {view === 'host-dashboard' && currentHost && (
+        <div className="max-w-7xl mx-auto px-6 py-24">
+          <div className="flex items-start justify-between mb-8 gap-2">
+            <div>
+              <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-host-title">Host Dashboard</h1>
+              <p className="text-xs text-zinc-500">Welcome, {currentHost.firstName} {currentHost.lastName}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-host-theme">
+                {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => { setCurrentHost(null); setView('home'); }} data-testid="button-host-logout">
+                <LogOut size={14} className="mr-1" /> Logout
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2">
+            {['fleet', 'bookings', 'earnings'].map(tab => (
+              <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
+                {tab === 'fleet' && <Car size={18} />}
+                {tab === 'bookings' && <Briefcase size={18} />}
+                {tab === 'earnings' && <TrendingUp size={18} />}
+                <span>{tab}</span>
+              </button>
+            ))}
+          </div>
+
+          {hostTab === 'fleet' && (() => {
+            const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
+            return (
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const vehicleData = {
+                      ...formData,
+                      price: parseFloat(formData.price) || 0,
+                      hostId: String(currentHost.id),
+                      commission: 15
+                    };
+                    createVehicleMutation.mutate(vehicleData);
+                  }} className="space-y-4">
+                    <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Vehicle Model *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="select-host-vehicle-category">
+                        <option value="">Category</option>
+                        <option value="Economy">Economy</option>
+                        <option value="Standard">Standard</option>
+                        <option value="SUV">SUV</option>
+                        <option value="Luxury">Luxury</option>
+                      </select>
+                      <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Price/Day *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                        <option value="Gasoline">Gasoline</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Electric">Electric</option>
+                        <option value="Hybrid">Hybrid</option>
+                      </select>
+                      <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                        <option value="Automatic">Automatic</option>
+                        <option value="Manual">Manual</option>
+                      </select>
+                    </div>
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">Add Vehicle</Button>
+                  </form>
+                </Card>
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {hostVehicles.length > 0 ? hostVehicles.map((car) => (
+                      <div key={car.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group" data-testid={`card-host-vehicle-${car.id}`}>
+                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                          <p className="text-xs text-zinc-500">${car.price}/day | {car.commission || 15}% commission</p>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-sm text-zinc-500 text-center py-4">No vehicles added yet</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            );
+          })()}
+
+          {hostTab === 'bookings' && (() => {
+            const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
+            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId));
+            return (
+              <Card className="p-6">
+                <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Bookings ({hostBookings.length})</h3>
+                {hostBookings.length > 0 ? (
+                  <div className="space-y-3">
+                    {hostBookings.map(b => (
+                      <div key={b.id} className="p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{b.bookingCode}</h4>
+                            <p className="text-xs text-zinc-500">{b.carName}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded font-bold ${b.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{b.status}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                          <div><span className="text-zinc-500">Client:</span> {b.driver.name}</div>
+                          <div><span className="text-zinc-500">Total:</span> <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></div>
+                          <div><span className="text-zinc-500">From:</span> {b.startDate}</div>
+                          <div><span className="text-zinc-500">To:</span> {b.returnDate}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-500 text-center py-8">No bookings yet</p>
+                )}
+              </Card>
+            );
+          })()}
+
+          {hostTab === 'earnings' && (() => {
+            const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
+            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId) && b.status === 'Completed');
+            const grossEarnings = hostBookings.reduce((sum, b) => sum + b.total, 0);
+            const avgCommission = 15; // Default commission
+            const commission = grossEarnings * (avgCommission / 100);
+            const netEarnings = grossEarnings - commission;
+            return (
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="p-6 text-center">
+                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Gross Earnings</h4>
+                  <p className="text-3xl font-bold text-zinc-900 dark:text-white">${grossEarnings.toFixed(2)}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Total before commission</p>
+                </Card>
+                <Card className="p-6 text-center">
+                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Commission ({avgCommission}%)</h4>
+                  <p className="text-3xl font-bold text-red-500">-${commission.toFixed(2)}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Platform fee</p>
+                </Card>
+                <Card className="p-6 text-center">
+                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Net Earnings</h4>
+                  <p className="text-3xl font-bold text-green-500">${netEarnings.toFixed(2)}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Your profit</p>
+                </Card>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -1839,16 +2201,152 @@ export default function CarHopApp() {
             {adminTab === 'hosts' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
-                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Hosts (0)</h3>
-                  <div className="text-xs text-zinc-500 text-center py-8">No hosts registered yet</div>
+                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Hosts ({hostsData.length})</h3>
+                  {hostsData.length > 0 ? (
+                    <div className="space-y-2">
+                      {hostsData.map((host: any) => {
+                        const hostVehicles = vehicles.filter(v => v.hostId === String(host.id));
+                        return (
+                          <div key={host.id} onClick={() => { setSelectedHost(host); setEditingHost(null); }} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedHost?.id === host.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-${host.id}`}>
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-bold text-sm text-white">{host.firstName} {host.lastName}</span>
+                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${host.status === 'active' ? 'bg-green-600 text-white' : 'bg-zinc-500 text-white'}`}>{host.status}</span>
+                            </div>
+                            <div className="text-xs text-zinc-500">@{host.username}</div>
+                            <div className="text-xs text-zinc-400 mt-1">Vehicles: {hostVehicles.length}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-zinc-500 text-center py-8">No hosts registered yet</div>
+                  )}
                 </Card>
                 <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
-                  <div className="flex items-center justify-center h-full text-zinc-500">
-                    <div className="text-center">
-                      <Building2 size={32} className="mx-auto mb-2 text-zinc-400" />
-                      <p>Select a host to view details</p>
+                  {selectedHost ? (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white">{selectedHost.firstName} {selectedHost.lastName}</h2>
+                          <p className="text-xs sm:text-sm text-zinc-500 mt-1">@{selectedHost.username} | Joined: {selectedHost.createdAt ? new Date(selectedHost.createdAt).toLocaleDateString() : 'N/A'}</p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setEditingHost(editingHost ? null : {...selectedHost})} data-testid="button-edit-host">
+                          {editingHost ? <X size={14}/> : <Edit size={14}/>}
+                        </Button>
+                      </div>
+
+                      {editingHost ? (
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          try {
+                            const response = await fetch(`/api/hosts/${selectedHost.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(editingHost),
+                            });
+                            if (response.ok) {
+                              queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+                              setEditingHost(null);
+                              const updated = await response.json();
+                              setSelectedHost(updated);
+                            } else {
+                              alert('Error updating host');
+                            }
+                          } catch (err) { alert('Error updating host'); }
+                        }} className="space-y-4 p-4 bg-zinc-900 rounded-lg">
+                          <div className="grid grid-cols-2 gap-3">
+                            <input type="text" value={editingHost.firstName} onChange={(e) => setEditingHost({...editingHost, firstName: e.target.value})} placeholder="First Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="text" value={editingHost.lastName} onChange={(e) => setEditingHost({...editingHost, lastName: e.target.value})} placeholder="Last Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <input type="email" value={editingHost.email} onChange={(e) => setEditingHost({...editingHost, email: e.target.value})} placeholder="Email" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="tel" value={editingHost.phone} onChange={(e) => setEditingHost({...editingHost, phone: e.target.value})} placeholder="Phone" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          </div>
+                          <input type="text" value={editingHost.address || ''} onChange={(e) => setEditingHost({...editingHost, address: e.target.value})} placeholder="Address" className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          <div className="grid grid-cols-3 gap-3">
+                            <input type="text" value={editingHost.city || ''} onChange={(e) => setEditingHost({...editingHost, city: e.target.value})} placeholder="City" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="text" value={editingHost.state || ''} onChange={(e) => setEditingHost({...editingHost, state: e.target.value})} placeholder="State" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="text" value={editingHost.zipCode || ''} onChange={(e) => setEditingHost({...editingHost, zipCode: e.target.value})} placeholder="ZIP" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <input type="text" value={editingHost.licenseNumber} onChange={(e) => setEditingHost({...editingHost, licenseNumber: e.target.value})} placeholder="License Number" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <select value={editingHost.status} onChange={(e) => setEditingHost({...editingHost, status: e.target.value})} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm">
+                              <option value="active">Active</option>
+                              <option value="suspended">Suspended</option>
+                              <option value="pending">Pending</option>
+                            </select>
+                          </div>
+                          <input type="password" value={editingHost.password || ''} onChange={(e) => setEditingHost({...editingHost, password: e.target.value})} placeholder="New Password (leave blank to keep current)" className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          <div className="flex gap-2">
+                            <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">Save Changes</Button>
+                            <Button type="button" variant="outline" onClick={() => setEditingHost(null)}>Cancel</Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Contact</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                <p>{selectedHost.email}</p>
+                                <p className="text-zinc-500">{selectedHost.phone}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Address</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                <p>{selectedHost.address || 'N/A'}</p>
+                                <p className="text-zinc-500">{[selectedHost.city, selectedHost.state, selectedHost.zipCode].filter(Boolean).join(', ') || 'N/A'}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">License</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white">{selectedHost.licenseNumber}</div>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Status</h4>
+                              <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${selectedHost.status === 'active' ? 'bg-green-600 text-white' : 'bg-zinc-500 text-white'}`}>{selectedHost.status}</span>
+                            </div>
+                          </div>
+                          
+                          {(selectedHost.licenseFrontImage || selectedHost.licenseBackImage) && (
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">License Photos</h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                {selectedHost.licenseFrontImage && <img src={selectedHost.licenseFrontImage} alt="Front" className="w-full h-32 object-cover rounded border border-zinc-700" />}
+                                {selectedHost.licenseBackImage && <img src={selectedHost.licenseBackImage} alt="Back" className="w-full h-32 object-cover rounded border border-zinc-700" />}
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Host Vehicles ({vehicles.filter(v => v.hostId === String(selectedHost.id)).length})</h4>
+                            <div className="space-y-2">
+                              {vehicles.filter(v => v.hostId === String(selectedHost.id)).map(car => (
+                                <div key={car.id} className="flex items-center gap-3 p-2 bg-zinc-900 rounded-lg">
+                                  <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-white">{car.model}</p>
+                                    <p className="text-xs text-zinc-500">${car.price}/day | {car.commission || 10}% commission</p>
+                                  </div>
+                                </div>
+                              ))}
+                              {vehicles.filter(v => v.hostId === String(selectedHost.id)).length === 0 && (
+                                <p className="text-xs text-zinc-500">No vehicles registered</p>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-zinc-500">
+                      <div className="text-center">
+                        <Building2 size={32} className="mx-auto mb-2 text-zinc-400" />
+                        <p>Select a host to view details</p>
+                      </div>
+                    </div>
+                  )}
                 </Card>
               </div>
             )}

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
-import { insertVehicleSchema, insertBookingSchema } from "@shared/schema";
+import { insertVehicleSchema, insertBookingSchema, insertHostSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -531,5 +531,167 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       vehicleExpenses: Object.values(vehicleExpenses),
       fixedMonthly: totalFleetFixedExpenses 
     });
+  });
+
+  // ========== HOST ROUTES ==========
+  // Get all hosts (Admin Matriz only)
+  app.get("/api/hosts", async (_req, res) => {
+    try {
+      const hosts = await storage.getHosts();
+      // Don't send password hashes to frontend
+      const safeHosts = hosts.map(h => ({ ...h, passwordHash: undefined }));
+      res.json(safeHosts);
+    } catch (error) {
+      console.error("Error fetching hosts:", error);
+      res.status(500).json({ message: "Failed to fetch hosts" });
+    }
+  });
+
+  // Get single host
+  app.get("/api/hosts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const host = await storage.getHost(id);
+      if (!host) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+      res.json({ ...host, passwordHash: undefined });
+    } catch (error) {
+      console.error("Error fetching host:", error);
+      res.status(500).json({ message: "Failed to fetch host" });
+    }
+  });
+
+  // Host registration
+  app.post("/api/hosts/register", async (req, res) => {
+    try {
+      const { firstName, lastName, email, phone, address, city, state, zipCode,
+              licenseNumber, licenseFrontImage, licenseBackImage, username, password } = req.body;
+
+      // Check if username already exists
+      const existingUsername = await storage.getHostByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      // Check if email already exists
+      const existingEmail = await storage.getHostByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
+
+      const host = await storage.createHost({
+        firstName, lastName, email, phone, address, city, state, zipCode,
+        licenseNumber, licenseFrontImage, licenseBackImage, username, passwordHash, status: 'active'
+      });
+
+      res.status(201).json({ 
+        message: "Host registered successfully", 
+        host: { ...host, passwordHash: undefined }
+      });
+    } catch (error) {
+      console.error("Error registering host:", error);
+      res.status(500).json({ message: "Failed to register host" });
+    }
+  });
+
+  // Host login
+  app.post("/api/hosts/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      const host = await storage.getHostByUsername(username);
+      if (!host) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const validPassword = await bcrypt.compare(password, host.passwordHash);
+      if (!validPassword) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      if (host.status !== 'active') {
+        return res.status(403).json({ message: "Account is not active" });
+      }
+
+      res.json({ 
+        message: "Login successful", 
+        host: { ...host, passwordHash: undefined }
+      });
+    } catch (error) {
+      console.error("Error logging in host:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  // Update host (Admin Matriz edit capability)
+  app.patch("/api/hosts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+
+      // If password is being updated, hash it
+      if (updates.password) {
+        const salt = await bcrypt.genSalt(10);
+        updates.passwordHash = await bcrypt.hash(updates.password, salt);
+        delete updates.password;
+      }
+
+      const host = await storage.updateHost(id, updates);
+      if (!host) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+      res.json({ ...host, passwordHash: undefined });
+    } catch (error) {
+      console.error("Error updating host:", error);
+      res.status(500).json({ message: "Failed to update host" });
+    }
+  });
+
+  // Delete host
+  app.delete("/api/hosts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteHost(id);
+      if (!success) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+      res.json({ message: "Host deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting host:", error);
+      res.status(500).json({ message: "Failed to delete host" });
+    }
+  });
+
+  // Get vehicles by host
+  app.get("/api/hosts/:id/vehicles", async (req, res) => {
+    try {
+      const hostId = req.params.id;
+      const vehicles = await storage.getVehicles();
+      const hostVehicles = vehicles.filter(v => v.hostId === hostId);
+      res.json(hostVehicles);
+    } catch (error) {
+      console.error("Error fetching host vehicles:", error);
+      res.status(500).json({ message: "Failed to fetch vehicles" });
+    }
+  });
+
+  // Get bookings by host (vehicles owned by host)
+  app.get("/api/hosts/:id/bookings", async (req, res) => {
+    try {
+      const hostId = req.params.id;
+      const vehicles = await storage.getVehicles();
+      const hostVehicleIds = vehicles.filter(v => v.hostId === hostId).map(v => v.id);
+      const bookings = await storage.getBookings();
+      const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId));
+      res.json(hostBookings);
+    } catch (error) {
+      console.error("Error fetching host bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
   });
 }

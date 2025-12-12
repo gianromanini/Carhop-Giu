@@ -1,9 +1,10 @@
 import { 
-  vehicles, bookings, settings,
+  vehicles, bookings, settings, hosts,
   type Vehicle, type InsertVehicle,
   type Booking, type InsertBooking,
   type Settings, type InsertSettings,
-  type User, type UpsertUser
+  type User, type UpsertUser,
+  type Host, type InsertHost
 } from "@shared/schema";
 
 export interface IStorage {
@@ -35,6 +36,15 @@ export interface IStorage {
   getSetting(key: string): Promise<Settings | undefined>;
   setSetting(key: string, value: any): Promise<Settings>;
   getAllSettings(): Promise<Settings[]>;
+
+  // Hosts
+  getHosts(): Promise<Host[]>;
+  getHost(id: number): Promise<Host | undefined>;
+  getHostByUsername(username: string): Promise<Host | undefined>;
+  getHostByEmail(email: string): Promise<Host | undefined>;
+  createHost(host: InsertHost): Promise<Host>;
+  updateHost(id: number, host: Partial<InsertHost>): Promise<Host | undefined>;
+  deleteHost(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -42,9 +52,11 @@ export class MemStorage implements IStorage {
   private bookings: Map<number, Booking> = new Map();
   private settings: Map<string, Settings> = new Map();
   private users: Map<string, User> = new Map();
+  private hosts: Map<number, Host> = new Map();
   private vehicleId = 1;
   private bookingId = 1;
   private settingsId = 1;
+  private hostId = 1;
   private bookingCodeCounter = 1;
 
   // Users (required for Replit Auth)
@@ -73,6 +85,7 @@ export class MemStorage implements IStorage {
       passwordHash: userData.passwordHash ?? null,
       profileImageUrl: userData.profileImageUrl ?? null,
       isAdmin: userData.isAdmin ?? false,
+      isHost: userData.isHost ?? false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -100,6 +113,7 @@ export class MemStorage implements IStorage {
       passwordHash: userData.passwordHash ?? null,
       profileImageUrl: userData.profileImageUrl ?? null,
       isAdmin: userData.isAdmin ?? false,
+      isHost: userData.isHost ?? false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -433,6 +447,8 @@ export class MemStorage implements IStorage {
       hasDriveAssist: vehicle.hasDriveAssist ?? false,
       hasUSBCharger: vehicle.hasUSBCharger ?? false,
       expenses: vehicle.expenses ?? null,
+      hostId: vehicle.hostId ?? null,
+      commission: vehicle.commission ?? 10,
     };
     this.vehicles.set(id, newVehicle);
     return newVehicle;
@@ -608,6 +624,89 @@ export class MemStorage implements IStorage {
 
   async getAllSettings(): Promise<Settings[]> {
     return Array.from(this.settings.values());
+  }
+
+  // Hosts
+  async getHosts(): Promise<Host[]> {
+    return Array.from(this.hosts.values());
+  }
+
+  async getHost(id: number): Promise<Host | undefined> {
+    return this.hosts.get(id);
+  }
+
+  async getHostByUsername(username: string): Promise<Host | undefined> {
+    const hosts = Array.from(this.hosts.values());
+    for (const host of hosts) {
+      if (host.username.toLowerCase() === username.toLowerCase()) {
+        return host;
+      }
+    }
+    return undefined;
+  }
+
+  async getHostByEmail(email: string): Promise<Host | undefined> {
+    const hosts = Array.from(this.hosts.values());
+    for (const host of hosts) {
+      if (host.email.toLowerCase() === email.toLowerCase()) {
+        return host;
+      }
+    }
+    return undefined;
+  }
+
+  async createHost(hostData: InsertHost): Promise<Host> {
+    const id = this.hostId++;
+    const newHost: Host = {
+      id,
+      firstName: hostData.firstName,
+      lastName: hostData.lastName,
+      email: hostData.email,
+      phone: hostData.phone,
+      address: hostData.address ?? null,
+      city: hostData.city ?? null,
+      state: hostData.state ?? null,
+      zipCode: hostData.zipCode ?? null,
+      licenseNumber: hostData.licenseNumber,
+      licenseFrontImage: hostData.licenseFrontImage ?? null,
+      licenseBackImage: hostData.licenseBackImage ?? null,
+      username: hostData.username,
+      passwordHash: hostData.passwordHash,
+      status: hostData.status ?? 'active',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.hosts.set(id, newHost);
+    return newHost;
+  }
+
+  async updateHost(id: number, hostData: Partial<InsertHost>): Promise<Host | undefined> {
+    const existing = this.hosts.get(id);
+    if (!existing) return undefined;
+    const updated: Host = {
+      ...existing,
+      firstName: hostData.firstName ?? existing.firstName,
+      lastName: hostData.lastName ?? existing.lastName,
+      email: hostData.email ?? existing.email,
+      phone: hostData.phone ?? existing.phone,
+      address: hostData.address ?? existing.address,
+      city: hostData.city ?? existing.city,
+      state: hostData.state ?? existing.state,
+      zipCode: hostData.zipCode ?? existing.zipCode,
+      licenseNumber: hostData.licenseNumber ?? existing.licenseNumber,
+      licenseFrontImage: hostData.licenseFrontImage ?? existing.licenseFrontImage,
+      licenseBackImage: hostData.licenseBackImage ?? existing.licenseBackImage,
+      username: hostData.username ?? existing.username,
+      passwordHash: hostData.passwordHash ?? existing.passwordHash,
+      status: hostData.status ?? existing.status,
+      updatedAt: new Date(),
+    };
+    this.hosts.set(id, updated);
+    return updated;
+  }
+
+  async deleteHost(id: number): Promise<boolean> {
+    return this.hosts.delete(id);
   }
 }
 

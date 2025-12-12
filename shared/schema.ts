@@ -157,6 +157,30 @@ export const bookings = pgTable("bookings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const hosts = pgTable("hosts", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").notNull().unique(),
+  phone: varchar("phone").notNull(),
+  address: varchar("address"),
+  city: varchar("city"),
+  state: varchar("state"),
+  zipCode: varchar("zip_code"),
+  licenseNumber: varchar("license_number").notNull(),
+  licenseFrontImage: text("license_front_image"),
+  licenseBackImage: text("license_back_image"),
+  username: varchar("username").notNull().unique(),
+  passwordHash: varchar("password_hash").notNull(),
+  status: varchar("status").notNull().default('active'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertHostSchema = createInsertSchema(hosts).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertHost = z.infer<typeof insertHostSchema>;
+export type Host = typeof hosts.$inferSelect;
+
 export const settings = pgTable("settings", {
   id: serial("id").primaryKey(),
   key: text("key").notNull().unique(),
