@@ -1946,7 +1946,13 @@ export default function CarHopApp() {
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
-                            <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="e.g. Sedan" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" />
+                            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="">Select Category</option>
+                              <option value="SEDAN">SEDAN</option>
+                              <option value="SUV">SUV</option>
+                              <option value="HATCHBACK">HATCHBACK</option>
+                              <option value="MINIVAN">MINIVAN</option>
+                            </select>
                           </div>
                         </div>
                         
@@ -2006,7 +2012,7 @@ export default function CarHopApp() {
                         
                         <div className="border-t pt-4">
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vehicle Photos ({formData.images.filter(img => img.trim()).length} photos)</label>
-                          <div className="flex flex-wrap gap-2 mb-2">
+                          <div className="flex flex-wrap gap-2 mb-3">
                             {formData.images.filter(img => img.trim()).map((img, idx) => (
                               <div key={idx} className="relative group">
                                 <img src={img} alt={`Photo ${idx+1}`} className="w-16 h-16 object-cover rounded border border-zinc-300 dark:border-zinc-700" />
@@ -2016,7 +2022,22 @@ export default function CarHopApp() {
                               </div>
                             ))}
                           </div>
-                          <input type="text" placeholder="Or paste image URL..." className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" onKeyDown={(e) => {
+                          <div className="flex gap-2 mb-2">
+                            <input type="file" accept="image/*" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  const newImages = formData.images[0] === '' ? [base64] : [...formData.images, base64];
+                                  setFormData({...formData, images: newImages});
+                                  e.target.value = '';
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }} className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-photo-upload" />
+                          </div>
+                          <input type="text" placeholder="Or paste image URL and press Enter..." className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
                               const input = e.target as HTMLInputElement;
@@ -2054,6 +2075,30 @@ export default function CarHopApp() {
                     </Card>
                   </div>
                   <div className="lg:col-span-2 space-y-6">
+                    {/* Pickup Locations */}
+                    <Card className="p-6">
+                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                        <MapPin size={18} className="text-green-500"/>
+                        Pickup Locations
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {settings.locations.map(loc => (
+                          <span key={loc} className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-xs font-bold group">
+                            <MapPin size={12}/> {loc}
+                            <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                              <X size={12} className="text-red-500"/>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input type="text" value={hostNewLocation} onChange={(e) => setHostNewLocation(e.target.value)} placeholder="Add new location..." className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-new-location" />
+                        <Button variant="primary" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
+                          <Plus size={16}/> Add
+                        </Button>
+                      </div>
+                    </Card>
+
                     {/* My Vehicles */}
                     <Card className="p-6">
                       <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
@@ -2078,30 +2123,6 @@ export default function CarHopApp() {
                         )) : (
                           <p className="text-sm text-zinc-500 text-center py-8">No vehicles added yet</p>
                         )}
-                      </div>
-                    </Card>
-
-                    {/* Pickup Locations */}
-                    <Card className="p-6">
-                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                        <MapPin size={18} className="text-green-500"/>
-                        Pickup Locations
-                      </h3>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {settings.locations.map(loc => (
-                          <span key={loc} className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-xs font-bold group">
-                            <MapPin size={12}/> {loc}
-                            <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
-                              <X size={12} className="text-red-500"/>
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <input type="text" value={hostNewLocation} onChange={(e) => setHostNewLocation(e.target.value)} placeholder="Add new location..." className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-new-location" />
-                        <Button variant="primary" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
-                          <Plus size={16}/> Add
-                        </Button>
                       </div>
                     </Card>
                   </div>
