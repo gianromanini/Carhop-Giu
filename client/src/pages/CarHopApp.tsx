@@ -326,6 +326,7 @@ export default function CarHopApp() {
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [adminTab, setAdminTab] = useState('fleet');
+  const [selectedClient, setSelectedClient] = useState<any>(null);
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -1527,10 +1528,11 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2">
-              {['fleet', 'bookings', 'earnings'].map(tab => (
-                <button key={tab} onClick={() => setAdminTab(tab)} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+              {['fleet', 'bookings', 'clients', 'earnings'].map(tab => (
+                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); }} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   {tab === 'fleet' && <Car size={18} />}
                   {tab === 'bookings' && <Briefcase size={18} />}
+                  {tab === 'clients' && <Users size={18} />}
                   {tab === 'earnings' && <TrendingUp size={18} />}
                   <span className="md:text-xs text-xs">{tab}</span>
                 </button>
@@ -1705,6 +1707,121 @@ export default function CarHopApp() {
                 </div>
               </div>
             )}
+
+            {adminTab === 'clients' && (() => {
+              const allUsers = Array.from(new Set(bookings.map(b => b.driver.email))).map(email => {
+                const trips = bookings.filter(b => b.driver.email === email);
+                const firstTrip = trips[0];
+                const sortedTrips = trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+                const allDates = trips.map(t => t.createdAt ? new Date(t.createdAt).getTime() : Date.now());
+                return {
+                  email,
+                  name: firstTrip?.driver.name || 'Unknown',
+                  phone: firstTrip?.driver.phone || '',
+                  trips: sortedTrips,
+                  totalSpent: trips.reduce((sum, t) => sum + t.total, 0),
+                  createdAt: new Date(Math.min(...allDates))
+                };
+              }).sort((a, b) => a.name.localeCompare(b.name));
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Left Column - Clients List */}
+                  <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
+                    <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({allUsers.length})</h3>
+                    <div className="space-y-2">
+                      {allUsers.map((client, idx) => (
+                        <div key={idx} onClick={() => setSelectedClient(client)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedClient?.email === client.email ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-client-${idx}`}>
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-sm text-white truncate">{client.name}</span>
+                          </div>
+                          <div className="text-xs text-zinc-500">{client.email}</div>
+                          <div className="text-xs text-zinc-400 mt-1">Trips: {client.trips.length} | Spent: ${client.totalSpent.toFixed(2)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* Right Column - Client Details */}
+                  <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
+                    {selectedClient ? (
+                      <div className="space-y-4 sm:space-y-6">
+                        {/* Header */}
+                        <div>
+                          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white">{selectedClient.name}</h2>
+                          <p className="text-xs sm:text-sm text-zinc-500 mt-1">Joined: {new Date(selectedClient.createdAt).toLocaleDateString()}</p>
+                        </div>
+
+                        {/* Client Info */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Email</h4>
+                            <div className="text-sm text-zinc-900 dark:text-white font-medium">{selectedClient.email}</div>
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Phone</h4>
+                            <div className="text-sm text-zinc-900 dark:text-white font-medium">{selectedClient.phone || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Total Trips</h4>
+                            <div className="text-sm text-zinc-900 dark:text-white font-medium">{selectedClient.trips.length}</div>
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Total Spent</h4>
+                            <div className="text-sm text-green-500 font-bold">${selectedClient.totalSpent.toFixed(2)}</div>
+                          </div>
+                        </div>
+
+                        {/* Trip History */}
+                        <div>
+                          <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Trip History</h3>
+                          <div className="space-y-2">
+                            {selectedClient.trips.length > 0 ? (
+                              selectedClient.trips.map((trip: Booking, idx: number) => (
+                                <div key={idx} className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{trip.carName}</h4>
+                                      <p className="text-xs text-zinc-500">Booking: {trip.bookingCode}</p>
+                                    </div>
+                                    <span className={`text-xs px-2 py-1 rounded font-bold ${trip.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{trip.status}</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                    <div>
+                                      <span className="text-zinc-500">From:</span> {trip.startDate} {trip.startTime}
+                                    </div>
+                                    <div>
+                                      <span className="text-zinc-500">To:</span> {trip.returnDate} {trip.returnTime}
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                                    <div className="text-zinc-600 dark:text-zinc-400">
+                                      <span className="text-zinc-500">Days:</span> {trip.days}
+                                    </div>
+                                    <div>
+                                      <span className="text-zinc-500">Cost:</span> <span className="text-green-500 font-bold">${trip.total.toFixed(2)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-xs text-zinc-500">No trips found</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-zinc-500">
+                        <div className="text-center">
+                          <Users size={32} className="mx-auto mb-2 text-zinc-400" />
+                          <p>Select a client to view details</p>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              );
+            })()}
 
             {adminTab === 'bookings' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

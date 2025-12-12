@@ -13,6 +13,8 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<UpsertUser>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  getUserTrips(userEmail: string): Promise<Booking[]>;
 
   // Vehicles
   getVehicles(): Promise<Vehicle[]>;
@@ -123,6 +125,15 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getUserTrips(userEmail: string): Promise<Booking[]> {
+    const allBookings = Array.from(this.bookings.values());
+    return allBookings.filter(booking => booking.driver.email?.toLowerCase() === userEmail.toLowerCase());
   }
 
   private generateBookingCode(): string {
