@@ -24,6 +24,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"),
   profileImageUrl: varchar("profile_image_url"),
   isAdmin: boolean("is_admin").default(false),
+  isHost: boolean("is_host").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -55,6 +56,8 @@ export const vehicles = pgTable("vehicles", {
   hasBlindSpotWarning: boolean("has_blind_spot_warning").default(false),
   hasDriveAssist: boolean("has_drive_assist").default(false),
   hasUSBCharger: boolean("has_usb_charger").default(false),
+  hostId: varchar("host_id"),
+  commission: integer("commission").default(10),
   expenses: jsonb("expenses").$type<{
     lease: number;
     insurance: number;

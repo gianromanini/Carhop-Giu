@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell, MoreVertical
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell, MoreVertical, Building2
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -325,8 +325,10 @@ export default function CarHopApp() {
   const { user: authUser, isAuthenticated } = useAuth();
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
+  const [adminUnit, setAdminUnit] = useState('');
   const [adminTab, setAdminTab] = useState('fleet');
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedHost, setSelectedHost] = useState<any>(null);
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -532,6 +534,7 @@ export default function CarHopApp() {
   const handleAdminLoginSubmit = () => {
     if (adminLoginForm.unit === '01') {
       setShowAdminLoginModal(false);
+      setAdminUnit('01');
       setAdminLoginForm({ unit: '', password: '' });
       setView('admin');
     } else {
@@ -1516,7 +1519,7 @@ export default function CarHopApp() {
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="flex items-start justify-between mb-8 gap-2">
-              <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin</h1>
+              <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin {adminUnit === '01' && 'Matriz'}</h1>
               <div className="flex flex-col items-center gap-0.5">
                 <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
                   {darkMode ? <Sun size={14} /> : <Moon size={14} />}
@@ -1528,18 +1531,20 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex justify-center gap-1 md:gap-2 mb-6 overflow-x-auto pb-2">
-              {['fleet', 'bookings', 'clients', 'earnings'].map(tab => (
-                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); }} className={`flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+              {(adminUnit === '01' ? ['fleet', 'bookings', 'clients', 'hosts', 'earnings'] : ['fleet', 'bookings', 'earnings']).map(tab => (
+                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); }} className={`flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   <div className="hidden md:block">
                     {tab === 'fleet' && <Car size={18} />}
                     {tab === 'bookings' && <Briefcase size={18} />}
                     {tab === 'clients' && <Users size={18} />}
+                    {tab === 'hosts' && <Building2 size={18} />}
                     {tab === 'earnings' && <TrendingUp size={18} />}
                   </div>
                   <div className="md:hidden">
                     {tab === 'fleet' && <Car size={14} />}
                     {tab === 'bookings' && <Briefcase size={14} />}
                     {tab === 'clients' && <Users size={14} />}
+                    {tab === 'hosts' && <Building2 size={14} />}
                     {tab === 'earnings' && <TrendingUp size={14} />}
                   </div>
                   <span>{tab}</span>
@@ -1830,6 +1835,23 @@ export default function CarHopApp() {
                 </div>
               );
             })()}
+
+            {adminTab === 'hosts' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
+                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Hosts (0)</h3>
+                  <div className="text-xs text-zinc-500 text-center py-8">No hosts registered yet</div>
+                </Card>
+                <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
+                  <div className="flex items-center justify-center h-full text-zinc-500">
+                    <div className="text-center">
+                      <Building2 size={32} className="mx-auto mb-2 text-zinc-400" />
+                      <p>Select a host to view details</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
 
             {adminTab === 'bookings' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
