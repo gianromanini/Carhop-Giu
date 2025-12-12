@@ -371,6 +371,7 @@ export default function CarHopApp() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checkInInputRef = useRef<HTMLInputElement>(null);
   const carImageInputRef = useRef<HTMLInputElement>(null);
+  const editVehicleImageInputRef = useRef<HTMLInputElement>(null);
 
   const [paymentDetails, setPaymentDetails] = useState({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
   const [paymentMethod, setPaymentMethod] = useState<'credit' | 'paypal'>('credit');
@@ -2223,6 +2224,21 @@ export default function CarHopApp() {
                           <button onClick={() => setHostVehicleImages([...hostVehicleImages, ''])} className="w-full h-20 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-400 hover:border-green-500 hover:text-green-500 transition-colors" data-testid="button-add-photo-slot">
                             <Plus size={24}/>
                           </button>
+                        </div>
+                        <div className="flex gap-2 mb-2">
+                          <input type="file" ref={editVehicleImageInputRef} accept="image/*" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const base64 = event.target?.result as string;
+                                const newImages = hostVehicleImages[0] === '' ? [base64] : [...hostVehicleImages, base64];
+                                setHostVehicleImages(newImages);
+                                if (editVehicleImageInputRef.current) editVehicleImageInputRef.current.value = '';
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }} className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-edit-vehicle-photo-upload" />
                         </div>
                         {hostVehicleImages.map((img, idx) => (
                           <input key={idx} type="text" value={img} onChange={(e) => { const newImages = [...hostVehicleImages]; newImages[idx] = e.target.value; setHostVehicleImages(newImages); }} placeholder={`Photo URL ${idx+1}`} className="w-full px-3 py-2 mb-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid={`input-photo-url-${idx}`} />
