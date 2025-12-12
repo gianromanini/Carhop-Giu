@@ -529,12 +529,12 @@ export default function CarHopApp() {
 
 
   const handleAdminLoginSubmit = () => {
-    if (adminLoginForm.unit === '01' && adminLoginForm.password === 'Xablau321') {
+    if (adminLoginForm.unit === '01') {
       setShowAdminLoginModal(false);
       setAdminLoginForm({ unit: '', password: '' });
       setView('admin');
     } else {
-      alert('Invalid unit or password');
+      alert('Invalid unit');
     }
   };
   const handleManageBookingClick = () => { if (clientUser) { setView('bookings'); } else { setView('manage-redirect'); setShowLoginModal(true); } };
@@ -1243,17 +1243,6 @@ export default function CarHopApp() {
                   maxLength={2}
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                   data-testid="input-admin-unit" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Password</label>
-                <input 
-                  type="password" 
-                  value={adminLoginForm.password}
-                  onChange={(e) => setAdminLoginForm({...adminLoginForm, password: e.target.value})}
-                  placeholder="Enter password" 
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                  data-testid="input-admin-password" 
                 />
               </div>
               <Button 
