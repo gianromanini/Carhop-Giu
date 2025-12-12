@@ -1,11 +1,14 @@
 import { 
-  vehicles, bookings, settings, hosts,
+  vehicles, bookings, settings, hosts, users,
   type Vehicle, type InsertVehicle,
   type Booking, type InsertBooking,
   type Settings, type InsertSettings,
   type User, type UpsertUser,
   type Host, type InsertHost
 } from "@shared/schema";
+import { drizzle } from "drizzle-orm/neon-http";
+import { eq, ilike } from "drizzle-orm";
+import { neon } from "@neondatabase/serverless";
 
 export interface IStorage {
   // Users (required for Replit Auth)
@@ -715,4 +718,228 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database Storage Implementation
+export class DatabaseStorage implements IStorage {
+  private db: any;
+  private initialized: boolean = false;
+
+  constructor() {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      console.warn("DATABASE_URL not found, falling back to MemStorage");
+      this.initialized = false;
+      return;
+    }
+    try {
+      const sql = neon(connectionString);
+      this.db = drizzle(sql);
+      this.initialized = true;
+    } catch (error) {
+      console.error("Failed to initialize database:", error);
+      this.initialized = false;
+    }
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return undefined;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const result = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting user by email:", error);
+      return undefined;
+    }
+  }
+
+  async upsertUser(user: UpsertUser): Promise<User> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    if (!user.id) user.id = crypto.randomUUID();
+    const result = await this.db.insert(users).values(user).onConflictDoUpdate({
+      target: users.id,
+      set: user,
+    }).returning();
+    return result[0];
+  }
+
+  async createUser(user: UpsertUser): Promise<User> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    const userId = crypto.randomUUID();
+    const result = await this.db.insert(users).values({ ...user, id: userId }).returning();
+    return result[0];
+  }
+
+  async updateUser(id: string, updates: Partial<UpsertUser>): Promise<User | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    if (!this.initialized) return [];
+    return this.db.select().from(users);
+  }
+
+  async getUserTrips(userEmail: string): Promise<Booking[]> {
+    if (!this.initialized) return [];
+    return this.db.select().from(bookings);
+  }
+
+  // Vehicles
+  async getVehicles(): Promise<Vehicle[]> {
+    if (!this.initialized) return [];
+    return this.db.select().from(vehicles);
+  }
+
+  async getVehicle(id: number): Promise<Vehicle | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(vehicles).where(eq(vehicles.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    const result = await this.db.insert(vehicles).values(vehicle).returning();
+    return result[0];
+  }
+
+  async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.update(vehicles).set(vehicle).where(eq(vehicles.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteVehicle(id: number): Promise<boolean> {
+    if (!this.initialized) return false;
+    const result = await this.db.delete(vehicles).where(eq(vehicles.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Bookings
+  async getBookings(): Promise<Booking[]> {
+    if (!this.initialized) return [];
+    return this.db.select().from(bookings);
+  }
+
+  async getBooking(id: number): Promise<Booking | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getBookingByCode(code: string): Promise<Booking | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(bookings).where(eq(bookings.bookingCode, code)).limit(1);
+    return result[0];
+  }
+
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    const result = await this.db.insert(bookings).values(booking).returning();
+    return result[0];
+  }
+
+  async updateBooking(id: number, booking: Partial<InsertBooking>): Promise<Booking | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.update(bookings).set(booking).where(eq(bookings.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteBooking(id: number): Promise<boolean> {
+    if (!this.initialized) return false;
+    const result = await this.db.delete(bookings).where(eq(bookings.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Settings
+  async getSetting(key: string): Promise<Settings | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(settings).where(eq(settings.key, key)).limit(1);
+    return result[0];
+  }
+
+  async setSetting(key: string, value: any): Promise<Settings> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    const existing = await this.getSetting(key);
+    if (existing) {
+      const result = await this.db.update(settings).set({ value }).where(eq(settings.key, key)).returning();
+      return result[0];
+    }
+    const result = await this.db.insert(settings).values({ key, value }).returning();
+    return result[0];
+  }
+
+  async getAllSettings(): Promise<Settings[]> {
+    if (!this.initialized) return [];
+    return this.db.select().from(settings);
+  }
+
+  // Hosts
+  async getHosts(): Promise<Host[]> {
+    if (!this.initialized) return [];
+    try {
+      return await this.db.select().from(hosts);
+    } catch (error) {
+      console.error("Error getting hosts:", error);
+      return [];
+    }
+  }
+
+  async getHost(id: number): Promise<Host | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(hosts).where(eq(hosts.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getHostByUsername(username: string): Promise<Host | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(hosts).where(eq(hosts.username, username)).limit(1);
+    return result[0];
+  }
+
+  async getHostByEmail(email: string): Promise<Host | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.select().from(hosts).where(eq(hosts.email, email)).limit(1);
+    return result[0];
+  }
+
+  async createHost(host: InsertHost): Promise<Host> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    const result = await this.db.insert(hosts).values(host).returning();
+    return result[0];
+  }
+
+  async updateHost(id: number, host: Partial<InsertHost>): Promise<Host | undefined> {
+    if (!this.initialized) return undefined;
+    const result = await this.db.update(hosts).set(host).where(eq(hosts.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteHost(id: number): Promise<boolean> {
+    if (!this.initialized) return false;
+    const result = await this.db.delete(hosts).where(eq(hosts.id, id)).returning();
+    return result.length > 0;
+  }
+}
+
+// Initialize storage - try database first, fall back to memory
+let storage: IStorage;
+try {
+  storage = new DatabaseStorage();
+} catch (error) {
+  console.warn("Database initialization failed, using MemStorage:", error);
+  storage = new MemStorage();
+}
+
+export { storage };
