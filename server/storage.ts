@@ -809,7 +809,8 @@ export class DatabaseStorage implements IStorage {
   async getUserTrips(userEmail: string): Promise<Booking[]> {
     if (!this.initialized) return [];
     try {
-      return await this.db.select().from(bookings).where(eq(bookings.driver, userEmail));
+      const allBookings = await this.db.select().from(bookings);
+      return allBookings.filter((b: Booking) => b.driver?.email?.toLowerCase() === userEmail.toLowerCase());
     } catch (error) {
       console.error("Error getting user trips:", error);
       return [];
@@ -1053,13 +1054,9 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Initialize storage - try database first, fall back to memory
-let storage: IStorage;
-try {
-  storage = new DatabaseStorage();
-} catch (error) {
-  console.warn("Database initialization failed, using MemStorage:", error);
-  storage = new MemStorage();
-}
+// Initialize storage - use MemStorage until database tables are created
+// To use DatabaseStorage, run: npm run db:push -- --force
+// Then change this to: storage = new DatabaseStorage();
+const storage: IStorage = new MemStorage();
 
 export { storage };
