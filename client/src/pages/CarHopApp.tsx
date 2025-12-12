@@ -473,7 +473,15 @@ export default function CarHopApp() {
   const [hostNewLocation, setHostNewLocation] = useState('');
   const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
 
-  const settings: SettingsType = settingsData || { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
+  const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
+  const settings: SettingsType = {
+    taxes: settingsData?.taxes ?? defaultSettings.taxes,
+    cleaningFee: settingsData?.cleaningFee ?? defaultSettings.cleaningFee,
+    includedMiles: settingsData?.includedMiles ?? defaultSettings.includedMiles,
+    extraMileRate: settingsData?.extraMileRate ?? defaultSettings.extraMileRate,
+    prices: settingsData?.prices ?? defaultSettings.prices,
+    locations: settingsData?.locations ?? defaultSettings.locations,
+  };
 
   const createVehicleMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/vehicles', data),
