@@ -592,7 +592,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       const host = await storage.createHost({
         firstName, lastName, email, phone, address, city, state, zipCode,
-        licenseNumber, licenseFrontImage, licenseBackImage, username, passwordHash, status: 'active'
+        licenseNumber, licenseFrontImage, licenseBackImage, username, passwordHash, 
+        agreementAccepted: true,
+        agreementAcceptedAt: agreementAcceptedAt ? new Date(agreementAcceptedAt) : new Date(),
+        status: 'active'
       });
 
       // Send confirmation email with agreement copy

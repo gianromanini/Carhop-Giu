@@ -1888,53 +1888,164 @@ export default function CarHopApp() {
                         };
                         createVehicleMutation.mutate(vehicleData);
                       }} className="space-y-4">
-                        <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Vehicle Model *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
-                        <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="Category *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" />
-                        <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Price/Day *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Car Model *</label>
+                          <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. Tesla Model 3" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Daily Rate ($) *</label>
+                            <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="e.g. 45" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
+                            <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="Gasoline">Gasoline</option>
+                              <option value="Diesel">Diesel</option>
+                              <option value="Electric">Electric</option>
+                              <option value="Hybrid">Hybrid</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Seats</label>
+                            <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="2">2</option>
+                              <option value="4">4</option>
+                              <option value="5">5</option>
+                              <option value="7">7</option>
+                              <option value="8">8</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
+                            <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="Automatic">Automatic</option>
+                              <option value="Manual">Manual</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
+                          <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="AWD">AWD (All-Wheel Drive)</option>
+                            <option value="FWD">FWD (Front-Wheel Drive)</option>
+                            <option value="RWD">RWD (Rear-Wheel Drive)</option>
+                            <option value="4WD">4WD (Four-Wheel Drive)</option>
+                          </select>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Consumption / Range</label>
+                            <input type="text" value={formData.consumption} onChange={(e) => setFormData({...formData, consumption: e.target.value})} placeholder="e.g. 300mi range" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-consumption" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
+                            <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="e.g. Sedan" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" />
+                          </div>
+                        </div>
+                        
+                        <div className="border-t pt-4">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Features</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.isAWD} onChange={(e) => setFormData({...formData, isAWD: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              AWD / 4x4
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasCarPlay} onChange={(e) => setFormData({...formData, hasCarPlay: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              CarPlay / Auto
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasBluetooth} onChange={(e) => setFormData({...formData, hasBluetooth: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Bluetooth
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasReverseCamera} onChange={(e) => setFormData({...formData, hasReverseCamera: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Reverse Camera
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasHeatedSeats} onChange={(e) => setFormData({...formData, hasHeatedSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Heated Seats
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasHeatedSteering} onChange={(e) => setFormData({...formData, hasHeatedSteering: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Heated Steering
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasElectricSeats} onChange={(e) => setFormData({...formData, hasElectricSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Electric Seats
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasPaddleShifters} onChange={(e) => setFormData({...formData, hasPaddleShifters: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Paddle Shifters
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasKeylessEntry} onChange={(e) => setFormData({...formData, hasKeylessEntry: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Keyless Entry
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasBlindSpotWarning} onChange={(e) => setFormData({...formData, hasBlindSpotWarning: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Blind Spot Warning
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasDriveAssist} onChange={(e) => setFormData({...formData, hasDriveAssist: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              Drive Assist
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasUSBCharger} onChange={(e) => setFormData({...formData, hasUSBCharger: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                              USB Charger
+                            </label>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t pt-4">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vehicle Photos ({formData.images.filter(img => img.trim()).length} photos)</label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {formData.images.filter(img => img.trim()).map((img, idx) => (
+                              <div key={idx} className="relative group">
+                                <img src={img} alt={`Photo ${idx+1}`} className="w-16 h-16 object-cover rounded border border-zinc-300 dark:border-zinc-700" />
+                                <button type="button" onClick={() => setFormData({...formData, images: formData.images.filter((_, i) => i !== idx)})} className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <X size={10}/>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <input type="text" placeholder="Or paste image URL..." className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const input = e.target as HTMLInputElement;
+                              if (input.value.trim()) {
+                                const newImages = formData.images[0] === '' ? [input.value.trim()] : [...formData.images, input.value.trim()];
+                                setFormData({...formData, images: newImages});
+                                input.value = '';
+                              }
+                            }
+                          }} data-testid="input-host-vehicle-image-url" />
+                        </div>
                         
                         <div className="border-t pt-4">
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
                           <div className="space-y-2">
-                            <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 10, deductible: 1000})}>
+                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 10 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 10, deductible: 1000})}>
                               <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: 1000})} className="w-4 h-4" />
                               <div className="ml-3">
                                 <p className="text-sm font-bold text-zinc-900 dark:text-white">10% Commission</p>
                                 <p className="text-xs text-zinc-500">$1,000 Deductible</p>
                               </div>
                             </div>
-                            <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 20, deductible: 500})}>
+                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 20, deductible: 500})}>
                               <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 500})} className="w-4 h-4" />
                               <div className="ml-3">
                                 <p className="text-sm font-bold text-zinc-900 dark:text-white">20% Commission</p>
                                 <p className="text-xs text-zinc-500">$500 Deductible</p>
                               </div>
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="border-t pt-4">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Specifications</label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                              <option value="Gasoline">Gasoline</option>
-                              <option value="Diesel">Diesel</option>
-                              <option value="Electric">Electric</option>
-                              <option value="Hybrid">Hybrid</option>
-                            </select>
-                            <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                              <option value="Automatic">Automatic</option>
-                              <option value="Manual">Manual</option>
-                            </select>
-                            <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                              <option value="5">5 Seats</option>
-                              <option value="7">7 Seats</option>
-                              <option value="4">4 Seats</option>
-                            </select>
-                            <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                              <option value="AWD">AWD</option>
-                              <option value="FWD">FWD</option>
-                              <option value="RWD">RWD</option>
-                            </select>
                           </div>
                         </div>
 

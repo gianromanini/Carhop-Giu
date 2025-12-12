@@ -673,6 +673,8 @@ export class MemStorage implements IStorage {
       licenseBackImage: hostData.licenseBackImage ?? null,
       username: hostData.username,
       passwordHash: hostData.passwordHash,
+      agreementAccepted: hostData.agreementAccepted ?? false,
+      agreementAcceptedAt: hostData.agreementAcceptedAt ?? null,
       status: hostData.status ?? 'active',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -699,6 +701,8 @@ export class MemStorage implements IStorage {
       licenseBackImage: hostData.licenseBackImage ?? existing.licenseBackImage,
       username: hostData.username ?? existing.username,
       passwordHash: hostData.passwordHash ?? existing.passwordHash,
+      agreementAccepted: hostData.agreementAccepted ?? existing.agreementAccepted,
+      agreementAcceptedAt: hostData.agreementAcceptedAt ?? existing.agreementAcceptedAt,
       status: hostData.status ?? existing.status,
       updatedAt: new Date(),
     };

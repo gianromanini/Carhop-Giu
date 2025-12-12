@@ -173,6 +173,8 @@ export const hosts = pgTable("hosts", {
   licenseBackImage: text("license_back_image"),
   username: varchar("username").notNull().unique(),
   passwordHash: varchar("password_hash").notNull(),
+  agreementAccepted: boolean("agreement_accepted").notNull().default(false),
+  agreementAcceptedAt: timestamp("agreement_accepted_at"),
   status: varchar("status").notNull().default('active'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
