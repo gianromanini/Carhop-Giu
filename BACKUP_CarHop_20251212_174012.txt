@@ -1,0 +1,193 @@
+================================================================================
+                    CARHOP PROJECT - COMPLETE BACKUP
+================================================================================
+Backup Date: $(date)
+Project: CarHop - Economy Car Rental Platform
+Technology: React + TypeScript + Express + Node.js + PostgreSQL
+================================================================================
+
+STRUCTURE:
+-----------
+📁 client/
+   ├── public/
+   │   ├── favicon.svg (GREEN CAR ICON - Latest)
+   │   └── favicon.png (Old)
+   ├── src/
+   │   ├── pages/
+   │   │   ├── CarHopApp.tsx (MAIN APP - 3482 lines)
+   │   │   ├── Admin.tsx
+   │   │   ├── Home.tsx
+   │   │   └── not-found.tsx
+   │   ├── components/
+   │   │   ├── ThemeProvider.tsx
+   │   │   ├── ThemeToggle.tsx
+   │   │   └── ui/ (shadcn components)
+   │   ├── hooks/
+   │   │   └── useAuth.ts (Authentication)
+   │   ├── lib/
+   │   │   ├── queryClient.ts
+   │   │   ├── authUtils.ts
+   │   │   └── utils.ts
+   │   ├── App.tsx
+   │   ├── main.tsx
+   │   └── index.css
+   └── index.html (WITH FAVICON)
+
+📁 server/
+   ├── index.ts (Express Server)
+   ├── routes.ts (API Endpoints)
+   ├── storage.ts (MemStorage with updateUser method)
+   ├── googleAuth.ts (Google OAuth)
+   ├── replitAuth.ts
+   └── vite.ts
+
+📁 shared/
+   └── schema.ts (Data Models)
+
+📁 attached_assets/
+   └── CarHop_mini_Logo_1765471882450.jpg (Logo)
+
+KEY FEATURES IMPLEMENTED:
+==========================
+✅ User Authentication (Email/Password, Google OAuth, Apple Sign In)
+✅ Welcome Email with Account Details (including password)
+✅ Profile Editing (First Name, Last Name, Phone)
+✅ Admin Panel with Unit 01 access (NO PASSWORD - just Unit 01)
+✅ Mobile-responsive design (Phones, tablets, desktop)
+✅ Profile hidden on mobile header (accessible via 3-dot menu only)
+✅ Dark mode support
+✅ Favicon with green car icon (transparent background)
+✅ Chat/Support messaging
+✅ Booking system
+
+ADMIN LOGIN (Current):
+======================
+- NO PASSWORD REQUIRED
+- Unit: 01 (Bridgeport - Matriz)
+- Click "Admin / Owner Login" button on sign-in page
+
+IMPORTANT FILES:
+
+1. client/src/pages/CarHopApp.tsx
+   - Main application component (3482 lines)
+   - Contains:
+     - Login modal (email/password)
+     - Signup modal (First Name, Last Name, Email, Phone, Password)
+     - Profile editing modal
+     - Admin login modal (Unit 01 only)
+     - All UI pages and components
+     - Mobile header with 3-dot menu
+     - Profile removed from mobile header navigation
+   
+2. server/routes.ts
+   - POST /api/auth/login (Email/password login)
+   - POST /api/auth/signup (Create account with email)
+   - POST /api/auth/profile (Update user profile)
+   - POST /api/auth/google (Google OAuth)
+   - POST /api/auth/apple (Apple Sign In)
+   - GET /api/logout
+   - Other API endpoints for bookings, vehicles, etc.
+
+3. server/storage.ts
+   - IStorage interface with updateUser method
+   - MemStorage class (in-memory database)
+   - Methods: getUser, getUserByEmail, createUser, upsertUser, updateUser
+   - Booking, vehicle, and settings management
+
+4. shared/schema.ts
+   - User model with all fields
+   - UpsertUser type for profile updates
+   - Vehicle, Booking, Settings models
+
+5. client/index.html
+   - Favicon reference: <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+6. client/public/favicon.svg
+   - Green car icon with white outline
+   - Transparent background
+   - Visible in browser tabs
+
+EMAIL CONFIGURATION:
+====================
+✅ Gmail SMTP working
+✅ Welcome emails send with:
+   - First Name
+   - Last Name
+   - Email
+   - Phone
+   - Password (plain text)
+
+COLORS & BRANDING:
+===================
+- Primary Green: #22c55e (Tailwind green-600)
+- Dark Mode: Enabled
+- Font: Inter, DM Sans
+- Favicon: Green car, transparent background
+
+MOBILE BEHAVIOR:
+=================
+Desktop Navigation:
+- Logo on left
+- Phone number
+- Manage Booking
+- Chat support + notifications
+- Hi, {Name}
+- Sign Out
+- Theme toggle
+- Admin button
+
+Mobile Navigation:
+- Logo on left
+- 3-dot menu (≡) with:
+  - Hi, {Name}
+  - Chat / Support
+  - Edit Profile (OPENS MODAL)
+  - Light/Dark Mode toggle
+  - Logout
+  - (NO "Bookings" and "Profile" buttons in header anymore)
+
+TODO / PENDING ITEMS:
+======================
+⚠️  Google OAuth: User needs to add callback URLs to Google Cloud Console
+    - Redirect URIs:
+      - http://localhost:5000/api/auth/google/callback
+      - https://yourdomain.com/api/auth/google/callback
+
+⚠️  Apple Sign In: Missing credentials
+    - Need APPLE_TEAM_ID
+    - Need APPLE_KEY_ID
+    - Need APPLE_PRIVATE_KEY
+
+⚠️  PayPal: Currently in Sandbox mode
+    - PAYPAL_CLIENT_ID
+    - PAYPAL_CLIENT_SECRET
+    - Need to update to Live mode when ready
+
+⚠️  DATABASE: Currently using MemStorage (in-memory)
+    - Ready to switch to PostgreSQL via Drizzle ORM
+    - Database exists at /api connection
+
+RECENT CHANGES (Session):
+==========================
+1. Added updateUser method to storage.ts
+2. Created Admin Login modal with Unit 01 only (no password)
+3. Removed "Profile" and "Bookings" buttons from mobile header
+4. Moved Profile to 3-dot menu accessible via "Edit Profile" option
+5. Updated favicon to be larger and more visible
+6. Created SVG favicon with green car icon (transparent background)
+
+DEPLOYED ON:
+=============
+Replit.com - Full stack JavaScript/Node.js environment
+
+PACKAGE MANAGER:
+=================
+npm / bun
+
+NODE VERSION:
+==============
+Latest (via Nix)
+
+================================================================================
+                            END OF BACKUP DOCUMENT
+================================================================================
