@@ -25,11 +25,8 @@ export default function Admin() {
     payNowPrice: "",
     mpg: "",
     passengers: "",
-    transmission: "Automatic" as const,
-    drivetrain: "FWD" as const,
     luggage: "",
     fuelEfficient: false,
-    available: true,
   });
 
   const { data: vehicles = [], isLoading } = useQuery<Vehicle[]>({
@@ -51,11 +48,8 @@ export default function Admin() {
         payNowPrice: parseFloat(formData.payNowPrice),
         mpg: parseInt(formData.mpg),
         passengers: parseInt(formData.passengers),
-        transmission: formData.transmission,
-        drivetrain: formData.drivetrain,
         luggage: parseInt(formData.luggage),
         fuelEfficient: formData.fuelEfficient,
-        available: formData.available,
       });
       return res.json();
     },
@@ -80,11 +74,8 @@ export default function Admin() {
         payNowPrice: parseFloat(formData.payNowPrice),
         mpg: parseInt(formData.mpg),
         passengers: parseInt(formData.passengers),
-        transmission: formData.transmission,
-        drivetrain: formData.drivetrain,
         luggage: parseInt(formData.luggage),
         fuelEfficient: formData.fuelEfficient,
-        available: formData.available,
       });
       return res.json();
     },
@@ -115,11 +106,8 @@ export default function Admin() {
       payNowPrice: "",
       mpg: "",
       passengers: "",
-      transmission: "Automatic",
-      drivetrain: "FWD",
       luggage: "",
       fuelEfficient: false,
-      available: true,
     });
     setEditingVehicle(null);
   };
@@ -134,11 +122,8 @@ export default function Admin() {
       payNowPrice: vehicle.payNowPrice.toString(),
       mpg: vehicle.mpg.toString(),
       passengers: vehicle.passengers.toString(),
-      transmission: vehicle.transmission as "Automatic" | "Manual",
-      drivetrain: vehicle.drivetrain as "FWD" | "RWD" | "AWD",
       luggage: vehicle.luggage.toString(),
       fuelEfficient: vehicle.fuelEfficient,
-      available: vehicle.available,
     });
     setOpen(true);
   };
@@ -249,34 +234,6 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Transmission</Label>
-                  <Select value={formData.transmission} onValueChange={(v: any) => setFormData({ ...formData, transmission: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Automatic">Automatic</SelectItem>
-                      <SelectItem value="Manual">Manual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Drivetrain</Label>
-                  <Select value={formData.drivetrain} onValueChange={(v: any) => setFormData({ ...formData, drivetrain: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FWD">FWD</SelectItem>
-                      <SelectItem value="RWD">RWD</SelectItem>
-                      <SelectItem value="AWD">AWD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -284,13 +241,6 @@ export default function Admin() {
                     onCheckedChange={(c) => setFormData({ ...formData, fuelEfficient: !!c })}
                   />
                   <Label>Fuel Efficient (30+ MPG)</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={formData.available}
-                    onCheckedChange={(c) => setFormData({ ...formData, available: !!c })}
-                  />
-                  <Label>Available</Label>
                 </div>
               </div>
 
@@ -320,7 +270,7 @@ export default function Admin() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{vehicle.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {vehicle.category} • {vehicle.mpg} MPG • {vehicle.drivetrain} • {vehicle.transmission}
+                      {vehicle.category} • {vehicle.mpg} MPG
                     </p>
                     <p className="text-sm mt-2">
                       ${vehicle.payNowPrice}/day (regular: ${vehicle.pricePerDay}) • {vehicle.passengers} passengers • {vehicle.luggage} bags
