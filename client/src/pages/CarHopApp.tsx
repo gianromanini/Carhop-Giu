@@ -1093,17 +1093,6 @@ export default function CarHopApp() {
           </div>
 
           <div className="flex md:hidden items-center justify-end gap-2 flex-1">
-            {clientUser && (
-              <>
-                <button onClick={() => setView('bookings')} className="text-sm font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide relative" data-testid="button-bookings-mobile-header">
-                  Bookings
-                  {getClientUnreadCount() > 0 && (
-                    <span className="absolute -top-1 -right-3 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
-                  )}
-                </button>
-                <button onClick={() => setShowProfileModal(true)} className="text-sm font-bold hover:text-green-600 dark:hover:text-green-500 transition-colors uppercase tracking-wide" data-testid="button-profile-mobile-header">Profile</button>
-              </>
-            )}
             <div className="relative">
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
                 <Menu className="h-5 w-5" />
