@@ -470,6 +470,7 @@ export default function CarHopApp() {
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
   const [hostVehicleImages, setHostVehicleImages] = useState<string[]>([]);
   const [hostNewLocation, setHostNewLocation] = useState('');
+  const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
 
   const settings: SettingsType = settingsData || { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
 
@@ -517,6 +518,12 @@ export default function CarHopApp() {
     const returnDay = addDaysToDate(today, 3);
     setSearchParams({ location: '', start: today, startTime: nextTime, end: returnDay, endTime: nextTime });
   }, []);
+
+  useEffect(() => {
+    if (settingsData && !priceConfigForm) {
+      setPriceConfigForm(settingsData);
+    }
+  }, [settingsData, priceConfigForm]);
 
   useEffect(() => {
     if ((view === 'checkout' || view === 'payment') && cart.car && searchParams.start && searchParams.end && searchParams.startTime && searchParams.endTime) {
@@ -2137,19 +2144,19 @@ export default function CarHopApp() {
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
-                      <input type="number" step="0.1" value={settings.taxes} onChange={(e) => updateSettingMutation.mutate({ key: 'taxes', value: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-taxes" />
+                      <input type="number" step="0.1" value={priceConfigForm?.taxes || settings.taxes} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, taxes: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-taxes" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
-                      <input type="number" value={settings.cleaningFee} onChange={(e) => updateSettingMutation.mutate({ key: 'cleaningFee', value: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-cleaning-fee" />
+                      <input type="number" value={priceConfigForm?.cleaningFee || settings.cleaningFee} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, cleaningFee: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-cleaning-fee" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles/Day</label>
-                      <input type="number" value={settings.includedMiles} onChange={(e) => updateSettingMutation.mutate({ key: 'includedMiles', value: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-included-miles" />
+                      <input type="number" value={priceConfigForm?.includedMiles || settings.includedMiles} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, includedMiles: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-included-miles" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                      <input type="number" step="0.01" value={settings.extraMileRate} onChange={(e) => updateSettingMutation.mutate({ key: 'extraMileRate', value: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
+                      <input type="number" step="0.01" value={priceConfigForm?.extraMileRate || settings.extraMileRate} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, extraMileRate: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
                     </div>
                   </div>
                   
@@ -2157,19 +2164,34 @@ export default function CarHopApp() {
                     <Shield size={16} className="text-blue-500"/>
                     Insurance & Add-on Prices (per day)
                   </h4>
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-3 gap-4 mb-6">
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$500 Deductible Price</label>
-                      <input type="number" value={settings.prices.insurance500} onChange={(e) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance500: parseFloat(e.target.value) || 0} })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-500" />
+                      <input type="number" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, insurance500: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-500" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$1000 Deductible Price</label>
-                      <input type="number" value={settings.prices.insurance1000} onChange={(e) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance1000: parseFloat(e.target.value) || 0} })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-1000" />
+                      <input type="number" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, insurance1000: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-1000" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat Price</label>
-                      <input type="number" value={settings.prices.childSeat} onChange={(e) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, childSeat: parseFloat(e.target.value) || 0} })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-child-seat" />
+                      <input type="number" value={priceConfigForm?.prices?.childSeat || settings.prices.childSeat} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeat: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-child-seat" />
                     </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button variant="secondary" className="flex-1" onClick={() => setPriceConfigForm(settings)} data-testid="button-cancel-price-config">Cancel</Button>
+                    <Button variant="primary" className="flex-1" onClick={() => {
+                      if (priceConfigForm) {
+                        updateSettingMutation.mutate({ key: 'taxes', value: priceConfigForm.taxes });
+                        updateSettingMutation.mutate({ key: 'cleaningFee', value: priceConfigForm.cleaningFee });
+                        updateSettingMutation.mutate({ key: 'includedMiles', value: priceConfigForm.includedMiles });
+                        updateSettingMutation.mutate({ key: 'extraMileRate', value: priceConfigForm.extraMileRate });
+                        updateSettingMutation.mutate({ key: 'prices', value: priceConfigForm.prices });
+                      }
+                    }} data-testid="button-save-price-config">
+                      <Check size={16}/> Save Configuration
+                    </Button>
                   </div>
                 </Card>
 
