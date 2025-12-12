@@ -1054,9 +1054,7 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Initialize storage - use MemStorage until database tables are created
-// To use DatabaseStorage, run: npm run db:push -- --force
-// Then change this to: storage = new DatabaseStorage();
-const storage: IStorage = new MemStorage();
+// Initialize storage with DatabaseStorage (tables created in PostgreSQL)
+const storage: IStorage = new DatabaseStorage();
 
 export { storage };
