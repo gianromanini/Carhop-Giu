@@ -346,6 +346,9 @@ export default function CarHopApp() {
     licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', username: '', password: '', confirmPassword: ''
   });
   const [hostRegisterMessage, setHostRegisterMessage] = useState('');
+  const [showHostAgreementModal, setShowHostAgreementModal] = useState(false);
+  const [hostAgreementAccepted, setHostAgreementAccepted] = useState(false);
+  const [hostAgreementAcceptedAt, setHostAgreementAcceptedAt] = useState('');
   const [currentHost, setCurrentHost] = useState<any>(null);
   const [signupMessage, setSignupMessage] = useState('');
   
@@ -464,6 +467,9 @@ export default function CarHopApp() {
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
   const [hostTab, setHostTab] = useState('fleet');
   const [editingHost, setEditingHost] = useState<any>(null);
+  const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
+  const [hostVehicleImages, setHostVehicleImages] = useState<string[]>([]);
+  const [hostNewLocation, setHostNewLocation] = useState('');
 
   const settings: SettingsType = settingsData || { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
 
@@ -1390,10 +1396,14 @@ export default function CarHopApp() {
                         licenseBackImage: hostRegisterForm.licenseBackImage,
                         username: hostRegisterForm.username,
                         password: hostRegisterForm.password,
+                        agreementAccepted: hostAgreementAccepted,
+                        agreementAcceptedAt: hostAgreementAcceptedAt,
                       }),
                     });
                     if (response.ok) {
-                      setHostRegisterMessage(`Welcome ${hostRegisterForm.firstName}! Your host account has been created. You can now login with username: ${hostRegisterForm.username}`);
+                      setHostAgreementAccepted(false);
+                      setHostAgreementAcceptedAt('');
+                      setHostRegisterMessage(`Welcome ${hostRegisterForm.firstName}! Your host account has been created. A confirmation email has been sent to ${hostRegisterForm.email}. You can now login with username: ${hostRegisterForm.username}`);
                     } else {
                       const error = await response.json();
                       alert(error.message || 'Registration failed');
@@ -1464,7 +1474,37 @@ export default function CarHopApp() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-host-register-submit">Register as Host</Button>
+                  <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4 mt-4">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Partner Agreement</h3>
+                    <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                      <input 
+                        type="checkbox" 
+                        checked={hostAgreementAccepted} 
+                        onChange={(e) => {
+                          if (!hostAgreementAccepted) {
+                            setShowHostAgreementModal(true);
+                          } else {
+                            setHostAgreementAccepted(false);
+                            setHostAgreementAcceptedAt('');
+                          }
+                        }}
+                        className="w-5 h-5 mt-0.5 accent-green-600 cursor-pointer"
+                        data-testid="checkbox-host-agreement"
+                      />
+                      <div className="flex-1">
+                        <label className="text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" onClick={() => setShowHostAgreementModal(true)}>
+                          I have read and agree to the <span className="text-green-600 font-bold hover:text-green-700 underline">Host Partner Agreement</span> *
+                        </label>
+                        {hostAgreementAccepted && hostAgreementAcceptedAt && (
+                          <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            <Check size={12} /> Accepted on {new Date(hostAgreementAcceptedAt).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={!hostAgreementAccepted} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed" data-testid="button-host-register-submit">Register as Host</Button>
                 </form>
 
                 <div className="mt-6 text-center">
@@ -1472,6 +1512,176 @@ export default function CarHopApp() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showHostAgreementModal && (
+        <div className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 my-4">
+            <div className="sticky top-0 bg-white dark:bg-zinc-900 p-6 border-b border-zinc-200 dark:border-zinc-700 rounded-t-2xl z-10">
+              <button onClick={() => setShowHostAgreementModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-host-agreement-modal"><X size={20}/></button>
+              <div className="text-center">
+                <FileText size={32} className="mx-auto mb-2 text-green-500" />
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">CarHop Host Partner Agreement</h2>
+                <p className="text-sm text-zinc-500 mt-1">Please read carefully before accepting</p>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-4">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <p className="font-bold text-green-800 dark:text-green-400">Effective Date: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-green-700 dark:text-green-500 text-xs mt-1">State of Connecticut, United States</p>
+              </div>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">1. PARTIES AND OVERVIEW</h3>
+              <p>This Host Partner Agreement ("Agreement") is entered into between CarHop LLC ("CarHop," "Company," "we," or "us") and you ("Host," "you," or "your"). By accepting this Agreement, you agree to list your vehicle(s) on the CarHop platform for rental by approved customers ("Renters").</p>
+              
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">2. COMMISSION STRUCTURE</h3>
+              <p>CarHop offers two commission plans. You select your plan when adding each vehicle:</p>
+              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
+                  <div className="text-center min-w-16">
+                    <span className="text-2xl font-bold text-green-600">10%</span>
+                    <p className="text-xs text-zinc-500">Commission</p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-zinc-900 dark:text-white">Standard Plan</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">You are responsible for a <strong>$1,000 deductible</strong> per incident. Best for hosts who want to maximize earnings.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
+                  <div className="text-center min-w-16">
+                    <span className="text-2xl font-bold text-blue-600">20%</span>
+                    <p className="text-xs text-zinc-500">Commission</p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-zinc-900 dark:text-white">Premium Protection Plan</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Lower <strong>$500 deductible</strong> per incident. Best for hosts who want extra peace of mind.</p>
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">3. VEHICLE REQUIREMENTS</h3>
+              <p>To list your vehicle on CarHop, you must meet the following requirements:</p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Vehicle must be model year 2015 or newer</li>
+                <li>Vehicle must have fewer than 130,000 miles</li>
+                <li>Vehicle must pass a safety inspection and be in good working condition</li>
+                <li>Vehicle must be registered and insured in the State of Connecticut</li>
+                <li>Vehicle must have a clean title (no salvage, rebuilt, or flood titles)</li>
+                <li>Vehicle must be clean inside and out before each rental</li>
+                <li>Host must provide proof of personal auto insurance coverage</li>
+              </ul>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">4. INSURANCE AND LIABILITY</h3>
+              <p>CarHop provides commercial auto insurance coverage during active rentals through our insurance partner. This includes:</p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li><strong>Liability Coverage:</strong> Up to $1,000,000 per occurrence</li>
+                <li><strong>Comprehensive & Collision:</strong> Actual cash value of the vehicle (subject to deductible)</li>
+                <li><strong>Uninsured/Underinsured Motorist:</strong> State minimum requirements</li>
+              </ul>
+              <p className="text-amber-600 dark:text-amber-400 font-medium mt-2">Important: Coverage only applies during active rental periods. Your personal insurance remains primary when the vehicle is not rented.</p>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">5. DEDUCTIBLE RESPONSIBILITY</h3>
+              <p>In the event of damage, theft, or total loss:</p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>The Host is responsible for paying the deductible based on their selected commission plan</li>
+                <li>CarHop will attempt to recover the deductible from the Renter when applicable</li>
+                <li>If recovered, CarHop will reimburse the Host minus processing fees</li>
+                <li>Deductible is per incident, not per rental period</li>
+              </ul>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">6. PAYMENT TERMS</h3>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Earnings are calculated after the rental is completed and the vehicle is returned</li>
+                <li>Payments are processed weekly via direct deposit (ACH) or PayPal</li>
+                <li>Minimum payout threshold: $50</li>
+                <li>Payment processing time: 3-5 business days</li>
+                <li>Hosts are responsible for their own tax obligations (1099 provided if applicable)</li>
+              </ul>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">7. CANCELLATION POLICY</h3>
+              <p><strong>Host Cancellations:</strong></p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Cancellations made more than 24 hours before pickup: No penalty</li>
+                <li>Cancellations made less than 24 hours before pickup: $50 fee</li>
+                <li>No-show or same-day cancellation: $100 fee + temporary suspension review</li>
+                <li>Repeated cancellations may result in account termination</li>
+              </ul>
+              <p className="mt-2"><strong>Renter Cancellations:</strong> Handled per CarHop's renter cancellation policy. Hosts receive partial payment for late cancellations.</p>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">8. HOST RESPONSIBILITIES</h3>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Maintain accurate vehicle availability calendar</li>
+                <li>Respond to booking requests within 2 hours during business hours</li>
+                <li>Deliver vehicle clean, with at least 1/4 tank of fuel</li>
+                <li>Conduct vehicle walkaround and document condition at pickup</li>
+                <li>Report any issues or damage immediately through the app</li>
+                <li>Maintain vehicle in safe, roadworthy condition</li>
+                <li>Comply with all Connecticut state laws and regulations</li>
+              </ul>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">9. PROHIBITED USES</h3>
+              <p>The following are strictly prohibited and may result in immediate termination:</p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Conducting transactions outside the CarHop platform</li>
+                <li>Misrepresenting vehicle condition or specifications</li>
+                <li>Discrimination against renters based on protected characteristics</li>
+                <li>Fraudulent claims or documentation</li>
+                <li>Operating unlicensed or uninsured vehicles</li>
+              </ul>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">10. DISPUTE RESOLUTION</h3>
+              <p>Any disputes arising from this Agreement shall be resolved through:</p>
+              <ol className="list-decimal pl-6 space-y-1">
+                <li>Direct negotiation between parties</li>
+                <li>Mediation through a mutually agreed mediator</li>
+                <li>Binding arbitration under the rules of the American Arbitration Association</li>
+              </ol>
+              <p className="mt-2">Governing Law: This Agreement is governed by the laws of the State of Connecticut.</p>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">11. TERMINATION</h3>
+              <p>Either party may terminate this Agreement at any time with 7 days written notice. Outstanding rentals must be honored. Upon termination:</p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>All active listings will be deactivated</li>
+                <li>Pending payments will be processed per normal schedule</li>
+                <li>Outstanding deductibles or fees remain payable</li>
+                <li>Vehicle must be returned if currently rented</li>
+              </ul>
+
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">12. AMENDMENTS</h3>
+              <p>CarHop reserves the right to modify this Agreement with 30 days notice. Continued use of the platform after modifications constitutes acceptance of the updated terms.</p>
+
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-6">
+                <p className="font-bold text-amber-800 dark:text-amber-400">ACKNOWLEDGMENT</p>
+                <p className="text-amber-700 dark:text-amber-500 text-sm mt-2">By clicking "I Accept," you acknowledge that you have read, understood, and agree to be bound by the terms and conditions of this Host Partner Agreement. You confirm that you are at least 21 years old and legally authorized to enter into this binding contract.</p>
+              </div>
+            </div>
+            
+            <div className="sticky bottom-0 bg-white dark:bg-zinc-900 p-6 border-t border-zinc-200 dark:border-zinc-700 rounded-b-2xl">
+              <div className="flex gap-4">
+                <Button 
+                  onClick={() => setShowHostAgreementModal(false)} 
+                  variant="secondary"
+                  className="flex-1"
+                  data-testid="button-decline-host-agreement"
+                >
+                  Decline
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setHostAgreementAccepted(true);
+                    setHostAgreementAcceptedAt(new Date().toISOString());
+                    setShowHostAgreementModal(false);
+                  }} 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+                  data-testid="button-accept-host-agreement"
+                >
+                  <Check size={16} /> I Accept
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1662,37 +1872,266 @@ export default function CarHopApp() {
           {hostTab === 'fleet' && (() => {
             const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
             return (
-              <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
-                  <Card className="p-6">
-                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      const vehicleData = {
-                        ...formData,
-                        price: parseFloat(formData.price) || 0,
-                        hostId: String(currentHost.id),
-                        commission: formData.commission || 10,
-                        deductible: formData.deductible || 1000
-                      };
-                      createVehicleMutation.mutate(vehicleData);
-                    }} className="space-y-4">
-                      <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Vehicle Model *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
-                      <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="Category *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" />
-                      <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Price/Day *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
-                      
-                      <div className="border-t pt-4">
+              <div className="space-y-6">
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-1">
+                    <Card className="p-6">
+                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const vehicleData = {
+                          ...formData,
+                          price: parseFloat(formData.price) || 0,
+                          hostId: String(currentHost.id),
+                          commission: formData.commission || 10,
+                          deductible: formData.deductible || 1000
+                        };
+                        createVehicleMutation.mutate(vehicleData);
+                      }} className="space-y-4">
+                        <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Vehicle Model *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
+                        <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} placeholder="Category *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" />
+                        <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Price/Day *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
+                        
+                        <div className="border-t pt-4">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
+                          <div className="space-y-2">
+                            <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 10, deductible: 1000})}>
+                              <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: 1000})} className="w-4 h-4" />
+                              <div className="ml-3">
+                                <p className="text-sm font-bold text-zinc-900 dark:text-white">10% Commission</p>
+                                <p className="text-xs text-zinc-500">$1,000 Deductible</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 20, deductible: 500})}>
+                              <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 500})} className="w-4 h-4" />
+                              <div className="ml-3">
+                                <p className="text-sm font-bold text-zinc-900 dark:text-white">20% Commission</p>
+                                <p className="text-xs text-zinc-500">$500 Deductible</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Specifications</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="Gasoline">Gasoline</option>
+                              <option value="Diesel">Diesel</option>
+                              <option value="Electric">Electric</option>
+                              <option value="Hybrid">Hybrid</option>
+                            </select>
+                            <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="Automatic">Automatic</option>
+                              <option value="Manual">Manual</option>
+                            </select>
+                            <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="5">5 Seats</option>
+                              <option value="7">7 Seats</option>
+                              <option value="4">4 Seats</option>
+                            </select>
+                            <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                              <option value="AWD">AWD</option>
+                              <option value="FWD">FWD</option>
+                              <option value="RWD">RWD</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">Add Vehicle</Button>
+                      </form>
+                    </Card>
+                  </div>
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* My Vehicles */}
+                    <Card className="p-6">
+                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {hostVehicles.length > 0 ? hostVehicles.map((car) => (
+                          <div key={car.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 object-cover rounded-lg" />
+                            <div className="flex-1">
+                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{car.model}</h4>
+                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} · {car.seats} seats · {car.images?.length || 0} photos</p>
+                              <p className="text-xs font-bold text-green-600 mt-1">${car.price}/day | {car.commission || 10}% commission | ${car.deductible || 1000} deductible</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => { setEditingHostVehicle(car); setHostVehicleImages(car.images || []); }} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
+                                <Edit size={16} />
+                              </button>
+                              <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-sm text-zinc-500 text-center py-8">No vehicles added yet</p>
+                        )}
+                      </div>
+                    </Card>
+
+                    {/* Pickup Locations */}
+                    <Card className="p-6">
+                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                        <MapPin size={18} className="text-green-500"/>
+                        Pickup Locations
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {settings.locations.map(loc => (
+                          <span key={loc} className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-xs font-bold group">
+                            <MapPin size={12}/> {loc}
+                            <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                              <X size={12} className="text-red-500"/>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input type="text" value={hostNewLocation} onChange={(e) => setHostNewLocation(e.target.value)} placeholder="Add new location..." className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-new-location" />
+                        <Button variant="primary" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
+                          <Plus size={16}/> Add
+                        </Button>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Price Configuration Section */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <DollarSign size={18} className="text-green-500"/>
+                    Price Configuration
+                  </h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
+                      <input type="number" step="0.1" value={settings.taxes} onChange={(e) => updateSettingMutation.mutate({ key: 'taxes', value: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-taxes" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
+                      <input type="number" value={settings.cleaningFee} onChange={(e) => updateSettingMutation.mutate({ key: 'cleaningFee', value: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-cleaning-fee" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles/Day</label>
+                      <input type="number" value={settings.includedMiles} onChange={(e) => updateSettingMutation.mutate({ key: 'includedMiles', value: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-included-miles" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
+                      <input type="number" step="0.01" value={settings.extraMileRate} onChange={(e) => updateSettingMutation.mutate({ key: 'extraMileRate', value: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
+                    </div>
+                  </div>
+                  
+                  <h4 className="text-sm font-bold mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                    <Shield size={16} className="text-blue-500"/>
+                    Insurance & Add-on Prices (per day)
+                  </h4>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$500 Deductible Price</label>
+                      <input type="number" value={settings.prices.insurance500} onChange={(e) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance500: parseFloat(e.target.value) || 0} })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$1000 Deductible Price</label>
+                      <input type="number" value={settings.prices.insurance1000} onChange={(e) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance1000: parseFloat(e.target.value) || 0} })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-1000" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat Price</label>
+                      <input type="number" value={settings.prices.childSeat} onChange={(e) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, childSeat: parseFloat(e.target.value) || 0} })} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-child-seat" />
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Vehicle Edit Modal */}
+                {editingHostVehicle && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Edit Vehicle: {editingHostVehicle.model}</h3>
+                        <button onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" data-testid="button-close-edit-vehicle">
+                          <X size={20} className="text-zinc-500"/>
+                        </button>
+                      </div>
+
+                      {/* Photo Management */}
+                      <div className="mb-6">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider flex items-center gap-2">
+                          <Image size={14}/> Vehicle Photos ({hostVehicleImages.length})
+                        </label>
+                        <div className="grid grid-cols-4 gap-3 mb-3">
+                          {hostVehicleImages.map((img, idx) => (
+                            <div key={idx} className="relative group">
+                              <img src={img} alt={`Photo ${idx+1}`} className="w-full h-20 object-cover rounded-lg border border-zinc-300 dark:border-zinc-700" />
+                              <button onClick={() => setHostVehicleImages(hostVehicleImages.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`button-remove-photo-${idx}`}>
+                                <X size={12}/>
+                              </button>
+                            </div>
+                          ))}
+                          <button onClick={() => setHostVehicleImages([...hostVehicleImages, ''])} className="w-full h-20 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-400 hover:border-green-500 hover:text-green-500 transition-colors" data-testid="button-add-photo-slot">
+                            <Plus size={24}/>
+                          </button>
+                        </div>
+                        {hostVehicleImages.map((img, idx) => (
+                          <input key={idx} type="text" value={img} onChange={(e) => { const newImages = [...hostVehicleImages]; newImages[idx] = e.target.value; setHostVehicleImages(newImages); }} placeholder={`Photo URL ${idx+1}`} className="w-full px-3 py-2 mb-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid={`input-photo-url-${idx}`} />
+                        ))}
+                      </div>
+
+                      {/* Vehicle Details */}
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price/Day ($)</label>
+                          <input type="number" value={editingHostVehicle.price} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, price: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-edit-vehicle-price" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category</label>
+                          <input type="text" value={editingHostVehicle.category || ''} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, category: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-edit-vehicle-category" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
+                          <select value={editingHostVehicle.fuel || 'Gasoline'} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, fuel: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="Gasoline">Gasoline</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Hybrid">Hybrid</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
+                          <select value={editingHostVehicle.transmission || 'Automatic'} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, transmission: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Seats</label>
+                          <select value={editingHostVehicle.seats || 5} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, seats: parseInt(e.target.value)})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="4">4 Seats</option>
+                            <option value="5">5 Seats</option>
+                            <option value="7">7 Seats</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
+                          <select value={editingHostVehicle.driveType || 'AWD'} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, driveType: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <option value="AWD">AWD</option>
+                            <option value="FWD">FWD</option>
+                            <option value="RWD">RWD</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Commission Plan */}
+                      <div className="mb-6">
                         <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
-                        <div className="space-y-2">
-                          <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 10, deductible: 1000})}>
-                            <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: 1000})} className="w-4 h-4" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 10 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 10, deductible: 1000})}>
+                            <input type="radio" checked={editingHostVehicle.commission === 10} onChange={() => {}} className="w-4 h-4" />
                             <div className="ml-3">
                               <p className="text-sm font-bold text-zinc-900 dark:text-white">10% Commission</p>
                               <p className="text-xs text-zinc-500">$1,000 Deductible</p>
                             </div>
                           </div>
-                          <div className="flex items-center p-3 border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20" onClick={() => setFormData({...formData, commission: 20, deductible: 500})}>
-                            <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 500})} className="w-4 h-4" />
+                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 20, deductible: 500})}>
+                            <input type="radio" checked={editingHostVehicle.commission === 20} onChange={() => {}} className="w-4 h-4" />
                             <div className="ml-3">
                               <p className="text-sm font-bold text-zinc-900 dark:text-white">20% Commission</p>
                               <p className="text-xs text-zinc-500">$500 Deductible</p>
@@ -1701,71 +2140,23 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
-                      <div className="border-t pt-4">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Specifications</label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="Gasoline">Gasoline</option>
-                            <option value="Diesel">Diesel</option>
-                            <option value="Electric">Electric</option>
-                            <option value="Hybrid">Hybrid</option>
-                          </select>
-                          <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="Automatic">Automatic</option>
-                            <option value="Manual">Manual</option>
-                          </select>
-                          <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="5">5 Seats</option>
-                            <option value="7">7 Seats</option>
-                            <option value="4">4 Seats</option>
-                          </select>
-                          <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="AWD">AWD</option>
-                            <option value="FWD">FWD</option>
-                            <option value="RWD">RWD</option>
-                          </select>
-                        </div>
+                      <div className="flex gap-3">
+                        <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
+                        <Button variant="primary" className="flex-1" onClick={() => {
+                          const updatedData = {
+                            ...editingHostVehicle,
+                            images: hostVehicleImages.filter(img => img.trim() !== '')
+                          };
+                          updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: updatedData });
+                          setEditingHostVehicle(null);
+                          setHostVehicleImages([]);
+                        }} data-testid="button-save-vehicle">
+                          <Check size={16}/> Save Changes
+                        </Button>
                       </div>
-
-                      <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">Add Vehicle</Button>
-                    </form>
-                  </Card>
-                </div>
-                <div className="lg:col-span-2 space-y-6">
-                  {/* My Vehicles */}
-                  <Card className="p-6">
-                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {hostVehicles.length > 0 ? hostVehicles.map((car) => (
-                        <div key={car.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
-                          <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 object-cover rounded-lg" />
-                          <div className="flex-1">
-                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{car.model}</h4>
-                            <p className="text-xs text-zinc-500">{car.fuel} · {car.category} · {car.seats} seats</p>
-                            <p className="text-xs font-bold text-green-600 mt-1">${car.price}/day | {car.commission || 10}% commission | ${car.deductible || 1000} deductible</p>
-                          </div>
-                        </div>
-                      )) : (
-                        <p className="text-sm text-zinc-500 text-center py-8">No vehicles added yet</p>
-                      )}
                     </div>
-                  </Card>
-
-                  {/* Locations & Settings */}
-                  <Card className="p-6">
-                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                      <MapPin size={18} className="text-green-500"/>
-                      Pickup Locations
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {settings.locations.map(loc => (
-                        <span key={loc} className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-xs font-bold">
-                          <MapPin size={12}/> {loc}
-                        </span>
-                      ))}
-                    </div>
-                  </Card>
-                </div>
+                  </div>
+                )}
               </div>
             );
           })()}

@@ -566,7 +566,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.post("/api/hosts/register", async (req, res) => {
     try {
       const { firstName, lastName, email, phone, address, city, state, zipCode,
-              licenseNumber, licenseFrontImage, licenseBackImage, username, password } = req.body;
+              licenseNumber, licenseFrontImage, licenseBackImage, username, password,
+              agreementAccepted, agreementAcceptedAt } = req.body;
+
+      // Validate agreement acceptance
+      if (!agreementAccepted) {
+        return res.status(400).json({ message: "You must accept the Host Partner Agreement" });
+      }
 
       // Check if username already exists
       const existingUsername = await storage.getHostByUsername(username);
@@ -588,6 +594,92 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         firstName, lastName, email, phone, address, city, state, zipCode,
         licenseNumber, licenseFrontImage, licenseBackImage, username, passwordHash, status: 'active'
       });
+
+      // Send confirmation email with agreement copy
+      const baseUrl = process.env.BASE_URL || `http://${req.get('host')}`;
+      const loginUrl = `${baseUrl}/`;
+      const agreementDate = agreementAcceptedAt ? new Date(agreementAcceptedAt).toLocaleString() : new Date().toLocaleString();
+      
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: email,
+          subject: "Welcome to CarHop Host Partner Program - Registration Confirmed",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="margin: 0; font-size: 28px;">Welcome to CarHop Host Partner Program!</h1>
+              </div>
+              
+              <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${firstName} ${lastName}</strong>,</p>
+                
+                <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                  Congratulations! Your CarHop Host account has been successfully created. You're now part of our partner network and can start listing your vehicles to earn money.
+                </p>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                  <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">Your Account Details:</h3>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Name:</strong> ${firstName} ${lastName}</p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Email:</strong> ${email}</p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Phone:</strong> ${phone}</p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Username:</strong> ${username}</p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Address:</strong> ${address || 'N/A'}, ${city || ''} ${state || ''} ${zipCode || ''}</p>
+                  <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">License #:</strong> ${licenseNumber}</p>
+                </div>
+
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${loginUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                    Login to Host Dashboard
+                  </a>
+                </div>
+              </div>
+
+              <div style="padding: 30px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none;">
+                <h2 style="color: #1f2937; font-size: 18px; margin: 0 0 20px 0; border-bottom: 2px solid #22c55e; padding-bottom: 10px;">Host Partner Agreement - Copy for Your Records</h2>
+                <p style="font-size: 12px; color: #6b7280; margin-bottom: 15px;"><strong>Agreement Accepted:</strong> ${agreementDate}</p>
+                
+                <div style="font-size: 12px; color: #4b5563; line-height: 1.6;">
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">1. PARTIES AND OVERVIEW</h3>
+                  <p>This Host Partner Agreement is entered into between CarHop LLC and you. By accepting this Agreement, you agree to list your vehicle(s) on the CarHop platform.</p>
+                  
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">2. COMMISSION STRUCTURE</h3>
+                  <p><strong>10% Commission Plan:</strong> $1,000 deductible per incident<br/>
+                  <strong>20% Commission Plan:</strong> $500 deductible per incident</p>
+                  
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">3. VEHICLE REQUIREMENTS</h3>
+                  <p>Model year 2015+, under 130,000 miles, clean title, registered/insured in Connecticut.</p>
+                  
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">4. INSURANCE COVERAGE</h3>
+                  <p>Liability up to $1,000,000, Comprehensive & Collision at ACV (subject to deductible).</p>
+                  
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">5. PAYMENT TERMS</h3>
+                  <p>Weekly payments via ACH or PayPal, $50 minimum threshold, 3-5 business days processing.</p>
+                  
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">6. HOST RESPONSIBILITIES</h3>
+                  <p>Maintain availability calendar, respond within 2 hours, deliver clean vehicle with 1/4 tank fuel.</p>
+                  
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">7. GOVERNING LAW</h3>
+                  <p>This Agreement is governed by the laws of the State of Connecticut.</p>
+                </div>
+                
+                <p style="font-size: 11px; color: #9ca3af; margin: 20px 0 0 0; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                  This is an abbreviated copy of the agreement. The full agreement can be viewed anytime in your Host Dashboard.
+                </p>
+              </div>
+
+              <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                  Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+                  CarHop LLC - Connecticut, USA
+                </p>
+              </div>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error("Host email sending error:", emailError);
+      }
 
       res.status(201).json({ 
         message: "Host registered successfully", 
