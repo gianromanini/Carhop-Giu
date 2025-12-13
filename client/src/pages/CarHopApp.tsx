@@ -2426,11 +2426,11 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Sales Tax (%)</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               step="0.1" 
                               value={editingHostVehicle.pricing?.taxes ?? 8.5} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: parseFloat(e.target.value) || 0}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: 0}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.taxes ?? 8.5)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-taxes"
                             />
@@ -2438,10 +2438,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Cleaning Fee ($)</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               value={editingHostVehicle.pricing?.cleaningFee ?? 25} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: parseFloat(e.target.value) || 0}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: 0}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: val}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.cleaningFee ?? 25)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: val}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-cleaning"
                             />
@@ -2449,10 +2449,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Included Miles/Day</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               value={editingHostVehicle.pricing?.includedMiles ?? 200} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: parseInt(e.target.value) || 0}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: 0}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: val}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.includedMiles ?? 200)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: val}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-miles"
                             />
@@ -2460,11 +2460,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Extra Mile Rate ($)</label>
                             <input 
-                              type="number" 
-                              step="0.01" 
+                              type="text" 
                               value={editingHostVehicle.pricing?.extraMileRate ?? 0.45} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: parseFloat(e.target.value) || 0}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: 0}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.extraMileRate ?? 0.45)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-extra-mile"
                             />
@@ -2472,10 +2471,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $500</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               value={editingHostVehicle.pricing?.prices?.insurance500 ?? 25} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: parseFloat(e.target.value) || 0}}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: 0}}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: val}}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.prices?.insurance500 ?? 25)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: val}}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-ins500"
                             />
@@ -2483,10 +2482,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $1000</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               value={editingHostVehicle.pricing?.prices?.insurance1000 ?? 15} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: parseFloat(e.target.value) || 0}}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: 0}}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: val}}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.prices?.insurance1000 ?? 15)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: val}}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-ins1000"
                             />
@@ -2494,10 +2493,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Child Seat Price</label>
                             <input 
-                              type="number" 
+                              type="text" 
                               value={editingHostVehicle.pricing?.prices?.childSeat ?? 8} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: parseFloat(e.target.value) || 0}}} as Vehicle)}
-                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: 0}}} as Vehicle); }}}
+                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val}}} as Vehicle)}}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; if(val !== (editingHostVehicle.pricing?.prices?.childSeat ?? 8)) { setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val}}} as Vehicle); }}}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-child-seat"
                             />
