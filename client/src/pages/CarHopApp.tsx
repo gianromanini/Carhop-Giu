@@ -467,6 +467,7 @@ export default function CarHopApp() {
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
 
   // Load vehicles with availability filter based on search dates
@@ -2864,23 +2865,37 @@ export default function CarHopApp() {
                   <Card className="p-6">
                     <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
                       <DollarSign size={18} className="text-green-500"/>
-                      Price Configuration
+                      Price Configuration by Vehicle
                     </h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <Input label="Sales Tax (%)" type="number" step="0.1" value={settings.taxes} onChange={(e: any) => updateSettingMutation.mutate({ key: 'taxes', value: parseFloat(e.target.value) })} data-testid="input-taxes" />
-                      <Input label="Cleaning Fee ($)" type="number" value={settings.cleaningFee} onChange={(e: any) => updateSettingMutation.mutate({ key: 'cleaningFee', value: parseFloat(e.target.value) })} data-testid="input-cleaning-fee" />
+                    <div className="mb-4">
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase">Select Vehicle</label>
+                      <select value={adminEditingVehicleId || ''} onChange={(e) => setAdminEditingVehicleId(e.target.value ? parseInt(e.target.value) : null)} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white" data-testid="select-admin-vehicle-pricing">
+                        <option value="">-- Select a vehicle --</option>
+                        {vehicles.map(v => <option key={v.id} value={v.id}>{v.model}</option>)}
+                      </select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <Input label="Included Miles / Day" type="number" value={settings.includedMiles} onChange={(e: any) => updateSettingMutation.mutate({ key: 'includedMiles', value: parseInt(e.target.value) })} data-testid="input-included-miles" />
-                      <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={settings.extraMileRate} onChange={(e: any) => updateSettingMutation.mutate({ key: 'extraMileRate', value: parseFloat(e.target.value) })} data-testid="input-extra-mile-rate" />
-                    </div>
-                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Daily Add-on Rates</label>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <Input label="Ins. $500" type="number" value={settings.prices.insurance500} onChange={(e: any) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance500: parseFloat(e.target.value)} })} data-testid="input-insurance-500" />
-                      <Input label="Ins. $1000" type="number" value={settings.prices.insurance1000} onChange={(e: any) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, insurance1000: parseFloat(e.target.value)} })} data-testid="input-insurance-1000" />
-                      <Input label="Child Seat" type="number" value={settings.prices.childSeat} onChange={(e: any) => updateSettingMutation.mutate({ key: 'prices', value: {...settings.prices, childSeat: parseFloat(e.target.value)} })} data-testid="input-child-seat" />
-                    </div>
-                    <Button variant="primary" className="w-full" onClick={() => {}}>Update Global Settings</Button>
+                    {adminEditingVehicleId && vehicles.find(v => v.id === adminEditingVehicleId) && (() => {
+                      const vehicle = vehicles.find(v => v.id === adminEditingVehicleId)!;
+                      const pricing = vehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}};
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <Input label="Sales Tax (%)" type="number" step="0.1" value={pricing.taxes} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, taxes: parseFloat(e.target.value) || 0}} });}} data-testid="input-vehicle-admin-taxes" />
+                            <Input label="Cleaning Fee ($)" type="number" value={pricing.cleaningFee} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, cleaningFee: parseFloat(e.target.value) || 0}} });}} data-testid="input-vehicle-admin-cleaning" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <Input label="Included Miles / Day" type="number" value={pricing.includedMiles} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, includedMiles: parseInt(e.target.value) || 0}} });}} data-testid="input-vehicle-admin-miles" />
+                            <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={pricing.extraMileRate} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, extraMileRate: parseFloat(e.target.value) || 0}} });}} data-testid="input-vehicle-admin-extra-rate" />
+                          </div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Daily Add-on Rates</label>
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <Input label="Ins. $500" type="number" value={pricing.prices?.insurance500 || 25} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, prices: {...pricing.prices, insurance500: parseFloat(e.target.value) || 0}}} });}} data-testid="input-vehicle-admin-ins500" />
+                            <Input label="Ins. $1000" type="number" value={pricing.prices?.insurance1000 || 15} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, prices: {...pricing.prices, insurance1000: parseFloat(e.target.value) || 0}}} });}} data-testid="input-vehicle-admin-ins1000" />
+                            <Input label="Child Seat" type="number" value={pricing.prices?.childSeat || 8} onChange={(e: any) => {const v = vehicles.find(v => v.id === adminEditingVehicleId)!; updateVehicleMutation.mutate({ id: v.id, data: {...v, pricing: {...pricing, prices: {...pricing.prices, childSeat: parseFloat(e.target.value) || 0}}} });}} data-testid="input-vehicle-admin-child-seat" />
+                          </div>
+                        </>
+                      );
+                    })()}
                   </Card>
 
                   {/* Inventory */}
