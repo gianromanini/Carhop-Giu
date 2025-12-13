@@ -4837,7 +4837,7 @@ export default function CarHopApp() {
 
                   <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
                     <div className="flex justify-between items-end">
-                      <div><span className="text-zinc-500 text-sm">Price for {bookingDays} day{bookingDays !== 1 ? 's' : ''}</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${(viewCar.price * bookingDays).toFixed(2)}<span className="text-lg text-zinc-500">/rental</span></div></div>
+                      <div><span className="text-zinc-500 text-sm">Price for {bookingDays} day{bookingDays !== 1 ? 's' : ''}</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${(viewCar.price * bookingDays).toFixed(2)}</div></div>
                       <Button onClick={() => { setSearchParams({location: '', start: carDetailsBooking.startDate, startTime: carDetailsBooking.startTime, end: carDetailsBooking.endDate, endTime: carDetailsBooking.endTime}); handleRent(viewCar); }} className="px-8" data-testid="button-rent-detail">Book Now</Button>
                     </div>
                   </div>
