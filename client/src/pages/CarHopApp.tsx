@@ -3890,9 +3890,9 @@ export default function CarHopApp() {
                   {/* Check-in Photos */}
                   {receiptBooking.checkInData?.photosOutside && receiptBooking.checkInData.photosOutside.length > 0 && (
                     <div>
-                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos</p>
+                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({receiptBooking.checkInData.photosOutside.length})</p>
                       <div className="grid grid-cols-3 gap-3">
-                        {receiptBooking.checkInData.photosOutside.slice(0, 6).map((photo, idx) => (
+                        {receiptBooking.checkInData.photosOutside.map((photo, idx) => (
                           <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(receiptBooking.checkInData?.photosOutside || [], idx)}>
                             <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
                           </div>
@@ -3904,9 +3904,9 @@ export default function CarHopApp() {
                   {/* Check-out Photos */}
                   {receiptBooking.checkOutData?.photosOutside && receiptBooking.checkOutData.photosOutside.length > 0 && (
                     <div>
-                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos</p>
+                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({receiptBooking.checkOutData.photosOutside.length})</p>
                       <div className="grid grid-cols-3 gap-3">
-                        {receiptBooking.checkOutData.photosOutside.slice(0, 6).map((photo, idx) => (
+                        {receiptBooking.checkOutData.photosOutside.map((photo, idx) => (
                           <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(receiptBooking.checkOutData?.photosOutside || [], idx)}>
                             <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
                           </div>
@@ -3943,7 +3943,7 @@ export default function CarHopApp() {
                       <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({receiptBooking.days} days)</span>
                       <span className="text-zinc-900 dark:text-white font-medium">${receiptBooking.details?.rate?.toFixed(2) || '0.00'}</span>
                     </div>
-                    {receiptBooking.details?.protection > 0 && (
+                    {receiptBooking.details?.protection !== undefined && receiptBooking.details?.protection !== null && receiptBooking.details?.protection > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
                         <span className="text-zinc-900 dark:text-white">+${receiptBooking.details.protection.toFixed(2)}</span>
