@@ -451,6 +451,7 @@ export default function CarHopApp() {
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
   const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
   const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
+  const [checkingOutByAdminBookingId, setCheckingOutByAdminBookingId] = useState<number | null>(null);
 
   const [newLocation, setNewLocation] = useState('');
   
@@ -2922,7 +2923,7 @@ export default function CarHopApp() {
               </div>
             )}
 
-            {/* Delete Confirmation Modal */}
+            {/* Delete Vehicle Confirmation Modal */}
             {deletingVehicleId !== null && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
@@ -2931,6 +2932,26 @@ export default function CarHopApp() {
                   <div className="flex gap-3">
                     <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancel</button>
                     <button onClick={() => { deleteVehicleMutation.mutate(deletingVehicleId); setDeletingVehicleId(null); }} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors" data-testid="button-confirm-delete-vehicle">Yes, Delete</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Checkout By Admin Confirmation Modal */}
+            {checkingOutByAdminBookingId !== null && bookings.find(b => b.id === checkingOutByAdminBookingId) && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Complete Trip by Admin?</h3>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">You are about to complete this trip. This will mark it as COMPLETED and finalize all charges. Continue?</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setCheckingOutByAdminBookingId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-checkout-admin">Cancel</button>
+                    <button onClick={() => { 
+                      const bookingToComplete = bookings.find(b => b.id === checkingOutByAdminBookingId);
+                      if (bookingToComplete) {
+                        updateBookingMutation.mutate({ id: bookingToComplete.id, data: { status: 'Completed', checkOutStatus: 'completed', checkOutData: bookingToComplete.checkOutData || { miles: '0', gas: 'Full', photosOutside: [], photosInside: [] } } });
+                      }
+                      setCheckingOutByAdminBookingId(null);
+                    }} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors" data-testid="button-confirm-checkout-admin">Yes, Complete</button>
                   </div>
                 </div>
               </div>
@@ -3298,7 +3319,7 @@ export default function CarHopApp() {
                               <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
-                                <p className="text-zinc-500">{b.startDate} to {b.returnDate}</p>
+                                <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500">{b.location}</p>
                               </div>
                             </div>
@@ -3519,7 +3540,7 @@ export default function CarHopApp() {
                               {/* Extra Payment Charge */}
                               <div className="mt-4 pt-4 border-t border-zinc-700">
                                 <div className="text-xs text-zinc-500 mb-2">Charge {b.paymentMethod || 'Credit Card'}</div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 mb-3">
                                   <div className="relative flex-1">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
                                     <input
@@ -3539,6 +3560,13 @@ export default function CarHopApp() {
                                     Charge extra payment Trip
                                   </button>
                                 </div>
+                                <button 
+                                  onClick={() => setCheckingOutByAdminBookingId(b.id)}
+                                  className="w-full px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors"
+                                  data-testid="button-checkout-by-admin"
+                                >
+                                  Checkout By Admin
+                                </button>
                               </div>
                             </div>
                           </div>
