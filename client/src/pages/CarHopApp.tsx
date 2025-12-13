@@ -4179,20 +4179,20 @@ export default function CarHopApp() {
                           value={searchParams.start} 
                           onChange={e => handleSearchParamsChange('start', e.target.value)} 
                           min={getTodayString()} 
-                          disabled
-                          className="bg-transparent w-full outline-none text-sm text-white opacity-75 cursor-not-allowed" 
+                          className="bg-transparent w-full outline-none text-sm text-white" 
                           data-testid="input-checkout-start-date" 
                         />
                       </div>
                       <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3">
                         <Clock size={16} className="text-zinc-500" />
-                        <input 
-                          type="text"
-                          value={searchParams.startTime} 
-                          disabled
-                          className="bg-transparent w-full outline-none text-sm text-white opacity-75 cursor-not-allowed"
+                        <select
+                          value={searchParams.startTime}
+                          onChange={e => handleSearchParamsChange('startTime', e.target.value)}
+                          className="bg-transparent w-full outline-none text-sm text-white"
                           data-testid="select-checkout-start-time"
-                        />
+                        >
+                          {timeOptions.map(t => <option key={t} value={t} className="bg-zinc-900">{t}</option>)}
+                        </select>
                       </div>
                       <p className="text-xs text-zinc-500 mt-2">Auto-set to current time + 30 min</p>
                     </div>
@@ -4204,7 +4204,7 @@ export default function CarHopApp() {
                           type="date" 
                           value={searchParams.end} 
                           onChange={e => handleSearchParamsChange('end', e.target.value)} 
-                          min={getMinReturnDate()} 
+                          min={searchParams.start} 
                           className="bg-transparent w-full outline-none text-sm text-white" 
                           data-testid="input-checkout-end-date" 
                         />
@@ -4808,7 +4808,7 @@ export default function CarHopApp() {
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Return Date</label>
-                        <input type="date" value={carDetailsBooking.endDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endDate: e.target.value})} min={getMinReturnDate()} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="input-cardetail-enddate" />
+                        <input type="date" value={carDetailsBooking.endDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endDate: e.target.value})} min={carDetailsBooking.startDate} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="input-cardetail-enddate" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Return Time</label>
