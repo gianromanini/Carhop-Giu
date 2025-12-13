@@ -247,11 +247,17 @@ export default function Admin() {
                 </div>
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Input
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="Economy"
-                  />
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SEDAN">SEDAN</SelectItem>
+                      <SelectItem value="SUV">SUV</SelectItem>
+                      <SelectItem value="HATCHBACK">HATCHBACK</SelectItem>
+                      <SelectItem value="MINIVAN">MINIVAN</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
