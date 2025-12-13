@@ -223,8 +223,18 @@ export class MemStorage implements IStorage {
     ];
 
     const createdHosts: Host[] = [];
+    // Use synchronous approach by calling internal method directly
     defaultHosts.forEach(h => {
-      const host = this.createHost(h);
+      const id = this.hostId++;
+      const host: Host = {
+        id,
+        ...h,
+        address: h.address ?? null,
+        status: h.status ?? 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.hosts.set(id, host);
       createdHosts.push(host);
     });
 

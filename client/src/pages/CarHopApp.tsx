@@ -2969,9 +2969,24 @@ export default function CarHopApp() {
                           <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white">{selectedHost.firstName} {selectedHost.lastName}</h2>
                           <p className="text-xs sm:text-sm text-zinc-500 mt-1">@{selectedHost.username} | Joined: {selectedHost.createdAt ? new Date(selectedHost.createdAt).toLocaleDateString() : 'N/A'}</p>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => setEditingHost(editingHost ? null : {...selectedHost})} data-testid="button-edit-host">
-                          {editingHost ? <X size={14}/> : <Edit size={14}/>}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setEditingHost(editingHost ? null : {...selectedHost})} data-testid="button-edit-host">
+                            {editingHost ? <X size={14}/> : <Edit size={14}/>}
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-500 border-red-500 hover:bg-red-950" onClick={() => {
+                            if (confirm(`Are you sure you want to delete ${selectedHost.firstName} ${selectedHost.lastName}? This action cannot be undone.`)) {
+                              fetch(`/api/hosts/${selectedHost.id}`, { method: 'DELETE' })
+                                .then(r => r.json())
+                                .then(d => {
+                                  queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+                                  setSelectedHost(null);
+                                })
+                                .catch(err => alert('Error deleting host'));
+                            }
+                          }} data-testid="button-delete-host">
+                            <Trash2 size={14}/>
+                          </Button>
+                        </div>
                       </div>
 
                       {editingHost ? (
@@ -3151,7 +3166,7 @@ export default function CarHopApp() {
                                 <div>{b.date}</div>
                                 <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
                               </div>
-                              <button onClick={() => setDeletingBookingId(b.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-delete-booking">Delete Booking</button>
+                              <button onClick={() => setDeletingBookingId(b.id.toString())} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-delete-booking">Delete Booking</button>
                             </div>
                           </div>
 
