@@ -363,7 +363,7 @@ export default function Admin() {
                       <p className="text-sm mt-2 text-blue-600 dark:text-blue-400 font-medium">
                         Host: {vehicle.hostInfo.firstName} {vehicle.hostInfo.lastName}
                         {vehicle.hostInfo.city && vehicle.hostInfo.state && (
-                          <span className="text-muted-foreground ml-2">• {vehicle.hostInfo.city}, {vehicle.hostInfo.state}</span>
+                          <span className="text-blue-600 dark:text-blue-400 ml-2">• {vehicle.hostInfo.city}, {vehicle.hostInfo.state}</span>
                         )}
                       </p>
                     )}
