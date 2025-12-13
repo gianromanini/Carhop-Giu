@@ -2629,7 +2629,7 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex justify-center gap-1 md:gap-2 mb-6 overflow-x-auto pb-2">
-              {(adminUnit === '01' ? ['fleet', 'bookings', 'clients', 'hosts', 'earnings'] : ['fleet', 'bookings', 'earnings']).map(tab => (
+              {['fleet', 'bookings', 'clients', 'hosts', 'earnings'].map(tab => (
                 <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); }} className={`flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   <div className="hidden md:block">
                     {tab === 'fleet' && <Car size={18} />}
