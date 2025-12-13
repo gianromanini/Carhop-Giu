@@ -164,6 +164,70 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDefaultData() {
+    // Create default hosts first
+    const defaultHosts: InsertHost[] = [
+      {
+        firstName: 'John',
+        lastName: 'Martinez',
+        email: 'john.martinez@example.com',
+        phone: '(203) 555-0001',
+        address: '123 Main St',
+        city: 'Stamford',
+        state: 'CT',
+        zipCode: '06901',
+        licenseNumber: 'CT-12345678',
+        licenseFrontImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
+        licenseBackImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
+        username: 'johnmartinez',
+        passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DRj1C2',
+        agreementAccepted: true,
+        agreementAcceptedAt: new Date(),
+        status: 'active'
+      },
+      {
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        email: 'sarah.johnson@example.com',
+        phone: '(203) 555-0002',
+        address: '456 Oak Ave',
+        city: 'Darien',
+        state: 'CT',
+        zipCode: '06820',
+        licenseNumber: 'CT-87654321',
+        licenseFrontImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
+        licenseBackImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
+        username: 'sarahjohnson',
+        passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DRj1C2',
+        agreementAccepted: true,
+        agreementAcceptedAt: new Date(),
+        status: 'active'
+      },
+      {
+        firstName: 'Michael',
+        lastName: 'Chen',
+        email: 'michael.chen@example.com',
+        phone: '(203) 555-0003',
+        address: '789 Pine Rd',
+        city: 'Norwalk',
+        state: 'CT',
+        zipCode: '06850',
+        licenseNumber: 'CT-55555555',
+        licenseFrontImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
+        licenseBackImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
+        username: 'michaelchen',
+        passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DRj1C2',
+        agreementAccepted: true,
+        agreementAcceptedAt: new Date(),
+        status: 'active'
+      },
+    ];
+
+    const createdHosts: Host[] = [];
+    defaultHosts.forEach(h => {
+      const host = this.createHost(h);
+      createdHosts.push(host);
+    });
+
     const defaultVehicles: InsertVehicle[] = [
       {
         model: 'Hyunday Elantra 2016',
@@ -188,6 +252,7 @@ export class MemStorage implements IStorage {
         hasBlindSpotWarning: true,
         hasDriveAssist: true,
         hasUSBCharger: true,
+        hostId: createdHosts[0]?.id.toString() ?? '1',
       },
       {
         model: 'Subaru Impreza 2025',
@@ -212,6 +277,7 @@ export class MemStorage implements IStorage {
         hasBlindSpotWarning: true,
         hasDriveAssist: true,
         hasUSBCharger: true,
+        hostId: createdHosts[1]?.id.toString() ?? '2',
       },
       {
         model: 'Nissan Kicks 2026',
@@ -236,6 +302,7 @@ export class MemStorage implements IStorage {
         hasBlindSpotWarning: true,
         hasDriveAssist: true,
         hasUSBCharger: true,
+        hostId: createdHosts[2]?.id.toString() ?? '3',
       },
       {
         model: 'Kia Seltos 2025 EX',
@@ -260,6 +327,7 @@ export class MemStorage implements IStorage {
         hasBlindSpotWarning: true,
         hasDriveAssist: true,
         hasUSBCharger: true,
+        hostId: createdHosts[0]?.id.toString() ?? '1',
       },
       {
         model: 'Ford Escape 2014',
@@ -284,6 +352,7 @@ export class MemStorage implements IStorage {
         hasBlindSpotWarning: true,
         hasDriveAssist: true,
         hasUSBCharger: true,
+        hostId: createdHosts[1]?.id.toString() ?? '2',
       },
       {
         model: 'Honda Accord 2024',
@@ -308,6 +377,7 @@ export class MemStorage implements IStorage {
         hasBlindSpotWarning: true,
         hasDriveAssist: true,
         hasUSBCharger: true,
+        hostId: createdHosts[2]?.id.toString() ?? '3',
       },
     ];
 
