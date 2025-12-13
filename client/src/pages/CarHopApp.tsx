@@ -2514,8 +2514,8 @@ export default function CarHopApp() {
                           updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: updatedData });
                           setEditingHostVehicle(null);
                           setHostVehicleImages([]);
-                        }} data-testid="button-save-vehicle">
-                          <Check size={16}/> Save Changes
+                        }} data-testid="button-update-configuration">
+                          <Check size={16}/> Update Configuration
                         </Button>
                       </div>
                     </div>
