@@ -2593,7 +2593,7 @@ export default function CarHopApp() {
                         <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-4 flex-wrap">
                           <span className="flex items-center gap-1"><Users size={14}/> {car.seats} passengers</span>
                           <span className="flex items-center gap-1">
-                            {car.driveType === 'AWD' && <Mountain size={14} />}
+                            {car.driveType === 'AWD' && <Car size={14} />}
                             {car.driveType === 'FWD' && <Navigation size={14} />}
                             {car.driveType === 'RWD' && <Navigation size={14} className="transform rotate-180" />}
                             {car.driveType}
@@ -4811,7 +4811,7 @@ export default function CarHopApp() {
                     <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
                     <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
                     <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
-                    {viewCar.isAWD && <span className="flex items-center gap-1"><Mountain size={16}/> AWD</span>}
+                    {viewCar.isAWD && <span className="flex items-center gap-1"><Car size={16}/> AWD</span>}
                   </div>
                   
                   {/* Features - Without Icons */}
