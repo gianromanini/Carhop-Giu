@@ -354,15 +354,30 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (approvedRequest) {
       updateData.returnDate = approvedRequest.requestedReturnDate;
       updateData.returnTime = approvedRequest.requestedReturnTime;
-      // Recalculate days
+      // Recalculate days and adjust pricing
       const startDate = new Date(booking.startDate);
       const newReturnDate = new Date(approvedRequest.requestedReturnDate);
       const diffTime = newReturnDate.getTime() - startDate.getTime();
       const newDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       updateData.days = Math.max(1, newDays);
-      // Recalculate total
-      const rate = booking.details?.rate || 0;
-      updateData.total = rate * updateData.days + (booking.details?.extras || 0) + (booking.details?.protection || 0) + (booking.details?.fees || 0) + (booking.details?.tax || 0) - (booking.details?.discount || 0);
+      
+      // Calculate the difference in days from original booking
+      const oldDays = booking.days || 1;
+      const daysDifference = newDays - oldDays;
+      
+      // Calculate the daily rate based on original booking
+      const baseRate = booking.details?.rate || 0;
+      const dailyRate = baseRate / oldDays;
+      
+      // Adjust total based on days difference
+      const rateDifference = dailyRate * daysDifference;
+      const taxOnDifference = rateDifference * ((booking.details?.tax || 0) / (baseRate || 1));
+      
+      updateData.total = booking.total + rateDifference + taxOnDifference;
+      updateData.details = {
+        ...booking.details,
+        extendedRate: (booking.details?.extendedRate || 0) + rateDifference
+      };
     }
     
     const updated = await storage.updateBooking(id, updateData);
