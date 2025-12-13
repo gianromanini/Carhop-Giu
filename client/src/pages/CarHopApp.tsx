@@ -3332,7 +3332,7 @@ export default function CarHopApp() {
                               <div className="flex justify-between text-zinc-300"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
                               
-                              {b.details.discount && b.details.discount > 0 && (
+                              {(b.details.discount || 0) > 0 && (
                                 <div className="flex justify-between text-green-500">
                                   <span className="flex items-center gap-1">
                                     Discount Applied 
@@ -3344,7 +3344,7 @@ export default function CarHopApp() {
                                       <X size={12}/>
                                     </button>
                                   </span>
-                                  <span>-${b.details.discount.toFixed(2)}</span>
+                                  <span>-${(b.details.discount || 0).toFixed(2)}</span>
                                 </div>
                               )}
                               
