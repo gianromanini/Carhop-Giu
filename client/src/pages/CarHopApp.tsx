@@ -2800,19 +2800,22 @@ export default function CarHopApp() {
                   <Card className="p-6">
                     <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
                     <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {vehicles.map((car) => (
-                        <div key={car.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer group" onClick={() => handleEditVehicle(car)} data-testid={`card-admin-vehicle-${car.id}`}>
-                          <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                            <p className="text-xs text-zinc-500">{car.fuel} · {car.category}</p>
+                      {vehicles.map((car) => {
+                        const hostOwner = hostsData.find(h => h.id === car.hostId);
+                        return (
+                          <div key={car.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer group" onClick={() => handleEditVehicle(car)} data-testid={`card-admin-vehicle-${car.id}`}>
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-500 font-semibold">@{hostOwner.username}</span>}</p>
+                            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={(e) => { e.stopPropagation(); handleEditVehicle(car); }} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded" data-testid={`button-edit-${car.id}`}><Edit size={14}/></button>
+                              <button onClick={(e) => { e.stopPropagation(); deleteVehicleMutation.mutate(car.id); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" data-testid={`button-delete-${car.id}`}><Trash2 size={14}/></button>
+                            </div>
                           </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={(e) => { e.stopPropagation(); handleEditVehicle(car); }} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded" data-testid={`button-edit-${car.id}`}><Edit size={14}/></button>
-                            <button onClick={(e) => { e.stopPropagation(); deleteVehicleMutation.mutate(car.id); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" data-testid={`button-delete-${car.id}`}><Trash2 size={14}/></button>
-                          </div>
-                        </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   </Card>
                 </div>
