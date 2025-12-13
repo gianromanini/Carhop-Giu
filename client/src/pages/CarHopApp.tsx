@@ -4803,11 +4803,7 @@ export default function CarHopApp() {
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Pickup Time</label>
                         <select value={carDetailsBooking.startTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startTime: e.target.value})} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="select-cardetail-starttime">
-                          {carDetailsBooking.startDate === getTodayString() ? timeOptions.filter(t => {
-                            const tIndex = timeOptions.indexOf(t);
-                            const currentIndex = timeOptions.indexOf(getNext30MinSlot());
-                            return tIndex >= currentIndex;
-                          }).map(t => <option key={t} value={t}>{t}</option>) : timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
                       <div>
