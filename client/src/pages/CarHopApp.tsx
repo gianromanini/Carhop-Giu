@@ -4745,20 +4745,52 @@ export default function CarHopApp() {
 
         {view === 'car-details' && viewCar && (() => {
           const bookingDays = calculateBillingDays(carDetailsBooking.startDate, carDetailsBooking.startTime, carDetailsBooking.endDate, carDetailsBooking.endTime);
+          
+          const getFeaturesList = () => {
+            const features = [];
+            if (viewCar.hasCarPlay) features.push('CarPlay');
+            if (viewCar.hasBluetooth) features.push('Bluetooth');
+            if (viewCar.hasReverseCamera) features.push('Reverse Camera');
+            if (viewCar.hasHeatedSeats) features.push('Heated Seats');
+            if (viewCar.hasHeatedSteering) features.push('Heated Steering');
+            if (viewCar.hasElectricSeats) features.push('Electric Seats');
+            if (viewCar.hasPaddleShifters) features.push('Paddle Shifters');
+            if (viewCar.hasKeylessEntry) features.push('Keyless Entry');
+            if (viewCar.hasBlindSpotWarning) features.push('Blind Spot Warning');
+            if (viewCar.hasDriveAssist) features.push('Drive Assist');
+            if (viewCar.hasUSBCharger) features.push('USB Charger');
+            return features;
+          };
+          
+          const features = getFeaturesList();
+          
           return (
             <div className="max-w-5xl mx-auto px-6 py-12">
               <Button variant="ghost" onClick={() => setView('home')} className="mb-8"><ArrowLeft size={20} /> Back to Fleet</Button>
               <div className="grid md:grid-cols-2 gap-8">
-                <ImageCarousel images={viewCar.images} />
+                <div>
+                  <ImageCarousel images={viewCar.images} />
+                  <p className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed mt-6" data-testid="text-car-description">{getVehicleDescription(viewCar.model, viewCar.category)}</p>
+                </div>
                 <div>
                   <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
                   <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">{viewCar.model}</h1>
-                  <div className="flex gap-4 text-sm text-zinc-500 mb-4">
+                  <div className="flex gap-4 text-sm text-zinc-500 mb-6">
                     <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
                     <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
                     <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
                   </div>
-                  <p className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed mb-6" data-testid="text-car-description">{getVehicleDescription(viewCar.model, viewCar.category)}</p>
+                  
+                  {/* Features - Without Icons */}
+                  {features.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-zinc-200 dark:border-zinc-700">
+                      <div className="flex flex-wrap gap-2">
+                        {features.map((feature, idx) => (
+                          <span key={idx} className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">{feature}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Booking Dates and Times */}
                   <div className="space-y-4 mb-6 p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
