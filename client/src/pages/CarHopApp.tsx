@@ -2324,6 +2324,57 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
+                      {/* Features */}
+                      <div className="mb-6">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Features</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasCarPlay || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasCarPlay: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            CarPlay / Auto
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasBluetooth || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasBluetooth: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Bluetooth
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasReverseCamera || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasReverseCamera: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Reverse Camera
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasHeatedSeats || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasHeatedSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Heated Seats
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasHeatedSteering || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasHeatedSteering: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Heated Steering
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasElectricSeats || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasElectricSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Electric Seats
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasPaddleShifters || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasPaddleShifters: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Paddle Shifters
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasKeylessEntry || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasKeylessEntry: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Keyless Entry
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasBlindSpotWarning || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasBlindSpotWarning: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Blind Spot Warning
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasDriveAssist || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasDriveAssist: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            Drive Assist
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                            <input type="checkbox" checked={editingHostVehicle.hasUSBCharger || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasUSBCharger: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            USB Charger
+                          </label>
+                        </div>
+                      </div>
+
                       <div className="flex gap-3">
                         <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
                         <Button variant="primary" className="flex-1" onClick={() => {
