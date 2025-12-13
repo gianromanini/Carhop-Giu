@@ -2861,81 +2861,92 @@ export default function CarHopApp() {
                     <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
                   </Card>
 
-                  {/* Inventory - with inline editing */}
+                  {/* Inventory - Collapsed List */}
                   <Card className="p-6">
                     <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
                     <div className="space-y-3 max-h-full overflow-y-auto">
                       {vehicles.map((car) => {
                         const hostOwner = hostsData.find(h => String(h.id) === car.hostId);
-                        const isExpanded = adminEditingVehicleId === car.id;
-                        const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}};
                         return (
-                          <div key={car.id} className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-                            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer" onClick={() => setAdminEditingVehicleId(isExpanded ? null : car.id)} data-testid={`card-admin-vehicle-${car.id}`}>
-                              <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                                <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-500 font-semibold">@{hostOwner.username}</span>}</p>
-                              </div>
-                              <div className="flex gap-1">
-                                <button onClick={(e) => { e.stopPropagation(); deleteVehicleMutation.mutate(car.id); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded" data-testid={`button-delete-${car.id}`}><Trash2 size={14}/></button>
-                              </div>
+                          <div key={car.id} className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" data-testid={`card-admin-vehicle-${car.id}`}>
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-500 font-semibold">@{hostOwner.username}</span>}</p>
                             </div>
-                            {isExpanded && (
-                              <div className="p-6 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 space-y-6">
-                                {/* Features */}
-                                <div>
-                                  <h4 className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-400 mb-3">Vehicle Features</h4>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    {[
-                                      {key: 'isAWD', label: 'AWD'},
-                                      {key: 'hasCarPlay', label: 'Apple CarPlay'},
-                                      {key: 'hasBluetooth', label: 'Bluetooth'},
-                                      {key: 'hasReverseCamera', label: 'Reverse Camera'},
-                                      {key: 'hasHeatedSeats', label: 'Heated Seats'},
-                                      {key: 'hasHeatedSteering', label: 'Heated Steering'},
-                                      {key: 'hasElectricSeats', label: 'Electric Seats'},
-                                      {key: 'hasPaddleShifters', label: 'Paddle Shifters'},
-                                      {key: 'hasKeylessEntry', label: 'Keyless Entry'},
-                                      {key: 'hasBlindSpotWarning', label: 'Blind Spot Warning'},
-                                      {key: 'hasDriveAssist', label: 'Drive Assist'},
-                                      {key: 'hasUSBCharger', label: 'USB Charger'}
-                                    ].map(feature => (
-                                      <label key={feature.key} className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={(car as any)[feature.key] || false} onChange={(e) => updateVehicleMutation.mutate({ id: car.id, data: {...car, [feature.key]: e.target.checked} })} className="rounded" data-testid={`checkbox-${feature.key}-${car.id}`} />
-                                        <span className="text-xs text-zinc-700 dark:text-zinc-300">{feature.label}</span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                {/* Pricing */}
-                                <div>
-                                  <h4 className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-400 mb-3">Pricing & Rates</h4>
-                                  <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <Input label="Sales Tax (%)" type="number" step="0.1" value={pricing.taxes} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, taxes: parseFloat(e.target.value) || 0}} })} data-testid={`input-taxes-${car.id}`} />
-                                    <Input label="Cleaning Fee ($)" type="number" value={pricing.cleaningFee} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, cleaningFee: parseFloat(e.target.value) || 0}} })} data-testid={`input-cleaning-${car.id}`} />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <Input label="Included Miles / Day" type="number" value={pricing.includedMiles} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, includedMiles: parseInt(e.target.value) || 0}} })} data-testid={`input-miles-${car.id}`} />
-                                    <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={pricing.extraMileRate} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, extraMileRate: parseFloat(e.target.value) || 0}} })} data-testid={`input-extra-rate-${car.id}`} />
-                                  </div>
-                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Daily Add-on Rates</label>
-                                  <div className="grid grid-cols-3 gap-4">
-                                    <Input label="Ins. $500" type="number" value={pricing.prices?.insurance500 || 25} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, prices: {...pricing.prices, insurance500: parseFloat(e.target.value) || 0}}} })} data-testid={`input-ins500-${car.id}`} />
-                                    <Input label="Ins. $1000" type="number" value={pricing.prices?.insurance1000 || 15} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, prices: {...pricing.prices, insurance1000: parseFloat(e.target.value) || 0}}} })} data-testid={`input-ins1000-${car.id}`} />
-                                    <Input label="Child Seat" type="number" value={pricing.prices?.childSeat || 8} onChange={(e: any) => updateVehicleMutation.mutate({ id: car.id, data: {...car, pricing: {...pricing, prices: {...pricing.prices, childSeat: parseFloat(e.target.value) || 0}}} })} data-testid={`input-child-seat-${car.id}`} />
-                                  </div>
-                                </div>
-
-                                <Button onClick={() => setAdminEditingVehicleId(null)} className="w-full" data-testid={`button-update-${car.id}`}>Update</Button>
-                              </div>
-                            )}
+                            <div className="flex gap-1">
+                              <button onClick={() => setAdminEditingVehicleId(car.id)} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors" data-testid={`button-edit-${car.id}`} title="Edit configuration"><Edit size={14}/></button>
+                              <button onClick={() => deleteVehicleMutation.mutate(car.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors" data-testid={`button-delete-${car.id}`} title="Delete vehicle"><Trash2 size={14}/></button>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                   </Card>
+
+                  {/* Configuration Panel - Opens when vehicle is selected for editing */}
+                  {adminEditingVehicleId && (() => {
+                    const editingCar = vehicles.find(v => v.id === adminEditingVehicleId);
+                    if (!editingCar) return null;
+                    const pricing = editingCar.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}};
+                    return (
+                      <Card className="p-6 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Configure: {editingCar.model}</h3>
+                          <button onClick={() => setAdminEditingVehicleId(null)} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" data-testid="button-close-config"><X size={16}/></button>
+                        </div>
+
+                        <div className="space-y-6">
+                          {/* Features */}
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-400 mb-3">Vehicle Features</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              {[
+                                {key: 'isAWD', label: 'AWD'},
+                                {key: 'hasCarPlay', label: 'Apple CarPlay'},
+                                {key: 'hasBluetooth', label: 'Bluetooth'},
+                                {key: 'hasReverseCamera', label: 'Reverse Camera'},
+                                {key: 'hasHeatedSeats', label: 'Heated Seats'},
+                                {key: 'hasHeatedSteering', label: 'Heated Steering'},
+                                {key: 'hasElectricSeats', label: 'Electric Seats'},
+                                {key: 'hasPaddleShifters', label: 'Paddle Shifters'},
+                                {key: 'hasKeylessEntry', label: 'Keyless Entry'},
+                                {key: 'hasBlindSpotWarning', label: 'Blind Spot Warning'},
+                                {key: 'hasDriveAssist', label: 'Drive Assist'},
+                                {key: 'hasUSBCharger', label: 'USB Charger'}
+                              ].map(feature => (
+                                <label key={feature.key} className="flex items-center gap-2 cursor-pointer">
+                                  <input type="checkbox" checked={(editingCar as any)[feature.key] || false} onChange={(e) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, [feature.key]: e.target.checked} })} className="rounded" data-testid={`checkbox-${feature.key}-${editingCar.id}`} />
+                                  <span className="text-xs text-zinc-700 dark:text-zinc-300">{feature.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Pricing */}
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-400 mb-3">Pricing & Rates</h4>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <Input label="Sales Tax (%)" type="number" step="0.1" value={pricing.taxes} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, taxes: parseFloat(e.target.value) || 0}} })} data-testid={`input-taxes-${editingCar.id}`} />
+                              <Input label="Cleaning Fee ($)" type="number" value={pricing.cleaningFee} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, cleaningFee: parseFloat(e.target.value) || 0}} })} data-testid={`input-cleaning-${editingCar.id}`} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <Input label="Included Miles / Day" type="number" value={pricing.includedMiles} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, includedMiles: parseInt(e.target.value) || 0}} })} data-testid={`input-miles-${editingCar.id}`} />
+                              <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={pricing.extraMileRate} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, extraMileRate: parseFloat(e.target.value) || 0}} })} data-testid={`input-extra-rate-${editingCar.id}`} />
+                            </div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Daily Add-on Rates</label>
+                            <div className="grid grid-cols-3 gap-4">
+                              <Input label="Ins. $500" type="number" value={pricing.prices?.insurance500 || 25} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, prices: {...pricing.prices, insurance500: parseFloat(e.target.value) || 0}}} })} data-testid={`input-ins500-${editingCar.id}`} />
+                              <Input label="Ins. $1000" type="number" value={pricing.prices?.insurance1000 || 15} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, prices: {...pricing.prices, insurance1000: parseFloat(e.target.value) || 0}}} })} data-testid={`input-ins1000-${editingCar.id}`} />
+                              <Input label="Child Seat" type="number" value={pricing.prices?.childSeat || 8} onChange={(e: any) => updateVehicleMutation.mutate({ id: editingCar.id, data: {...editingCar, pricing: {...pricing, prices: {...pricing.prices, childSeat: parseFloat(e.target.value) || 0}}} })} data-testid={`input-child-seat-${editingCar.id}`} />
+                            </div>
+                          </div>
+
+                          <Button onClick={() => setAdminEditingVehicleId(null)} className="w-full" data-testid={`button-close-config-bottom`}>Done</Button>
+                        </div>
+                      </Card>
+                    );
+                  })()}
                 </div>
               </div>
             )}
