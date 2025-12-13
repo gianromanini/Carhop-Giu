@@ -4725,10 +4725,19 @@ export default function CarHopApp() {
                   <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
                   <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
                 </div>
-                <div className="flex gap-2 mb-6">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {viewCar.isAWD && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-3 py-1 rounded-full text-xs font-bold"><Mountain size={12} className="inline mr-1"/> AWD</span>}
                   {viewCar.hasCarPlay && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Smartphone size={12} className="inline mr-1"/> CarPlay</span>}
                   {viewCar.hasBluetooth && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Bluetooth size={12} className="inline mr-1"/> Bluetooth</span>}
+                  {viewCar.hasReverseCamera && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Camera size={12} className="inline mr-1"/> Reverse Camera</span>}
+                  {viewCar.hasHeatedSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Seats</span>}
+                  {viewCar.hasHeatedSteering && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Steering</span>}
+                  {viewCar.hasElectricSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Zap size={12} className="inline mr-1"/> Electric Seats</span>}
+                  {viewCar.hasPaddleShifters && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Navigation size={12} className="inline mr-1"/> Paddle Shifters</span>}
+                  {viewCar.hasKeylessEntry && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Lock size={12} className="inline mr-1"/> Keyless Entry</span>}
+                  {viewCar.hasBlindSpotWarning && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><AlertTriangle size={12} className="inline mr-1"/> Blind Spot Warning</span>}
+                  {viewCar.hasDriveAssist && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Activity size={12} className="inline mr-1"/> Drive Assist</span>}
+                  {viewCar.hasUSBCharger && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><BatteryCharging size={12} className="inline mr-1"/> USB Charger</span>}
                 </div>
                 <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
                   <div className="flex justify-between items-end">
