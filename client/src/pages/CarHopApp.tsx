@@ -2546,16 +2546,16 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Pick-up Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 sm:p-3">
-                          <Calendar size={16} className="text-green-600 mr-2 flex-shrink-0" />
-                          <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white" data-testid="input-start-date" />
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 sm:p-3 cursor-pointer">
+                          <Calendar size={16} className="text-black dark:text-white mr-2 flex-shrink-0" />
+                          <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white cursor-pointer" data-testid="input-start-date" />
                         </div>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Return Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 sm:p-3">
-                          <Calendar size={16} className="text-green-600 mr-2 flex-shrink-0" />
-                          <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white" data-testid="input-end-date" />
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 sm:p-3 cursor-pointer">
+                          <Calendar size={16} className="text-black dark:text-white mr-2 flex-shrink-0" />
+                          <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white cursor-pointer" data-testid="input-end-date" />
                         </div>
                       </div>
                     </div>
@@ -4222,14 +4222,14 @@ export default function CarHopApp() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">PICKUP</label>
-                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3 mb-2">
-                        <Calendar size={16} className="text-zinc-500" />
+                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3 mb-2 cursor-pointer">
+                        <Calendar size={16} className="text-black dark:text-white" />
                         <input 
                           type="date" 
                           value={searchParams.start} 
                           onChange={e => handleSearchParamsChange('start', e.target.value)} 
                           min={getTodayString()} 
-                          className="bg-transparent w-full outline-none text-sm text-white" 
+                          className="bg-transparent w-full outline-none text-sm text-white cursor-pointer" 
                           data-testid="input-checkout-start-date" 
                         />
                       </div>
@@ -4248,14 +4248,14 @@ export default function CarHopApp() {
                     </div>
                     <div>
                       <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">RETURN</label>
-                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3 mb-2">
-                        <Calendar size={16} className="text-zinc-500" />
+                      <div className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg p-3 mb-2 cursor-pointer">
+                        <Calendar size={16} className="text-black dark:text-white" />
                         <input 
                           type="date" 
                           value={searchParams.end} 
                           onChange={e => handleSearchParamsChange('end', e.target.value)} 
                           min={searchParams.start} 
-                          className="bg-transparent w-full outline-none text-sm text-white" 
+                          className="bg-transparent w-full outline-none text-sm text-white cursor-pointer" 
                           data-testid="input-checkout-end-date" 
                         />
                       </div>
