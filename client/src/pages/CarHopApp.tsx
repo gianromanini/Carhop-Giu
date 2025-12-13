@@ -329,7 +329,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000 };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -1086,6 +1086,7 @@ export default function CarHopApp() {
       hasBlindSpotWarning: formData.hasBlindSpotWarning,
       hasDriveAssist: formData.hasDriveAssist,
       hasUSBCharger: formData.hasUSBCharger,
+      pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}
     };
 
     if (editingId) {
@@ -2862,34 +2863,27 @@ export default function CarHopApp() {
                   </Card>
 
                   {/* Pricing Configuration */}
-                  {editingId && (() => {
-                    const car = vehicles.find(v => v.id === editingId);
-                    if (!car) return null;
-                    const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}};
-                    return (
-                      <Card className="p-6">
-                        <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Pricing Configuration: {car.model}</h3>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input label="Sales Tax (%)" type="number" step="0.1" value={pricing.taxes} onChange={(e: any) => { const p = {...pricing, taxes: parseFloat(e.target.value) || 0}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-taxes-${car.id}`} />
-                            <Input label="Cleaning Fee ($)" type="number" value={pricing.cleaningFee} onChange={(e: any) => { const p = {...pricing, cleaningFee: parseFloat(e.target.value) || 0}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-cleaning-${car.id}`} />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input label="Included Miles / Day" type="number" value={pricing.includedMiles} onChange={(e: any) => { const p = {...pricing, includedMiles: parseInt(e.target.value) || 0}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-miles-${car.id}`} />
-                            <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={pricing.extraMileRate} onChange={(e: any) => { const p = {...pricing, extraMileRate: parseFloat(e.target.value) || 0}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-extra-rate-${car.id}`} />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Daily Add-on Rates</label>
-                            <div className="grid grid-cols-3 gap-4">
-                              <Input label="Ins. $500" type="number" value={pricing.prices?.insurance500 || 25} onChange={(e: any) => { const p = {...pricing, prices: {...pricing.prices, insurance500: parseFloat(e.target.value) || 0}}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-ins500-${car.id}`} />
-                              <Input label="Ins. $1000" type="number" value={pricing.prices?.insurance1000 || 15} onChange={(e: any) => { const p = {...pricing, prices: {...pricing.prices, insurance1000: parseFloat(e.target.value) || 0}}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-ins1000-${car.id}`} />
-                              <Input label="Child Seat" type="number" value={pricing.prices?.childSeat || 8} onChange={(e: any) => { const p = {...pricing, prices: {...pricing.prices, childSeat: parseFloat(e.target.value) || 0}}; setFormData({...formData, pricing: p}); updateVehicleMutation.mutate({id: car.id, data: {...car, pricing: p}}); }} data-testid={`input-child-seat-${car.id}`} />
-                            </div>
-                          </div>
+                  <Card className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Pricing Configuration {editingId && `(${formData.model})`}</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input label="Sales Tax (%)" type="number" step="0.1" value={formData.pricing?.taxes || 8.5} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, taxes: parseFloat(e.target.value) || 0}})} data-testid="input-pricing-taxes" />
+                        <Input label="Cleaning Fee ($)" type="number" value={formData.pricing?.cleaningFee || 25} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, cleaningFee: parseFloat(e.target.value) || 0}})} data-testid="input-pricing-cleaning" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input label="Included Miles / Day" type="number" value={formData.pricing?.includedMiles || 200} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, includedMiles: parseInt(e.target.value) || 0}})} data-testid="input-pricing-miles" />
+                        <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={formData.pricing?.extraMileRate || 0.45} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, extraMileRate: parseFloat(e.target.value) || 0}})} data-testid="input-pricing-extra-rate" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Daily Add-on Rates</label>
+                        <div className="grid grid-cols-3 gap-4">
+                          <Input label="Ins. $500" type="number" value={formData.pricing?.prices?.insurance500 || 25} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance500: parseFloat(e.target.value) || 0}}})} data-testid="input-pricing-ins500" />
+                          <Input label="Ins. $1000" type="number" value={formData.pricing?.prices?.insurance1000 || 15} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance1000: parseFloat(e.target.value) || 0}}})} data-testid="input-pricing-ins1000" />
+                          <Input label="Child Seat" type="number" value={formData.pricing?.prices?.childSeat || 8} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, childSeat: parseFloat(e.target.value) || 0}}})} data-testid="input-pricing-child-seat" />
                         </div>
-                      </Card>
-                    );
-                  })()}
+                      </div>
+                    </div>
+                  </Card>
 
                   {/* Inventory - Collapsed List */}
                   <Card className="p-6">
