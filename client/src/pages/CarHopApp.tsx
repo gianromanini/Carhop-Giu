@@ -4793,26 +4793,26 @@ export default function CarHopApp() {
                   )}
 
                   {/* Booking Dates and Times */}
-                  <div className="space-y-4 mb-6 p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                    <h3 className="font-bold text-zinc-900 dark:text-white mb-4">Select Your Rental Dates</h3>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-4 mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                    <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-3">Select Your Rental Dates</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Pickup Date</label>
-                        <input type="date" value={carDetailsBooking.startDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startDate: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="input-cardetail-startdate" />
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Pickup Date</label>
+                        <input type="date" value={carDetailsBooking.startDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startDate: e.target.value})} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="input-cardetail-startdate" />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Pickup Time</label>
-                        <select value={carDetailsBooking.startTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startTime: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="select-cardetail-starttime">
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Pickup Time</label>
+                        <select value={carDetailsBooking.startTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startTime: e.target.value})} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="select-cardetail-starttime">
                           {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Return Date</label>
-                        <input type="date" value={carDetailsBooking.endDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endDate: e.target.value})} min={getMinReturnDate()} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="input-cardetail-enddate" />
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Return Date</label>
+                        <input type="date" value={carDetailsBooking.endDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endDate: e.target.value})} min={getMinReturnDate()} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="input-cardetail-enddate" />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Return Time</label>
-                        <select value={carDetailsBooking.endTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endTime: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="select-cardetail-endtime">
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Return Time</label>
+                        <select value={carDetailsBooking.endTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endTime: e.target.value})} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="select-cardetail-endtime">
                           {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
