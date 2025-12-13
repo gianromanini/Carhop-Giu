@@ -214,7 +214,21 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   // ========== VEHICLES ==========
   app.get("/api/vehicles", async (req, res) => {
     const vehicles = await storage.getVehicles();
-    res.json(vehicles);
+    const hosts = await storage.getHosts();
+    const hostsMap = new Map(hosts.map(h => [h.id.toString(), h]));
+    
+    const vehiclesWithHost = vehicles.map(v => ({
+      ...v,
+      hostInfo: v.hostId ? {
+        id: hostsMap.get(v.hostId)?.id,
+        firstName: hostsMap.get(v.hostId)?.firstName,
+        lastName: hostsMap.get(v.hostId)?.lastName,
+        city: hostsMap.get(v.hostId)?.city,
+        state: hostsMap.get(v.hostId)?.state,
+      } : null,
+    }));
+    
+    res.json(vehiclesWithHost);
   });
 
   app.get("/api/vehicles/:id", async (req, res) => {

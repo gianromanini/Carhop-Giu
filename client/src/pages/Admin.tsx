@@ -7,16 +7,32 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Vehicle } from "@/components/VehicleCard";
 
+interface VehicleWithHost extends Vehicle {
+  hostInfo?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    city: string;
+    state: string;
+  } | null;
+}
+
 export default function Admin() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<VehicleWithHost | null>(null);
+  const [confirmationDialog, setConfirmationDialog] = useState<{ open: boolean; action: 'edit' | 'delete'; vehicle: VehicleWithHost | null }>({ 
+    open: false, 
+    action: 'edit', 
+    vehicle: null 
+  });
   const [formData, setFormData] = useState({
     name: "",
     category: "Economy",
@@ -29,10 +45,10 @@ export default function Admin() {
     fuelEfficient: false,
   });
 
-  const { data: vehicles = [], isLoading } = useQuery<Vehicle[]>({
-    queryKey: ["/api/admin/vehicles"],
+  const { data: vehicles = [], isLoading } = useQuery<VehicleWithHost[]>({
+    queryKey: ["/api/vehicles"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/vehicles");
+      const res = await fetch("/api/vehicles");
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },
@@ -40,7 +56,7 @@ export default function Admin() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/vehicles", {
+      const res = await apiRequest("POST", "/api/vehicles", {
         name: formData.name,
         category: formData.category,
         image: formData.image,
@@ -55,7 +71,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       toast({ title: "Vehicle created successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       setOpen(false);
       resetForm();
     },
@@ -66,7 +82,7 @@ export default function Admin() {
 
   const updateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("PUT", `/api/admin/vehicles/${id}`, {
+      const res = await apiRequest("PUT", `/api/vehicles/${id}`, {
         name: formData.name,
         category: formData.category,
         image: formData.image,
@@ -81,19 +97,21 @@ export default function Admin() {
     },
     onSuccess: () => {
       toast({ title: "Vehicle updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       setOpen(false);
       resetForm();
+      setConfirmationDialog({ open: false, action: 'edit', vehicle: null });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/vehicles/${id}`);
+      await apiRequest("DELETE", `/api/vehicles/${id}`);
     },
     onSuccess: () => {
       toast({ title: "Vehicle deleted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      setConfirmationDialog({ open: false, action: 'delete', vehicle: null });
     },
   });
 
@@ -112,20 +130,37 @@ export default function Admin() {
     setEditingVehicle(null);
   };
 
-  const handleEdit = (vehicle: Vehicle) => {
-    setEditingVehicle(vehicle);
-    setFormData({
-      name: vehicle.name,
-      category: vehicle.category,
-      image: vehicle.image,
-      pricePerDay: vehicle.pricePerDay.toString(),
-      payNowPrice: vehicle.payNowPrice.toString(),
-      mpg: vehicle.mpg.toString(),
-      passengers: vehicle.passengers.toString(),
-      luggage: vehicle.luggage.toString(),
-      fuelEfficient: vehicle.fuelEfficient,
-    });
-    setOpen(true);
+  const handleEdit = (vehicle: VehicleWithHost) => {
+    setConfirmationDialog({ open: true, action: 'edit', vehicle });
+  };
+
+  const proceedEdit = () => {
+    if (confirmationDialog.vehicle) {
+      setEditingVehicle(confirmationDialog.vehicle);
+      setFormData({
+        name: confirmationDialog.vehicle.name,
+        category: confirmationDialog.vehicle.category,
+        image: confirmationDialog.vehicle.image,
+        pricePerDay: confirmationDialog.vehicle.pricePerDay.toString(),
+        payNowPrice: confirmationDialog.vehicle.payNowPrice.toString(),
+        mpg: confirmationDialog.vehicle.mpg.toString(),
+        passengers: confirmationDialog.vehicle.passengers.toString(),
+        luggage: confirmationDialog.vehicle.luggage.toString(),
+        fuelEfficient: confirmationDialog.vehicle.fuelEfficient,
+      });
+      setOpen(true);
+      setConfirmationDialog({ open: false, action: 'edit', vehicle: null });
+    }
+  };
+
+  const handleDelete = (vehicle: VehicleWithHost) => {
+    setConfirmationDialog({ open: true, action: 'delete', vehicle });
+  };
+
+  const proceedDelete = () => {
+    if (confirmationDialog.vehicle) {
+      deleteMutation.mutate(confirmationDialog.vehicle.id);
+    }
   };
 
   const handleSubmit = () => {
@@ -272,6 +307,14 @@ export default function Admin() {
                     <p className="text-sm text-muted-foreground">
                       {vehicle.category} • {vehicle.mpg} MPG
                     </p>
+                    {vehicle.hostInfo && (
+                      <p className="text-sm mt-2 text-blue-600 dark:text-blue-400 font-medium">
+                        Host: {vehicle.hostInfo.firstName} {vehicle.hostInfo.lastName}
+                        {vehicle.hostInfo.city && vehicle.hostInfo.state && (
+                          <span className="text-muted-foreground ml-2">• {vehicle.hostInfo.city}, {vehicle.hostInfo.state}</span>
+                        )}
+                      </p>
+                    )}
                     <p className="text-sm mt-2">
                       ${vehicle.payNowPrice}/day (regular: ${vehicle.pricePerDay}) • {vehicle.passengers} passengers • {vehicle.luggage} bags
                     </p>
@@ -281,13 +324,15 @@ export default function Admin() {
                       variant="outline"
                       size="icon"
                       onClick={() => handleEdit(vehicle)}
+                      data-testid="button-edit-vehicle"
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
-                      onClick={() => deleteMutation.mutate(vehicle.id)}
+                      onClick={() => handleDelete(vehicle)}
+                      data-testid="button-delete-vehicle"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -298,6 +343,32 @@ export default function Admin() {
           ))}
         </div>
       )}
+
+      <AlertDialog open={confirmationDialog.open} onOpenChange={(open) => setConfirmationDialog({ ...confirmationDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm {confirmationDialog.action === 'edit' ? 'Edit' : 'Delete'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmationDialog.vehicle?.hostInfo ? (
+                <span>
+                  Este Veículo pertence ao Host <span className="font-semibold text-foreground">{confirmationDialog.vehicle.hostInfo.firstName} {confirmationDialog.vehicle.hostInfo.lastName}</span>, tem certeza que quer fazer alguma alteração?
+                </span>
+              ) : (
+                `Are you sure you want to ${confirmationDialog.action} this vehicle?`
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel data-testid="button-cancel-confirmation">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmationDialog.action === 'edit' ? proceedEdit : proceedDelete}
+              data-testid="button-confirm-action"
+            >
+              {confirmationDialog.action === 'edit' ? 'Edit Vehicle' : 'Delete Vehicle'}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
