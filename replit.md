@@ -113,3 +113,12 @@ Preferred communication style: Simple, everyday language.
 5. Adapted CarHopApp.tsx to use TanStack Query for data fetching
 6. Implemented complete booking lifecycle: checkout → payment → check-in → check-out
 7. Added admin dashboard with fleet management, bookings overview, and financial reporting
+8. Migrated to PostgreSQL database with data persistence
+9. Restored all 7 vehicles: Hyundai Elantra, Hyundai Kona, Subaru Impreza, Nissan Kicks, Kia Seltos, Ford Escape, Honda Accord
+
+## Important Price Configuration Requirement
+**CRITICAL FOR FUTURE IMPLEMENTATION:**
+- Price configuration will be **PER-VEHICLE** (not global)
+- Each vehicle will have its own individual pricing settings
+- Button label must be: **"Update Configuration"** (not "Save Settings")
+- Settings apply individually to each car in the fleet
