@@ -59,6 +59,13 @@ export const vehicles = pgTable("vehicles", {
   hostId: varchar("host_id"),
   commission: integer("commission").default(10),
   deductible: integer("deductible").default(1000),
+  pricing: jsonb("pricing").$type<{
+    taxes: number;
+    cleaningFee: number;
+    includedMiles: number;
+    extraMileRate: number;
+    prices: { insurance500: number; insurance1000: number; childSeat: number };
+  }>(),
   expenses: jsonb("expenses").$type<{
     lease: number;
     insurance: number;

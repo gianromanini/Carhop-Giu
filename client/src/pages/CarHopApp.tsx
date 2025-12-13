@@ -2417,6 +2417,94 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
+                      {/* Individual Vehicle Pricing Configuration */}
+                      <div className="mb-6 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-lg">
+                        <label className="block text-xs font-bold text-zinc-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
+                          <DollarSign size={14}/> Individual Price Configuration
+                        </label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Sales Tax (%)</label>
+                            <input 
+                              type="number" 
+                              step="0.1" 
+                              value={editingHostVehicle.pricing?.taxes ?? 8.5} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: parseFloat(e.target.value) || 0}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: 0}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-taxes"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Cleaning Fee ($)</label>
+                            <input 
+                              type="number" 
+                              value={editingHostVehicle.pricing?.cleaningFee ?? 25} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: parseFloat(e.target.value) || 0}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: 0}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-cleaning"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Included Miles/Day</label>
+                            <input 
+                              type="number" 
+                              value={editingHostVehicle.pricing?.includedMiles ?? 200} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: parseInt(e.target.value) || 0}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: 0}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-miles"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Extra Mile Rate ($)</label>
+                            <input 
+                              type="number" 
+                              step="0.01" 
+                              value={editingHostVehicle.pricing?.extraMileRate ?? 0.45} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: parseFloat(e.target.value) || 0}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: 0}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-extra-mile"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $500</label>
+                            <input 
+                              type="number" 
+                              value={editingHostVehicle.pricing?.prices?.insurance500 ?? 25} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: parseFloat(e.target.value) || 0}}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: 0}}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-ins500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $1000</label>
+                            <input 
+                              type="number" 
+                              value={editingHostVehicle.pricing?.prices?.insurance1000 ?? 15} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: parseFloat(e.target.value) || 0}}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: 0}}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-ins1000"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Child Seat Price</label>
+                            <input 
+                              type="number" 
+                              value={editingHostVehicle.pricing?.prices?.childSeat ?? 8} 
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: parseFloat(e.target.value) || 0}}} as Vehicle)}
+                              onKeyDown={(e) => {if(['Backspace', 'Delete'].includes(e.key)) { e.currentTarget.value = ''; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: 0}}} as Vehicle); }}}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              data-testid="input-vehicle-pricing-child-seat"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="flex gap-3">
                         <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
                         <Button variant="primary" className="flex-1" onClick={() => {
