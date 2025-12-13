@@ -1039,7 +1039,10 @@ export class DatabaseStorage implements IStorage {
 
   async setSetting(key: string, value: any): Promise<Settings> {
     if (!this.initialized) throw new Error("Database not initialized");
-    if (value === null || value === undefined) throw new Error(`Cannot set setting "${key}" to null or undefined`);
+    // Convert null/undefined to 0 for numeric settings
+    if (value === null || value === undefined) {
+      value = 0;
+    }
     try {
       const existing = await this.getSetting(key);
       if (existing) {
