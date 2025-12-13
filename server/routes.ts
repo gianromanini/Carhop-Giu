@@ -730,13 +730,22 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.patch("/api/hosts/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updates = req.body;
+      const { password, ...safeUpdates } = req.body;
+
+      // Build update object with only safe fields
+      const updates: any = {};
+      const allowedFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'status'];
+      
+      for (const field of allowedFields) {
+        if (field in safeUpdates) {
+          updates[field] = safeUpdates[field];
+        }
+      }
 
       // If password is being updated, hash it
-      if (updates.password) {
+      if (password) {
         const salt = await bcrypt.genSalt(10);
-        updates.passwordHash = await bcrypt.hash(updates.password, salt);
-        delete updates.password;
+        updates.passwordHash = await bcrypt.hash(password, salt);
       }
 
       const host = await storage.updateHost(id, updates);
