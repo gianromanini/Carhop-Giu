@@ -472,6 +472,7 @@ export default function CarHopApp() {
   const [hostVehicleImages, setHostVehicleImages] = useState<string[]>([]);
   const [hostNewLocation, setHostNewLocation] = useState('');
   const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
+  const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
   const settings: SettingsType = {
@@ -589,7 +590,15 @@ export default function CarHopApp() {
     setTimeout(() => { setIsSearching(false); const fleetSection = document.getElementById('fleet'); if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); }, 1500); 
   };
   
-  const handleViewDetails = (car: Vehicle) => { setViewCar(car); setView('car-details'); window.scrollTo(0, 0); };
+  const handleViewDetails = (car: Vehicle) => { 
+    setViewCar(car); 
+    setView('car-details'); 
+    const today = getTodayString();
+    const nextTime = getNext30MinSlot();
+    const returnDay = addDaysToDate(today, 3);
+    setCarDetailsBooking({ startDate: today, startTime: nextTime, endDate: returnDay, endTime: nextTime });
+    window.scrollTo(0, 0); 
+  };
   const handleImageClick = (src: string) => { setSelectedImage(src); };
 
   const handleLicenseUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -4712,52 +4721,99 @@ export default function CarHopApp() {
           </div>
         )}
 
-        {view === 'car-details' && viewCar && (
-          <div className="max-w-5xl mx-auto px-6 py-12">
-            <Button variant="ghost" onClick={() => setView('home')} className="mb-8"><ArrowLeft size={20} /> Back to Fleet</Button>
-            <div className="grid md:grid-cols-2 gap-8">
-              <ImageCarousel images={viewCar.images} />
-              <div>
-                <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
-                <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">{viewCar.model}</h1>
-                <div className="flex gap-4 text-sm text-zinc-500 mb-6">
-                  <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
-                  <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
-                  <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {viewCar.isAWD && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-3 py-1 rounded-full text-xs font-bold"><Mountain size={12} className="inline mr-1"/> AWD</span>}
-                  {viewCar.hasCarPlay && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Smartphone size={12} className="inline mr-1"/> CarPlay</span>}
-                  {viewCar.hasBluetooth && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Bluetooth size={12} className="inline mr-1"/> Bluetooth</span>}
-                  {viewCar.hasReverseCamera && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Camera size={12} className="inline mr-1"/> Reverse Camera</span>}
-                  {viewCar.hasHeatedSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Seats</span>}
-                  {viewCar.hasHeatedSteering && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Steering</span>}
-                  {viewCar.hasElectricSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Zap size={12} className="inline mr-1"/> Electric Seats</span>}
-                  {viewCar.hasPaddleShifters && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Navigation size={12} className="inline mr-1"/> Paddle Shifters</span>}
-                  {viewCar.hasKeylessEntry && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Lock size={12} className="inline mr-1"/> Keyless Entry</span>}
-                  {viewCar.hasBlindSpotWarning && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><AlertTriangle size={12} className="inline mr-1"/> Blind Spot Warning</span>}
-                  {viewCar.hasDriveAssist && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Activity size={12} className="inline mr-1"/> Drive Assist</span>}
-                  {viewCar.hasUSBCharger && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><BatteryCharging size={12} className="inline mr-1"/> USB Charger</span>}
-                </div>
-                <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
-                  <div className="flex justify-between items-end">
-                    <div><span className="text-zinc-500 text-sm">Starting at</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${viewCar.price}<span className="text-lg text-zinc-500">/day</span></div></div>
-                    <Button onClick={() => handleRent(viewCar)} className="px-8" data-testid="button-rent-detail">Book Now</Button>
+        {view === 'car-details' && viewCar && (() => {
+          const bookingDays = calculateBillingDays(carDetailsBooking.startDate, carDetailsBooking.startTime, carDetailsBooking.endDate, carDetailsBooking.endTime);
+          return (
+            <div className="max-w-5xl mx-auto px-6 py-12">
+              <Button variant="ghost" onClick={() => setView('home')} className="mb-8"><ArrowLeft size={20} /> Back to Fleet</Button>
+              <div className="grid md:grid-cols-2 gap-8">
+                <ImageCarousel images={viewCar.images} />
+                <div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
+                  <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">{viewCar.model}</h1>
+                  <div className="flex gap-4 text-sm text-zinc-500 mb-6">
+                    <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
+                    <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
+                    <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
                   </div>
-                </div>
-                {viewCar.isPriceMatch && (
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3">
-                    <DollarSign className="text-green-600" size={24}/>
-                    <div><h4 className="font-bold text-green-800 dark:text-green-400">Price Match Guarantee</h4><p className="text-xs text-green-600 dark:text-green-500">Find a lower price? We'll match it!</p></div>
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {viewCar.isAWD && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-3 py-1 rounded-full text-xs font-bold"><Mountain size={12} className="inline mr-1"/> AWD</span>}
+                    {viewCar.hasCarPlay && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Smartphone size={12} className="inline mr-1"/> CarPlay</span>}
+                    {viewCar.hasBluetooth && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Bluetooth size={12} className="inline mr-1"/> Bluetooth</span>}
+                    {viewCar.hasReverseCamera && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Camera size={12} className="inline mr-1"/> Reverse Camera</span>}
+                    {viewCar.hasHeatedSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Seats</span>}
+                    {viewCar.hasHeatedSteering && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Steering</span>}
+                    {viewCar.hasElectricSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Zap size={12} className="inline mr-1"/> Electric Seats</span>}
+                    {viewCar.hasPaddleShifters && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Navigation size={12} className="inline mr-1"/> Paddle Shifters</span>}
+                    {viewCar.hasKeylessEntry && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Lock size={12} className="inline mr-1"/> Keyless Entry</span>}
+                    {viewCar.hasBlindSpotWarning && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><AlertTriangle size={12} className="inline mr-1"/> Blind Spot Warning</span>}
+                    {viewCar.hasDriveAssist && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Activity size={12} className="inline mr-1"/> Drive Assist</span>}
+                    {viewCar.hasUSBCharger && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><BatteryCharging size={12} className="inline mr-1"/> USB Charger</span>}
                   </div>
-                )}
+
+                  {/* Booking Dates and Times */}
+                  <div className="space-y-4 mb-6 p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                    <h3 className="font-bold text-zinc-900 dark:text-white mb-4">Select Your Rental Dates</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Pickup Date</label>
+                        <input type="date" value={carDetailsBooking.startDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startDate: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="input-cardetail-startdate" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Pickup Time</label>
+                        <select value={carDetailsBooking.startTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startTime: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="select-cardetail-starttime">
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Return Date</label>
+                        <input type="date" value={carDetailsBooking.endDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endDate: e.target.value})} min={getMinReturnDate()} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="input-cardetail-enddate" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Return Time</label>
+                        <select value={carDetailsBooking.endTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endTime: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-sm" data-testid="select-cardetail-endtime">
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Mileage Info */}
+                    <div className="border-t border-zinc-300 dark:border-zinc-600 pt-4 mt-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-zinc-600 dark:text-zinc-300">Included Miles per Day:</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">{settings.includedMiles} miles/day</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-zinc-600 dark:text-zinc-300">Extra Mile Rate:</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">${settings.extraMileRate}/mile</span>
+                      </div>
+                      <div className="flex justify-between items-center text-green-600 dark:text-green-400">
+                        <span className="text-sm font-bold">Total Included Miles ({bookingDays} days):</span>
+                        <span className="font-bold">{settings.includedMiles * bookingDays} miles</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
+                    <div className="flex justify-between items-end">
+                      <div><span className="text-zinc-500 text-sm">Price for {bookingDays} day{bookingDays !== 1 ? 's' : ''}</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${(viewCar.price * bookingDays).toFixed(2)}<span className="text-lg text-zinc-500">/rental</span></div></div>
+                      <Button onClick={() => { setSearchParams({location: '', start: carDetailsBooking.startDate, startTime: carDetailsBooking.startTime, end: carDetailsBooking.endDate, endTime: carDetailsBooking.endTime}); handleRent(viewCar); }} className="px-8" data-testid="button-rent-detail">Book Now</Button>
+                    </div>
+                  </div>
+                  {viewCar.isPriceMatch && (
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3">
+                      <DollarSign className="text-green-600" size={24}/>
+                      <div><h4 className="font-bold text-green-800 dark:text-green-400">Price Match Guarantee</h4><p className="text-xs text-green-600 dark:text-green-500">Find a lower price? We'll match it!</p></div>
+                    </div>
+                  )}
+                </div>
               </div>
+              <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-16 pt-8 pb-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                Copyright © All Rights Reserved 2025
+              </footer>
             </div>
-            <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-16 pt-8 pb-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-              Copyright © All Rights Reserved 2025
-            </footer>
-          </div>
-        )}
+          );
+        })()}
       </main>
 
       {/* Photo Lightbox Modal */}
