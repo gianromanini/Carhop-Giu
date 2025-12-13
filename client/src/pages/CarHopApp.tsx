@@ -469,6 +469,7 @@ export default function CarHopApp() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
+  const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
 
   // Load vehicles with availability filter based on search dates
   const vehicleQueryKey = searchParams.start && searchParams.end 
@@ -2785,7 +2786,16 @@ export default function CarHopApp() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <Input label="Consumption / Range" name="consumption" value={formData.consumption} onChange={handleInputChange} placeholder="e.g. 300mi range" data-testid="input-vehicle-consumption" />
-                      <Input label="Category" name="category" value={formData.category} onChange={handleInputChange} placeholder="e.g. Sedan" required data-testid="input-vehicle-category" />
+                      <div className="mb-3">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
+                        <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-category">
+                          <option value="">Select Category</option>
+                          <option value="SEDAN">SEDAN</option>
+                          <option value="SUV">SUV</option>
+                          <option value="HATCHBACK">HATCHBACK</option>
+                          <option value="MINIVAN">MINIVAN</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="pt-2">
@@ -2900,7 +2910,7 @@ export default function CarHopApp() {
                             </div>
                             <div className="flex gap-1">
                               <button onClick={() => { setFormData({...car, images: car.images || []}); setEditingId(car.id); }} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors" data-testid={`button-edit-${car.id}`} title="Edit vehicle"><Edit size={14}/></button>
-                              <button onClick={() => deleteVehicleMutation.mutate(car.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors" data-testid={`button-delete-${car.id}`} title="Delete vehicle"><Trash2 size={14}/></button>
+                              <button onClick={() => setDeletingVehicleId(car.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors" data-testid={`button-delete-${car.id}`} title="Delete vehicle"><Trash2 size={14}/></button>
                             </div>
                           </div>
                         );
@@ -2908,6 +2918,20 @@ export default function CarHopApp() {
                     </div>
                   </Card>
 
+                </div>
+              </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deletingVehicleId !== null && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Vehicle?</h3>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to delete this vehicle? This action cannot be undone.</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancel</button>
+                    <button onClick={() => { deleteVehicleMutation.mutate(deletingVehicleId); setDeletingVehicleId(null); }} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors" data-testid="button-confirm-delete-vehicle">Yes, Delete</button>
+                  </div>
                 </div>
               </div>
             )}
