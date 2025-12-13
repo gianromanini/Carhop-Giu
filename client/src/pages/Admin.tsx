@@ -8,10 +8,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Vehicle } from "@/components/VehicleCard";
+
+interface Host {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  city?: string;
+  state?: string;
+  status: 'active' | 'inactive';
+  createdAt: Date;
+}
 
 interface VehicleWithHost extends Vehicle {
   hostInfo?: {
@@ -27,6 +41,7 @@ export default function Admin() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("vehicles");
   const [editingVehicle, setEditingVehicle] = useState<VehicleWithHost | null>(null);
   const [confirmationDialog, setConfirmationDialog] = useState<{ open: boolean; action: 'edit' | 'delete'; vehicle: VehicleWithHost | null }>({ 
     open: false, 
@@ -51,6 +66,30 @@ export default function Admin() {
       const res = await fetch("/api/vehicles");
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
+    },
+  });
+
+  const { data: hosts = [], isLoading: hostsLoading } = useQuery<Host[]>({
+    queryKey: ["/api/hosts"],
+    queryFn: async () => {
+      const res = await fetch("/api/hosts");
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+  });
+
+  const toggleHostStatus = useMutation({
+    mutationFn: async (host: Host) => {
+      const newStatus = host.status === 'active' ? 'inactive' : 'active';
+      const res = await apiRequest("PATCH", `/api/hosts/${host.id}`, { status: newStatus });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Host status updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/hosts"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to update host status", variant: "destructive" });
     },
   });
 
@@ -173,6 +212,13 @@ export default function Admin() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+          <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+          <TabsTrigger value="hosts">Hosts</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="vehicles">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-3xl font-bold">Vehicle Management</h1>
         <Dialog open={open} onOpenChange={(o) => {
@@ -343,6 +389,64 @@ export default function Admin() {
           ))}
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="hosts">
+          <div className="mb-6">
+            <h1 className="font-display text-3xl font-bold">Host Management</h1>
+          </div>
+
+          {hostsLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {hosts.map((host) => (
+                <Card key={host.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{host.firstName} {host.lastName}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {host.email} • {host.phone}
+                        </p>
+                        {host.city && host.state && (
+                          <p className="text-sm mt-2 text-muted-foreground">
+                            {host.city}, {host.state}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                            host.status === 'active' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          }`}>
+                            {host.status === 'active' ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {host.status === 'active' ? 'Deactivate' : 'Activate'}
+                          </span>
+                          <Switch
+                            checked={host.status === 'active'}
+                            onCheckedChange={() => toggleHostStatus.mutate(host)}
+                            disabled={toggleHostStatus.isPending}
+                            data-testid="switch-host-status"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={confirmationDialog.open} onOpenChange={(open) => setConfirmationDialog({ ...confirmationDialog, open })}>
         <AlertDialogContent>
