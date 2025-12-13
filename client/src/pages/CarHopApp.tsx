@@ -351,6 +351,7 @@ export default function CarHopApp() {
   const [adminTab, setAdminTab] = useState('fleet');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedHost, setSelectedHost] = useState<any>(null);
+  const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -952,6 +953,16 @@ export default function CarHopApp() {
     
     setAdjustment({ type: 'fixed', value: '' });
     alert(`Discount of $${discountAmount.toFixed(2)} applied successfully!`);
+  };
+
+  const handleDeleteBooking = (bookingId: string) => {
+    apiRequest('DELETE', `/api/bookings/${bookingId}`)
+      .then(() => {
+        setDeletingBookingId(null);
+        setManageBookingId(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      })
+      .catch(err => console.error('Error deleting booking:', err));
   };
 
   const handleAddCharge = async (booking: Booking) => {
@@ -3132,9 +3143,12 @@ export default function CarHopApp() {
                               <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
                               <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
                             </div>
-                            <div className="text-left sm:text-right text-[10px] sm:text-xs text-zinc-500">
-                              <div>{b.date}</div>
-                              <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-left sm:text-right text-[10px] sm:text-xs text-zinc-500">
+                                <div>{b.date}</div>
+                                <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
+                              </div>
+                              <button onClick={() => setDeletingBookingId(b.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-delete-booking">Delete Booking</button>
                             </div>
                           </div>
 
@@ -4156,6 +4170,19 @@ export default function CarHopApp() {
               )}
             </div>
             <Button variant="ghost" onClick={() => setView('home')} className="mt-8" data-testid="button-back-to-home"><ArrowLeft size={16}/> Back to Home</Button>
+          </div>
+        )}
+
+        {deletingBookingId && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999]">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 max-w-sm mx-4 border border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Delete Booking?</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Are you sure you want to delete this booking? This action cannot be undone and will permanently remove it from the database.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeletingBookingId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete">Cancel</button>
+                <button onClick={() => handleDeleteBooking(deletingBookingId)} className="flex-1 px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors" data-testid="button-confirm-delete">Delete</button>
+              </div>
+            </div>
           </div>
         )}
 
