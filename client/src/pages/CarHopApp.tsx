@@ -103,6 +103,28 @@ const getGasValue = (level: string) => {
   }
 };
 
+const getVehicleDescription = (model: string, category: string): string => {
+  const descriptions: Record<string, string> = {
+    'Toyota Camry': 'A reliable midsize sedan known for its comfort and fuel efficiency. Perfect for business trips or family getaways with excellent reliability.',
+    'Honda Civic': 'A compact and nimble sedan that combines style with practical performance. Ideal for urban exploration with responsive handling and great gas mileage.',
+    'BMW X5': 'A luxury SUV combining premium comfort with powerful performance. Experience sophistication and advanced technology for every journey.',
+    'Tesla Model 3': 'A cutting-edge electric sedan offering zero-emission driving with impressive acceleration. Enjoy advanced autopilot features and minimal maintenance.',
+    'Ford F-150': 'A powerful pickup truck built for capability and comfort. Perfect for those needing cargo space and towing power without sacrificing interior quality.',
+    'Jeep Wrangler': 'An iconic SUV engineered for adventure. Go where most vehicles can\'t while enjoying rugged durability and open-air freedom.',
+    'Audi A4': 'A sophisticated sedan that blends German engineering with understated luxury. Enjoy premium materials and smooth performance on every drive.',
+    'Mazda CX-5': 'A sleek crossover SUV offering sportiness with practicality. Excellent handling and fuel efficiency in a versatile family package.',
+    'Chevrolet Equinox': 'A versatile midsize SUV providing spacious comfort and reliable performance. Great for families needing room and dependability.',
+    'Hyundai Elantra': 'An affordable and stylish compact sedan with modern features. Perfect for budget-conscious travelers without compromising quality.',
+    'Volkswagen Jetta': 'A European-inspired compact sedan with excellent driving dynamics. Offers refined comfort and efficiency for savvy travelers.',
+    'Nissan Altima': 'A spacious midsize sedan balancing comfort and performance. Known for reliability and a smooth, quiet ride.',
+    'Kia Sportage': 'A compact SUV combining style with smart technology. Perfect for those seeking an affordable crossover with modern features.',
+    'Honda Accord': 'A legendary midsize sedan recognized for durability and value. Offers a perfect blend of power, comfort, and efficiency.',
+    'Toyota Highlander': 'A three-row SUV designed for families who need space and power. Seats up to 8 with the reliability Toyota is known for.'
+  };
+  
+  return descriptions[model] || `A ${category.toLowerCase()} that offers comfortable and reliable transportation. Perfect for your next adventure with quality and style.`;
+};
+
 const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -4731,25 +4753,12 @@ export default function CarHopApp() {
                 <div>
                   <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
                   <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">{viewCar.model}</h1>
-                  <div className="flex gap-4 text-sm text-zinc-500 mb-6">
+                  <div className="flex gap-4 text-sm text-zinc-500 mb-4">
                     <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
                     <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
                     <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
                   </div>
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {viewCar.isAWD && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-3 py-1 rounded-full text-xs font-bold"><Mountain size={12} className="inline mr-1"/> AWD</span>}
-                    {viewCar.hasCarPlay && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Smartphone size={12} className="inline mr-1"/> CarPlay</span>}
-                    {viewCar.hasBluetooth && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Bluetooth size={12} className="inline mr-1"/> Bluetooth</span>}
-                    {viewCar.hasReverseCamera && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Camera size={12} className="inline mr-1"/> Reverse Camera</span>}
-                    {viewCar.hasHeatedSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Seats</span>}
-                    {viewCar.hasHeatedSteering && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Thermometer size={12} className="inline mr-1"/> Heated Steering</span>}
-                    {viewCar.hasElectricSeats && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Zap size={12} className="inline mr-1"/> Electric Seats</span>}
-                    {viewCar.hasPaddleShifters && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Navigation size={12} className="inline mr-1"/> Paddle Shifters</span>}
-                    {viewCar.hasKeylessEntry && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Lock size={12} className="inline mr-1"/> Keyless Entry</span>}
-                    {viewCar.hasBlindSpotWarning && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><AlertTriangle size={12} className="inline mr-1"/> Blind Spot Warning</span>}
-                    {viewCar.hasDriveAssist && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><Activity size={12} className="inline mr-1"/> Drive Assist</span>}
-                    {viewCar.hasUSBCharger && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-3 py-1 rounded-full text-xs font-bold"><BatteryCharging size={12} className="inline mr-1"/> USB Charger</span>}
-                  </div>
+                  <p className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed mb-6" data-testid="text-car-description">{getVehicleDescription(viewCar.model, viewCar.category)}</p>
 
                   {/* Booking Dates and Times */}
                   <div className="space-y-4 mb-6 p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
