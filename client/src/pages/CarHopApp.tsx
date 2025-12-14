@@ -1171,7 +1171,7 @@ export default function CarHopApp() {
     updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== locToRemove) });
   };
 
-  if (vehiclesLoading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600"><Loader className="animate-spin" size={32} /> Loading CarHop...</div>;
+  if (vehiclesLoading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600"><Loader className="animate-spin" size={32} /> Loading CarHopGo...</div>;
 
   return (
     <div className={darkMode ? "dark" : ""}>
@@ -1182,7 +1182,7 @@ export default function CarHopApp() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')} data-testid="link-home">
             <div className="bg-green-600 p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white" size={20} /></div>
-            <span className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop</span>
+            <span className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300">
             <div className="flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>(475) 449-8622</span></div>
@@ -1254,7 +1254,7 @@ export default function CarHopApp() {
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
             <button onClick={() => setShowLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-modal"><X size={20}/></button>
             
-            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Sign In to CarHop</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Sign In to CarHop<span className="text-green-600">Go</span></h2>
             
             <div className="space-y-3 mb-6">
               <Button 
