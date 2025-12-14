@@ -2699,7 +2699,19 @@ export default function CarHopApp() {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {vehicles.filter(car => !searchParams.location || !car.availableLocations || car.availableLocations.length === 0 || car.availableLocations.includes(searchParams.location)).map((car) => (
+                {vehicles.filter(car => {
+                  // If no location selected, show all vehicles
+                  if (!searchParams.location) return true;
+                  
+                  // If vehicle has no availableLocations (old data), show it
+                  if (!car.availableLocations) return true;
+                  
+                  // If vehicle has empty availableLocations array, show it
+                  if (car.availableLocations.length === 0) return true;
+                  
+                  // Otherwise, only show if location is in availableLocations
+                  return car.availableLocations.includes(searchParams.location);
+                }).map((car) => (
                   <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
                       <div className="relative overflow-hidden rounded-t-lg">
