@@ -329,7 +329,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}} };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -340,6 +340,35 @@ interface SettingsType {
   extraMileRate: number;
   prices: { insurance500: number; insurance1000: number; childSeat: number };
   locations: string[];
+}
+
+interface FormDataType {
+  model: string;
+  category: string;
+  price: string;
+  fuel: string;
+  seats: number;
+  transmission: string;
+  driveType: string;
+  images: string[];
+  consumption: string;
+  isPriceMatch: boolean;
+  isAWD: boolean;
+  hasCarPlay: boolean;
+  hasBluetooth: boolean;
+  hasReverseCamera: boolean;
+  hasHeatedSeats: boolean;
+  hasHeatedSteering: boolean;
+  hasElectricSeats: boolean;
+  hasPaddleShifters: boolean;
+  hasKeylessEntry: boolean;
+  hasBlindSpotWarning: boolean;
+  hasDriveAssist: boolean;
+  hasUSBCharger: boolean;
+  commission: number;
+  deductible: number;
+  availableLocations: string[];
+  pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number } };
 }
 
 export default function CarHopApp() {
@@ -466,7 +495,7 @@ export default function CarHopApp() {
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
@@ -1088,6 +1117,7 @@ export default function CarHopApp() {
       hasBlindSpotWarning: formData.hasBlindSpotWarning,
       hasDriveAssist: formData.hasDriveAssist,
       hasUSBCharger: formData.hasUSBCharger,
+      availableLocations: formData.availableLocations || [],
       pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}
     };
 
@@ -1124,6 +1154,7 @@ export default function CarHopApp() {
       hasUSBCharger: car.hasUSBCharger || false,
       commission: car.commission || 10,
       deductible: car.deductible || 1000,
+      availableLocations: car.availableLocations || [],
       pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}},
     });
     setEditingId(car.id);
@@ -2668,7 +2699,7 @@ export default function CarHopApp() {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {vehicles.map((car) => (
+                {vehicles.filter(car => !searchParams.location || !car.availableLocations || car.availableLocations.length === 0 || car.availableLocations.includes(searchParams.location)).map((car) => (
                   <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
                       <div className="relative overflow-hidden rounded-t-lg">
@@ -2797,6 +2828,18 @@ export default function CarHopApp() {
                           <option value="HATCHBACK">HATCHBACK</option>
                           <option value="MINIVAN">MINIVAN</option>
                         </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
+                      <div className="space-y-1">
+                        {settings.locations.map(loc => (
+                          <Checkbox key={loc} label={loc} checked={formData.availableLocations?.includes(loc)} onChange={(e: any) => {
+                            const current = formData.availableLocations || [];
+                            setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
+                          }} />
+                        ))}
                       </div>
                     </div>
 

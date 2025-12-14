@@ -26,6 +26,7 @@ Preferred communication style: Simple, everyday language.
 
 **Key Features:**
 - Vehicle browsing with fuel-saver filter
+- Location-based vehicle filtering (select location to see available cars)
 - Multi-step checkout flow with driver verification
 - License photo upload system
 - Check-in/check-out workflow with mileage and fuel tracking
@@ -37,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 **Technology Stack:**
 - **Runtime**: Node.js with TypeScript
 - **Framework**: Express.js
-- **Storage**: In-memory storage with mock data (ready for PostgreSQL)
+- **Storage**: PostgreSQL database with Drizzle ORM
 - **Validation**: Zod schemas with drizzle-zod integration
 
 **API Endpoints:**
@@ -61,8 +62,10 @@ Preferred communication style: Simple, everyday language.
 
 **Vehicles:**
 - model, category, price, fuel, seats, transmission
+- availableLocations: string[] (locations where vehicle is available)
 - Feature flags: isAWD, hasCarPlay, hasBluetooth, hasReverseCamera, etc.
 - expenses (JSONB): lease, insurance, carWash, maintenance, trackApp, downPayment
+- pricing (JSONB): per-vehicle pricing configuration
 
 **Bookings:**
 - bookingCode, status (Active/Extended/Completed)
@@ -76,14 +79,14 @@ Preferred communication style: Simple, everyday language.
 **Settings:**
 - taxes, cleaningFee, includedMiles, extraMileRate
 - prices (insurance500, insurance1000, childSeat)
-- locations (array)
+- locations (array of available pickup/return locations)
 
 ### Storage Pattern
 
 **Interface-based design (`server/storage.ts`):**
 - `IStorage` interface for flexibility
-- `MemStorage` implementation with pre-populated mock data
-- Ready for database migration to PostgreSQL via Drizzle ORM
+- Database implementation with PostgreSQL via Drizzle ORM
+- Full data persistence
 
 ### Build System
 
@@ -100,7 +103,7 @@ Preferred communication style: Simple, everyday language.
 ### Configuration Files
 
 - `shared/schema.ts` - Database schema definitions with Zod validation
-- `server/storage.ts` - Storage layer with in-memory implementation
+- `server/storage.ts` - Storage layer with database implementation
 - `server/routes.ts` - Express API routes
 - `client/src/pages/CarHopApp.tsx` - Main application component
 
@@ -108,26 +111,20 @@ Preferred communication style: Simple, everyday language.
 
 1. Migrated from Firebase to Express/TanStack Query architecture
 2. Created comprehensive database schema for vehicles, bookings, and settings
-3. Implemented in-memory storage with mock booking and vehicle data
+3. Implemented database storage with PostgreSQL
 4. Built RESTful API routes for all CRUD operations
 5. Adapted CarHopApp.tsx to use TanStack Query for data fetching
 6. Implemented complete booking lifecycle: checkout → payment → check-in → check-out
 7. Added admin dashboard with fleet management, bookings overview, and financial reporting
-8. Migrated to PostgreSQL database with data persistence
-9. Restored all 7 vehicles: Hyundai Elantra, Hyundai Kona, Subaru Impreza, Nissan Kicks, Kia Seltos, Ford Escape, Honda Accord
-10. **Mobile Responsiveness Improvements (Dec 14):**
-    - Reduced "Book Now" button and price sizing for small screens (iPhone SE)
-    - Fleet price: `text-base sm:text-xl` (from `text-lg sm:text-2xl`)
-    - Fleet button: Added `text-xs sm:text-sm py-2 sm:py-3` for compact mobile
-    - Detail page: Price `text-2xl sm:text-4xl` (from `text-4xl`)
-    - Detail page: Button layout changed to flex-col on mobile, flex-row on desktop
-11. **Hero Section Text Updates:**
-    - Changed "Up to $39/Day" → "Starting from $39/Day"
-    - Reduced "Price Match Guarantee" badge spacing: `mb-1 sm:mb-2` (from `mb-3 sm:mb-4`)
+8. **Location-Based Vehicle Filtering (Dec 14):**
+   - Added `availableLocations` field to vehicles schema
+   - Admin can select which locations each vehicle is available at
+   - Home page filters fleet based on selected location
+   - Vehicles without location restrictions appear for all locations
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
-- Price configuration will be **PER-VEHICLE** (not global)
-- Each vehicle will have its own individual pricing settings
-- Button label must be: **"Update Configuration"** (not "Save Settings")
+- Price configuration is **PER-VEHICLE**
+- Each vehicle has its own individual pricing settings via `pricing` JSONB field
+- Button label: **"Update Configuration"** (not "Save Settings")
 - Settings apply individually to each car in the fleet
