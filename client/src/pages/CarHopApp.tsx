@@ -272,10 +272,10 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/95 text-white text-[10px] p-3 rounded-lg shadow-xl z-20 w-36 backdrop-blur-sm border border-zinc-700">
                   <div className="font-bold text-sm border-b border-zinc-700 pb-1 mb-1 text-center">{label}</div>
-                  <div className="flex justify-between"><span className="text-orange-400">Expenses:</span> <span>${expenses.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                  <div className="flex justify-between"><span className="text-green-400">Revenue:</span> <span>${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                  <div className="flex justify-between"><span className="text-purple-400">Pending:</span> <span>${pending.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
-                  <div className="flex justify-between font-bold border-t border-zinc-700 pt-1 mt-1"><span className={net >= 0 ? 'text-green-400' : 'text-red-400'}>Net:</span> <span>${net.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-orange-400">Expenses:</span> <span>${expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-green-400">Revenue:</span> <span>${gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-purple-400">Pending:</span> <span>${pending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between font-bold border-t border-zinc-700 pt-1 mt-1"><span className={net >= 0 ? 'text-green-400' : 'text-red-400'}>Net:</span> <span>${net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
                 </div>
                 
                 {/* Vertical stacked bar */}
@@ -3793,7 +3793,7 @@ export default function CarHopApp() {
                     </h3>
                     <div className="text-right">
                       <span className="text-xs text-zinc-500">Monthly Fleet Fixed Cost: </span>
-                      <span className="text-sm font-bold text-orange-500">${(financialData?.fixedMonthly || 0).toLocaleString()}</span>
+                      <span className="text-sm font-bold text-orange-500">${(financialData?.fixedMonthly || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                   </div>
                   
@@ -3801,7 +3801,7 @@ export default function CarHopApp() {
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-green-900/20 p-4 rounded-xl border border-green-800/30">
                       <div className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Total Gross Revenue</div>
-                      <div className="text-3xl font-bold text-green-500">${Object.values(financialData?.monthly || {}).reduce((sum: number, m: any) => sum + (m.gross || 0) + (m.pending || 0), 0).toLocaleString()}</div>
+                      <div className="text-3xl font-bold text-green-500">${Object.values(financialData?.monthly || {}).reduce((sum: number, m: any) => sum + (m.gross || 0) + (m.pending || 0), 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
                     <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700/30">
                       <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Completed Trips</div>
