@@ -2677,8 +2677,8 @@ export default function CarHopApp() {
                         <div className="flex justify-between items-start mb-3 gap-2">
                           <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate flex-1" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
                           <div className="text-right flex-shrink-0">
-                            <div className="text-lg sm:text-2xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
-                            <div className="text-[10px] sm:text-xs text-zinc-500">/day</div>
+                            <div className="text-base sm:text-xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
+                            <div className="text-[9px] sm:text-xs text-zinc-500">/day</div>
                           </div>
                         </div>
                         <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-4 flex-wrap">
@@ -2692,7 +2692,7 @@ export default function CarHopApp() {
                           <span className="flex items-center gap-1"><Gauge size={14}/> {car.consumption}</span>
                           <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
                         </div>
-                        <Button className="w-full" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Book Now</Button>
+                        <Button className="w-full text-xs sm:text-sm py-2 sm:py-3" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-${car.id}`}>Book Now</Button>
                       </div>
                     </Card>
                   </div>
@@ -5028,10 +5028,10 @@ export default function CarHopApp() {
                     </div>
                   </div>
 
-                  <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
-                    <div className="flex justify-between items-end">
-                      <div><span className="text-zinc-500 text-sm">Price for {bookingDays} day{bookingDays !== 1 ? 's' : ''}</span><div className="text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${(viewCar.price * bookingDays).toFixed(2)}</div></div>
-                      <Button onClick={() => { setSearchParams({location: '', start: carDetailsBooking.startDate, startTime: carDetailsBooking.startTime, end: carDetailsBooking.endDate, endTime: carDetailsBooking.endTime}); handleRent(viewCar); }} className="px-8" data-testid="button-rent-detail">Book Now</Button>
+                  <div className="p-4 sm:p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                      <div><span className="text-zinc-500 text-xs sm:text-sm">Price for {bookingDays} day{bookingDays !== 1 ? 's' : ''}</span><div className="text-2xl sm:text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${(viewCar.price * bookingDays).toFixed(2)}</div></div>
+                      <Button onClick={() => { setSearchParams({location: '', start: carDetailsBooking.startDate, startTime: carDetailsBooking.startTime, end: carDetailsBooking.endDate, endTime: carDetailsBooking.endTime}); handleRent(viewCar); }} className="px-4 sm:px-8 py-2 sm:py-3 text-xs sm:text-sm w-full sm:w-auto" data-testid="button-rent-detail">Book Now</Button>
                     </div>
                   </div>
                   {viewCar.isPriceMatch && (
