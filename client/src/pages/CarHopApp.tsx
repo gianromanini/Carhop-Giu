@@ -380,6 +380,7 @@ export default function CarHopApp() {
   const [adminTab, setAdminTab] = useState('fleet');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedHost, setSelectedHost] = useState<any>(null);
+  const [selectedHostCarCommission, setSelectedHostCarCommission] = useState<any>(null);
   const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
@@ -3267,15 +3268,22 @@ export default function CarHopApp() {
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Host Vehicles ({vehicles.filter(v => v.hostId === String(selectedHost.id)).length})</h4>
                             <div className="space-y-2">
-                              {vehicles.filter(v => v.hostId === String(selectedHost.id)).map(car => (
-                                <div key={car.id} className="flex items-center gap-3 p-2 bg-zinc-900 rounded-lg">
-                                  <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded" />
-                                  <div className="flex-1">
-                                    <p className="text-sm font-bold text-white">{car.model}</p>
-                                    <p className="text-xs text-zinc-500">${car.price}/day | {car.commission || 10}% commission</p>
+                              {vehicles.filter(v => v.hostId === String(selectedHost.id)).map(car => {
+                                const carBookings = bookings.filter(b => b.carId === car.id && b.status === 'Completed');
+                                const grossRevenue = carBookings.reduce((sum, b) => sum + (b.total || 0), 0);
+                                const commissionEarned = (grossRevenue * (car.commission || 10)) / 100;
+                                const hostNetProfit = grossRevenue - commissionEarned;
+                                return (
+                                  <div key={car.id} onClick={() => setSelectedHostCarCommission({ car, host: selectedHost, trips: carBookings.length, grossRevenue, commissionEarned, hostNetProfit })} className="flex items-center gap-3 p-2 bg-zinc-900 rounded-lg cursor-pointer hover:bg-zinc-800 hover:border-green-500/50 border border-zinc-800 transition-all">
+                                    <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded" />
+                                    <div className="flex-1">
+                                      <p className="text-sm font-bold text-white">{car.model}</p>
+                                      <p className="text-xs text-zinc-500">${car.price}/day | {car.commission || 10}% commission | {carBookings.length} trips</p>
+                                    </div>
+                                    <ChevronRight size={16} className="text-zinc-500" />
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                               {vehicles.filter(v => v.hostId === String(selectedHost.id)).length === 0 && (
                                 <p className="text-xs text-zinc-500">No vehicles registered</p>
                               )}
@@ -3958,10 +3966,108 @@ export default function CarHopApp() {
                     </div>
                   </Card>
                 </div>
+                
+                {/* Host Earning Commission Section */}
+                <Card className="p-6">
+                  <h3 className="text-base font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Wallet size={18}/> Host Earning Commission
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {bookings.reduce((acc: any[], b) => {
+                      if (b.status !== 'Completed') return acc;
+                      const vehicle = vehicles.find(v => v.id === b.carId);
+                      if (!vehicle?.hostId) return acc;
+                      const existingHost = acc.find(h => h.hostId === vehicle.hostId);
+                      if (existingHost) {
+                        existingHost.total += b.total;
+                        existingHost.trips += 1;
+                      } else {
+                        const host = hosts.find(h => h.id === parseInt(vehicle.hostId));
+                        acc.push({ hostId: vehicle.hostId, hostName: host?.firstName + ' ' + host?.lastName, vehicle: vehicle.model, commission: vehicle.commission || 10, total: b.total, trips: 1 });
+                      }
+                      return acc;
+                    }, []).map((item, idx) => {
+                      const commissionEarned = (item.total * item.commission) / 100;
+                      const hostNetProfit = item.total - commissionEarned;
+                      return (
+                        <div key={idx} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-bold text-white">{item.hostName} - {item.vehicle}</p>
+                              <p className="text-xs text-zinc-500">{item.trips} completed trip{item.trips !== 1 ? 's' : ''}</p>
+                            </div>
+                            <span className="text-xs font-bold px-2 py-1 bg-green-900/30 border border-green-700 text-green-400 rounded">{item.commission}%</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3 mt-3">
+                            <div>
+                              <div className="text-[9px] text-zinc-500 uppercase font-bold">Gross Revenue</div>
+                              <div className="text-sm font-bold text-green-500">${item.total.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] text-orange-500 uppercase font-bold">CarHop Commission</div>
+                              <div className="text-sm font-bold text-orange-500">${commissionEarned.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] text-blue-400 uppercase font-bold">Host Net Profit</div>
+                              <div className="text-sm font-bold text-blue-400">${hostNetProfit.toFixed(2)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {bookings.filter(b => b.status === 'Completed').length === 0 && (
+                      <p className="text-xs text-zinc-500 text-center py-4">No completed trips yet</p>
+                    )}
+                  </div>
+                </Card>
               </div>
             )}
 
                       </div>
+        )}
+
+        {selectedHostCarCommission && (
+          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="flex justify-between items-center p-6 border-b border-zinc-200 dark:border-zinc-800">
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Vehicle Commission</h2>
+                <button onClick={() => setSelectedHostCarCommission(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Vehicle Info */}
+                <div className="flex gap-4 items-start">
+                  <img src={selectedHostCarCommission.car.images?.[0]} alt={selectedHostCarCommission.car.model} className="w-24 h-20 object-cover rounded-lg" />
+                  <div>
+                    <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{selectedHostCarCommission.car.model}</h3>
+                    <p className="text-xs text-zinc-500">${selectedHostCarCommission.car.price}/day</p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">{selectedHostCarCommission.host.firstName} {selectedHostCarCommission.host.lastName}</p>
+                  </div>
+                </div>
+                
+                {/* Commission Details */}
+                <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-600 dark:text-zinc-400">Number of Trips</span>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-white">{selectedHostCarCommission.trips}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-600 dark:text-zinc-400">Gross Revenue Total</span>
+                    <span className="text-sm font-bold text-green-600">${selectedHostCarCommission.grossRevenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-600 dark:text-zinc-400">CarHop Commission ({selectedHostCarCommission.car.commission}%)</span>
+                    <span className="text-sm font-bold text-orange-600">${selectedHostCarCommission.commissionEarned.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-800 pt-3 mt-3">
+                    <span className="text-base font-bold text-zinc-900 dark:text-white">Host Net Profit</span>
+                    <span className="text-base font-bold text-blue-600">${selectedHostCarCommission.hostNetProfit.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {showCarRentalModal && (
