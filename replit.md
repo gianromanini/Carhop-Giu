@@ -115,6 +115,15 @@ Preferred communication style: Simple, everyday language.
 7. Added admin dashboard with fleet management, bookings overview, and financial reporting
 8. Migrated to PostgreSQL database with data persistence
 9. Restored all 7 vehicles: Hyundai Elantra, Hyundai Kona, Subaru Impreza, Nissan Kicks, Kia Seltos, Ford Escape, Honda Accord
+10. **Mobile Responsiveness Improvements (Dec 14):**
+    - Reduced "Book Now" button and price sizing for small screens (iPhone SE)
+    - Fleet price: `text-base sm:text-xl` (from `text-lg sm:text-2xl`)
+    - Fleet button: Added `text-xs sm:text-sm py-2 sm:py-3` for compact mobile
+    - Detail page: Price `text-2xl sm:text-4xl` (from `text-4xl`)
+    - Detail page: Button layout changed to flex-col on mobile, flex-row on desktop
+11. **Hero Section Text Updates:**
+    - Changed "Up to $39/Day" → "Starting from $39/Day"
+    - Reduced "Price Match Guarantee" badge spacing: `mb-1 sm:mb-2` (from `mb-3 sm:mb-4`)
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**

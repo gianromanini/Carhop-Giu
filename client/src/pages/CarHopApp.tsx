@@ -1124,6 +1124,7 @@ export default function CarHopApp() {
       hasUSBCharger: car.hasUSBCharger || false,
       commission: car.commission || 10,
       deductible: car.deductible || 1000,
+      pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}},
     });
     setEditingId(car.id);
   };
@@ -2617,8 +2618,8 @@ export default function CarHopApp() {
               <div className="absolute inset-0 bg-black/40 z-10"></div>
               <div className="relative z-20 max-w-7xl w-full px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start lg:items-center">
                 <div className="text-left pt-6 sm:pt-0">
-                  <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-3 sm:mb-4">Price Match Guarantee</span>
-                  <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-3 sm:mb-4" data-testid="text-hero-title">The Best price rental in Fairfield County <br/><span className="text-green-500">Up to $39/Day</span></h1>
+                  <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2">Price Match Guarantee</span>
+                  <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-3 sm:mb-4" data-testid="text-hero-title">The Best price rental in Fairfield County <br/><span className="text-green-500">Starting from $39/Day</span></h1>
                   <p className="text-xs sm:text-base lg:text-lg text-zinc-200 max-w-xl mb-6 sm:mb-8">Premium vehicles at unbeatable prices. Book your ride in just 3 simple steps.</p>
                 </div>
                 <Card className="p-4 sm:p-6 bg-white/95 dark:bg-zinc-900/95 backdrop-blur w-full">
@@ -2910,7 +2911,7 @@ export default function CarHopApp() {
                               <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-500 font-semibold">@{hostOwner.username}</span>}</p>
                             </div>
                             <div className="flex gap-1">
-                              <button onClick={() => { setFormData({...car, images: car.images || []}); setEditingId(car.id); }} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors" data-testid={`button-edit-${car.id}`} title="Edit vehicle"><Edit size={14}/></button>
+                              <button onClick={() => handleEditVehicle(car)} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors" data-testid={`button-edit-${car.id}`} title="Edit vehicle"><Edit size={14}/></button>
                               <button onClick={() => setDeletingVehicleId(car.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors" data-testid={`button-delete-${car.id}`} title="Delete vehicle"><Trash2 size={14}/></button>
                             </div>
                           </div>
