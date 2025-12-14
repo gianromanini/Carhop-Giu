@@ -540,6 +540,8 @@ export class MemStorage implements IStorage {
       hostId: vehicle.hostId ?? null,
       commission: vehicle.commission ?? 10,
       deductible: vehicle.deductible ?? 1000,
+      availableLocations: vehicle.availableLocations ?? [],
+      pricing: vehicle.pricing ?? null,
     };
     this.vehicles.set(id, newVehicle);
     return newVehicle;
