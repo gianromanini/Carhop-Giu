@@ -882,7 +882,7 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: string, updates: Partial<UpsertUser>): Promise<User | undefined> {
     if (!this.initialized) return undefined;
     try {
-      const { createdAt, passwordHash, id: _, ...safeUpdates } = updates as any;
+      const { createdAt, updatedAt, passwordHash, id: _, ...safeUpdates } = updates as any;
       const result = await this.db.update(users).set(safeUpdates).where(eq(users.id, id)).returning();
       return result[0];
     } catch (error) {
