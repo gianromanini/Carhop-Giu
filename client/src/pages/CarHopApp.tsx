@@ -1537,8 +1537,8 @@ export default function CarHopApp() {
       )}
 
       {showHostRegisterModal && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 my-4">
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md sm:max-w-xl md:max-w-2xl p-4 sm:p-6 md:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 my-2 sm:my-4">
             <button onClick={() => setShowHostRegisterModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-host-register-modal"><X size={20}/></button>
             
             {hostRegisterMessage ? (
@@ -1555,10 +1555,10 @@ export default function CarHopApp() {
               </div>
             ) : (
               <>
-                <div className="text-center mb-6">
-                  <Building2 size={32} className="mx-auto mb-2 text-green-500" />
-                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Become a Host</h2>
-                  <p className="text-sm text-zinc-500 mt-1">Register to list your vehicles and earn money</p>
+                <div className="text-center mb-4 sm:mb-6">
+                  <Building2 size={28} className="mx-auto mb-2 text-green-500" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white">Become a Host</h2>
+                  <p className="text-xs sm:text-sm text-zinc-500 mt-1">Register to list your vehicles and earn money</p>
                 </div>
                 
                 <form onSubmit={async (e) => {
@@ -1600,35 +1600,35 @@ export default function CarHopApp() {
                   } catch (err) {
                     alert('Error registering');
                   }
-                }} className="space-y-4">
-                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Personal Information</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" value={hostRegisterForm.firstName} onChange={(e) => setHostRegisterForm({...hostRegisterForm, firstName: e.target.value})} placeholder="First Name *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-first-name" />
-                      <input type="text" value={hostRegisterForm.lastName} onChange={(e) => setHostRegisterForm({...hostRegisterForm, lastName: e.target.value})} placeholder="Last Name *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-last-name" />
+                }} className="space-y-3 sm:space-y-4">
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Personal Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                      <input type="text" value={hostRegisterForm.firstName} onChange={(e) => setHostRegisterForm({...hostRegisterForm, firstName: e.target.value})} placeholder="First Name *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-first-name" />
+                      <input type="text" value={hostRegisterForm.lastName} onChange={(e) => setHostRegisterForm({...hostRegisterForm, lastName: e.target.value})} placeholder="Last Name *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-last-name" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                      <input type="email" value={hostRegisterForm.email} onChange={(e) => setHostRegisterForm({...hostRegisterForm, email: e.target.value})} placeholder="Email *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-email" />
-                      <input type="tel" value={hostRegisterForm.phone} onChange={(e) => setHostRegisterForm({...hostRegisterForm, phone: e.target.value})} placeholder="Phone *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-phone" />
-                    </div>
-                  </div>
-
-                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Address</h3>
-                    <input type="text" value={hostRegisterForm.address} onChange={(e) => setHostRegisterForm({...hostRegisterForm, address: e.target.value})} placeholder="Street Address" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-address" />
-                    <div className="grid grid-cols-3 gap-3">
-                      <input type="text" value={hostRegisterForm.city} onChange={(e) => setHostRegisterForm({...hostRegisterForm, city: e.target.value})} placeholder="City" className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-city" />
-                      <input type="text" value={hostRegisterForm.state} onChange={(e) => setHostRegisterForm({...hostRegisterForm, state: e.target.value})} placeholder="State" maxLength={2} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-state" />
-                      <input type="text" value={hostRegisterForm.zipCode} onChange={(e) => setHostRegisterForm({...hostRegisterForm, zipCode: e.target.value})} placeholder="ZIP Code" className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-zip" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-2 sm:mt-3">
+                      <input type="email" value={hostRegisterForm.email} onChange={(e) => setHostRegisterForm({...hostRegisterForm, email: e.target.value})} placeholder="Email *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-email" />
+                      <input type="tel" value={hostRegisterForm.phone} onChange={(e) => setHostRegisterForm({...hostRegisterForm, phone: e.target.value})} placeholder="Phone *" required className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-phone" />
                     </div>
                   </div>
 
-                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Driver's License</h3>
-                    <input type="text" value={hostRegisterForm.licenseNumber} onChange={(e) => setHostRegisterForm({...hostRegisterForm, licenseNumber: e.target.value})} placeholder="License Number *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-license" />
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Address</h3>
+                    <input type="text" value={hostRegisterForm.address} onChange={(e) => setHostRegisterForm({...hostRegisterForm, address: e.target.value})} placeholder="Street Address" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-2 sm:mb-3" data-testid="input-host-address" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                      <input type="text" value={hostRegisterForm.city} onChange={(e) => setHostRegisterForm({...hostRegisterForm, city: e.target.value})} placeholder="City" className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-city" />
+                      <input type="text" value={hostRegisterForm.state} onChange={(e) => setHostRegisterForm({...hostRegisterForm, state: e.target.value})} placeholder="State" maxLength={2} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-state" />
+                      <input type="text" value={hostRegisterForm.zipCode} onChange={(e) => setHostRegisterForm({...hostRegisterForm, zipCode: e.target.value})} placeholder="ZIP" className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-zip" />
+                    </div>
+                  </div>
+
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Driver's License</h3>
+                    <input type="text" value={hostRegisterForm.licenseNumber} onChange={(e) => setHostRegisterForm({...hostRegisterForm, licenseNumber: e.target.value})} placeholder="License Number *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-2 sm:mb-3" data-testid="input-host-license" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Front of License</label>
+                        <label className="block text-xs text-zinc-500 mb-1">Front License</label>
                         <input type="file" accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -1636,11 +1636,11 @@ export default function CarHopApp() {
                             reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, licenseFrontImage: reader.result as string});
                             reader.readAsDataURL(file);
                           }
-                        }} className="w-full text-xs text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-front" />
-                        {hostRegisterForm.licenseFrontImage && <img src={hostRegisterForm.licenseFrontImage} alt="Front" className="mt-2 w-full h-24 object-cover rounded border" />}
+                        }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-front" />
+                        {hostRegisterForm.licenseFrontImage && <img src={hostRegisterForm.licenseFrontImage} alt="Front" className="mt-2 w-full h-20 object-cover rounded border" />}
                       </div>
                       <div>
-                        <label className="block text-xs text-zinc-500 mb-1">Back of License</label>
+                        <label className="block text-xs text-zinc-500 mb-1">Back License</label>
                         <input type="file" accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -1648,30 +1648,30 @@ export default function CarHopApp() {
                             reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, licenseBackImage: reader.result as string});
                             reader.readAsDataURL(file);
                           }
-                        }} className="w-full text-xs text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-back" />
-                        {hostRegisterForm.licenseBackImage && <img src={hostRegisterForm.licenseBackImage} alt="Back" className="mt-2 w-full h-24 object-cover rounded border" />}
+                        }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-back" />
+                        {hostRegisterForm.licenseBackImage && <img src={hostRegisterForm.licenseBackImage} alt="Back" className="mt-2 w-full h-20 object-cover rounded border" />}
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Account Credentials</h3>
-                    <input type="text" value={hostRegisterForm.username} onChange={(e) => setHostRegisterForm({...hostRegisterForm, username: e.target.value})} placeholder="Username *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-username-register" />
-                    <div className="grid grid-cols-2 gap-3">
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Account Credentials</h3>
+                    <input type="text" value={hostRegisterForm.username} onChange={(e) => setHostRegisterForm({...hostRegisterForm, username: e.target.value})} placeholder="Username *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-2 sm:mb-3" data-testid="input-host-username-register" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <div className="relative">
-                        <input type={showHostRegisterPassword ? "text" : "password"} value={hostRegisterForm.password} onChange={(e) => setHostRegisterForm({...hostRegisterForm, password: e.target.value})} placeholder="Password *" required minLength={6} className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-password-register" />
-                        <button type="button" onClick={() => setShowHostRegisterPassword(!showHostRegisterPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors" data-testid="button-toggle-host-password-register">{showHostRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                        <input type={showHostRegisterPassword ? "text" : "password"} value={hostRegisterForm.password} onChange={(e) => setHostRegisterForm({...hostRegisterForm, password: e.target.value})} placeholder="Password *" required minLength={6} className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-password-register" />
+                        <button type="button" onClick={() => setShowHostRegisterPassword(!showHostRegisterPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors" data-testid="button-toggle-host-password-register">{showHostRegisterPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                       </div>
                       <div className="relative">
-                        <input type={showHostRegisterConfirmPassword ? "text" : "password"} value={hostRegisterForm.confirmPassword} onChange={(e) => setHostRegisterForm({...hostRegisterForm, confirmPassword: e.target.value})} placeholder="Confirm Password *" required minLength={6} className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-confirm-password" />
-                        <button type="button" onClick={() => setShowHostRegisterConfirmPassword(!showHostRegisterConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors" data-testid="button-toggle-host-confirm-password">{showHostRegisterConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                        <input type={showHostRegisterConfirmPassword ? "text" : "password"} value={hostRegisterForm.confirmPassword} onChange={(e) => setHostRegisterForm({...hostRegisterForm, confirmPassword: e.target.value})} placeholder="Confirm Password *" required minLength={6} className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-confirm-password" />
+                        <button type="button" onClick={() => setShowHostRegisterConfirmPassword(!showHostRegisterConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors" data-testid="button-toggle-host-confirm-password">{showHostRegisterConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4 mt-4">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Partner Agreement</h3>
-                    <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                  <div className="border-t border-zinc-200 dark:border-zinc-700 pt-3 sm:pt-4 mt-3 sm:mt-4">
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Partner Agreement</h3>
+                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
                       <input 
                         type="checkbox" 
                         checked={hostAgreementAccepted} 
@@ -1683,27 +1683,27 @@ export default function CarHopApp() {
                             setHostAgreementAcceptedAt('');
                           }
                         }}
-                        className="w-5 h-5 mt-0.5 accent-green-600 cursor-pointer"
+                        className="w-4 h-4 mt-0.5 accent-green-600 cursor-pointer"
                         data-testid="checkbox-host-agreement"
                       />
                       <div className="flex-1">
-                        <label className="text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" onClick={() => setShowHostAgreementModal(true)}>
-                          I have read and agree to the <span className="text-green-600 font-bold hover:text-green-700 underline">Host Partner Agreement</span> *
+                        <label className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" onClick={() => setShowHostAgreementModal(true)}>
+                          I agree to the <span className="text-green-600 font-bold hover:text-green-700 underline">Host Agreement</span> *
                         </label>
                         {hostAgreementAccepted && hostAgreementAcceptedAt && (
                           <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                            <Check size={12} /> Accepted on {new Date(hostAgreementAcceptedAt).toLocaleString()}
+                            <Check size={12} /> Accepted
                           </p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={!hostAgreementAccepted} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed" data-testid="button-host-register-submit">Register as Host</Button>
+                  <Button type="submit" disabled={!hostAgreementAccepted} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 text-xs sm:text-sm mt-3 sm:mt-4 disabled:opacity-50 disabled:cursor-not-allowed" data-testid="button-host-register-submit">Register as Host</Button>
                 </form>
 
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Already a host? <button onClick={() => { setShowHostRegisterModal(false); setShowHostLoginModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-host-login-link-2">Login</button></p>
+                <div className="mt-4 sm:mt-6 text-center">
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Already a host? <button onClick={() => { setShowHostRegisterModal(false); setShowHostLoginModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-host-login-link-2">Login</button></p>
                 </div>
               </>
             )}
