@@ -3797,13 +3797,15 @@ export default function CarHopApp() {
                                     Charge extra payment Trip
                                   </button>
                                 </div>
-                                <button 
-                                  onClick={() => setCheckingOutByAdminBookingId(b.id)}
-                                  className="w-full px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors"
-                                  data-testid="button-checkout-by-admin"
-                                >
-                                  Checkout By Admin
-                                </button>
+                                {b.checkInStatus && !b.checkOutStatus && (
+                                  <button 
+                                    onClick={() => setCheckingOutByAdminBookingId(b.id)}
+                                    className="w-full px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors"
+                                    data-testid="button-checkout-by-admin"
+                                  >
+                                    Checkout By Admin
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
