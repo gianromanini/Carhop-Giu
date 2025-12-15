@@ -2645,7 +2645,7 @@ export default function CarHopApp() {
                             <input 
                               type="text" 
                               placeholder="e.g., 8.5"
-                              value={editingHostVehicle.pricing?.taxes ?? 8.5} 
+                              value={editingHostVehicle.pricing?.taxes == null ? '' : String(editingHostVehicle.pricing.taxes)} 
                               onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val}} as Vehicle)}}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-taxes"
@@ -2678,7 +2678,7 @@ export default function CarHopApp() {
                             <input 
                               type="text" 
                               placeholder="e.g., 0.45"
-                              value={editingHostVehicle.pricing?.extraMileRate ?? 0.45} 
+                              value={editingHostVehicle.pricing?.extraMileRate == null ? '' : String(editingHostVehicle.pricing.extraMileRate)} 
                               onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}} as Vehicle)}}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-extra-mile"
@@ -2711,7 +2711,7 @@ export default function CarHopApp() {
                             <input 
                               type="text" 
                               placeholder="e.g., 8 or 8.50"
-                              value={editingHostVehicle.pricing?.prices?.childSeat ?? 8} 
+                              value={editingHostVehicle.pricing?.prices?.childSeat == null ? '' : String(editingHostVehicle.pricing.prices.childSeat)} 
                               onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val}}} as Vehicle)}}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-child-seat"
