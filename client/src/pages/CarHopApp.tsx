@@ -492,6 +492,7 @@ export default function CarHopApp() {
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
+  const [editingPricingStrings, setEditingPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
   const [editingId, setEditingId] = useState<number | null>(null);
   const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
@@ -2420,7 +2421,7 @@ export default function CarHopApp() {
                               <p className="text-xs font-bold text-green-600 mt-1">${car.price}/day | {car.commission || 10}% commission | ${car.deductible || 1000} deductible</p>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => { setEditingHostVehicle(car); setHostVehicleImages(car.images || []); }} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
+                              <button onClick={() => { setEditingHostVehicle(car); setHostVehicleImages(car.images || []); setEditingPricingStrings({taxes: String(car.pricing?.taxes || '8.5'), extraMileRate: String(car.pricing?.extraMileRate || '0.45'), childSeat: String(car.pricing?.prices?.childSeat || '8'), cleaningFee: String(car.pricing?.cleaningFee || '25'), includedMiles: String(car.pricing?.includedMiles || '200'), insurance500: String(car.pricing?.prices?.insurance500 || '25'), insurance1000: String(car.pricing?.prices?.insurance1000 || '15')}); }} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
                                 <Edit size={16} />
                               </button>
                               <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
@@ -2660,9 +2661,9 @@ export default function CarHopApp() {
                               type="text" 
                               inputMode="decimal"
                               placeholder="e.g., 8.5"
-                              value={editingHostVehicle.pricing?.taxes == null ? '' : String(editingHostVehicle.pricing.taxes)} 
-                              onChange={(e) => {const val = e.target.value === '' ? '' : e.target.value; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val === '' ? 0 : (parseFloat(val) || 0)}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing})}}
-                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing})}}
+                              value={editingPricingStrings.taxes}
+                              onChange={(e) => setEditingPricingStrings({...editingPricingStrings, taxes: e.target.value})}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing}); setEditingPricingStrings({...editingPricingStrings, taxes: String(val)})}}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-taxes"
                             />
@@ -2696,9 +2697,9 @@ export default function CarHopApp() {
                               type="text" 
                               inputMode="decimal"
                               placeholder="e.g., 0.45"
-                              value={editingHostVehicle.pricing?.extraMileRate == null ? '' : String(editingHostVehicle.pricing.extraMileRate)} 
-                              onChange={(e) => {const val = e.target.value === '' ? '' : e.target.value; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val === '' ? 0 : (parseFloat(val) || 0)}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing})}}
-                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing})}}
+                              value={editingPricingStrings.extraMileRate}
+                              onChange={(e) => setEditingPricingStrings({...editingPricingStrings, extraMileRate: e.target.value})}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing}); setEditingPricingStrings({...editingPricingStrings, extraMileRate: String(val)})}}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-extra-mile"
                             />
@@ -2731,9 +2732,9 @@ export default function CarHopApp() {
                               type="text" 
                               inputMode="decimal"
                               placeholder="e.g., 8 or 8.50"
-                              value={editingHostVehicle.pricing?.prices?.childSeat == null ? '' : String(editingHostVehicle.pricing.prices.childSeat)} 
-                              onChange={(e) => {const val = e.target.value === '' ? '' : e.target.value; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val === '' ? 0 : (parseFloat(val) || 0)}}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing})}}
-                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val}}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing})}}
+                              value={editingPricingStrings.childSeat}
+                              onChange={(e) => setEditingPricingStrings({...editingPricingStrings, childSeat: e.target.value})}
+                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val}}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing}); setEditingPricingStrings({...editingPricingStrings, childSeat: String(val)})}}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-child-seat"
                             />
@@ -2742,7 +2743,7 @@ export default function CarHopApp() {
                       </div>
 
                       <div className="flex gap-3">
-                        <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
+                        <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); setEditingPricingStrings({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'}); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
                         <Button variant="primary" className="flex-1" onClick={() => {
                           const updatedData = {
                             ...editingHostVehicle,
