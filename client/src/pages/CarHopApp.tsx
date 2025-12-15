@@ -493,6 +493,8 @@ export default function CarHopApp() {
   const [chatBookingId, setChatBookingId] = useState<number | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
+  const [bookingFilterPickupDate, setBookingFilterPickupDate] = useState('');
+  const [bookingFilterReturnDate, setBookingFilterReturnDate] = useState('');
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -3309,40 +3311,92 @@ export default function CarHopApp() {
                 {/* Left Column - All Bookings List */}
                 <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                   <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">All Bookings</h3>
+                  
+                  {/* Filters */}
+                  <div className="space-y-2 mb-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Filter by Pickup Date</label>
+                      <input type="date" value={bookingFilterPickupDate} onChange={(e) => setBookingFilterPickupDate(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-filter-pickup-date" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Filter by Return Date</label>
+                      <input type="date" value={bookingFilterReturnDate} onChange={(e) => setBookingFilterReturnDate(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-filter-return-date" />
+                    </div>
+                    {(bookingFilterPickupDate || bookingFilterReturnDate) && (
+                      <button onClick={() => {setBookingFilterPickupDate(''); setBookingFilterReturnDate('');}} className="w-full text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded">Clear Filters</button>
+                    )}
+                  </div>
+                  
                   <div className="space-y-2">
-                    {bookings.map(b => {
-                      const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
-                      const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
-                      const pendingRequests = getPendingRequestsCount(b);
-                      const unreadMessages = getUnreadMessagesCount(b, 'admin');
-                      const hasNotifications = pendingRequests > 0 || unreadMessages > 0;
-                      return (
-                        <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
-                          <div className="flex justify-between items-start mb-1">
-                            <div className="flex items-center gap-2">
-                              {hasNotifications && (
-                                <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
-                                  <AlertCircle size={14}/>
-                                </span>
+                    {bookings
+                      .filter(b => {
+                        if (bookingFilterPickupDate && b.startDate !== bookingFilterPickupDate) return false;
+                        if (bookingFilterReturnDate && b.returnDate !== bookingFilterReturnDate) return false;
+                        return true;
+                      })
+                      .sort((a, b) => new Date(b.returnDate).getTime() - new Date(a.returnDate).getTime())
+                      .map(b => {
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
+                        const pendingRequests = getPendingRequestsCount(b);
+                        const unreadMessages = getUnreadMessagesCount(b, 'admin');
+                        const hasNotifications = pendingRequests > 0 || unreadMessages > 0;
+                        
+                        const today = getTodayString();
+                        const tomorrow = addDaysToDate(today, 1);
+                        const returnDate = b.returnDate;
+                        const pickupDate = b.startDate;
+                        
+                        const pickupIsToday = pickupDate === today;
+                        const pickupIsTomorrow = pickupDate === tomorrow;
+                        const returnIsToday = returnDate === today;
+                        const returnIsTomorrow = returnDate === tomorrow;
+                        
+                        return (
+                          <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
+                            <div className="flex justify-between items-start mb-1">
+                              <div className="flex items-center gap-2">
+                                {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
+                                  <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
+                                    <AlertTriangle size={14}/>
+                                  </span>
+                                )}
+                                {hasNotifications && (
+                                  <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
+                                    <AlertCircle size={14}/>
+                                  </span>
+                                )}
+                                <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                              </div>
+                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
+                            </div>
+                            <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
+                            <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
+                            <div className="text-[10px] text-zinc-400 mt-2">
+                              <div>Pickup: {b.startDate}</div>
+                              <div>Return: {b.returnDate}</div>
+                              {(pickupIsToday || pickupIsTomorrow) && (
+                                <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
+                                  Pickup {pickupIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
+                                </div>
                               )}
-                              <span className="font-bold text-sm text-white">{b.bookingCode}</span>
-                              <span className="text-[10px] text-zinc-500">{b.startDate}</span>
+                              {(returnIsToday || returnIsTomorrow) && (
+                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
+                                  Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
+                                </div>
+                              )}
                             </div>
-                            <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
+                            {hasNotifications && (
+                              <div className="mt-2 text-[10px] text-yellow-400 flex items-center gap-1">
+                                <Bell size={10}/>
+                                {pendingRequests > 0 && <span>{pendingRequests} request{pendingRequests > 1 ? 's' : ''}</span>}
+                                {pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}
+                                {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
-                          <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
-                          {hasNotifications && (
-                            <div className="mt-2 text-[10px] text-yellow-400 flex items-center gap-1">
-                              <Bell size={10}/>
-                              {pendingRequests > 0 && <span>{pendingRequests} request{pendingRequests > 1 ? 's' : ''}</span>}
-                              {pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}
-                              {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </Card>
 
