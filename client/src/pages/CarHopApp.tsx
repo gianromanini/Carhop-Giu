@@ -5,6 +5,8 @@ import {
   Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell, MoreVertical, Building2
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
+type User = typeof import('@shared/schema').users.$inferSelect;
+import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -3060,6 +3062,7 @@ export default function CarHopApp() {
               const [editingUserId, setEditingUserId] = useState<string | null>(null);
               const [editForm, setEditForm] = useState<Partial<User> | null>(null);
               const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+              const { toast } = useToast();
 
               const updateUserMutation = useMutation({
                 mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => 
@@ -3068,7 +3071,7 @@ export default function CarHopApp() {
                   queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
                   setEditingUserId(null);
                   setEditForm(null);
-                  useToast()({ title: 'User updated successfully' });
+                  toast({ title: 'User updated successfully' });
                 }
               });
 
@@ -3079,16 +3082,17 @@ export default function CarHopApp() {
                   queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
                   setDeletingUserId(null);
                   setSelectedClient(null);
-                  useToast()({ title: 'User deleted successfully' });
+                  toast({ title: 'User deleted successfully' });
                 }
               });
 
               const clientTrips = useMemo(() => {
-                if (!selectedClient) return {};
+                if (!selectedClient) return [];
                 return bookings.filter(b => b.driver.email === selectedClient.email);
               }, [selectedClient, bookings]);
 
               return (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                     <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({usersData.length})</h3>
@@ -3142,10 +3146,10 @@ export default function CarHopApp() {
                         )}
 
                         <div>
-                          <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Trip History ({Object.values(clientTrips).length})</h4>
+                          <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Trip History ({clientTrips.length})</h4>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {Object.values(clientTrips).length > 0 ? (
-                              Object.values(clientTrips).map((trip: Booking, idx: number) => (
+                            {clientTrips.length > 0 ? (
+                              clientTrips.map((trip, idx) => (
                                 <div key={idx} className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs">
                                   <div className="flex justify-between items-start mb-1">
                                     <span className="font-bold text-zinc-900 dark:text-white">{trip.carName}</span>
@@ -3168,21 +3172,22 @@ export default function CarHopApp() {
                     )}
                   </Card>
                 </div>
+
+                {deletingUserId && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Client?</h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">This will permanently delete this client and cannot be undone. Continue?</p>
+                      <div className="flex gap-3">
+                        <button onClick={() => setDeletingUserId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-client">Cancel</button>
+                        <button onClick={() => deleteUserMutation.mutate(deletingUserId)} disabled={deleteUserMutation.isPending} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors disabled:opacity-50" data-testid="button-confirm-delete-client">Yes, Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </>
               );
             })()}
-
-            {deletingUserId && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Client?</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">This will permanently delete this client and cannot be undone. Continue?</p>
-                  <div className="flex gap-3">
-                    <button onClick={() => setDeletingUserId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-client">Cancel</button>
-                    <button onClick={() => deleteUserMutation.mutate(deletingUserId)} disabled={deleteUserMutation.isPending} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors disabled:opacity-50" data-testid="button-confirm-delete-client">Yes, Delete</button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {adminTab === 'hosts' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
