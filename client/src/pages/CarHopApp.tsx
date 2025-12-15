@@ -384,6 +384,7 @@ export default function CarHopApp() {
   const [selectedHost, setSelectedHost] = useState<any>(null);
   const [selectedHostCarCommission, setSelectedHostCarCommission] = useState<any>(null);
   const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
+  const [expandedHostImage, setExpandedHostImage] = useState<string | null>(null);
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -3436,15 +3437,15 @@ export default function CarHopApp() {
                               <div>
                                 <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Driver's License</h4>
                                 <div className="grid grid-cols-2 gap-3">
-                                  {selectedHost.licenseFrontImage && <img src={selectedHost.licenseFrontImage} alt="Front" className="w-full h-32 object-cover rounded border border-zinc-700" />}
-                                  {selectedHost.licenseBackImage && <img src={selectedHost.licenseBackImage} alt="Back" className="w-full h-32 object-cover rounded border border-zinc-700" />}
+                                  {selectedHost.licenseFrontImage && <img src={selectedHost.licenseFrontImage} alt="Front" onClick={() => setExpandedHostImage(selectedHost.licenseFrontImage)} className="w-full h-32 object-cover rounded border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" data-testid="img-host-license-front" />}
+                                  {selectedHost.licenseBackImage && <img src={selectedHost.licenseBackImage} alt="Back" onClick={() => setExpandedHostImage(selectedHost.licenseBackImage)} className="w-full h-32 object-cover rounded border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" data-testid="img-host-license-back" />}
                                 </div>
                               </div>
                             )}
                             {selectedHost.proofOfResidenceImage && (
                               <div>
                                 <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Proof of Residence</h4>
-                                <img src={selectedHost.proofOfResidenceImage} alt="Proof of Residence" className="w-full h-40 object-cover rounded border border-zinc-700" />
+                                <img src={selectedHost.proofOfResidenceImage} alt="Proof of Residence" onClick={() => setExpandedHostImage(selectedHost.proofOfResidenceImage)} className="w-full h-40 object-cover rounded border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" data-testid="img-host-proof-residence" />
                               </div>
                             )}
                           </div>
@@ -3485,6 +3486,13 @@ export default function CarHopApp() {
                     </div>
                   )}
                 </Card>
+              </div>
+            )}
+
+            {expandedHostImage && (
+              <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+                <button onClick={() => setExpandedHostImage(null)} className="absolute top-4 right-4 text-white hover:text-zinc-300 transition-colors" data-testid="button-close-host-image-expand"><X size={28} /></button>
+                <img src={expandedHostImage} alt="Expanded" className="max-w-4xl max-h-[90vh] object-contain rounded-lg" />
               </div>
             )}
 
