@@ -3172,8 +3172,8 @@ export default function CarHopApp() {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => setConfirmingEditUserId(selectedClient.id)} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Accept</button>
-                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-decline-edit-client">Decline</button>
+                              <button onClick={() => setConfirmingEditUserId(selectedClient.id)} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Salvar</button>
+                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-decline-edit-client">Voltar</button>
                             </div>
                           </div>
                         ) : (
