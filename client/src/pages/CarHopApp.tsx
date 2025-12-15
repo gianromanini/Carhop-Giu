@@ -542,7 +542,11 @@ export default function CarHopApp() {
 
   const createVehicleMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/vehicles', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); setFormData(initialFormState); }
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); 
+      setFormData(initialFormState); 
+      toast({ title: 'Vehicle created successfully' });
+    }
   });
 
   const updateVehicleMutation = useMutation({
@@ -555,12 +559,16 @@ export default function CarHopApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       setFormData(initialFormState); 
       setEditingId(null); 
+      toast({ title: 'Vehicle updated successfully' });
     }
   });
 
   const deleteVehicleMutation = useMutation({
     mutationFn: (id: number) => apiRequest('DELETE', `/api/vehicles/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      toast({ title: 'Vehicle deleted successfully' });
+    }
   });
 
   const updateUserMutation = useMutation({
@@ -587,17 +595,28 @@ export default function CarHopApp() {
 
   const createBookingMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/bookings', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); }
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
+      toast({ title: 'Booking created successfully' });
+    }
   });
 
   const updateBookingMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/bookings/${id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); }
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
+      toast({ title: 'Booking updated successfully' });
+    }
   });
 
   const updateSettingMutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: any }) => apiRequest('PUT', `/api/settings/${key}`, { value }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/settings'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({ title: 'Settings updated successfully' });
+    }
   });
 
   const clientTrips = useMemo(() => {
