@@ -674,7 +674,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <strong>25% Commission Plan:</strong> $500 deductible per incident</p>
                   
                   <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">3. VEHICLE REQUIREMENTS</h3>
-                  <p>Model year 2015+, under 130,000 miles, clean title, registered/insured in Connecticut.</p>
+                  <p>Model Year 2010+, Max 120,000 Miles, clean title, registered/insured in Connecticut and we can request an Inspection in our Partners mechanics Places to approve.</p>
                   
                   <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">4. INSURANCE COVERAGE</h3>
                   <p>Liability up to $1,000,000, Comprehensive & Collision at ACV (subject to deductible).</p>
