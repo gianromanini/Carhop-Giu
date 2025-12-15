@@ -1185,7 +1185,7 @@ export default function CarHopApp() {
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-2">
           <div className="flex items-center gap-1 sm:gap-2 cursor-pointer flex-shrink-0" onClick={() => setView('home')} data-testid="link-home">
-            <div className="bg-green-600 p-1 sm:p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white" size={16} sm:size={20} /></div>
+            <div className="bg-green-600 p-1 sm:p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white w-4 h-4 sm:w-5 sm:h-5" /></div>
             <span className="text-sm sm:text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
@@ -2727,7 +2727,7 @@ export default function CarHopApp() {
                       </div>
                     </div>
                     <Button className="w-full py-2 sm:py-4 text-xs sm:text-sm" onClick={handleSearch} disabled={isSearching} data-testid="button-search">
-                      {isSearching ? <><Loader className="animate-spin" size={16} sm:size-20/> Searching...</> : <><Search size={16}/> Search Vehicles</>}
+                      {isSearching ? <><Loader className="animate-spin" size={16}/> Searching...</> : <><Search size={16}/> Search Vehicles</>}
                     </Button>
                   </div>
                 </Card>
@@ -2834,7 +2834,7 @@ export default function CarHopApp() {
                 {/* Left Column - Add New Vehicle Form */}
                 <Card className="p-3 sm:p-6">
                   <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <Plus size={16} sm:size={18} className="text-green-500"/>
+                    <Plus size={16} className="text-green-500"/>
                     {editingId ? 'Edit Vehicle' : 'Add New Vehicle'}
                   </h3>
                   <div className="space-y-3 sm:space-y-4">
@@ -2955,7 +2955,7 @@ export default function CarHopApp() {
                   {/* Pickup Locations */}
                   <Card className="p-3 sm:p-6">
                     <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                      <MapPin size={16} sm:size={18} className="text-green-500"/>
+                      <MapPin size={16} className="text-green-500"/>
                       Pickup Locations
                     </h3>
                     <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
@@ -3329,7 +3329,7 @@ export default function CarHopApp() {
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Host Vehicles ({vehicles.filter(v => v.hostId === String(selectedHost.id)).length})</h4>
                             <div className="space-y-2">
                               {vehicles.filter(v => v.hostId === String(selectedHost.id)).map(car => {
-                                const carBookings = bookings.filter(b => b.carId === car.id && b.status === 'Completed');
+                                const carBookings = bookings.filter(b => b.vehicleId === car.id && b.status === 'Completed');
                                 const grossRevenue = carBookings.reduce((sum, b) => sum + (b.total || 0), 0);
                                 const commissionEarned = (grossRevenue * (car.commission || 10)) / 100;
                                 const hostNetProfit = grossRevenue - commissionEarned;
@@ -4097,14 +4097,14 @@ export default function CarHopApp() {
                   <div className="space-y-2 sm:space-y-3">
                     {bookings.reduce((acc: any[], b) => {
                       if (b.status !== 'Completed') return acc;
-                      const vehicle = vehicles.find(v => v.id === b.carId);
+                      const vehicle = vehicles.find(v => v.id === b.vehicleId);
                       if (!vehicle?.hostId) return acc;
                       const existingHost = acc.find(h => h.hostId === vehicle.hostId);
                       if (existingHost) {
                         existingHost.total += b.total;
                         existingHost.trips += 1;
                       } else {
-                        const host = hosts.find(h => h.id === parseInt(vehicle.hostId));
+                        const host = hostsData.find((h: any) => h.id === parseInt(vehicle.hostId || '0'));
                         acc.push({ hostId: vehicle.hostId, hostName: host?.firstName + ' ' + host?.lastName, vehicle: vehicle.model, commission: vehicle.commission || 10, total: b.total, trips: 1 });
                       }
                       return acc;
