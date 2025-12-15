@@ -2661,10 +2661,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Extra Mile Rate ($) (Editable)</label>
                             <input 
-                              type="text" 
-                              placeholder="e.g., 0.45 or 0,45"
+                              type="number" 
+                              step="0.01"
                               value={editingHostVehicle.pricing?.extraMileRate ?? 0.45} 
-                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}} as Vehicle)}}
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: parseFloat(e.target.value) || 0}} as Vehicle)}
                               className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-extra-mile"
                             />
