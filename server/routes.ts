@@ -779,17 +779,20 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
 
       // Send email if status changed
-      console.log(`DEBUG: previousHost=${previousHost?.status}, host=${host?.status}, Changed=${previousHost && previousHost.status !== host.status}`);
-      if (previousHost && previousHost.status !== host.status) {
+      console.log(`DEBUG: previousHost?.status='${previousHost?.status}' (type: ${typeof previousHost?.status}), host?.status='${host?.status}' (type: ${typeof host?.status})`);
+      const statusChanged = previousHost && previousHost.status !== host.status;
+      console.log(`DEBUG: statusChanged=${statusChanged}`);
+      
+      if (statusChanged) {
         try {
           let subject = '';
           let emailHtml = '';
-          console.log(`DEBUG: Host status changed: ${previousHost.status} -> ${host.status}`);
+          console.log(`DEBUG: ENTERING STATUS CHANGE EMAIL BLOCK: ${previousHost.status} -> ${host.status}`);
           
-          if (host.status === 'active' && previousHost.status === 'pending') {
-            console.log('DEBUG: Condition 1 matched - Sending approval email');
-            // Approval email - Pending to Active
+          if ((host.status === 'active' && previousHost.status === 'pending') || (host.status === 'active' && previousHost.status !== 'active')) {
+            // Approval email - Any status to Active
             subject = 'Congratulations! Your CarHop Host Account is Approved';
+            console.log(`DEBUG: Sending approval email (${previousHost.status} -> Active)`);
             emailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -917,13 +920,18 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
             `;
           }
 
+          console.log(`DEBUG: subject="${subject}", emailHtml exists=${!!emailHtml}`);
           if (subject && emailHtml) {
+            console.log(`DEBUG: Sending email to ${host.email}`);
             await transporter.sendMail({
               from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
               to: host.email,
               subject: subject,
               html: emailHtml,
             });
+            console.log(`DEBUG: Email sent successfully to ${host.email}`);
+          } else {
+            console.log(`DEBUG: No email sent - subject or emailHtml empty`);
           }
         } catch (emailError) {
           console.error("Host status change email error:", emailError);
