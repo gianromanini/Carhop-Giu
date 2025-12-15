@@ -832,7 +832,15 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.put("/api/admin/users/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { password, ...otherUpdates } = req.body;
+      const updates = { ...otherUpdates };
+      
+      // Hash password if provided
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        (updates as any).passwordHash = await bcrypt.hash(password, salt);
+      }
+      
       const user = await storage.updateUser(id, updates);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -848,6 +856,22 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.delete("/api/admin/users/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      // Get user to find their email
+      const users = await storage.getAllUsers();
+      const userToDelete = users.find(u => u.id === id);
+      
+      if (!userToDelete) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Delete all bookings for this user
+      const allBookings = await storage.getBookings();
+      const userBookings = allBookings.filter(b => b.driver.email === userToDelete.email);
+      for (const booking of userBookings) {
+        await storage.deleteBooking(booking.id);
+      }
+      
+      // Delete user
       const success = await storage.deleteUser(id);
       if (!success) {
         return res.status(404).json({ message: "User not found" });
