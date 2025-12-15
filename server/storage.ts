@@ -901,6 +901,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deleteUser(id: string): Promise<boolean> {
+    if (!this.initialized) return false;
+    try {
+      const result = await this.db.delete(users).where(eq(users.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
   async getUserTrips(userEmail: string): Promise<Booking[]> {
     if (!this.initialized) return [];
     try {
