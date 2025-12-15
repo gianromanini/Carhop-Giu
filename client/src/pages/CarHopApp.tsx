@@ -3899,32 +3899,32 @@ export default function CarHopApp() {
             {adminTab === 'earnings' && (
               <div className="space-y-6">
                 {/* Top Section - Revenue & Finance Overview */}
-                <Card className="p-6">
-                  <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Card className="p-2 sm:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start mb-4 sm:mb-6 gap-3">
+                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                       <TrendingUp size={20} className="text-green-500"/> Revenue & Finance Overview
                     </h3>
-                    <div className="text-right">
-                      <span className="text-xs text-zinc-500">Monthly Fleet Fixed Cost: </span>
-                      <span className="text-sm font-bold text-orange-500">${(financialData?.fixedMonthly || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <div className="text-right text-xs sm:text-sm">
+                      <span className="text-[10px] sm:text-xs text-zinc-500">Monthly Fleet Fixed Cost: </span>
+                      <span className="text-xs sm:text-sm font-bold text-orange-500">${(financialData?.fixedMonthly || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                   </div>
                   
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-green-900/20 p-4 rounded-xl border border-green-800/30">
-                      <div className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Total Gross Revenue</div>
-                      <div className="text-3xl font-bold text-green-500">${Object.values(financialData?.monthly || {}).reduce((sum: number, m: any) => sum + (m.gross || 0) + (m.pending || 0), 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-green-900/20 p-3 sm:p-4 rounded-xl border border-green-800/30">
+                      <div className="text-[8px] sm:text-[10px] text-green-500 font-bold uppercase tracking-wider">Total Gross Revenue</div>
+                      <div className="text-lg sm:text-3xl font-bold text-green-500">${Object.values(financialData?.monthly || {}).reduce((sum: number, m: any) => sum + (m.gross || 0) + (m.pending || 0), 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
-                    <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700/30">
-                      <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Completed Trips</div>
-                      <div className="text-3xl font-bold text-white">{bookings.filter(b => b.status === 'Completed').length}</div>
+                    <div className="bg-zinc-800/50 p-3 sm:p-4 rounded-xl border border-zinc-700/30">
+                      <div className="text-[8px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Completed Trips</div>
+                      <div className="text-lg sm:text-3xl font-bold text-white">{bookings.filter(b => b.status === 'Completed').length}</div>
                     </div>
                   </div>
                   
                   {/* Monthly Performance Chart */}
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">Monthly Financial Performance</h4>
+                    <h4 className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 sm:mb-4">Monthly Financial Performance</h4>
                     {financialData && <FinancialBarChart data={financialData.monthly} fixedExpenses={financialData.fixedMonthly} />}
                     <div className="flex justify-center gap-6 mt-4">
                       <span className="flex items-center gap-2 text-xs"><span className="w-3 h-3 bg-orange-500 rounded"></span> Expenses</span>
@@ -3935,18 +3935,18 @@ export default function CarHopApp() {
                 </Card>
                 
                 {/* Bottom Section - Two Columns */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* Left Column - Monthly Vehicle Expenses */}
-                  <Card className="p-6">
-                    <h3 className="text-base font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Card className="p-3 sm:p-6">
+                    <h3 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
                       <DollarSign size={18}/> Monthly Vehicle Expenses
                     </h3>
                     
                     {/* Vehicle Selector */}
-                    <div className="mb-4">
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">Select Vehicle to Update</label>
+                    <div className="mb-3 sm:mb-4">
+                      <label className="block text-[8px] sm:text-[10px] font-bold text-zinc-500 mb-1 sm:mb-2 uppercase tracking-wider">Select Vehicle to Update</label>
                       <select 
-                        className="w-full p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-white"
+                        className="w-full p-2 sm:p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-xs sm:text-sm text-white"
                         value={selectedExpenseVehicleId || ''}
                         onChange={(e) => {
                           const id = parseInt(e.target.value);
@@ -3966,30 +3966,30 @@ export default function CarHopApp() {
                     </div>
                     
                     {/* Expense Form - Always visible */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
                       <div>
-                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Down Payment ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.downPayment || ''} onChange={(e) => setExpenseForm({...expenseForm, downPayment: parseFloat(e.target.value) || 0})} data-testid="input-expense-downpayment"/>
+                        <label className="block text-[8px] sm:text-[10px] text-zinc-500 mb-1 uppercase">Down Payment ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs sm:text-sm text-white" placeholder="0.00" value={expenseForm.downPayment || ''} onChange={(e) => setExpenseForm({...expenseForm, downPayment: parseFloat(e.target.value) || 0})} data-testid="input-expense-downpayment"/>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Lease / Financing ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.lease || ''} onChange={(e) => setExpenseForm({...expenseForm, lease: parseFloat(e.target.value) || 0})} data-testid="input-expense-lease"/>
+                        <label className="block text-[8px] sm:text-[10px] text-zinc-500 mb-1 uppercase">Lease / Financing ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs sm:text-sm text-white" placeholder="0.00" value={expenseForm.lease || ''} onChange={(e) => setExpenseForm({...expenseForm, lease: parseFloat(e.target.value) || 0})} data-testid="input-expense-lease"/>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Insurance ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.insurance || ''} onChange={(e) => setExpenseForm({...expenseForm, insurance: parseFloat(e.target.value) || 0})} data-testid="input-expense-insurance"/>
+                        <label className="block text-[8px] sm:text-[10px] text-zinc-500 mb-1 uppercase">Insurance ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs sm:text-sm text-white" placeholder="0.00" value={expenseForm.insurance || ''} onChange={(e) => setExpenseForm({...expenseForm, insurance: parseFloat(e.target.value) || 0})} data-testid="input-expense-insurance"/>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Car Wash ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.carWash || ''} onChange={(e) => setExpenseForm({...expenseForm, carWash: parseFloat(e.target.value) || 0})} data-testid="input-expense-carwash"/>
+                        <label className="block text-[8px] sm:text-[10px] text-zinc-500 mb-1 uppercase">Car Wash ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs sm:text-sm text-white" placeholder="0.00" value={expenseForm.carWash || ''} onChange={(e) => setExpenseForm({...expenseForm, carWash: parseFloat(e.target.value) || 0})} data-testid="input-expense-carwash"/>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Maintenance ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.maintenance || ''} onChange={(e) => setExpenseForm({...expenseForm, maintenance: parseFloat(e.target.value) || 0})} data-testid="input-expense-maintenance"/>
+                        <label className="block text-[8px] sm:text-[10px] text-zinc-500 mb-1 uppercase">Maintenance ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs sm:text-sm text-white" placeholder="0.00" value={expenseForm.maintenance || ''} onChange={(e) => setExpenseForm({...expenseForm, maintenance: parseFloat(e.target.value) || 0})} data-testid="input-expense-maintenance"/>
                       </div>
                       <div>
-                        <label className="block text-[10px] text-zinc-500 mb-1 uppercase">Tracking / App ($)</label>
-                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white" placeholder="0.00" value={expenseForm.trackApp || ''} onChange={(e) => setExpenseForm({...expenseForm, trackApp: parseFloat(e.target.value) || 0})} data-testid="input-expense-trackapp"/>
+                        <label className="block text-[8px] sm:text-[10px] text-zinc-500 mb-1 uppercase">Tracking / App ($)</label>
+                        <input type="number" className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs sm:text-sm text-white" placeholder="0.00" value={expenseForm.trackApp || ''} onChange={(e) => setExpenseForm({...expenseForm, trackApp: parseFloat(e.target.value) || 0})} data-testid="input-expense-trackapp"/>
                       </div>
                     </div>
                     
@@ -4008,12 +4008,12 @@ export default function CarHopApp() {
                   </Card>
                   
                   {/* Right Column - Financial Status by Vehicle */}
-                  <Card className="p-6">
-                    <h3 className="text-base font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Card className="p-3 sm:p-6">
+                    <h3 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
                       <BarChart3 size={18}/> Financial Status by Vehicle
                     </h3>
                     
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div className="space-y-2 sm:space-y-3 max-h-[400px] overflow-y-auto pr-2">
                       {vehicles.map(vehicle => {
                         const vehicleData = financialData?.byVehicle?.[vehicle.model] || { gross: 0, pending: 0, expenses: 0 };
                         const gross = (vehicleData.gross || 0) + (vehicleData.pending || 0);
@@ -4021,22 +4021,22 @@ export default function CarHopApp() {
                         const balance = gross - expenses;
                         
                         return (
-                          <div key={vehicle.id} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
-                            <div className="flex items-center gap-3">
+                          <div key={vehicle.id} className="bg-zinc-900 rounded-lg p-2 sm:p-3 border border-zinc-800">
+                            <div className="flex items-center gap-2 sm:gap-3">
                               {/* Vehicle Image */}
-                              <div className="w-16 h-12 rounded overflow-hidden shrink-0">
+                              <div className="w-12 sm:w-16 h-9 sm:h-12 rounded overflow-hidden shrink-0">
                                 <img src={vehicle.images[0]} alt={vehicle.model} className="w-full h-full object-cover"/>
                               </div>
                               
                               {/* Vehicle Info */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-start gap-1">
                                   <div>
-                                    <h4 className="font-bold text-sm text-white truncate">{vehicle.model}</h4>
-                                    <p className="text-[10px] text-zinc-500">{vehicle.category}</p>
+                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model}</h4>
+                                    <p className="text-[8px] sm:text-[10px] text-zinc-500">{vehicle.category}</p>
                                   </div>
                                   <button 
-                                    className="text-xs text-zinc-400 hover:text-white border border-zinc-700 rounded px-2 py-1 shrink-0"
+                                    className="text-[10px] sm:text-xs text-zinc-400 hover:text-white border border-zinc-700 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 shrink-0"
                                     onClick={() => {
                                       setSelectedExpenseVehicleId(vehicle.id);
                                       setExpenseForm(vehicle.expenses || { lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
@@ -4047,18 +4047,18 @@ export default function CarHopApp() {
                                 </div>
                                 
                                 {/* Financial Stats */}
-                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                <div className="grid grid-cols-3 gap-1 sm:gap-2 mt-1 sm:mt-2">
                                   <div>
-                                    <div className="text-[9px] text-green-500 uppercase font-bold">Gross Revenue</div>
-                                    <div className="text-sm font-bold text-green-500">${gross.toFixed(0)}</div>
+                                    <div className="text-[7px] sm:text-[9px] text-green-500 uppercase font-bold">Gross Revenue</div>
+                                    <div className="text-xs sm:text-sm font-bold text-green-500">${gross.toFixed(0)}</div>
                                   </div>
                                   <div>
-                                    <div className="text-[9px] text-orange-500 uppercase font-bold">Monthly Exp</div>
-                                    <div className="text-sm font-bold text-orange-500">${expenses.toFixed(0)}</div>
+                                    <div className="text-[7px] sm:text-[9px] text-orange-500 uppercase font-bold">Monthly Exp</div>
+                                    <div className="text-xs sm:text-sm font-bold text-orange-500">${expenses.toFixed(0)}</div>
                                   </div>
                                   <div>
-                                    <div className="text-[9px] text-zinc-400 uppercase font-bold">Net Balance</div>
-                                    <div className={`text-sm font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-500'}`}>
+                                    <div className="text-[7px] sm:text-[9px] text-zinc-400 uppercase font-bold">Net Balance</div>
+                                    <div className={`text-xs sm:text-sm font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-500'}`}>
                                       {balance >= 0 ? '' : '-'}${Math.abs(balance).toFixed(0)}
                                     </div>
                                   </div>
@@ -4073,12 +4073,12 @@ export default function CarHopApp() {
                 </div>
                 
                 {/* Host Earning Commission Section */}
-                <Card className="p-6">
-                  <h3 className="text-base font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                <Card className="p-3 sm:p-6">
+                  <h3 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
                     <Wallet size={18}/> Host Earning Commission
                   </h3>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {bookings.reduce((acc: any[], b) => {
                       if (b.status !== 'Completed') return acc;
                       const vehicle = vehicles.find(v => v.id === b.carId);
@@ -4096,26 +4096,26 @@ export default function CarHopApp() {
                       const commissionEarned = (item.total * item.commission) / 100;
                       const hostNetProfit = item.total - commissionEarned;
                       return (
-                        <div key={idx} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
-                          <div className="flex justify-between items-start mb-2">
+                        <div key={idx} className="bg-zinc-900 rounded-lg p-2 sm:p-4 border border-zinc-800">
+                          <div className="flex justify-between items-start mb-1 sm:mb-2 gap-2">
                             <div>
-                              <p className="font-bold text-white">{item.hostName} - {item.vehicle}</p>
-                              <p className="text-xs text-zinc-500">{item.trips} completed trip{item.trips !== 1 ? 's' : ''}</p>
+                              <p className="font-bold text-xs sm:text-sm text-white truncate">{item.hostName} - {item.vehicle}</p>
+                              <p className="text-[10px] sm:text-xs text-zinc-500">{item.trips} completed trip{item.trips !== 1 ? 's' : ''}</p>
                             </div>
-                            <span className="text-xs font-bold px-2 py-1 bg-green-900/30 border border-green-700 text-green-400 rounded">{item.commission}%</span>
+                            <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-green-900/30 border border-green-700 text-green-400 rounded shrink-0">{item.commission}%</span>
                           </div>
-                          <div className="grid grid-cols-3 gap-3 mt-3">
+                          <div className="grid grid-cols-3 gap-1 sm:gap-3 mt-2 sm:mt-3">
                             <div>
-                              <div className="text-[9px] text-zinc-500 uppercase font-bold">Gross Revenue</div>
-                              <div className="text-sm font-bold text-green-500">${item.total.toFixed(2)}</div>
+                              <div className="text-[7px] sm:text-[9px] text-zinc-500 uppercase font-bold">Gross Revenue</div>
+                              <div className="text-xs sm:text-sm font-bold text-green-500">${item.total.toFixed(2)}</div>
                             </div>
                             <div>
-                              <div className="text-[9px] text-orange-500 uppercase font-bold">CarHop Commission</div>
-                              <div className="text-sm font-bold text-orange-500">${commissionEarned.toFixed(2)}</div>
+                              <div className="text-[7px] sm:text-[9px] text-orange-500 uppercase font-bold">CarHop Commission</div>
+                              <div className="text-xs sm:text-sm font-bold text-orange-500">${commissionEarned.toFixed(2)}</div>
                             </div>
                             <div>
-                              <div className="text-[9px] text-blue-400 uppercase font-bold">Host Net Profit</div>
-                              <div className="text-sm font-bold text-blue-400">${hostNetProfit.toFixed(2)}</div>
+                              <div className="text-[7px] sm:text-[9px] text-blue-400 uppercase font-bold">Host Net Profit</div>
+                              <div className="text-xs sm:text-sm font-bold text-blue-400">${hostNetProfit.toFixed(2)}</div>
                             </div>
                           </div>
                         </div>
