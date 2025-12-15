@@ -528,6 +528,12 @@ export default function CarHopApp() {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showClientPassword, setShowClientPassword] = useState(false);
   const [confirmingEditUserId, setConfirmingEditUserId] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showHostLoginPassword, setShowHostLoginPassword] = useState(false);
+  const [showHostRegisterPassword, setShowHostRegisterPassword] = useState(false);
+  const [showHostRegisterConfirmPassword, setShowHostRegisterConfirmPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showHostEditPassword, setShowHostEditPassword] = useState(false);
   const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
@@ -1389,15 +1395,25 @@ export default function CarHopApp() {
                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                 data-testid="input-login-email" 
               />
-              <input 
-                type="password" 
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                placeholder="Password" 
-                required 
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                data-testid="input-login-password" 
-              />
+              <div className="relative">
+                <input 
+                  type={showLoginPassword ? "text" : "password"} 
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                  placeholder="Password" 
+                  required 
+                  className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-login-password" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                  data-testid="button-toggle-login-password"
+                >
+                  {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-login-submit">Sign In</Button>
             </form>
 
@@ -1491,15 +1507,25 @@ export default function CarHopApp() {
                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                 data-testid="input-host-username" 
               />
-              <input 
-                type="password" 
-                value={hostLoginForm.password}
-                onChange={(e) => setHostLoginForm({...hostLoginForm, password: e.target.value})}
-                placeholder="Password" 
-                required 
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                data-testid="input-host-password" 
-              />
+              <div className="relative">
+                <input 
+                  type={showHostLoginPassword ? "text" : "password"} 
+                  value={hostLoginForm.password}
+                  onChange={(e) => setHostLoginForm({...hostLoginForm, password: e.target.value})}
+                  placeholder="Password" 
+                  required 
+                  className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-host-password" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowHostLoginPassword(!showHostLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                  data-testid="button-toggle-host-login-password"
+                >
+                  {showHostLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-host-login-submit">Access Host Panel</Button>
             </form>
 
@@ -1632,8 +1658,14 @@ export default function CarHopApp() {
                     <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Account Credentials</h3>
                     <input type="text" value={hostRegisterForm.username} onChange={(e) => setHostRegisterForm({...hostRegisterForm, username: e.target.value})} placeholder="Username *" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-3" data-testid="input-host-username-register" />
                     <div className="grid grid-cols-2 gap-3">
-                      <input type="password" value={hostRegisterForm.password} onChange={(e) => setHostRegisterForm({...hostRegisterForm, password: e.target.value})} placeholder="Password *" required minLength={6} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-password-register" />
-                      <input type="password" value={hostRegisterForm.confirmPassword} onChange={(e) => setHostRegisterForm({...hostRegisterForm, confirmPassword: e.target.value})} placeholder="Confirm Password *" required minLength={6} className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-confirm-password" />
+                      <div className="relative">
+                        <input type={showHostRegisterPassword ? "text" : "password"} value={hostRegisterForm.password} onChange={(e) => setHostRegisterForm({...hostRegisterForm, password: e.target.value})} placeholder="Password *" required minLength={6} className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-password-register" />
+                        <button type="button" onClick={() => setShowHostRegisterPassword(!showHostRegisterPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors" data-testid="button-toggle-host-password-register">{showHostRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                      </div>
+                      <div className="relative">
+                        <input type={showHostRegisterConfirmPassword ? "text" : "password"} value={hostRegisterForm.confirmPassword} onChange={(e) => setHostRegisterForm({...hostRegisterForm, confirmPassword: e.target.value})} placeholder="Confirm Password *" required minLength={6} className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-confirm-password" />
+                        <button type="button" onClick={() => setShowHostRegisterConfirmPassword(!showHostRegisterConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors" data-testid="button-toggle-host-confirm-password">{showHostRegisterConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                      </div>
                     </div>
                   </div>
 
@@ -1921,15 +1953,25 @@ export default function CarHopApp() {
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                     data-testid="input-signup-phone" 
                   />
-                  <input 
-                    type="password" 
-                    value={signupForm.password}
-                    onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
-                    placeholder="Password (min 6 chars)" 
-                    required 
-                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                    data-testid="input-signup-password" 
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showSignupPassword ? "text" : "password"} 
+                      value={signupForm.password}
+                      onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
+                      placeholder="Password (min 6 chars)" 
+                      required 
+                      className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                      data-testid="input-signup-password" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignupPassword(!showSignupPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                      data-testid="button-toggle-signup-password"
+                    >
+                      {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-signup-submit">Create Account</Button>
                 </form>
 
@@ -3340,7 +3382,10 @@ export default function CarHopApp() {
                               <option value="pending">Pending</option>
                             </select>
                           </div>
-                          <input type="password" value={editingHost.password || ''} onChange={(e) => setEditingHost({...editingHost, password: e.target.value})} placeholder="New Password (leave blank to keep current)" className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          <div className="relative">
+                            <input type={showHostEditPassword ? "text" : "password"} value={editingHost.password || ''} onChange={(e) => setEditingHost({...editingHost, password: e.target.value})} placeholder="New Password (leave blank to keep current)" className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <button type="button" onClick={() => setShowHostEditPassword(!showHostEditPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors" data-testid="button-toggle-host-edit-password">{showHostEditPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                          </div>
                           <div className="flex gap-2">
                             <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">Save Changes</Button>
                             <Button type="button" variant="outline" onClick={() => setEditingHost(null)}>Cancel</Button>
