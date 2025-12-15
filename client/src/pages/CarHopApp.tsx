@@ -3374,9 +3374,13 @@ export default function CarHopApp() {
                       })
                       .sort((a, b) => {
                         if (bookingFilterType === 'end-soon') {
-                          return new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime();
+                          const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
+                          const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
+                          return aDateTime - bDateTime;
                         } else {
-                          return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                          const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
+                          const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
+                          return aDateTime - bDateTime;
                         }
                       })
                       .map(b => {
@@ -3417,8 +3421,8 @@ export default function CarHopApp() {
                             <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
                             <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
                             <div className="text-[10px] text-zinc-400 mt-2">
-                              <div>Pickup: {b.startDate}</div>
-                              <div>Return: {b.returnDate}</div>
+                              <div>Pickup: {b.startDate} at {b.startTime}</div>
+                              <div>Return: {b.returnDate} at {b.returnTime}</div>
                               {(pickupIsToday || pickupIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
                                   Pickup {pickupIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
@@ -3722,13 +3726,15 @@ export default function CarHopApp() {
                                     Charge extra payment Trip
                                   </button>
                                 </div>
-                                <button 
-                                  onClick={() => setCheckingOutByAdminBookingId(b.id)}
-                                  className="w-full px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors"
-                                  data-testid="button-checkout-by-admin"
-                                >
-                                  Checkout By Admin
-                                </button>
+                                {!b.checkOutStatus && (
+                                  <button 
+                                    onClick={() => setCheckingOutByAdminBookingId(b.id)}
+                                    className="w-full px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors"
+                                    data-testid="button-checkout-by-admin"
+                                  >
+                                    Checkout By Admin
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
