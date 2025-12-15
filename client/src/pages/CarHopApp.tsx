@@ -527,6 +527,7 @@ export default function CarHopApp() {
   const [editForm, setEditForm] = useState<Partial<User> | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showClientPassword, setShowClientPassword] = useState(false);
+  const [confirmingEditUserId, setConfirmingEditUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
@@ -3152,7 +3153,7 @@ export default function CarHopApp() {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => updateUserMutation.mutate({id: selectedClient.id, data: editForm})} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Accept</button>
+                              <button onClick={() => setConfirmingEditUserId(selectedClient.id)} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Accept</button>
                               <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-decline-edit-client">Decline</button>
                             </div>
                           </div>
@@ -3194,6 +3195,19 @@ export default function CarHopApp() {
                     )}
                   </Card>
                 </div>
+
+                {confirmingEditUserId && editForm && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Save Changes?</h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to save these changes to the client information?</p>
+                      <div className="flex gap-3">
+                        <button onClick={() => setConfirmingEditUserId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-edit-confirmation">Cancel</button>
+                        <button onClick={() => { updateUserMutation.mutate({id: confirmingEditUserId, data: editForm}); setConfirmingEditUserId(null); }} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50" data-testid="button-confirm-edit-confirmation">Save Changes</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {deletingUserId && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
