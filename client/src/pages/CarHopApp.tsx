@@ -1549,10 +1549,9 @@ export default function CarHopApp() {
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">{hostRegisterMessage}</p>
                 <Button onClick={() => { 
                   setShowHostRegisterModal(false); 
-                  setHostRegisterForm({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '', licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', username: '', password: '', confirmPassword: '' }); 
+                  setHostRegisterForm({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '', licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', proofOfResidenceImage: '', username: '', password: '', confirmPassword: '' }); 
                   setHostRegisterMessage(''); 
-                  setShowHostLoginModal(true);
-                }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-host-register-success">Login Now</Button>
+                }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-host-register-success">Done</Button>
               </div>
             ) : (
               <>
@@ -1594,10 +1593,10 @@ export default function CarHopApp() {
                     if (response.ok) {
                       setHostAgreementAccepted(false);
                       setHostAgreementAcceptedAt('');
-                      setHostRegisterMessage(`Welcome ${hostRegisterForm.firstName}! Your host account has been created. A confirmation email has been sent to ${hostRegisterForm.email}. You can now login with username: ${hostRegisterForm.username}`);
+                      setHostRegisterMessage(`Thank you for registering, ${hostRegisterForm.firstName}! Your host account is pending verification. We'll review your documents and email you at ${hostRegisterForm.email} within 2-3 business days. Once approved, you can login with username: ${hostRegisterForm.username}`);
                     } else {
                       const error = await response.json();
-                      alert(error.message || 'Registration failed');
+                      alert(error.message || 'Failed to register Host');
                     }
                   } catch (err) {
                     alert('Error registering');

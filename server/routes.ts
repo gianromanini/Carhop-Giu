@@ -584,7 +584,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.post("/api/hosts/register", async (req, res) => {
     try {
       const { firstName, lastName, email, phone, address, city, state, zipCode,
-              licenseNumber, licenseFrontImage, licenseBackImage, username, password,
+              licenseNumber, licenseFrontImage, licenseBackImage, proofOfResidenceImage, username, password,
               agreementAccepted, agreementAcceptedAt } = req.body;
 
       // Validate agreement acceptance
@@ -610,10 +610,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       const host = await storage.createHost({
         firstName, lastName, email, phone, address, city, state, zipCode,
-        licenseNumber, licenseFrontImage, licenseBackImage, username, passwordHash, 
+        licenseNumber, licenseFrontImage, licenseBackImage, proofOfResidenceImage, username, passwordHash, 
         agreementAccepted: true,
         agreementAcceptedAt: agreementAcceptedAt ? new Date(agreementAcceptedAt) : new Date(),
-        status: 'active'
+        status: 'pending'
       });
 
       // Send confirmation email with agreement copy
@@ -636,7 +636,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                 <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${firstName} ${lastName}</strong>,</p>
                 
                 <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-                  Congratulations! Your CarHop Host account has been successfully created. You're now part of our partner network and can start listing your vehicles to earn money.
+                  Thank you for registering as a CarHop Host! Your account has been created and is pending verification. Our team will review your documents and credentials within 2-3 business days. You'll receive a confirmation email once your account is approved.
                 </p>
                 
                 <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
@@ -649,9 +649,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">License #:</strong> ${licenseNumber}</p>
                 </div>
 
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${loginUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
-                    Login to Host Dashboard
+                <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>Status: Pending Verification</strong></p>
+                <p style="margin: 5px 0 0 0; color: #b45309; font-size: 12px;">Your account is under review. You'll be notified once approved.</p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                  <a href="${loginUrl}" style="display: inline-block; background: #d1d5db; color: #6b7280; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: not-allowed;">
+                    Login to Host Dashboard (Available After Approval)
                   </a>
                 </div>
               </div>
