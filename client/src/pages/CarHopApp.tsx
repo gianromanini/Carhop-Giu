@@ -3459,7 +3459,13 @@ export default function CarHopApp() {
                                 <div>{b.date}</div>
                                 <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
                               </div>
-                              <button onClick={() => setDeletingBookingId(b.id.toString())} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-delete-booking">Delete Booking</button>
+                              <div className="flex gap-2 w-full sm:w-auto">
+                                <button onClick={() => setManageBookingId(null)} className="flex-1 sm:flex-none px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-1" data-testid="button-close-booking">
+                                  <ChevronLeft size={14}/>
+                                  Close
+                                </button>
+                                <button onClick={() => setDeletingBookingId(b.id.toString())} className="flex-1 sm:flex-none px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-delete-booking">Delete Booking</button>
+                              </div>
                             </div>
                           </div>
 
