@@ -1537,8 +1537,8 @@ export default function CarHopApp() {
       )}
 
       {showHostRegisterModal && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md sm:max-w-xl md:max-w-2xl p-4 sm:p-6 md:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 my-2 sm:my-4">
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto pt-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md sm:max-w-xl md:max-w-2xl p-4 sm:p-6 md:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 my-2 sm:my-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
             <button onClick={() => setShowHostRegisterModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-host-register-modal"><X size={20}/></button>
             
             {hostRegisterMessage ? (
