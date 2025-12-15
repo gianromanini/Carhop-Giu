@@ -814,6 +814,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                     <p style="margin: 0; color: #047857; font-size: 14px;"><strong>Status: Active</strong></p>
                     <p style="margin: 5px 0 0 0; color: #059669; font-size: 12px;">Your account is ready to use. You can login now!</p>
                   </div>
+
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${loginUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 15px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer;">
+                      Login to Your Host Dashboard
+                    </a>
+                  </div>
                 </div>
 
                 <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
