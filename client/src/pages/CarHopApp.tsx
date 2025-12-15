@@ -2270,6 +2270,21 @@ export default function CarHopApp() {
                         </div>
                         
                         <div className="border-t pt-4">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
+                          <div className="space-y-2">
+                            {settings.locations.map(loc => (
+                              <label key={loc} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                                <input type="checkbox" checked={formData.availableLocations?.includes(loc) || false} onChange={(e) => {
+                                  const current = formData.availableLocations || [];
+                                  setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
+                                }} className="w-4 h-4 accent-green-600" />
+                                {loc}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-4">
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
                           <div className="space-y-2">
                             <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 750})}>
@@ -2628,10 +2643,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Sales Tax (%)</label>
                             <input 
-                              type="text" 
-                              placeholder="e.g., 8.5 or 8,5"
+                              type="number" 
+                              step="0.1"
                               value={editingHostVehicle.pricing?.taxes ?? 8.5} 
-                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: val}} as Vehicle)}}
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), taxes: parseFloat(e.target.value) || 0}} as Vehicle)}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-taxes"
                             />
@@ -2639,10 +2654,10 @@ export default function CarHopApp() {
                           <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Cleaning Fee ($)</label>
                             <input 
-                              type="text" 
-                              placeholder="e.g., 25 or 25.50"
+                              type="number" 
+                              step="0.01"
                               value={editingHostVehicle.pricing?.cleaningFee ?? 25} 
-                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: val}} as Vehicle)}}
+                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), cleaningFee: parseFloat(e.target.value) || 0}} as Vehicle)}
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-cleaning"
                             />
