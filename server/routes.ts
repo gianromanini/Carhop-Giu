@@ -830,6 +830,47 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                 </div>
               </div>
             `;
+          } else if (host.status === 'pending') {
+            // Pending/Under Review email
+            subject = 'Your CarHop Host Account is Under Review';
+            emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="margin: 0; font-size: 28px;">Account Under Review</h1>
+                </div>
+                
+                <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${host.firstName} ${host.lastName}</strong>,</p>
+                  
+                  <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                    Thank you for registering with CarHop! Your application has been moved to <strong>pending review status</strong>. Our team is carefully evaluating your information.
+                  </p>
+                  
+                  <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>Status: Pending Review</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #b45309; font-size: 12px;">Your account is being reviewed by our administrative team</p>
+                  </div>
+
+                  <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">What's Next:</h3>
+                    <p style="margin: 0; color: #4b5563; font-size: 12px;">
+                      You'll receive an email notification once your account has been approved or if we need additional information. This typically takes 24-48 hours.
+                    </p>
+                  </div>
+
+                  <p style="font-size: 12px; color: #4b5563; line-height: 1.6; margin: 20px 0;">
+                    If you have any questions in the meantime, please don't hesitate to contact us.
+                  </p>
+                </div>
+
+                <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                  <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                    Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+                    CarHop LLC - Connecticut, USA
+                  </p>
+                </div>
+              </div>
+            `;
           } else if (host.status === 'suspended') {
             // Suspension email
             subject = 'Notice: Your CarHop Host Account Has Been Suspended';
@@ -886,7 +927,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         }
       }
 
-      res.json({ ...host, passwordHash: undefined });
+      res.json({ message: 'Host updated successfully', host: { ...host, passwordHash: undefined } });
     } catch (error) {
       console.error("Error updating host:", error);
       res.status(500).json({ message: "Failed to update host" });
