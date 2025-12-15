@@ -493,8 +493,7 @@ export default function CarHopApp() {
   const [chatBookingId, setChatBookingId] = useState<number | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
-  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'by-date'>('end-soon');
-  const [bookingFilterReturnDate, setBookingFilterReturnDate] = useState('');
+  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -3356,20 +3355,11 @@ export default function CarHopApp() {
                   <div className="space-y-2 mb-4">
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Filter Bookings</label>
-                      <select value={bookingFilterType} onChange={(e) => {setBookingFilterType(e.target.value as 'end-soon' | 'by-date'); setBookingFilterReturnDate('');}} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
+                      <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
                         <option value="end-soon">End Soon (Next 3 Days)</option>
-                        <option value="by-date">By Return Date</option>
+                        <option value="start-first">Start First</option>
                       </select>
                     </div>
-                    {bookingFilterType === 'by-date' && (
-                      <div>
-                        <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Return Date</label>
-                        <input type="date" value={bookingFilterReturnDate} onChange={(e) => setBookingFilterReturnDate(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-filter-return-date" />
-                      </div>
-                    )}
-                    {bookingFilterReturnDate && (
-                      <button onClick={() => setBookingFilterReturnDate('')} className="w-full text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded">Clear Filter</button>
-                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -3379,13 +3369,16 @@ export default function CarHopApp() {
                         const inThreeDays = addDaysToDate(today, 3);
                         if (bookingFilterType === 'end-soon') {
                           return b.returnDate >= today && b.returnDate <= inThreeDays && b.status !== 'Completed';
-                        } else if (bookingFilterType === 'by-date') {
-                          if (bookingFilterReturnDate && b.returnDate !== bookingFilterReturnDate) return false;
-                          return true;
                         }
                         return true;
                       })
-                      .sort((a, b) => new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime())
+                      .sort((a, b) => {
+                        if (bookingFilterType === 'end-soon') {
+                          return new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime();
+                        } else {
+                          return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                        }
+                      })
                       .map(b => {
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
