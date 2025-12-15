@@ -491,6 +491,7 @@ export default function CarHopApp() {
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
+  const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
   const [editingId, setEditingId] = useState<number | null>(null);
   const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
@@ -547,11 +548,13 @@ export default function CarHopApp() {
     locations: settingsData?.locations ?? defaultSettings.locations,
   };
 
+  const defaultPricingStrings = {taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'};
   const createVehicleMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/vehicles', data),
     onSuccess: () => { 
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); 
       setFormData(initialFormState); 
+      setPricingStrings(defaultPricingStrings);
       toast({ title: 'Vehicle created successfully' });
     }
   });
@@ -565,6 +568,7 @@ export default function CarHopApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       setFormData(initialFormState); 
+      setPricingStrings(defaultPricingStrings);
       setEditingId(null); 
       toast({ title: 'Vehicle updated successfully' });
     }
@@ -1205,6 +1209,7 @@ export default function CarHopApp() {
   };
 
   const handleEditVehicle = (car: Vehicle) => {
+    const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}};
     setFormData({
       model: car.model,
       category: car.category,
@@ -1231,7 +1236,16 @@ export default function CarHopApp() {
       commission: car.commission || 10,
       deductible: car.deductible || 1000,
       availableLocations: car.availableLocations || [],
-      pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}},
+      pricing: pricing,
+    });
+    setPricingStrings({
+      taxes: String(pricing.taxes || ''),
+      extraMileRate: String(pricing.extraMileRate || ''),
+      childSeat: String(pricing.prices?.childSeat || ''),
+      cleaningFee: String(pricing.cleaningFee || ''),
+      includedMiles: String(pricing.includedMiles || ''),
+      insurance500: String(pricing.prices?.insurance500 || ''),
+      insurance1000: String(pricing.prices?.insurance1000 || ''),
     });
     setEditingId(car.id);
   };
@@ -3082,7 +3096,7 @@ export default function CarHopApp() {
                     <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
                       {editingId ? 'Update Vehicle' : 'Add Vehicle'}
                     </Button>
-                    {editingId && <Button variant="ghost" onClick={() => { setFormData(initialFormState); setEditingId(null); }} className="w-full">Cancel</Button>}
+                    {editingId && <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }} className="w-full">Cancel</Button>}
                   </div>
                 </Card>
 
@@ -3116,25 +3130,37 @@ export default function CarHopApp() {
                       <div className="grid grid-cols-2 gap-2 sm:gap-4">
                         <div className="mb-3 w-full">
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
-                          <input type="text" placeholder="e.g., 8.5" value={formData.pricing?.taxes == null ? '' : String(formData.pricing.taxes)} onChange={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, taxes: val}})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-taxes" />
+                          <input type="text" inputMode="decimal" placeholder="e.g., 8.5" value={pricingStrings.taxes} onChange={(e: any) => setPricingStrings({...pricingStrings, taxes: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, taxes: val}}); setPricingStrings({...pricingStrings, taxes: String(val)})}} onFocus={() => { if (!pricingStrings.taxes) setPricingStrings({...pricingStrings, taxes: String(formData.pricing?.taxes || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-taxes" />
                         </div>
-                        <Input label="Cleaning Fee ($)" type="number" value={formData.pricing?.cleaningFee || 25} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, cleaningFee: parseFloat(e.target.value) || 0}})} data-testid="input-pricing-cleaning" />
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
+                          <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.cleaningFee} onChange={(e: any) => setPricingStrings({...pricingStrings, cleaningFee: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, cleaningFee: val}}); setPricingStrings({...pricingStrings, cleaningFee: String(val)})}} onFocus={() => { if (!pricingStrings.cleaningFee) setPricingStrings({...pricingStrings, cleaningFee: String(formData.pricing?.cleaningFee || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-cleaning" />
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                        <Input label="Included Miles / Day" type="number" value={formData.pricing?.includedMiles || 200} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, includedMiles: parseInt(e.target.value) || 0}})} data-testid="input-pricing-miles" />
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles / Day</label>
+                          <input type="text" inputMode="numeric" placeholder="e.g., 200" value={pricingStrings.includedMiles} onChange={(e: any) => setPricingStrings({...pricingStrings, includedMiles: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, includedMiles: val}}); setPricingStrings({...pricingStrings, includedMiles: String(val)})}} onFocus={() => { if (!pricingStrings.includedMiles) setPricingStrings({...pricingStrings, includedMiles: String(formData.pricing?.includedMiles || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-miles" />
+                        </div>
                         <div className="mb-3 w-full">
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                          <input type="text" placeholder="e.g., 0.45" value={formData.pricing?.extraMileRate == null ? '' : String(formData.pricing.extraMileRate)} onChange={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate" />
+                          <input type="text" inputMode="decimal" placeholder="e.g., 0.45" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} onFocus={() => { if (!pricingStrings.extraMileRate) setPricingStrings({...pricingStrings, extraMileRate: String(formData.pricing?.extraMileRate || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Daily Add-on Rates</label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
-                          <Input label="Ins. $500" type="number" value={formData.pricing?.prices?.insurance500 || 25} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance500: parseFloat(e.target.value) || 0}}})} data-testid="input-pricing-ins500" />
-                          <Input label="Ins. $1000" type="number" value={formData.pricing?.prices?.insurance1000 || 15} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance1000: parseFloat(e.target.value) || 0}}})} data-testid="input-pricing-ins1000" />
+                          <div className="mb-3 w-full">
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Ins. $500</label>
+                            <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} onFocus={() => { if (!pricingStrings.insurance500) setPricingStrings({...pricingStrings, insurance500: String(formData.pricing?.prices?.insurance500 || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-ins500" />
+                          </div>
+                          <div className="mb-3 w-full">
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Ins. $1000</label>
+                            <input type="text" inputMode="decimal" placeholder="e.g., 15" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} onFocus={() => { if (!pricingStrings.insurance1000) setPricingStrings({...pricingStrings, insurance1000: String(formData.pricing?.prices?.insurance1000 || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-ins1000" />
+                          </div>
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat</label>
-                            <input type="text" placeholder="e.g., 8.50" value={formData.pricing?.prices?.childSeat == null ? '' : String(formData.pricing.prices.childSeat)} onChange={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, childSeat: val}}})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-child-seat" />
+                            <input type="text" inputMode="decimal" placeholder="e.g., 8.50" value={pricingStrings.childSeat} onChange={(e: any) => setPricingStrings({...pricingStrings, childSeat: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, childSeat: val}}}); setPricingStrings({...pricingStrings, childSeat: String(val)})}} onFocus={() => { if (!pricingStrings.childSeat) setPricingStrings({...pricingStrings, childSeat: String(formData.pricing?.prices?.childSeat || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-child-seat" />
                           </div>
                         </div>
                       </div>
