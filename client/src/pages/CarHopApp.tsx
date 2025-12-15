@@ -3222,7 +3222,10 @@ export default function CarHopApp() {
                       <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Save Changes?</h3>
                       <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to save these changes to the client information?</p>
                       <div className="flex gap-3">
-                        <button onClick={() => { updateUserMutation.mutate({id: confirmingEditUserId, data: editForm}); }} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50" data-testid="button-confirm-edit-confirmation">Save Changes</button>
+                        <button onClick={() => { 
+                          const { createdAt, passwordHash, ...dataToUpdate } = editForm;
+                          updateUserMutation.mutate({id: confirmingEditUserId, data: dataToUpdate}); 
+                        }} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50" data-testid="button-confirm-edit-confirmation">Save Changes</button>
                         <button onClick={() => setConfirmingEditUserId(null)} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50" data-testid="button-cancel-edit-confirmation">Cancel</button>
                       </div>
                     </div>
