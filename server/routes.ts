@@ -785,6 +785,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       if (statusChanged) {
         try {
+          const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000';
+          const loginUrl = `${baseUrl}/`;
           let subject = '';
           let emailHtml = '';
           console.log(`DEBUG: ENTERING STATUS CHANGE EMAIL BLOCK: ${previousHost.status} -> ${host.status}`);
