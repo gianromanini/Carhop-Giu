@@ -515,6 +515,7 @@ export default function CarHopApp() {
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
+  const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const [hostTab, setHostTab] = useState('fleet');
   const [editingHost, setEditingHost] = useState<any>(null);
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
@@ -522,6 +523,10 @@ export default function CarHopApp() {
   const [hostNewLocation, setHostNewLocation] = useState('');
   const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
   const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<User> | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
   const settings: SettingsType = {
@@ -556,6 +561,28 @@ export default function CarHopApp() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] })
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => 
+      apiRequest('PUT', `/api/admin/users/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setEditingUserId(null);
+      setEditForm(null);
+      toast({ title: 'User updated successfully' });
+    }
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => 
+      apiRequest('DELETE', `/api/admin/users/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setDeletingUserId(null);
+      setSelectedClient(null);
+      toast({ title: 'User deleted successfully' });
+    }
+  });
+
   const createBookingMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/bookings', data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); }
@@ -570,6 +597,11 @@ export default function CarHopApp() {
     mutationFn: ({ key, value }: { key: string; value: any }) => apiRequest('PUT', `/api/settings/${key}`, { value }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/settings'] })
   });
+
+  const clientTrips = useMemo(() => {
+    if (!selectedClient) return [];
+    return bookings.filter(b => b.driver.email === selectedClient.email);
+  }, [selectedClient, bookings]);
 
   useEffect(() => {
     const today = getTodayString();
@@ -3057,43 +3089,9 @@ export default function CarHopApp() {
               </div>
             )}
 
-            {adminTab === 'clients' && (() => {
-              const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
-              const [editingUserId, setEditingUserId] = useState<string | null>(null);
-              const [editForm, setEditForm] = useState<Partial<User> | null>(null);
-              const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-              const { toast } = useToast();
-
-              const updateUserMutation = useMutation({
-                mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => 
-                  apiRequest('PUT', `/api/admin/users/${id}`, data),
-                onSuccess: () => {
-                  queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-                  setEditingUserId(null);
-                  setEditForm(null);
-                  toast({ title: 'User updated successfully' });
-                }
-              });
-
-              const deleteUserMutation = useMutation({
-                mutationFn: async (id: string) => 
-                  apiRequest('DELETE', `/api/admin/users/${id}`),
-                onSuccess: () => {
-                  queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-                  setDeletingUserId(null);
-                  setSelectedClient(null);
-                  toast({ title: 'User deleted successfully' });
-                }
-              });
-
-              const clientTrips = useMemo(() => {
-                if (!selectedClient) return [];
-                return bookings.filter(b => b.driver.email === selectedClient.email);
-              }, [selectedClient, bookings]);
-
-              return (
-                <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {adminTab === 'clients' && (
+              <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                     <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({usersData.length})</h3>
                     <div className="space-y-2">
@@ -3186,8 +3184,7 @@ export default function CarHopApp() {
                   </div>
                 )}
                 </>
-              );
-            })()}
+              )}
 
             {adminTab === 'hosts' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
