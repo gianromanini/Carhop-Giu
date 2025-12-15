@@ -2318,6 +2318,66 @@ export default function CarHopApp() {
                       </div>
                     </Card>
 
+                    {/* Price Configuration Section */}
+                    <Card className="p-6">
+                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                        <DollarSign size={18} className="text-green-500"/>
+                        Price Configuration
+                      </h3>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
+                          <input type="number" step="0.1" value={priceConfigForm?.taxes || settings.taxes} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, taxes: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-taxes" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
+                          <input type="number" value={priceConfigForm?.cleaningFee || settings.cleaningFee} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, cleaningFee: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-cleaning-fee" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles/Day</label>
+                          <input type="number" value={priceConfigForm?.includedMiles || settings.includedMiles} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, includedMiles: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-included-miles" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
+                          <input type="text" placeholder="e.g., 0.45 or 0,45" value={priceConfigForm?.extraMileRate || settings.extraMileRate} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, extraMileRate: e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
+                        </div>
+                      </div>
+                      
+                      <h4 className="text-sm font-bold mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                        <Shield size={16} className="text-blue-500"/>
+                        Insurance & Add-on Prices (per day)
+                      </h4>
+                      <div className="grid md:grid-cols-3 gap-4 mb-6">
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$500 Deductible Price (Fixed)</label>
+                          <input type="text" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} disabled className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-500" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$1000 Deductible Price (Fixed)</label>
+                          <input type="text" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} disabled className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-1000" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat Price</label>
+                          <input type="number" value={priceConfigForm?.prices?.childSeat || settings.prices.childSeat} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeat: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-child-seat" />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button variant="secondary" className="flex-1" onClick={() => setPriceConfigForm(settings)} data-testid="button-cancel-price-config">Cancel</Button>
+                        <Button variant="primary" className="flex-1" onClick={() => {
+                          if (priceConfigForm) {
+                            updateSettingMutation.mutate({ key: 'taxes', value: priceConfigForm.taxes });
+                            updateSettingMutation.mutate({ key: 'cleaningFee', value: priceConfigForm.cleaningFee });
+                            updateSettingMutation.mutate({ key: 'includedMiles', value: priceConfigForm.includedMiles });
+                            updateSettingMutation.mutate({ key: 'extraMileRate', value: priceConfigForm.extraMileRate });
+                            updateSettingMutation.mutate({ key: 'prices', value: priceConfigForm.prices });
+                          }
+                        }} data-testid="button-save-price-config">
+                          <Check size={16}/> Save Configuration
+                        </Button>
+                      </div>
+                    </Card>
+
                     {/* My Vehicles */}
                     <Card className="p-6">
                       <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
@@ -2346,66 +2406,6 @@ export default function CarHopApp() {
                     </Card>
                   </div>
                 </div>
-
-                {/* Price Configuration Section */}
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <DollarSign size={18} className="text-green-500"/>
-                    Price Configuration
-                  </h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
-                      <input type="number" step="0.1" value={priceConfigForm?.taxes || settings.taxes} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, taxes: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-taxes" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
-                      <input type="number" value={priceConfigForm?.cleaningFee || settings.cleaningFee} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, cleaningFee: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-cleaning-fee" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles/Day</label>
-                      <input type="number" value={priceConfigForm?.includedMiles || settings.includedMiles} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, includedMiles: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-included-miles" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                      <input type="number" step="0.01" value={priceConfigForm?.extraMileRate || settings.extraMileRate} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, extraMileRate: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
-                    </div>
-                  </div>
-                  
-                  <h4 className="text-sm font-bold mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                    <Shield size={16} className="text-blue-500"/>
-                    Insurance & Add-on Prices (per day)
-                  </h4>
-                  <div className="grid md:grid-cols-3 gap-4 mb-6">
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$500 Deductible Price</label>
-                      <input type="number" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, insurance500: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-500" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$1000 Deductible Price</label>
-                      <input type="number" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, insurance1000: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-insurance-1000" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat Price</label>
-                      <input type="number" value={priceConfigForm?.prices?.childSeat || settings.prices.childSeat} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeat: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-child-seat" />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button variant="secondary" className="flex-1" onClick={() => setPriceConfigForm(settings)} data-testid="button-cancel-price-config">Cancel</Button>
-                    <Button variant="primary" className="flex-1" onClick={() => {
-                      if (priceConfigForm) {
-                        updateSettingMutation.mutate({ key: 'taxes', value: priceConfigForm.taxes });
-                        updateSettingMutation.mutate({ key: 'cleaningFee', value: priceConfigForm.cleaningFee });
-                        updateSettingMutation.mutate({ key: 'includedMiles', value: priceConfigForm.includedMiles });
-                        updateSettingMutation.mutate({ key: 'extraMileRate', value: priceConfigForm.extraMileRate });
-                        updateSettingMutation.mutate({ key: 'prices', value: priceConfigForm.prices });
-                      }
-                    }} data-testid="button-save-price-config">
-                      <Check size={16}/> Save Configuration
-                    </Button>
-                  </div>
-                </Card>
 
                 {/* Vehicle Edit Modal */}
                 {editingHostVehicle && (
