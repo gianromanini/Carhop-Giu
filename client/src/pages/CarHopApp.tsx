@@ -3415,10 +3415,11 @@ export default function CarHopApp() {
                               body: JSON.stringify(editingHost),
                             });
                             if (response.ok) {
+                              const data = await response.json();
                               queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
                               setEditingHost(null);
-                              const updated = await response.json();
-                              setSelectedHost(updated);
+                              setSelectedHost(data.host || data);
+                              toast({ title: data.message || 'Host updated successfully' });
                             } else {
                               alert('Error updating host');
                             }
