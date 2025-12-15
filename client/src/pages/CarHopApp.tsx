@@ -398,7 +398,7 @@ export default function CarHopApp() {
   const [hostLoginForm, setHostLoginForm] = useState({ username: '', password: '' });
   const [hostRegisterForm, setHostRegisterForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '',
-    licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', username: '', password: '', confirmPassword: ''
+    licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', proofOfResidenceImage: '', username: '', password: '', confirmPassword: ''
   });
   const [hostRegisterMessage, setHostRegisterMessage] = useState('');
   const [showHostAgreementModal, setShowHostAgreementModal] = useState(false);
@@ -1583,6 +1583,7 @@ export default function CarHopApp() {
                         licenseNumber: hostRegisterForm.licenseNumber,
                         licenseFrontImage: hostRegisterForm.licenseFrontImage,
                         licenseBackImage: hostRegisterForm.licenseBackImage,
+                        proofOfResidenceImage: hostRegisterForm.proofOfResidenceImage,
                         username: hostRegisterForm.username,
                         password: hostRegisterForm.password,
                         agreementAccepted: hostAgreementAccepted,
@@ -1651,6 +1652,18 @@ export default function CarHopApp() {
                         }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-back" />
                         {hostRegisterForm.licenseBackImage && <img src={hostRegisterForm.licenseBackImage} alt="Back" className="mt-2 w-full h-20 object-cover rounded border" />}
                       </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="block text-xs text-zinc-500 mb-1">Proof of Residence (Utilities Bill, etc.) *</label>
+                      <input type="file" accept="image/*" required onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, proofOfResidenceImage: reader.result as string});
+                          reader.readAsDataURL(file);
+                        }
+                      }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-proof-residence" />
+                      {hostRegisterForm.proofOfResidenceImage && <img src={hostRegisterForm.proofOfResidenceImage} alt="Proof" className="mt-2 w-full h-20 object-cover rounded border" />}
                     </div>
                   </div>
 
@@ -3361,29 +3374,29 @@ export default function CarHopApp() {
                           } catch (err) { alert('Error updating host'); }
                         }} className="space-y-4 p-4 bg-zinc-900 rounded-lg">
                           <div className="grid grid-cols-2 gap-3">
-                            <input type="text" value={editingHost.firstName} onChange={(e) => setEditingHost({...editingHost, firstName: e.target.value})} placeholder="First Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
-                            <input type="text" value={editingHost.lastName} onChange={(e) => setEditingHost({...editingHost, lastName: e.target.value})} placeholder="Last Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="text" value={editingHost.firstName} onChange={(e) => setEditingHost({...editingHost, firstName: e.target.value})} placeholder="First Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
+                            <input type="text" value={editingHost.lastName} onChange={(e) => setEditingHost({...editingHost, lastName: e.target.value})} placeholder="Last Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
-                            <input type="email" value={editingHost.email} onChange={(e) => setEditingHost({...editingHost, email: e.target.value})} placeholder="Email" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
-                            <input type="tel" value={editingHost.phone} onChange={(e) => setEditingHost({...editingHost, phone: e.target.value})} placeholder="Phone" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="email" value={editingHost.email} onChange={(e) => setEditingHost({...editingHost, email: e.target.value})} placeholder="Email" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
+                            <input type="tel" value={editingHost.phone} onChange={(e) => setEditingHost({...editingHost, phone: e.target.value})} placeholder="Phone" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                           </div>
-                          <input type="text" value={editingHost.address || ''} onChange={(e) => setEditingHost({...editingHost, address: e.target.value})} placeholder="Address" className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                          <input type="text" value={editingHost.address || ''} onChange={(e) => setEditingHost({...editingHost, address: e.target.value})} placeholder="Address" className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                           <div className="grid grid-cols-3 gap-3">
-                            <input type="text" value={editingHost.city || ''} onChange={(e) => setEditingHost({...editingHost, city: e.target.value})} placeholder="City" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
-                            <input type="text" value={editingHost.state || ''} onChange={(e) => setEditingHost({...editingHost, state: e.target.value})} placeholder="State" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
-                            <input type="text" value={editingHost.zipCode || ''} onChange={(e) => setEditingHost({...editingHost, zipCode: e.target.value})} placeholder="ZIP" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type="text" value={editingHost.city || ''} onChange={(e) => setEditingHost({...editingHost, city: e.target.value})} placeholder="City" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
+                            <input type="text" value={editingHost.state || ''} onChange={(e) => setEditingHost({...editingHost, state: e.target.value})} placeholder="State" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
+                            <input type="text" value={editingHost.zipCode || ''} onChange={(e) => setEditingHost({...editingHost, zipCode: e.target.value})} placeholder="ZIP" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
-                            <input type="text" value={editingHost.licenseNumber} onChange={(e) => setEditingHost({...editingHost, licenseNumber: e.target.value})} placeholder="License Number" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
-                            <select value={editingHost.status} onChange={(e) => setEditingHost({...editingHost, status: e.target.value})} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-sm">
+                            <input type="text" value={editingHost.licenseNumber} onChange={(e) => setEditingHost({...editingHost, licenseNumber: e.target.value})} placeholder="License Number" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
+                            <select value={editingHost.status} onChange={(e) => setEditingHost({...editingHost, status: e.target.value})} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs">
                               <option value="active">Active</option>
                               <option value="suspended">Suspended</option>
                               <option value="pending">Pending</option>
                             </select>
                           </div>
                           <div className="relative">
-                            <input type={showHostEditPassword ? "text" : "password"} value={editingHost.password || ''} onChange={(e) => setEditingHost({...editingHost, password: e.target.value})} placeholder="New Password (leave blank to keep current)" className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded bg-zinc-800 text-white text-sm" />
+                            <input type={showHostEditPassword ? "text" : "password"} value={editingHost.password || ''} onChange={(e) => setEditingHost({...editingHost, password: e.target.value})} placeholder="New Password (leave blank to keep current)" className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                             <button type="button" onClick={() => setShowHostEditPassword(!showHostEditPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors" data-testid="button-toggle-host-edit-password">{showHostEditPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                           </div>
                           <div className="flex gap-2">
@@ -3418,15 +3431,23 @@ export default function CarHopApp() {
                             </div>
                           </div>
                           
-                          {(selectedHost.licenseFrontImage || selectedHost.licenseBackImage) && (
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">License Photos</h4>
-                              <div className="grid grid-cols-2 gap-3">
-                                {selectedHost.licenseFrontImage && <img src={selectedHost.licenseFrontImage} alt="Front" className="w-full h-32 object-cover rounded border border-zinc-700" />}
-                                {selectedHost.licenseBackImage && <img src={selectedHost.licenseBackImage} alt="Back" className="w-full h-32 object-cover rounded border border-zinc-700" />}
+                          <div className="space-y-4">
+                            {(selectedHost.licenseFrontImage || selectedHost.licenseBackImage) && (
+                              <div>
+                                <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Driver's License</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {selectedHost.licenseFrontImage && <img src={selectedHost.licenseFrontImage} alt="Front" className="w-full h-32 object-cover rounded border border-zinc-700" />}
+                                  {selectedHost.licenseBackImage && <img src={selectedHost.licenseBackImage} alt="Back" className="w-full h-32 object-cover rounded border border-zinc-700" />}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                            {selectedHost.proofOfResidenceImage && (
+                              <div>
+                                <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Proof of Residence</h4>
+                                <img src={selectedHost.proofOfResidenceImage} alt="Proof of Residence" className="w-full h-40 object-cover rounded border border-zinc-700" />
+                              </div>
+                            )}
+                          </div>
 
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Host Vehicles ({vehicles.filter(v => v.hostId === String(selectedHost.id)).length})</h4>
