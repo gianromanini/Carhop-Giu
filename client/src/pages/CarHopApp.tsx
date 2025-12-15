@@ -604,6 +604,17 @@ export default function CarHopApp() {
     return bookings.filter(b => b.driver.email === selectedClient.email);
   }, [selectedClient, bookings]);
 
+  const getUserTripsAndTotal = (userEmail: string | null) => {
+    if (!userEmail) return { trips: 0, total: 0 };
+    const userBookings = bookings.filter(b => b.driver.email === userEmail);
+    const total = userBookings.reduce((sum, b) => {
+      const details = b.details;
+      if (!details) return sum;
+      return sum + (details.rate * 1 + details.extras + details.protection + details.fees + details.tax - (details.discount || 0));
+    }, 0);
+    return { trips: userBookings.length, total };
+  };
+
   useEffect(() => {
     const today = getTodayString();
     const nextTime = getNext30MinSlot();
@@ -3096,13 +3107,19 @@ export default function CarHopApp() {
                   <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                     <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({usersData.length})</h3>
                     <div className="space-y-2">
-                      {usersData.map((user) => (
-                        <div key={user.id} onClick={() => setSelectedClient(user)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedClient?.id === user.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-client-${user.id}`}>
-                          <div className="font-bold text-sm text-white">{user.firstName} {user.lastName}</div>
-                          <div className="text-xs text-zinc-500 truncate">{user.email}</div>
-                          <div className="text-xs text-zinc-400 mt-1">{user.city}, {user.state}</div>
-                        </div>
-                      ))}
+                      {usersData.map((user) => {
+                        const { trips, total } = getUserTripsAndTotal(user.email);
+                        return (
+                          <div key={user.id} onClick={() => setSelectedClient(user)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedClient?.id === user.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-client-${user.id}`}>
+                            <div className="font-bold text-sm text-white">{user.firstName} {user.lastName}</div>
+                            <div className="text-xs text-zinc-500 truncate">{user.email}</div>
+                            <div className="text-xs text-zinc-400 mt-2 flex justify-between">
+                              <span>{trips} Trip{trips !== 1 ? 's' : ''}</span>
+                              <span>${total.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </Card>
 
