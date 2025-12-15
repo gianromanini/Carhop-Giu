@@ -1685,17 +1685,17 @@ export default function CarHopApp() {
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 space-y-3">
                 <div className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
                   <div className="text-center min-w-16">
-                    <span className="text-2xl font-bold text-green-600">10%</span>
+                    <span className="text-2xl font-bold text-green-600">15%</span>
                     <p className="text-xs text-zinc-500">Commission</p>
                   </div>
                   <div className="flex-1">
                     <p className="font-bold text-zinc-900 dark:text-white">Standard Plan</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">You are responsible for a <strong>$1,000 deductible</strong> per incident. Best for hosts who want to maximize earnings.</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">You are responsible for a <strong>$750 deductible</strong> per incident. Best for hosts who want to maximize earnings.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
                   <div className="text-center min-w-16">
-                    <span className="text-2xl font-bold text-blue-600">20%</span>
+                    <span className="text-2xl font-bold text-blue-600">25%</span>
                     <p className="text-xs text-zinc-500">Commission</p>
                   </div>
                   <div className="flex-1">
@@ -2196,17 +2196,17 @@ export default function CarHopApp() {
                         <div className="border-t pt-4">
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
                           <div className="space-y-2">
-                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 10 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 10, deductible: 1000})}>
-                              <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: 1000})} className="w-4 h-4" />
+                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 750})}>
+                              <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: 750})} className="w-4 h-4" />
                               <div className="ml-3">
-                                <p className="text-sm font-bold text-zinc-900 dark:text-white">10% Commission</p>
-                                <p className="text-xs text-zinc-500">$1,000 Deductible</p>
+                                <p className="text-sm font-bold text-zinc-900 dark:text-white">15% Commission</p>
+                                <p className="text-xs text-zinc-500">$750 Deductible</p>
                               </div>
                             </div>
-                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 20, deductible: 500})}>
-                              <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 500})} className="w-4 h-4" />
+                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 25, deductible: 500})}>
+                              <input type="radio" name="commission" value="25" checked={formData.commission === 25} onChange={() => setFormData({...formData, commission: 25, deductible: 500})} className="w-4 h-4" />
                               <div className="ml-3">
-                                <p className="text-sm font-bold text-zinc-900 dark:text-white">20% Commission</p>
+                                <p className="text-sm font-bold text-zinc-900 dark:text-white">25% Commission</p>
                                 <p className="text-xs text-zinc-500">$500 Deductible</p>
                               </div>
                             </div>
@@ -2434,17 +2434,17 @@ export default function CarHopApp() {
                       <div className="mb-6">
                         <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 10 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 10, deductible: 1000})}>
-                            <input type="radio" checked={editingHostVehicle.commission === 10} onChange={() => {}} className="w-4 h-4" />
+                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 15, deductible: 750})}>
+                            <input type="radio" checked={editingHostVehicle.commission === 15} onChange={() => {}} className="w-4 h-4" />
                             <div className="ml-3">
-                              <p className="text-sm font-bold text-zinc-900 dark:text-white">10% Commission</p>
-                              <p className="text-xs text-zinc-500">$1,000 Deductible</p>
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white">15% Commission</p>
+                              <p className="text-xs text-zinc-500">$750 Deductible</p>
                             </div>
                           </div>
-                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 20, deductible: 500})}>
-                            <input type="radio" checked={editingHostVehicle.commission === 20} onChange={() => {}} className="w-4 h-4" />
+                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 25, deductible: 500})}>
+                            <input type="radio" checked={editingHostVehicle.commission === 25} onChange={() => {}} className="w-4 h-4" />
                             <div className="ml-3">
-                              <p className="text-sm font-bold text-zinc-900 dark:text-white">20% Commission</p>
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white">25% Commission</p>
                               <p className="text-xs text-zinc-500">$500 Deductible</p>
                             </div>
                           </div>
