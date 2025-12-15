@@ -406,16 +406,6 @@ export default function CarHopApp() {
   const [hostAgreementAcceptedAt, setHostAgreementAcceptedAt] = useState('');
   const [currentHost, setCurrentHost] = useState<any>(null);
   const [signupMessage, setSignupMessage] = useState('');
-  
-  useEffect(() => {
-    if (isAuthenticated && authUser) {
-      const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
-      setClientUser({ name: fullName, email: authUser.email || '' });
-      setDriverDetails(prev => ({ ...prev, name: fullName, email: authUser.email || '' }));
-      setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '' });
-      setShowLoginModal(false);
-    }
-  }, [isAuthenticated, authUser]);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isRegistering, setIsRegistering] = useState(false);
 
@@ -600,6 +590,16 @@ export default function CarHopApp() {
       setCart(prev => ({ ...prev, billingDays }));
     }
   }, [searchParams.end, searchParams.endTime, searchParams.start, searchParams.startTime, view, cart.car?.id]);
+
+  useEffect(() => {
+    if (isAuthenticated && authUser) {
+      const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
+      setClientUser({ name: fullName, email: authUser.email || '' });
+      setDriverDetails(prev => ({ ...prev, name: fullName, email: authUser.email || '' }));
+      setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '' });
+      setShowLoginModal(false);
+    }
+  }, [isAuthenticated, authUser]);
 
   const getMinReturnDate = () => {
     const today = getTodayString();
