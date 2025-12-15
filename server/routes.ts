@@ -645,13 +645,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Email:</strong> ${email}</p>
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Phone:</strong> ${phone}</p>
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Username:</strong> ${username}</p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Password:</strong> ${password}</p>
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Address:</strong> ${address || 'N/A'}, ${city || ''} ${state || ''} ${zipCode || ''}</p>
                   <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">License #:</strong> ${licenseNumber}</p>
                 </div>
 
                 <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px;">
                 <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>Status: Pending Verification</strong></p>
-                <p style="margin: 5px 0 0 0; color: #b45309; font-size: 12px;">Your account is under review. You'll be notified once approved.</p>
+                <p style="margin: 5px 0 0 0; color: #b45309; font-size: 12px;">Your account is under review. We'll verify your documents and notify you within 2-3 business days.</p>
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
@@ -785,39 +786,39 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
           
           if (host.status === 'active' && previousHost.status === 'pending') {
             // Approval email - Pending to Active
-            subject = 'Parabéns! Sua Conta CarHop foi Aprovada';
+            subject = 'Congratulations! Your CarHop Host Account is Approved';
             emailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                  <h1 style="margin: 0; font-size: 28px;">Conta Aprovada!</h1>
+                  <h1 style="margin: 0; font-size: 28px;">Account Approved!</h1>
                 </div>
                 
                 <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
-                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Olá <strong>${host.firstName} ${host.lastName}</strong>,</p>
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${host.firstName} ${host.lastName}</strong>,</p>
                   
                   <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-                    Excelente notícia! Sua conta no programa CarHop Host foi <strong>aprovada com sucesso</strong>!
+                    Great news! Your CarHop Host Partner account has been <strong>approved and is now active</strong>! You're ready to start listing your vehicles and earning money.
                   </p>
                   
                   <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
-                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">Próximos Passos:</h3>
+                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">Next Steps:</h3>
                     <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
-                      <li>Faça login em sua conta com seu username</li>
-                      <li>Cadastre seus veículos na plataforma</li>
-                      <li>Configure as datas de disponibilidade</li>
-                      <li>Comece a ganhar dinheiro com seus veículos!</li>
+                      <li>Login to your account with your username and password</li>
+                      <li>Add your vehicles to the platform</li>
+                      <li>Set your vehicle availability dates</li>
+                      <li>Start earning money with your fleet!</li>
                     </ul>
                   </div>
 
                   <div style="background: #ecfdf5; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0; border-radius: 4px;">
-                    <p style="margin: 0; color: #047857; font-size: 14px;"><strong>Status: Ativo</strong></p>
-                    <p style="margin: 5px 0 0 0; color: #059669; font-size: 12px;">Sua conta está pronta para uso. Você pode fazer login agora!</p>
+                    <p style="margin: 0; color: #047857; font-size: 14px;"><strong>Status: Active</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #059669; font-size: 12px;">Your account is ready to use. You can login now!</p>
                   </div>
                 </div>
 
                 <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
                   <p style="font-size: 12px; color: #9ca3af; margin: 0;">
-                    Dúvidas? Contate-nos em (475) 449-8622 ou responda este email.<br/>
+                    Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
                     CarHop LLC - Connecticut, USA
                   </p>
                 </div>
@@ -825,40 +826,40 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
             `;
           } else if (host.status === 'suspended') {
             // Suspension email
-            subject = 'Aviso: Sua Conta CarHop foi Suspensa';
+            subject = 'Notice: Your CarHop Host Account Has Been Suspended';
             emailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                  <h1 style="margin: 0; font-size: 28px;">Conta Suspensa</h1>
+                  <h1 style="margin: 0; font-size: 28px;">Account Suspended</h1>
                 </div>
                 
                 <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
-                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Olá <strong>${host.firstName} ${host.lastName}</strong>,</p>
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${host.firstName} ${host.lastName}</strong>,</p>
                   
                   <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-                    Informamos que sua conta no programa CarHop Host foi <strong>suspensa</strong> devido a violação dos termos de serviço ou prática ilegal.
+                    We regret to inform you that your CarHop Host Partner account has been <strong>suspended</strong> due to violation of our Terms of Service or illegal activity.
                   </p>
                   
                   <div style="background: #fee2e2; padding: 15px; border-left: 4px solid #dc2626; margin: 20px 0; border-radius: 4px;">
-                    <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>Motivo da Suspensão:</strong></p>
-                    <p style="margin: 5px 0 0 0; color: #b91c1c; font-size: 12px;">Violação dos Termos de Serviço ou Prática Ilegal</p>
+                    <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>Reason for Suspension:</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #b91c1c; font-size: 12px;">Terms of Service Violation or Illegal Activity</p>
                   </div>
 
                   <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
-                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">O que isso significa:</h3>
+                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">What This Means:</h3>
                     <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                      Sua conta não poderá mais receber reservas. Todos os veículos listados foram removidos da plataforma.
+                      Your account will no longer accept bookings. All vehicles currently listed on the platform have been removed.
                     </p>
                   </div>
 
                   <p style="font-size: 12px; color: #4b5563; line-height: 1.6; margin: 20px 0;">
-                    Se você acredita que isso foi um erro ou gostaria de apelar esta decisão, entre em contato conosco imediatamente.
+                    If you believe this is an error or would like to appeal this decision, please contact us immediately.
                   </p>
                 </div>
 
                 <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
                   <p style="font-size: 12px; color: #9ca3af; margin: 0;">
-                    Contate-nos em (475) 449-8622 ou responda este email para mais informações.<br/>
+                    Contact us at (475) 449-8622 or reply to this email for more information.<br/>
                     CarHop LLC - Connecticut, USA
                   </p>
                 </div>
