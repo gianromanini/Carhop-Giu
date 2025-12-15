@@ -783,6 +783,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         try {
           let subject = '';
           let emailHtml = '';
+          console.log(`Host status changed: ${previousHost.status} -> ${host.status}`);
           
           if (host.status === 'active' && previousHost.status === 'pending') {
             // Approval email - Pending to Active
