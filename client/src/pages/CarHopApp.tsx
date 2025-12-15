@@ -1788,7 +1788,7 @@ export default function CarHopApp() {
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">3. VEHICLE REQUIREMENTS</h3>
               <p>To list your vehicle on CarHop, you must meet the following requirements:</p>
               <ul className="list-disc pl-6 space-y-1">
-                <li>Vehicle must be model year 2015 or newer</li>
+                <li>Vehicle must be model year 2010 or newer</li>
                 <li>Vehicle must have fewer than 130,000 miles</li>
                 <li>Vehicle must pass a safety inspection and be in good working condition</li>
                 <li>Vehicle must be registered and insured in the State of Connecticut</li>
@@ -1800,7 +1800,7 @@ export default function CarHopApp() {
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">4. INSURANCE AND LIABILITY</h3>
               <p>CarHop provides commercial auto insurance coverage during active rentals through our insurance partner. This includes:</p>
               <ul className="list-disc pl-6 space-y-1">
-                <li><strong>Liability Coverage:</strong> Up to $1,000,000 per occurrence</li>
+                <li><strong>Liability Coverage:</strong> Up to $35,000 per occurrence</li>
                 <li><strong>Comprehensive & Collision:</strong> Actual cash value of the vehicle (subject to deductible)</li>
                 <li><strong>Uninsured/Underinsured Motorist:</strong> State minimum requirements</li>
               </ul>
