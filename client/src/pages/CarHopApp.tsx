@@ -526,6 +526,7 @@ export default function CarHopApp() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<User> | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [showClientPassword, setShowClientPassword] = useState(false);
   const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8 }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
@@ -3126,10 +3127,16 @@ export default function CarHopApp() {
                               <input type="text" placeholder="Phone" value={editForm.phone || ''} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-phone"/>
                               <input type="text" placeholder="City" value={editForm.city || ''} onChange={(e) => setEditForm({...editForm, city: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-city"/>
                               <input type="text" placeholder="State" value={editForm.state || ''} onChange={(e) => setEditForm({...editForm, state: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-state"/>
+                              <div className="col-span-2 relative">
+                                <input type={showClientPassword ? "text" : "password"} placeholder="Password (leave blank to keep current)" value={(editForm as any).password || ''} onChange={(e) => setEditForm({...editForm, password: e.target.value} as any)} className="w-full p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white pr-8" data-testid="input-edit-password"/>
+                                <button type="button" onClick={() => setShowClientPassword(!showClientPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700" data-testid="button-toggle-password-visibility">
+                                  {showClientPassword ? <EyeOff size={14}/> : <Eye size={14}/>}
+                                </button>
+                              </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => updateUserMutation.mutate({id: selectedClient.id, data: editForm})} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-save-edit-client">Save</button>
-                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-cancel-edit-client">Cancel</button>
+                              <button onClick={() => updateUserMutation.mutate({id: selectedClient.id, data: editForm})} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Accept</button>
+                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-decline-edit-client">Decline</button>
                             </div>
                           </div>
                         ) : (
