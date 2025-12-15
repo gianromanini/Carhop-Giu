@@ -2354,7 +2354,7 @@ export default function CarHopApp() {
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                          <input type="text" placeholder="e.g., 0.45 or 0,45" value={priceConfigForm?.extraMileRate ?? settings.extraMileRate} onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || parseFloat(e.target.value) || 0; setPriceConfigForm({...priceConfigForm || settings, extraMileRate: val})}} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
+                          <input type="number" step="0.01" value={priceConfigForm?.extraMileRate ?? settings.extraMileRate} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, extraMileRate: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
                         </div>
                       </div>
                       
