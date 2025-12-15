@@ -752,6 +752,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const id = parseInt(req.params.id);
       const { password, ...safeUpdates } = req.body;
 
+      // Get the current host to check for status changes
+      const hosts = await storage.getHosts();
+      const previousHost = hosts.find(h => h.id === id);
+      
       // Build update object with only safe fields
       const updates: any = {};
       const allowedFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'status'];
@@ -772,6 +776,109 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       if (!host) {
         return res.status(404).json({ message: "Host not found" });
       }
+
+      // Send email if status changed
+      if (previousHost && previousHost.status !== host.status) {
+        try {
+          let subject = '';
+          let emailHtml = '';
+          
+          if (host.status === 'active' && previousHost.status === 'pending') {
+            // Approval email - Pending to Active
+            subject = 'Parabéns! Sua Conta CarHop foi Aprovada';
+            emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="margin: 0; font-size: 28px;">Conta Aprovada!</h1>
+                </div>
+                
+                <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Olá <strong>${host.firstName} ${host.lastName}</strong>,</p>
+                  
+                  <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                    Excelente notícia! Sua conta no programa CarHop Host foi <strong>aprovada com sucesso</strong>!
+                  </p>
+                  
+                  <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">Próximos Passos:</h3>
+                    <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+                      <li>Faça login em sua conta com seu username</li>
+                      <li>Cadastre seus veículos na plataforma</li>
+                      <li>Configure as datas de disponibilidade</li>
+                      <li>Comece a ganhar dinheiro com seus veículos!</li>
+                    </ul>
+                  </div>
+
+                  <div style="background: #ecfdf5; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; color: #047857; font-size: 14px;"><strong>Status: Ativo</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #059669; font-size: 12px;">Sua conta está pronta para uso. Você pode fazer login agora!</p>
+                  </div>
+                </div>
+
+                <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                  <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                    Dúvidas? Contate-nos em (475) 449-8622 ou responda este email.<br/>
+                    CarHop LLC - Connecticut, USA
+                  </p>
+                </div>
+              </div>
+            `;
+          } else if (host.status === 'suspended') {
+            // Suspension email
+            subject = 'Aviso: Sua Conta CarHop foi Suspensa';
+            emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="margin: 0; font-size: 28px;">Conta Suspensa</h1>
+                </div>
+                
+                <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Olá <strong>${host.firstName} ${host.lastName}</strong>,</p>
+                  
+                  <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                    Informamos que sua conta no programa CarHop Host foi <strong>suspensa</strong> devido a violação dos termos de serviço ou prática ilegal.
+                  </p>
+                  
+                  <div style="background: #fee2e2; padding: 15px; border-left: 4px solid #dc2626; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>Motivo da Suspensão:</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #b91c1c; font-size: 12px;">Violação dos Termos de Serviço ou Prática Ilegal</p>
+                  </div>
+
+                  <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">O que isso significa:</h3>
+                    <p style="margin: 0; color: #4b5563; font-size: 12px;">
+                      Sua conta não poderá mais receber reservas. Todos os veículos listados foram removidos da plataforma.
+                    </p>
+                  </div>
+
+                  <p style="font-size: 12px; color: #4b5563; line-height: 1.6; margin: 20px 0;">
+                    Se você acredita que isso foi um erro ou gostaria de apelar esta decisão, entre em contato conosco imediatamente.
+                  </p>
+                </div>
+
+                <div style="padding: 20px 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                  <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                    Contate-nos em (475) 449-8622 ou responda este email para mais informações.<br/>
+                    CarHop LLC - Connecticut, USA
+                  </p>
+                </div>
+              </div>
+            `;
+          }
+
+          if (subject && emailHtml) {
+            await transporter.sendMail({
+              from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+              to: host.email,
+              subject: subject,
+              html: emailHtml,
+            });
+          }
+        } catch (emailError) {
+          console.error("Host status change email error:", emailError);
+        }
+      }
+
       res.json({ ...host, passwordHash: undefined });
     } catch (error) {
       console.error("Error updating host:", error);
