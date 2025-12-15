@@ -3364,14 +3364,6 @@ export default function CarHopApp() {
                   
                   <div className="space-y-2">
                     {bookings
-                      .filter(b => {
-                        const today = getTodayString();
-                        const inThreeDays = addDaysToDate(today, 3);
-                        if (bookingFilterType === 'end-soon') {
-                          return b.returnDate >= today && b.returnDate <= inThreeDays && b.status !== 'Completed';
-                        }
-                        return true;
-                      })
                       .sort((a, b) => {
                         if (bookingFilterType === 'end-soon') {
                           const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
