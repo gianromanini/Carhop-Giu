@@ -2648,57 +2648,57 @@ export default function CarHopApp() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Included Miles/Day</label>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Included Miles/Day (Editable)</label>
                             <input 
                               type="text" 
                               placeholder="e.g., 200"
                               value={editingHostVehicle.pricing?.includedMiles ?? 200} 
                               onChange={(e) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), includedMiles: val}} as Vehicle)}}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-miles"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Extra Mile Rate ($)</label>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Extra Mile Rate ($) (Editable)</label>
                             <input 
                               type="text" 
                               placeholder="e.g., 0.45 or 0,45"
                               value={editingHostVehicle.pricing?.extraMileRate ?? 0.45} 
                               onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), extraMileRate: val}} as Vehicle)}}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-extra-mile"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $500</label>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $500 (Fixed)</label>
                             <input 
                               type="text" 
                               placeholder="e.g., 25 or 25.50"
                               value={editingHostVehicle.pricing?.prices?.insurance500 ?? 25} 
-                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance500: val}}} as Vehicle)}}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              disabled
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" 
                               data-testid="input-vehicle-pricing-ins500"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $1000</label>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $1000 (Fixed)</label>
                             <input 
                               type="text" 
                               placeholder="e.g., 15 or 15.50"
                               value={editingHostVehicle.pricing?.prices?.insurance1000 ?? 15} 
-                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), insurance1000: val}}} as Vehicle)}}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              disabled
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" 
                               data-testid="input-vehicle-pricing-ins1000"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Child Seat Price</label>
+                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Child Seat Price (Editable)</label>
                             <input 
                               type="text" 
                               placeholder="e.g., 8 or 8.50"
                               value={editingHostVehicle.pricing?.prices?.childSeat ?? 8} 
                               onChange={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8}), childSeat: val}}} as Vehicle)}}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
                               data-testid="input-vehicle-pricing-child-seat"
                             />
                           </div>
