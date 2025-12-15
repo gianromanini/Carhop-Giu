@@ -1594,6 +1594,7 @@ export default function CarHopApp() {
                       setHostAgreementAccepted(false);
                       setHostAgreementAcceptedAt('');
                       setHostRegisterMessage(`Thank you for registering, ${hostRegisterForm.firstName}! Your host account is pending verification. We'll review your documents and email you at ${hostRegisterForm.email} within 2-3 business days. Once approved, you can login with username: ${hostRegisterForm.username}`);
+                      queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
                     } else {
                       const error = await response.json();
                       alert(error.message || 'Failed to register Host');

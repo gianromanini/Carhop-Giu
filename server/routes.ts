@@ -670,8 +670,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <p>This Host Partner Agreement is entered into between CarHop LLC and you. By accepting this Agreement, you agree to list your vehicle(s) on the CarHop platform.</p>
                   
                   <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">2. COMMISSION STRUCTURE</h3>
-                  <p><strong>10% Commission Plan:</strong> $1,000 deductible per incident<br/>
-                  <strong>20% Commission Plan:</strong> $500 deductible per incident</p>
+                  <p><strong>15% Commission Plan:</strong> $750 deductible per incident<br/>
+                  <strong>25% Commission Plan:</strong> $500 deductible per incident</p>
                   
                   <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">3. VEHICLE REQUIREMENTS</h3>
                   <p>Model year 2015+, under 130,000 miles, clean title, registered/insured in Connecticut.</p>
