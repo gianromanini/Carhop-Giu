@@ -779,13 +779,15 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
 
       // Send email if status changed
+      console.log(`DEBUG: previousHost=${previousHost?.status}, host=${host?.status}, Changed=${previousHost && previousHost.status !== host.status}`);
       if (previousHost && previousHost.status !== host.status) {
         try {
           let subject = '';
           let emailHtml = '';
-          console.log(`Host status changed: ${previousHost.status} -> ${host.status}`);
+          console.log(`DEBUG: Host status changed: ${previousHost.status} -> ${host.status}`);
           
           if (host.status === 'active' && previousHost.status === 'pending') {
+            console.log('DEBUG: Condition 1 matched - Sending approval email');
             // Approval email - Pending to Active
             subject = 'Congratulations! Your CarHop Host Account is Approved';
             emailHtml = `
