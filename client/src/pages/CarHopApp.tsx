@@ -3056,99 +3056,103 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'clients' && (() => {
-              const allUsers = Array.from(new Set(bookings.map(b => b.driver.email))).map(email => {
-                const trips = bookings.filter(b => b.driver.email === email);
-                const firstTrip = trips[0];
-                const sortedTrips = trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-                const allDates = trips.map(t => t.createdAt ? new Date(t.createdAt).getTime() : Date.now());
-                return {
-                  email,
-                  name: firstTrip?.driver.name || 'Unknown',
-                  phone: firstTrip?.driver.phone || '',
-                  trips: sortedTrips,
-                  totalSpent: trips.reduce((sum, t) => sum + t.total, 0),
-                  createdAt: new Date(Math.min(...allDates))
-                };
-              }).sort((a, b) => a.name.localeCompare(b.name));
+              const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
+              const [editingUserId, setEditingUserId] = useState<string | null>(null);
+              const [editForm, setEditForm] = useState<Partial<User> | null>(null);
+              const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
+              const updateUserMutation = useMutation({
+                mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => 
+                  apiRequest('PUT', `/api/admin/users/${id}`, data),
+                onSuccess: () => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+                  setEditingUserId(null);
+                  setEditForm(null);
+                  useToast()({ title: 'User updated successfully' });
+                }
+              });
+
+              const deleteUserMutation = useMutation({
+                mutationFn: async (id: string) => 
+                  apiRequest('DELETE', `/api/admin/users/${id}`),
+                onSuccess: () => {
+                  queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+                  setDeletingUserId(null);
+                  setSelectedClient(null);
+                  useToast()({ title: 'User deleted successfully' });
+                }
+              });
+
+              const clientTrips = useMemo(() => {
+                if (!selectedClient) return {};
+                return bookings.filter(b => b.driver.email === selectedClient.email);
+              }, [selectedClient, bookings]);
 
               return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Left Column - Clients List */}
                   <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
-                    <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({allUsers.length})</h3>
+                    <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({usersData.length})</h3>
                     <div className="space-y-2">
-                      {allUsers.map((client, idx) => (
-                        <div key={idx} onClick={() => setSelectedClient(client)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedClient?.email === client.email ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-client-${idx}`}>
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-sm text-white truncate">{client.name}</span>
-                          </div>
-                          <div className="text-xs text-zinc-500">{client.email}</div>
-                          <div className="text-xs text-zinc-400 mt-1">Trips: {client.trips.length} | Spent: ${client.totalSpent.toFixed(2)}</div>
+                      {usersData.map((user) => (
+                        <div key={user.id} onClick={() => setSelectedClient(user)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedClient?.id === user.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-client-${user.id}`}>
+                          <div className="font-bold text-sm text-white">{user.firstName} {user.lastName}</div>
+                          <div className="text-xs text-zinc-500 truncate">{user.email}</div>
+                          <div className="text-xs text-zinc-400 mt-1">{user.city}, {user.state}</div>
                         </div>
                       ))}
                     </div>
                   </Card>
 
-                  {/* Right Column - Client Details */}
                   <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
                     {selectedClient ? (
                       <div className="space-y-4 sm:space-y-6">
-                        {/* Header */}
-                        <div>
-                          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white">{selectedClient.name}</h2>
-                          <p className="text-xs sm:text-sm text-zinc-500 mt-1">Joined: {new Date(selectedClient.createdAt).toLocaleDateString()}</p>
-                        </div>
-
-                        {/* Client Info */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Email</h4>
-                            <div className="text-sm text-zinc-900 dark:text-white font-medium">{selectedClient.email}</div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Phone</h4>
-                            <div className="text-sm text-zinc-900 dark:text-white font-medium">{selectedClient.phone || 'N/A'}</div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Total Trips</h4>
-                            <div className="text-sm text-zinc-900 dark:text-white font-medium">{selectedClient.trips.length}</div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Total Spent</h4>
-                            <div className="text-sm text-green-500 font-bold">${selectedClient.totalSpent.toFixed(2)}</div>
+                        <div className="flex justify-between items-start mb-4">
+                          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white">{selectedClient.firstName} {selectedClient.lastName}</h2>
+                          <div className="flex gap-2">
+                            <button onClick={() => { setEditingUserId(selectedClient.id); setEditForm({...selectedClient}); }} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors" data-testid={`button-edit-client-${selectedClient.id}`}>Edit</button>
+                            <button onClick={() => setDeletingUserId(selectedClient.id)} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid={`button-delete-client-${selectedClient.id}`}>Delete</button>
                           </div>
                         </div>
 
-                        {/* Trip History */}
+                        {editingUserId === selectedClient.id && editForm ? (
+                          <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Edit Client Info</h4>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <input type="text" placeholder="First Name" value={editForm.firstName || ''} onChange={(e) => setEditForm({...editForm, firstName: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-firstName"/>
+                              <input type="text" placeholder="Last Name" value={editForm.lastName || ''} onChange={(e) => setEditForm({...editForm, lastName: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-lastName"/>
+                              <input type="email" placeholder="Email" value={editForm.email || ''} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white col-span-2" data-testid="input-edit-email"/>
+                              <input type="text" placeholder="Phone" value={editForm.phone || ''} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-phone"/>
+                              <input type="text" placeholder="City" value={editForm.city || ''} onChange={(e) => setEditForm({...editForm, city: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-city"/>
+                              <input type="text" placeholder="State" value={editForm.state || ''} onChange={(e) => setEditForm({...editForm, state: e.target.value})} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white" data-testid="input-edit-state"/>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => updateUserMutation.mutate({id: selectedClient.id, data: editForm})} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-save-edit-client">Save</button>
+                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-cancel-edit-client">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg text-xs">
+                            <div><span className="text-zinc-400 block text-[10px] uppercase mb-1">Full Name</span><span className="font-medium text-zinc-900 dark:text-white">{selectedClient.firstName} {selectedClient.lastName}</span></div>
+                            <div><span className="text-zinc-400 block text-[10px] uppercase mb-1">Email</span><span className="font-medium text-zinc-900 dark:text-white break-all">{selectedClient.email}</span></div>
+                            <div><span className="text-zinc-400 block text-[10px] uppercase mb-1">Phone</span><span className="font-medium text-zinc-900 dark:text-white">{selectedClient.phone || 'N/A'}</span></div>
+                            <div><span className="text-zinc-400 block text-[10px] uppercase mb-1">City, State</span><span className="font-medium text-zinc-900 dark:text-white">{selectedClient.city || 'N/A'}, {selectedClient.state || 'N/A'}</span></div>
+                            <div className="col-span-2"><span className="text-zinc-400 block text-[10px] uppercase mb-1">Password (Hashed)</span><span className="font-mono text-[10px] text-zinc-500 break-all">{selectedClient.passwordHash?.substring(0, 20) || 'N/A'}...</span></div>
+                            <div className="col-span-2"><span className="text-zinc-400 block text-[10px] uppercase mb-1">Registered</span><span className="font-medium text-zinc-900 dark:text-white text-xs">{new Date(selectedClient.createdAt).toLocaleDateString()}</span></div>
+                          </div>
+                        )}
+
                         <div>
-                          <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Trip History</h3>
-                          <div className="space-y-2">
-                            {selectedClient.trips.length > 0 ? (
-                              selectedClient.trips.map((trip: Booking, idx: number) => (
-                                <div key={idx} className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{trip.carName}</h4>
-                                      <p className="text-xs text-zinc-500">Booking: {trip.bookingCode}</p>
-                                    </div>
-                                    <span className={`text-xs px-2 py-1 rounded font-bold ${trip.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{trip.status}</span>
+                          <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Trip History ({Object.values(clientTrips).length})</h4>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {Object.values(clientTrips).length > 0 ? (
+                              Object.values(clientTrips).map((trip: Booking, idx: number) => (
+                                <div key={idx} className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <span className="font-bold text-zinc-900 dark:text-white">{trip.carName}</span>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${trip.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{trip.status}</span>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-                                    <div>
-                                      <span className="text-zinc-500">From:</span> {trip.startDate} {trip.startTime}
-                                    </div>
-                                    <div>
-                                      <span className="text-zinc-500">To:</span> {trip.returnDate} {trip.returnTime}
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-                                    <div className="text-zinc-600 dark:text-zinc-400">
-                                      <span className="text-zinc-500">Days:</span> {trip.days}
-                                    </div>
-                                    <div>
-                                      <span className="text-zinc-500">Cost:</span> <span className="text-green-500 font-bold">${trip.total.toFixed(2)}</span>
-                                    </div>
-                                  </div>
+                                  <div className="text-zinc-500">{trip.startDate} to {trip.returnDate}</div>
+                                  <div className="text-zinc-400">${trip.total.toFixed(2)}</div>
                                 </div>
                               ))
                             ) : (
@@ -3159,16 +3163,26 @@ export default function CarHopApp() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-full text-zinc-500">
-                        <div className="text-center">
-                          <Users size={32} className="mx-auto mb-2 text-zinc-400" />
-                          <p>Select a client to view details</p>
-                        </div>
+                        <div className="text-center"><Users size={32} className="mx-auto mb-2 text-zinc-400" /><p>Select a client to view details</p></div>
                       </div>
                     )}
                   </Card>
                 </div>
               );
             })()}
+
+            {deletingUserId && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Client?</h3>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">This will permanently delete this client and cannot be undone. Continue?</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setDeletingUserId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-client">Cancel</button>
+                    <button onClick={() => deleteUserMutation.mutate(deletingUserId)} disabled={deleteUserMutation.isPending} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors disabled:opacity-50" data-testid="button-confirm-delete-client">Yes, Delete</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {adminTab === 'hosts' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
