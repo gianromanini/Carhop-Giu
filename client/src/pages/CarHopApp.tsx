@@ -911,10 +911,13 @@ export default function CarHopApp() {
      if (isCheckOutMode) {
        const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
        const checkOutMiles = parseInt(checkData.miles || '0');
-       const allowedMiles = settings.includedMiles * activeBooking.days;
+       const carPricing = vehicles.find(v => v.id === activeBooking.vehicleId)?.pricing;
+       const includedMilesPerDay = carPricing?.includedMiles || settings.includedMiles;
+       const extraMileRate = carPricing?.extraMileRate || settings.extraMileRate;
+       const allowedMiles = includedMilesPerDay * activeBooking.days;
        const milesDriven = checkOutMiles - checkInMiles;
        const excessMiles = Math.max(0, milesDriven - allowedMiles);
-       const excessMileageFee = excessMiles * settings.extraMileRate;
+       const excessMileageFee = excessMiles * extraMileRate;
        const gasInLevel = getGasValue(activeBooking.checkInData?.gas || 'Full');
        const gasOutLevel = getGasValue(checkData.gas);
        const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
@@ -5465,19 +5468,71 @@ export default function CarHopApp() {
                 
                 {(() => {
                   const canComplete = checkData.photosOutside.length === 1 && checkData.photosInside.length === 1 && checkData.miles && checkData.gas;
-                  const isPayPalBooking = activeBooking?.paymentRaw?.type === 'paypal';
+                  
+                  const calculateCheckoutCharges = () => {
+                    if (!isCheckOutMode || !activeBooking?.checkInData) return { excessMileageFee: 0, refuelingFee: 0, totalDifference: 0 };
+                    
+                    const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
+                    const checkOutMiles = parseInt(checkData.miles || '0');
+                    const carPricing = vehicles.find(v => v.id === activeBooking.vehicleId)?.pricing;
+                    const includedMilesPerDay = carPricing?.includedMiles || settings.includedMiles;
+                    const extraMileRate = carPricing?.extraMileRate || settings.extraMileRate;
+                    const allowedMiles = includedMilesPerDay * activeBooking.days;
+                    const milesDriven = checkOutMiles - checkInMiles;
+                    const excessMiles = Math.max(0, milesDriven - allowedMiles);
+                    const excessMileageFee = excessMiles * extraMileRate;
+                    
+                    const gasInLevel = getGasValue(activeBooking.checkInData?.gas || 'Full');
+                    const gasOutLevel = getGasValue(checkData.gas);
+                    const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
+                    const refuelingFee = gasDiff * 10;
+                    
+                    return { excessMileageFee, refuelingFee, totalDifference: excessMileageFee + refuelingFee };
+                  };
+                  
+                  const charges = calculateCheckoutCharges();
                   
                   return (
                     <div className="space-y-3">
-                      {isCheckOutMode && isPayPalBooking && (
-                        <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
-                          <p className="text-xs text-blue-400 mb-2">Final payment via PayPal</p>
-                          <p className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18}/> Total: ${activeBooking?.total.toFixed(2)}</p>
+                      {isCheckOutMode && (
+                        <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4 space-y-3">
+                          <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-3">Check-Out Summary</h3>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-zinc-600 dark:text-zinc-400">Original Booking Amount</span>
+                            <span className="text-zinc-900 dark:text-white font-medium">${activeBooking?.total.toFixed(2)}</span>
+                          </div>
+                          {charges.excessMileageFee > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-orange-600 dark:text-orange-400">Extra Mileage Charge</span>
+                              <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.excessMileageFee.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {charges.refuelingFee > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-orange-600 dark:text-orange-400">Fuel Charge</span>
+                              <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.refuelingFee.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {charges.totalDifference > 0 ? (
+                            <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                              <span className="font-bold text-zinc-900 dark:text-white">Difference to Pay</span>
+                              <span className="font-bold text-red-600 dark:text-red-400">${charges.totalDifference.toFixed(2)}</span>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                              <span className="font-bold text-zinc-900 dark:text-white">Additional Charges</span>
+                              <span className="font-bold text-green-600 dark:text-green-400">$0.00</span>
+                            </div>
+                          )}
+                          {charges.totalDifference > 0 && (
+                            <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                              The difference of ${charges.totalDifference.toFixed(2)} will be charged to the same payment method used for the original booking.
+                            </p>
+                          )}
                         </div>
                       )}
                       <Button className={`w-full py-4 flex items-center justify-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">
-                        {isCheckOutMode && isPayPalBooking && <Wallet size={18}/>}
-                        {isCheckOutMode && isPayPalBooking ? 'Pay Now (PayPal)' : `Complete ${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
+                        {`Complete ${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
                       </Button>
                     </div>
                   );
