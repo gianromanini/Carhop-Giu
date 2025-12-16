@@ -1362,17 +1362,6 @@ export default function CarHopApp() {
                 </svg>
                 <span className="font-bold">Continue with Google</span>
               </Button>
-              <Button 
-                variant="secondary" 
-                className="w-full flex items-center justify-center gap-3 text-sm py-3 border-2 bg-black text-white hover:bg-zinc-800" 
-                onClick={() => window.location.href = '/api/auth/apple'} 
-                data-testid="button-apple-login"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.38-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.38C2.79 15.25 3.51 7.59 9.05 7.31c1.35.05 2.29.89 3.04.89.9 0 2.29-1.16 3.86-1.04.64.03 2.46.25 3.64 1.84-3.38 2.08-2.81 6.48.28 7.74-.95 1.78-2.27 2.97-4.52 3.74z"/>
-                </svg>
-                <span className="font-bold">Continue with Apple</span>
-              </Button>
             </div>
 
             <div className="flex items-center gap-3 mb-6">
