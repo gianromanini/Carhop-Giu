@@ -556,7 +556,18 @@ export default function CarHopApp() {
     cleaningFee: settingsData?.cleaningFee ?? defaultSettings.cleaningFee,
     includedMiles: settingsData?.includedMiles ?? defaultSettings.includedMiles,
     extraMileRate: settingsData?.extraMileRate ?? defaultSettings.extraMileRate,
-    prices: settingsData?.prices ?? defaultSettings.prices,
+    prices: {
+      insurance500: settingsData?.prices?.insurance500 ?? defaultSettings.prices.insurance500,
+      insurance1000: settingsData?.prices?.insurance1000 ?? defaultSettings.prices.insurance1000,
+      childSeat: settingsData?.prices?.childSeat ?? defaultSettings.prices.childSeat,
+      childSeatPerTrip: settingsData?.prices?.childSeatPerTrip ?? defaultSettings.prices.childSeatPerTrip,
+      prepaidFuel: settingsData?.prices?.prepaidFuel ?? defaultSettings.prices.prepaidFuel,
+      prepaidFuelPerTrip: settingsData?.prices?.prepaidFuelPerTrip ?? defaultSettings.prices.prepaidFuelPerTrip,
+      lateReturnGrace: settingsData?.prices?.lateReturnGrace ?? defaultSettings.prices.lateReturnGrace,
+      lateReturnGracePerTrip: settingsData?.prices?.lateReturnGracePerTrip ?? defaultSettings.prices.lateReturnGracePerTrip,
+      stressFreePackage: settingsData?.prices?.stressFreePackage ?? defaultSettings.prices.stressFreePackage,
+      stressFreePackagePerTrip: settingsData?.prices?.stressFreePackagePerTrip ?? defaultSettings.prices.stressFreePackagePerTrip,
+    },
     locations: settingsData?.locations ?? defaultSettings.locations,
   };
 
