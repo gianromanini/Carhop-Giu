@@ -2871,15 +2871,15 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Pick-up Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 sm:p-2 cursor-pointer" onClick={(e) => {if (e.target.tagName !== 'INPUT') document.querySelector('[data-testid="input-start-date"]').click()}}>
-                          <Calendar size={14} className="text-black dark:text-white mr-1.5 flex-shrink-0 cursor-pointer" />
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 sm:px-2 sm:py-1.5 cursor-pointer" onClick={(e) => {if (e.target.tagName !== 'INPUT') document.querySelector('[data-testid="input-start-date"]').click()}}>
+                          <Calendar size={13} className="text-black dark:text-white mr-1 flex-shrink-0 cursor-pointer" />
                           <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white cursor-pointer" data-testid="input-start-date" />
                         </div>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Return Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 sm:p-2 cursor-pointer" onClick={(e) => {if (e.target.tagName !== 'INPUT') document.querySelector('[data-testid="input-end-date"]').click()}}>
-                          <Calendar size={14} className="text-black dark:text-white mr-1.5 flex-shrink-0 cursor-pointer" />
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 sm:px-2 sm:py-1.5 cursor-pointer" onClick={(e) => {if (e.target.tagName !== 'INPUT') document.querySelector('[data-testid="input-end-date"]').click()}}>
+                          <Calendar size={13} className="text-black dark:text-white mr-1 flex-shrink-0 cursor-pointer" />
                           <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white cursor-pointer" data-testid="input-end-date" />
                         </div>
                       </div>

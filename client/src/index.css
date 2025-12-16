@@ -202,18 +202,16 @@
     @apply hidden;
   }
 
-  /* Date input calendar icon styling - Light mode (black) */
+  /* Date input calendar picker icon - Light mode (black) */
   input[type="date"]::-webkit-calendar-picker-indicator {
-    color: black;
+    filter: invert(1);
     cursor: pointer;
-    filter: invert(0);
   }
 
-  /* Date input calendar icon styling - Dark mode (white) */
+  /* Date input calendar picker icon - Dark mode (white) */
   .dark input[type="date"]::-webkit-calendar-picker-indicator {
-    color: white;
+    filter: invert(0);
     cursor: pointer;
-    filter: invert(1) brightness(1.2);
   }
 
   /* Calendar picker styling - Light mode */
