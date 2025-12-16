@@ -4790,13 +4790,73 @@ export default function CarHopApp() {
                               const minDateStr = today.toISOString().split('T')[0];
                               const isReduction = extensionDate < b.returnDate;
                               
+                              // Calculate extension details
+                              const oldTimeStr = b.returnTime || "10:00 AM";
+                              const oldDateTimeStr = `${b.returnDate}T${convertTo24Hour(oldTimeStr)}:00`;
+                              const newDateTimeStr = `${extensionDate}T${convertTo24Hour(extensionTime)}:00`;
+                              const oldReturn = new Date(oldDateTimeStr);
+                              const newReturn = new Date(newDateTimeStr);
+                              const diffTime = newReturn.getTime() - oldReturn.getTime();
+                              const diffHours = diffTime / (1000 * 60 * 60);
+                              const extendedDays = Math.ceil(diffHours / 24);
+                              
+                              // Calculate costs
+                              const baseRate = b.details.rate || 0;
+                              const currentExtended = b.details.extendedRate || 0;
+                              const currentDays = b.days || 1;
+                              const dailyRate = (baseRate + currentExtended) / currentDays;
+                              const extensionCost = dailyRate * Math.max(0, extendedDays);
+                              const extensionTax = extensionCost * (settings.taxes / 100);
+                              
+                              // Extra miles calculation (show potential)
+                              const vehicle = vehicles.find(v => v.id === b.vehicleId);
+                              const includedMilesPerDay = vehicle?.pricing?.includedMiles || settings.includedMiles;
+                              const extraMileRate = vehicle?.pricing?.extraMileRate || settings.extraMileRate;
+                              const totalAllowedMiles = includedMilesPerDay * b.days;
+                              
+                              // Fuel proportional
+                              const fuelCostPerDay = 15; // Average daily fuel usage cost
+                              const fuelProportional = fuelCostPerDay * Math.max(0, extendedDays);
+                              
                               return (
-                              <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
-                                <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">New Return Date & Time</label>
-                                <p className="text-xs text-zinc-500 mb-3">Extend or reduce your booking. Reductions require admin approval.</p>
+                              <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg space-y-4">
+                                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">New Return Date & Time</label>
+                                <p className="text-xs text-zinc-500">Extend or reduce your booking. Reductions require admin approval.</p>
                                 <div className="flex flex-col gap-3">
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Calendar size={18} className="text-green-600 mr-2" /><input type="date" className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionDate} min={minDateStr} onChange={(e) => setExtensionDate(e.target.value)} data-testid="input-extension-date" /></div>
                                   <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-2"><Clock size={18} className="text-green-600 mr-2" /><select className="bg-transparent w-full outline-none text-sm text-zinc-900 dark:text-white" value={extensionTime} onChange={(e) => setExtensionTime(e.target.value)} data-testid="select-extension-time">{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
+                                  
+                                  {/* Extension Cost Breakdown */}
+                                  {!isReduction && diffTime > 30 * 60 * 1000 && (
+                                    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-3 space-y-2">
+                                      <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase">Extension Breakdown</h4>
+                                      <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                        <span>Original Booking Amount</span>
+                                        <span className="font-bold text-zinc-900 dark:text-white">${b.total.toFixed(2)}</span>
+                                      </div>
+                                      {extendedDays > 0 && (
+                                        <>
+                                          <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                            <span>Extended Days</span>
+                                            <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)}</span>
+                                          </div>
+                                          <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                            <span>Extra Miles (Potential)</span>
+                                            <span className="font-bold text-zinc-900 dark:text-white">${(totalAllowedMiles * extraMileRate).toFixed(2)} max</span>
+                                          </div>
+                                          <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                            <span>Fuel Proportional</span>
+                                            <span className="font-bold text-green-600">${fuelProportional.toFixed(2)}</span>
+                                          </div>
+                                          <div className="border-t border-zinc-300 dark:border-zinc-700 pt-2 flex justify-between text-xs font-bold">
+                                            <span className="text-zinc-700 dark:text-zinc-300">Extension Total</span>
+                                            <span className="text-blue-600 dark:text-blue-400">${(extensionCost + extensionTax + fuelProportional).toFixed(2)}</span>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                  
                                   {isReduction && (
                                     <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-3">
                                       <p className="text-xs text-orange-400 mb-2"><AlertCircle size={12} className="inline mr-1"/> This is a reduction and requires admin approval</p>
