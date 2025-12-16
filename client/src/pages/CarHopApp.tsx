@@ -808,9 +808,6 @@ export default function CarHopApp() {
     const carPricing = cart.car.pricing || settings;
     let runningTotal = cart.car.price * days; 
     if (cart.extrasSelected.includes('childSeat')) runningTotal += settings.prices.childSeat;
-    if (cart.extrasSelected.includes('prepaidFuel')) runningTotal += settings.prices.prepaidFuel;
-    if (cart.extrasSelected.includes('lateReturnGrace')) runningTotal += settings.prices.lateReturnGrace;
-    if (cart.extrasSelected.includes('stressFreePackage')) runningTotal += settings.prices.stressFreePackage;
     if (cart.insuranceOption === '500') runningTotal += (settings.prices.insurance500 * days); 
     if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days); 
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
@@ -859,7 +856,7 @@ export default function CarHopApp() {
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0) + (cart.extrasSelected.includes('prepaidFuel') ? settings.prices.prepaidFuel : 0) + (cart.extrasSelected.includes('lateReturnGrace') ? settings.prices.lateReturnGrace : 0) + (cart.extrasSelected.includes('stressFreePackage') ? settings.prices.stressFreePackage : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: settings.cleaningFee, tax: totalData.taxAmount }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: settings.cleaningFee, tax: totalData.taxAmount }, 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -5031,62 +5028,18 @@ export default function CarHopApp() {
                   <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
                     <Plus size={18} /> Extras
                   </h2>
-                  <div className="space-y-3">
-                    <div 
-                      onClick={() => toggleExtra('childSeat')} 
-                      className={`p-4 rounded-lg cursor-pointer transition-all flex justify-between items-center ${cart.extrasSelected.includes('childSeat') ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
-                      data-testid="option-child-seat"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${cart.extrasSelected.includes('childSeat') ? 'bg-green-500 border-green-500' : 'border-zinc-500'}`}>
-                          {cart.extrasSelected.includes('childSeat') && <Check size={12} className="text-white" />}
-                        </div>
-                        <span className="text-white">Child Safety Seat</span>
+                  <div 
+                    onClick={() => toggleExtra('childSeat')} 
+                    className={`p-4 rounded-lg cursor-pointer transition-all flex justify-between items-center ${cart.extrasSelected.includes('childSeat') ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                    data-testid="option-child-seat"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${cart.extrasSelected.includes('childSeat') ? 'bg-green-500 border-green-500' : 'border-zinc-500'}`}>
+                        {cart.extrasSelected.includes('childSeat') && <Check size={12} className="text-white" />}
                       </div>
-                      <span className="font-bold text-white">+${settings.prices.childSeat}</span>
+                      <span className="text-white">Child Safety Seat</span>
                     </div>
-                    <div 
-                      onClick={() => toggleExtra('prepaidFuel')} 
-                      className={`p-4 rounded-lg cursor-pointer transition-all flex justify-between items-center ${cart.extrasSelected.includes('prepaidFuel') ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
-                      data-testid="option-prepaid-fuel"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${cart.extrasSelected.includes('prepaidFuel') ? 'bg-green-500 border-green-500' : 'border-zinc-500'}`}>
-                          {cart.extrasSelected.includes('prepaidFuel') && <Check size={12} className="text-white" />}
-                        </div>
-                        <span className="text-white">Prepaid Fuel</span>
-                      </div>
-                      <span className="font-bold text-white">+${settings.prices.prepaidFuel}</span>
-                    </div>
-                    <div 
-                      onClick={() => toggleExtra('lateReturnGrace')} 
-                      className={`p-4 rounded-lg cursor-pointer transition-all flex justify-between items-center ${cart.extrasSelected.includes('lateReturnGrace') ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
-                      data-testid="option-late-return-grace"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${cart.extrasSelected.includes('lateReturnGrace') ? 'bg-green-500 border-green-500' : 'border-zinc-500'}`}>
-                          {cart.extrasSelected.includes('lateReturnGrace') && <Check size={12} className="text-white" />}
-                        </div>
-                        <span className="text-white">2hr Late Return Grace Period</span>
-                      </div>
-                      <span className="font-bold text-white">+${settings.prices.lateReturnGrace}</span>
-                    </div>
-                    <div 
-                      onClick={() => toggleExtra('stressFreePackage')} 
-                      className={`p-4 rounded-lg cursor-pointer transition-all flex justify-between items-center ${cart.extrasSelected.includes('stressFreePackage') ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
-                      data-testid="option-stress-free-package"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${cart.extrasSelected.includes('stressFreePackage') ? 'bg-green-500 border-green-500' : 'border-zinc-500'}`}>
-                          {cart.extrasSelected.includes('stressFreePackage') && <Check size={12} className="text-white" />}
-                        </div>
-                        <div>
-                          <span className="text-white">Stress-Free Package</span>
-                          <p className="text-xs text-zinc-500">Includes Prepaid Fuel + 2hr Late Return Grace</p>
-                        </div>
-                      </div>
-                      <span className="font-bold text-white">+${settings.prices.stressFreePackage}</span>
-                    </div>
+                    <span className="font-bold text-white">+${settings.prices.childSeat}</span>
                   </div>
                 </div>
 
@@ -5241,24 +5194,6 @@ export default function CarHopApp() {
                       <div className="flex justify-between">
                         <span className="text-green-500">Child Seat</span>
                         <span className="text-green-500">+${settings.prices.childSeat.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {cart.extrasSelected.includes('prepaidFuel') && (
-                      <div className="flex justify-between">
-                        <span className="text-green-500">Prepaid Fuel</span>
-                        <span className="text-green-500">+${settings.prices.prepaidFuel.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {cart.extrasSelected.includes('lateReturnGrace') && (
-                      <div className="flex justify-between">
-                        <span className="text-green-500">2hr Late Return Grace</span>
-                        <span className="text-green-500">+${settings.prices.lateReturnGrace.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {cart.extrasSelected.includes('stressFreePackage') && (
-                      <div className="flex justify-between">
-                        <span className="text-green-500">Stress-Free Package</span>
-                        <span className="text-green-500">+${settings.prices.stressFreePackage.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
