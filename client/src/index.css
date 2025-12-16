@@ -206,12 +206,24 @@
   input[type="date"]::-webkit-calendar-picker-indicator {
     color: black;
     cursor: pointer;
+    filter: invert(0);
   }
 
   /* Date input calendar icon styling - Dark mode (white) */
   .dark input[type="date"]::-webkit-calendar-picker-indicator {
     color: white;
     cursor: pointer;
+    filter: invert(1) brightness(1.2);
+  }
+
+  /* Calendar picker styling - Light mode */
+  input[type="date"] {
+    color-scheme: light;
+  }
+
+  /* Calendar picker styling - Dark mode */
+  .dark input[type="date"] {
+    color-scheme: dark;
   }
 
   /* Placeholder styling for contentEditable div */
