@@ -5534,6 +5534,7 @@ export default function CarHopApp() {
                   const originalBookingValue = activeBooking ? activeBooking.total - (activeBooking.details?.extendedRate || 0) : 0;
                   const extendedAmount = activeBooking?.details?.extendedRate || 0;
                   const totalAmount = originalBookingValue + extendedAmount + charges.totalDifference;
+                  const amountToPay = totalAmount - originalBookingValue;
                   
                   return (
                     <div className="space-y-3">
@@ -5567,13 +5568,18 @@ export default function CarHopApp() {
                           )}
                           
                           <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                            <span className="font-bold text-lg text-zinc-900 dark:text-white">Total</span>
-                            <span className="font-bold text-lg text-green-600 dark:text-green-400">${totalAmount.toFixed(2)}</span>
+                            <span className="font-bold text-zinc-900 dark:text-white">Total</span>
+                            <span className="font-bold text-zinc-900 dark:text-white">${totalAmount.toFixed(2)}</span>
+                          </div>
+                          
+                          <div className="flex justify-between text-sm">
+                            <span className="font-bold text-lg text-zinc-900 dark:text-white">Amount to Pay Now</span>
+                            <span className="font-bold text-lg text-green-600 dark:text-green-400">${amountToPay.toFixed(2)}</span>
                           </div>
                           
                           {charges.totalDifference > 0 && (
                             <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                              The difference of ${charges.totalDifference.toFixed(2)} will be charged to the same payment method used for the original booking.
+                              The amount of ${amountToPay.toFixed(2)} will be charged to the same payment method used for the original booking.
                             </p>
                           )}
                         </div>
