@@ -805,6 +805,7 @@ export default function CarHopApp() {
   const calculateTotal = () => { 
     if (!cart.car) return { subtotal: 0, taxAmount: 0, total: 0 }; 
     const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
+    const carPricing = cart.car.pricing || settings;
     let runningTotal = cart.car.price * days; 
     if (cart.extrasSelected.includes('childSeat')) runningTotal += settings.prices.childSeat;
     if (cart.extrasSelected.includes('prepaidFuel')) runningTotal += settings.prices.prepaidFuel;
@@ -812,8 +813,8 @@ export default function CarHopApp() {
     if (cart.extrasSelected.includes('stressFreePackage')) runningTotal += settings.prices.stressFreePackage;
     if (cart.insuranceOption === '500') runningTotal += (settings.prices.insurance500 * days); 
     if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days); 
-    runningTotal += settings.cleaningFee; 
-    const taxAmount = runningTotal * (settings.taxes / 100); 
+    runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
+    const taxAmount = runningTotal * ((carPricing.taxes || settings.taxes) / 100); 
     return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount }; 
   };
 
@@ -4514,7 +4515,7 @@ export default function CarHopApp() {
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE AND FUEL</h4>
-                      <p>The Lessee is entitled to {settings.includedMiles} miles per day included in the rental. Excess mileage will be charged at ${settings.extraMileRate} per mile. The vehicle must be returned with a full fuel tank. Refueling charges will apply if the vehicle is returned with less fuel.</p>
+                      <p>The Lessee is entitled to {activeBooking?.car?.pricing?.includedMiles || settings.includedMiles} miles per day included in the rental. Excess mileage will be charged at ${(activeBooking?.car?.pricing?.extraMileRate || settings.extraMileRate).toFixed(2)} per mile. The vehicle must be returned with a full fuel tank. Refueling charges will apply if the vehicle is returned with less fuel.</p>
                     </div>
 
                     <div>
@@ -5222,8 +5223,8 @@ export default function CarHopApp() {
                       <Route size={16} className="text-green-500" />
                       <span className="text-zinc-300 font-medium">Mileage Policy</span>
                     </div>
-                    <p className="text-xs text-zinc-500 mt-1 ml-6">200 miles/day included</p>
-                    <p className="text-xs text-zinc-500 ml-6">Excess: $0.30/mile</p>
+                    <p className="text-xs text-zinc-500 mt-1 ml-6">{cart.car.pricing?.includedMiles || settings.includedMiles} miles/day included</p>
+                    <p className="text-xs text-zinc-500 ml-6">Excess: ${(cart.car.pricing?.extraMileRate || settings.extraMileRate).toFixed(2)}/mile</p>
                   </div>
 
                   {/* Price Breakdown */}
@@ -5262,10 +5263,10 @@ export default function CarHopApp() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Cleaning Fee</span>
-                      <span className="text-white">${settings.cleaningFee.toFixed(2)}</span>
+                      <span className="text-white">${(cart.car.pricing?.cleaningFee || settings.cleaningFee).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-zinc-400">Taxes ({settings.taxes}%)</span>
+                      <span className="text-zinc-400">Taxes ({(cart.car.pricing?.taxes || settings.taxes)}%)</span>
                       <span className="text-white">${calculateTotal().taxAmount.toFixed(2)}</span>
                     </div>
                   </div>
