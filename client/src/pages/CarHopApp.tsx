@@ -5489,15 +5489,15 @@ export default function CarHopApp() {
                     <div className="border-t border-zinc-300 dark:border-zinc-600 pt-4 mt-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-zinc-600 dark:text-zinc-300">Included Miles per Day:</span>
-                        <span className="font-bold text-zinc-900 dark:text-white">{settings.includedMiles} miles/day</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">{viewCar.pricing?.includedMiles || settings.includedMiles} miles/day</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-zinc-600 dark:text-zinc-300">Extra Mile Rate:</span>
-                        <span className="font-bold text-zinc-900 dark:text-white">${settings.extraMileRate}/mile</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">${(viewCar.pricing?.extraMileRate || settings.extraMileRate).toFixed(2)}/mile</span>
                       </div>
                       <div className="flex justify-between items-center text-green-600 dark:text-green-400">
                         <span className="text-sm font-bold">Total Included Miles ({bookingDays} days):</span>
-                        <span className="font-bold">{settings.includedMiles * bookingDays} miles</span>
+                        <span className="font-bold">{(viewCar.pricing?.includedMiles || settings.includedMiles) * bookingDays} miles</span>
                       </div>
                     </div>
                   </div>
