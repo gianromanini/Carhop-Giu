@@ -4898,7 +4898,7 @@ export default function CarHopApp() {
                               Gold Protection 
                               {cart.insuranceOption === '500' && <Check size={16} className="text-green-500" />}
                             </h4>
-                            <p className="text-xs text-zinc-500">Franchise of $500</p>
+                            <p className="text-xs text-zinc-500">$500 Deductible</p>
                           </div>
                         </div>
                         <span className="font-bold text-white">+${settings.prices.insurance500}/day</span>
@@ -4916,7 +4916,7 @@ export default function CarHopApp() {
                               Standard Protection 
                               {cart.insuranceOption === '1000' && <Check size={16} className="text-green-500" />}
                             </h4>
-                            <p className="text-xs text-zinc-500">Franchise of $1,000</p>
+                            <p className="text-xs text-zinc-500">$1,000 Deductible</p>
                           </div>
                         </div>
                         <span className="font-bold text-white">+${settings.prices.insurance1000}/day</span>
