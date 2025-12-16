@@ -5532,6 +5532,8 @@ export default function CarHopApp() {
                   
                   // Calculate booking value (original without extensions)
                   const originalBookingValue = activeBooking ? activeBooking.total - (activeBooking.details?.extendedRate || 0) : 0;
+                  const extendedAmount = activeBooking?.details?.extendedRate || 0;
+                  const totalAmount = originalBookingValue + extendedAmount + charges.totalDifference;
                   
                   return (
                     <div className="space-y-3">
@@ -5544,10 +5546,10 @@ export default function CarHopApp() {
                           </div>
                           
                           {/* Extended Days if any */}
-                          {activeBooking?.details?.extendedRate && activeBooking.details.extendedRate > 0 && (
+                          {extendedAmount > 0 && (
                             <div className="flex justify-between text-sm">
                               <span className="text-blue-600 dark:text-blue-400">Extended Days</span>
-                              <span className="text-blue-600 dark:text-blue-400 font-medium">+${activeBooking.details.extendedRate.toFixed(2)}</span>
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">+${extendedAmount.toFixed(2)}</span>
                             </div>
                           )}
                           
@@ -5563,17 +5565,12 @@ export default function CarHopApp() {
                               <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.refuelingFee.toFixed(2)}</span>
                             </div>
                           )}
-                          {charges.totalDifference > 0 ? (
-                            <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                              <span className="font-bold text-zinc-900 dark:text-white">Difference to Pay</span>
-                              <span className="font-bold text-red-600 dark:text-red-400">${charges.totalDifference.toFixed(2)}</span>
-                            </div>
-                          ) : (
-                            <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                              <span className="font-bold text-zinc-900 dark:text-white">Additional Charges</span>
-                              <span className="font-bold text-green-600 dark:text-green-400">$0.00</span>
-                            </div>
-                          )}
+                          
+                          <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                            <span className="font-bold text-lg text-zinc-900 dark:text-white">Total</span>
+                            <span className="font-bold text-lg text-green-600 dark:text-green-400">${totalAmount.toFixed(2)}</span>
+                          </div>
+                          
                           {charges.totalDifference > 0 && (
                             <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-300 dark:border-zinc-600">
                               The difference of ${charges.totalDifference.toFixed(2)} will be charged to the same payment method used for the original booking.
