@@ -3941,12 +3941,20 @@ export default function CarHopApp() {
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Financial Details</h4>
                             <div className="space-y-2 text-sm">
-                              <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
-                              <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
-                              {b.details.protection > 0 && (
-                                <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
-                              )}
-                              <div className="flex justify-between text-zinc-300"><span>Cleaning Fee</span><span>${b.details.fees.toFixed(2)}</span></div>
+                              {(() => {
+                                const carForFinancials = vehicles.find(v => v.id === b.vehicleId);
+                                const cleaningFeeForDisplay = carForFinancials?.pricing?.cleaningFee || settings.cleaningFee;
+                                return (
+                                  <>
+                                    <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
+                                    {b.details.protection > 0 && (
+                                      <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
+                                    )}
+                                    <div className="flex justify-between text-zinc-300"><span>Cleaning Fee</span><span>${cleaningFeeForDisplay.toFixed(2)}</span></div>
+                                  </>
+                                );
+                              })()}
                               <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
                               
                               {(b.details.discount || 0) > 0 && (
@@ -4693,12 +4701,16 @@ export default function CarHopApp() {
                         <span className="text-green-600 dark:text-green-400">+${receiptBooking.details.extras.toFixed(2)}</span>
                       </div>
                     )}
-                    {receiptBooking.details?.fees && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
-                        <span className="text-zinc-900 dark:text-white">${receiptBooking.details.fees.toFixed(2)}</span>
-                      </div>
-                    )}
+                    {(() => {
+                      const carForReceipt = vehicles.find(v => v.id === receiptBooking.vehicleId);
+                      const cleaningFeeForReceipt = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
+                      return (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
+                          <span className="text-zinc-900 dark:text-white">${cleaningFeeForReceipt.toFixed(2)}</span>
+                        </div>
+                      );
+                    })()}
                     {receiptBooking.details?.extendedRate && (
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-600 dark:text-zinc-400">Extension</span>
