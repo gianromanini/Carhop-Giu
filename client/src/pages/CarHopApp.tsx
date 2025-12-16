@@ -4676,63 +4676,106 @@ export default function CarHopApp() {
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({receiptBooking.days} days)</span>
-                      <span className="text-zinc-900 dark:text-white font-medium">${receiptBooking.details?.rate?.toFixed(2) || '0.00'}</span>
-                    </div>
-                    {receiptBooking.details?.protection !== undefined && receiptBooking.details?.protection !== null && receiptBooking.details?.protection > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
-                        <span className="text-zinc-900 dark:text-white">+${receiptBooking.details.protection.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {receiptBooking.details?.extras && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
-                        <span className="text-green-600 dark:text-green-400">+${receiptBooking.details.extras.toFixed(2)}</span>
-                      </div>
-                    )}
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-6">
                     {(() => {
                       const carForReceipt = vehicles.find(v => v.id === receiptBooking.vehicleId);
                       const cleaningFeeForReceipt = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
+                      
+                      // Calculate initial payment
+                      const rentalRate = receiptBooking.details?.rate || 0;
+                      const protection = receiptBooking.details?.protection || 0;
+                      const extras = receiptBooking.details?.extras || 0;
+                      const tax = receiptBooking.details?.tax || 0;
+                      const initialPayment = rentalRate + protection + extras + cleaningFeeForReceipt + tax;
+                      
+                      // Calculate additional charges
+                      const extendedRate = receiptBooking.details?.extendedRate || 0;
+                      const manualChargesTotal = (receiptBooking.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                      const extraPaymentsTotal = (receiptBooking.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                      const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal;
+                      
                       return (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
-                          <span className="text-zinc-900 dark:text-white">${cleaningFeeForReceipt.toFixed(2)}</span>
-                        </div>
+                        <>
+                          {/* Initial Payment Section */}
+                          <div>
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Initial Payment Breakdown</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({receiptBooking.days} days)</span>
+                                <span className="text-zinc-900 dark:text-white">${rentalRate.toFixed(2)}</span>
+                              </div>
+                              {protection > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
+                                  <span className="text-zinc-900 dark:text-white">+${protection.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {extras > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
+                                  <span className="text-green-600 dark:text-green-400">+${extras.toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm">
+                                <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
+                                <span className="text-zinc-900 dark:text-white">+${cleaningFeeForReceipt.toFixed(2)}</span>
+                              </div>
+                              {tax > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
+                                  <span className="text-zinc-900 dark:text-white">+${tax.toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                <span className="font-bold text-zinc-900 dark:text-white">Initial Payment</span>
+                                <span className="font-bold text-zinc-900 dark:text-white">${initialPayment.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Additional Charges Section */}
+                          {additionalCharges > 0 && (
+                            <div>
+                              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Additional Charges</h4>
+                              <div className="space-y-2">
+                                {extendedRate > 0 && (
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-zinc-600 dark:text-zinc-400">Extended Days</span>
+                                    <span className="text-blue-600 dark:text-blue-400">+${extendedRate.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {receiptBooking.details?.manualCharges && receiptBooking.details.manualCharges.map((charge, idx) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
+                                    <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
+                                  </div>
+                                ))}
+                                {receiptBooking.extraPayments && receiptBooking.extraPayments.map((payment, idx) => (
+                                  <div key={`ep-${idx}`} className="flex justify-between text-sm">
+                                    <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                                      <Check size={12} className="text-green-500"/> {payment.type}
+                                    </span>
+                                    <span className="text-green-600 dark:text-green-400">+${payment.amount.toFixed(2)}</span>
+                                  </div>
+                                ))}
+                                <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                  <span className="font-bold text-zinc-900 dark:text-white">Additional Charges</span>
+                                  <span className="font-bold text-zinc-900 dark:text-white">+${additionalCharges.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Final Total */}
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-lg font-bold text-green-900 dark:text-green-200">Total Amount</span>
+                              <span className="text-2xl font-bold text-green-600 dark:text-green-400">${receiptBooking.total.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </>
                       );
                     })()}
-                    {receiptBooking.details?.extendedRate && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">Extension</span>
-                        <span className="text-blue-600 dark:text-blue-400">+${receiptBooking.details.extendedRate.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {receiptBooking.details?.manualCharges && receiptBooking.details.manualCharges.map((charge, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
-                        <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {receiptBooking.extraPayments && receiptBooking.extraPayments.map((payment, idx) => (
-                      <div key={`ep-${idx}`} className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
-                          <Check size={12} className="text-green-500"/> {payment.type}
-                        </span>
-                        <span className="text-green-600 dark:text-green-400">+${payment.amount.toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {receiptBooking.details?.tax && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                        <span className="text-zinc-900 dark:text-white">${receiptBooking.details.tax.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-lg font-bold border-t border-zinc-200 dark:border-zinc-800 pt-3 mt-3">
-                      <span className="text-zinc-900 dark:text-white">Total</span>
-                      <span className="text-green-600">${receiptBooking.total.toFixed(2)}</span>
-                    </div>
                   </div>
 
                   <button onClick={() => setViewingReceiptBookingId(null)} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors mt-6" data-testid="button-close-receipt">Close Receipt</button>
