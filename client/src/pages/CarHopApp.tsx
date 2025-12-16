@@ -4805,18 +4805,6 @@ export default function CarHopApp() {
                               const currentExtended = b.details.extendedRate || 0;
                               const currentDays = b.days || 1;
                               const dailyRate = (baseRate + currentExtended) / currentDays;
-                              const extensionCost = dailyRate * Math.max(0, extendedDays);
-                              const extensionTax = extensionCost * (settings.taxes / 100);
-                              
-                              // Extra miles calculation (show potential)
-                              const vehicle = vehicles.find(v => v.id === b.vehicleId);
-                              const includedMilesPerDay = vehicle?.pricing?.includedMiles || settings.includedMiles;
-                              const extraMileRate = vehicle?.pricing?.extraMileRate || settings.extraMileRate;
-                              const totalAllowedMiles = includedMilesPerDay * b.days;
-                              
-                              // Fuel proportional
-                              const fuelCostPerDay = 15; // Average daily fuel usage cost
-                              const fuelProportional = fuelCostPerDay * Math.max(0, extendedDays);
                               
                               return (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg space-y-4">
@@ -4835,24 +4823,10 @@ export default function CarHopApp() {
                                         <span className="font-bold text-zinc-900 dark:text-white">${b.total.toFixed(2)}</span>
                                       </div>
                                       {extendedDays > 0 && (
-                                        <>
-                                          <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                                            <span>Extended Days</span>
-                                            <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)}</span>
-                                          </div>
-                                          <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                                            <span>Extra Miles (Potential)</span>
-                                            <span className="font-bold text-zinc-900 dark:text-white">${(totalAllowedMiles * extraMileRate).toFixed(2)} max</span>
-                                          </div>
-                                          <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                                            <span>Fuel Proportional</span>
-                                            <span className="font-bold text-green-600">${fuelProportional.toFixed(2)}</span>
-                                          </div>
-                                          <div className="border-t border-zinc-300 dark:border-zinc-700 pt-2 flex justify-between text-xs font-bold">
-                                            <span className="text-zinc-700 dark:text-zinc-300">Extension Total</span>
-                                            <span className="text-blue-600 dark:text-blue-400">${(extensionCost + extensionTax + fuelProportional).toFixed(2)}</span>
-                                          </div>
-                                        </>
+                                        <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                          <span>Extended Days</span>
+                                          <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)}</span>
+                                        </div>
                                       )}
                                     </div>
                                   )}
@@ -5556,6 +5530,9 @@ export default function CarHopApp() {
                   
                   const charges = calculateCheckoutCharges();
                   
+                  // Calculate booking value (original without extensions)
+                  const originalBookingValue = activeBooking ? activeBooking.total - (activeBooking.details?.extendedRate || 0) : 0;
+                  
                   return (
                     <div className="space-y-3">
                       {isCheckOutMode && (
@@ -5563,17 +5540,26 @@ export default function CarHopApp() {
                           <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-3">Check-Out Summary</h3>
                           <div className="flex justify-between text-sm">
                             <span className="text-zinc-600 dark:text-zinc-400">Original Booking Amount</span>
-                            <span className="text-zinc-900 dark:text-white font-medium">${activeBooking?.total.toFixed(2)}</span>
+                            <span className="text-zinc-900 dark:text-white font-medium">${originalBookingValue.toFixed(2)}</span>
                           </div>
+                          
+                          {/* Extended Days if any */}
+                          {activeBooking?.details?.extendedRate && activeBooking.details.extendedRate > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-blue-600 dark:text-blue-400">Extended Days</span>
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">+${activeBooking.details.extendedRate.toFixed(2)}</span>
+                            </div>
+                          )}
+                          
                           {charges.excessMileageFee > 0 && (
                             <div className="flex justify-between text-sm">
-                              <span className="text-orange-600 dark:text-orange-400">Extra Mileage Charge</span>
+                              <span className="text-orange-600 dark:text-orange-400">Extra Miles Charged</span>
                               <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.excessMileageFee.toFixed(2)}</span>
                             </div>
                           )}
                           {charges.refuelingFee > 0 && (
                             <div className="flex justify-between text-sm">
-                              <span className="text-orange-600 dark:text-orange-400">Fuel Charge</span>
+                              <span className="text-orange-600 dark:text-orange-400">Fuel Level Charge</span>
                               <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.refuelingFee.toFixed(2)}</span>
                             </div>
                           )}
