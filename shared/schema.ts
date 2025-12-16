@@ -67,7 +67,18 @@ export const vehicles = pgTable("vehicles", {
     cleaningFee: number;
     includedMiles: number;
     extraMileRate: number;
-    prices: { insurance500: number; insurance1000: number; childSeat: number };
+    prices: { 
+      insurance500: number; 
+      insurance1000: number; 
+      childSeat: number; 
+      childSeatPerTrip: boolean;
+      prepaidFuel: number; 
+      prepaidFuelPerTrip: boolean;
+      lateReturnGrace: number; 
+      lateReturnGracePerTrip: boolean;
+      stressFreePackage: number; 
+      stressFreePackagePerTrip: boolean;
+    };
   }>(),
   expenses: jsonb("expenses").$type<{
     lease: number;
