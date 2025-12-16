@@ -3939,67 +3939,129 @@ export default function CarHopApp() {
 
                           {/* Financial Details */}
                           <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Financial Details</h4>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
-                              <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
-                              {b.details.protection > 0 && (
-                                <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
-                              )}
-                              <div className="flex justify-between text-zinc-300"><span>Cleaning Fee</span><span>${(vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee).toFixed(2)}</span></div>
-                              <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
-                              
-                              {(b.details.discount || 0) > 0 && (
-                                <div className="flex justify-between text-green-500">
-                                  <span className="flex items-center gap-1">
-                                    Discount Applied 
-                                    <button 
-                                      onClick={() => handleRemoveDiscount(b)} 
-                                      className="text-red-400 hover:text-red-300"
-                                      data-testid="button-remove-discount"
-                                    >
-                                      <X size={12}/>
-                                    </button>
-                                  </span>
-                                  <span>-${(b.details.discount || 0).toFixed(2)}</span>
-                                </div>
-                              )}
-                              
-                              {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
-                                <div key={i} className="flex justify-between text-red-400">
-                                  <span className="flex items-center gap-1">
-                                    {c.type} 
-                                    <button 
-                                      onClick={() => handleRemoveCharge(b, i)} 
-                                      className="text-red-400 hover:text-red-300"
-                                      data-testid={`button-remove-charge-${i}`}
-                                    >
-                                      <X size={12}/>
-                                    </button>
-                                  </span>
-                                  <span>+${c.amount.toFixed(2)}</span>
-                                </div>
-                              ))}
-                              
-                              {/* Extra Payments Already Processed */}
-                              {b.extraPayments && b.extraPayments.length > 0 && (
-                                <>
-                                  <div className="text-xs text-zinc-500 mt-3 mb-1">Processed Extra Payments:</div>
-                                  {b.extraPayments.map((p, i) => (
-                                    <div key={i} className="flex justify-between text-orange-400">
-                                      <span className="flex items-center gap-1">
-                                        <Check size={12}/> {p.type}
-                                      </span>
-                                      <span>+${p.amount.toFixed(2)}</span>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Financial Details</h4>
+                            <div className="space-y-4 text-sm">
+                              {(() => {
+                                const rate = b.details.rate || 0;
+                                const extras = b.details.extras || 0;
+                                const protection = b.details.protection || 0;
+                                const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
+                                const tax = b.details.tax || 0;
+                                const originalBookingAmount = rate + extras + protection + cleaningFee + tax;
+                                
+                                const extendedRate = b.details.extendedRate || 0;
+                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                const discount = b.details.discount || 0;
+                                const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                                
+                                return (
+                                  <>
+                                    {/* Original Booking Amount */}
+                                    <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
+                                      <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
+                                      <div className="space-y-1 mb-2">
+                                        <div className="flex justify-between text-zinc-300 text-xs">
+                                          <span>Base Rate</span>
+                                          <span>${rate.toFixed(2)}</span>
+                                        </div>
+                                        {extras > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Extras</span>
+                                            <span>+${extras.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {protection > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Protection</span>
+                                            <span>+${protection.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between text-zinc-300 text-xs">
+                                          <span>Cleaning Fee</span>
+                                          <span>+${cleaningFee.toFixed(2)}</span>
+                                        </div>
+                                        {tax > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Tax</span>
+                                            <span>+${tax.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2">
+                                        <span>Initial Payment</span>
+                                        <span>${originalBookingAmount.toFixed(2)}</span>
+                                      </div>
                                     </div>
-                                  ))}
-                                </>
-                              )}
-                              
-                              <div className="flex justify-between border-t border-zinc-700 pt-3 mt-3 font-bold text-white">
-                                <span>Total Billed</span>
-                                <span>${b.total.toFixed(2)}</span>
-                              </div>
+
+                                    {/* Additional Charges */}
+                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0 || discount > 0) && (
+                                      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
+                                        <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
+                                        <div className="space-y-1 mb-2">
+                                          {extendedRate > 0 && (
+                                            <div className="flex justify-between text-blue-300 text-xs">
+                                              <span>Extended Days</span>
+                                              <span>+${extendedRate.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
+                                            <div key={i} className="flex justify-between text-orange-300 text-xs">
+                                              <span className="flex items-center gap-1">
+                                                {c.type}
+                                                <button 
+                                                  onClick={() => handleRemoveCharge(b, i)} 
+                                                  className="text-red-400 hover:text-red-300"
+                                                  data-testid={`button-remove-charge-${i}`}
+                                                >
+                                                  <X size={10}/>
+                                                </button>
+                                              </span>
+                                              <span>+${c.amount.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                          {b.extraPayments && b.extraPayments.map((p, i) => (
+                                            <div key={`ep-${i}`} className="flex justify-between text-green-300 text-xs">
+                                              <span className="flex items-center gap-1">
+                                                <Check size={10}/> {p.type}
+                                              </span>
+                                              <span>+${p.amount.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                          {discount > 0 && (
+                                            <div className="flex justify-between text-green-400 text-xs">
+                                              <span className="flex items-center gap-1">
+                                                Discount Applied
+                                                <button 
+                                                  onClick={() => handleRemoveDiscount(b)} 
+                                                  className="text-red-400 hover:text-red-300"
+                                                  data-testid="button-remove-discount"
+                                                >
+                                                  <X size={10}/>
+                                                </button>
+                                              </span>
+                                              <span>-${discount.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2 text-xs">
+                                          <span>Additional Charges Total</span>
+                                          <span>{additionalCharges >= 0 ? '+' : ''} ${additionalCharges.toFixed(2)}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Final Total */}
+                                    <div className="bg-green-950/30 rounded-lg p-3 border border-green-700">
+                                      <div className="flex justify-between text-green-200 font-bold">
+                                        <span>TOTAL BILLED</span>
+                                        <span>${b.total.toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
                               
                               {/* Extra Payment Charge */}
                               <div className="mt-4 pt-4 border-t border-zinc-700">
@@ -4035,7 +4097,6 @@ export default function CarHopApp() {
                                 )}
                               </div>
                             </div>
-                          </div>
 
                           {/* Vehicle & License Evidence */}
                           <div>
