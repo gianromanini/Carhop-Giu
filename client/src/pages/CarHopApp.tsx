@@ -3941,20 +3941,12 @@ export default function CarHopApp() {
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Financial Details</h4>
                             <div className="space-y-2 text-sm">
-                              {(() => {
-                                const carForFinancials = vehicles.find(v => v.id === b.vehicleId);
-                                const cleaningFeeForDisplay = carForFinancials?.pricing?.cleaningFee || settings.cleaningFee;
-                                return (
-                                  <>
-                                    <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
-                                    {b.details.protection > 0 && (
-                                      <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
-                                    )}
-                                    <div className="flex justify-between text-zinc-300"><span>Cleaning Fee</span><span>${cleaningFeeForDisplay.toFixed(2)}</span></div>
-                                  </>
-                                );
-                              })()}
+                              <div className="flex justify-between text-zinc-300"><span>Base Rate</span><span>${b.details.rate.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Extras</span><span>${b.details.extras.toFixed(2)}</span></div>
+                              {b.details.protection > 0 && (
+                                <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
+                              )}
+                              <div className="flex justify-between text-zinc-300"><span>Cleaning Fee</span><span>${(vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee).toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
                               
                               {(b.details.discount || 0) > 0 && (
