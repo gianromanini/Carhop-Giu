@@ -856,7 +856,7 @@ export default function CarHopApp() {
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: settings.cleaningFee, tax: totalData.taxAmount }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), tax: totalData.taxAmount }, 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -3946,7 +3946,7 @@ export default function CarHopApp() {
                               {b.details.protection > 0 && (
                                 <div className="flex justify-between text-zinc-300"><span>Protection</span><span>${b.details.protection.toFixed(2)}</span></div>
                               )}
-                              <div className="flex justify-between text-zinc-300"><span>Fees</span><span>${b.details.fees.toFixed(2)}</span></div>
+                              <div className="flex justify-between text-zinc-300"><span>Cleaning Fee</span><span>${b.details.fees.toFixed(2)}</span></div>
                               <div className="flex justify-between text-zinc-300"><span>Tax</span><span>${b.details.tax.toFixed(2)}</span></div>
                               
                               {(b.details.discount || 0) > 0 && (
