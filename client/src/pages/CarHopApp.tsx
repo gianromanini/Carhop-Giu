@@ -391,6 +391,7 @@ export default function CarHopApp() {
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
   const [adminTab, setAdminTab] = useState('fleet');
+  const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedHost, setSelectedHost] = useState<any>(null);
   const [selectedHostCarCommission, setSelectedHostCarCommission] = useState<any>(null);
@@ -4371,16 +4372,31 @@ export default function CarHopApp() {
                   
                   {/* Right Column - Financial Status by Vehicle */}
                   <Card className="p-3 sm:p-6">
-                    <h3 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                      <BarChart3 size={18}/> Financial Status by Vehicle
-                    </h3>
+                    <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+                      <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <BarChart3 size={18}/> Financial Status by Vehicle
+                      </h3>
+                      <select value={earningsSortBy} onChange={(e) => setEarningsSortBy(e.target.value)} className="text-xs sm:text-sm px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-white" data-testid="select-earnings-sort">
+                        <option value="carName">Sort by Car Name</option>
+                        <option value="hostName">Sort by Host Name</option>
+                      </select>
+                    </div>
                     
                     <div className="space-y-2 sm:space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                      {vehicles.map(vehicle => {
+                      {vehicles.sort((a, b) => {
+                        if (earningsSortBy === 'hostName') {
+                          const hostA = hostsData?.find(h => h.id === parseInt(a.hostId || '0'))?.firstName || '';
+                          const hostB = hostsData?.find(h => h.id === parseInt(b.hostId || '0'))?.firstName || '';
+                          return hostA.localeCompare(hostB);
+                        }
+                        return a.model.localeCompare(b.model);
+                      }).map(vehicle => {
                         const vehicleData = financialData?.byVehicle?.[vehicle.model] || { gross: 0, pending: 0, expenses: 0 };
                         const gross = (vehicleData.gross || 0) + (vehicleData.pending || 0);
                         const expenses = vehicleData.expenses || 0;
                         const balance = gross - expenses;
+                        const hostData = hostsData?.find(h => h.id === parseInt(vehicle.hostId || '0'));
+                        const hostName = hostData ? `${hostData.firstName} ${hostData.lastName}` : 'Unknown';
                         
                         return (
                           <div key={vehicle.id} className="bg-zinc-900 rounded-lg p-2 sm:p-3 border border-zinc-800">
@@ -4394,7 +4410,7 @@ export default function CarHopApp() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start gap-1">
                                   <div>
-                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model}</h4>
+                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model} - @{hostName}</h4>
                                     <p className="text-[8px] sm:text-[10px] text-zinc-500">{vehicle.category}</p>
                                   </div>
                                   <button 
