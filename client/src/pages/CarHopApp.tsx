@@ -4385,8 +4385,8 @@ export default function CarHopApp() {
                     <div className="space-y-2 sm:space-y-3 max-h-[400px] overflow-y-auto pr-2">
                       {vehicles.sort((a, b) => {
                         if (earningsSortBy === 'hostName') {
-                          const hostA = hostsData?.find(h => h.id === parseInt(a.hostId || '0'))?.firstName || '';
-                          const hostB = hostsData?.find(h => h.id === parseInt(b.hostId || '0'))?.firstName || '';
+                          const hostA = hostsData?.find(h => h.id === parseInt(a.hostId || '0'))?.firstName || 'CarHopGo';
+                          const hostB = hostsData?.find(h => h.id === parseInt(b.hostId || '0'))?.firstName || 'CarHopGo';
                           return hostA.localeCompare(hostB);
                         }
                         return a.model.localeCompare(b.model);
@@ -4396,7 +4396,7 @@ export default function CarHopApp() {
                         const expenses = vehicleData.expenses || 0;
                         const balance = gross - expenses;
                         const hostData = hostsData?.find(h => h.id === parseInt(vehicle.hostId || '0'));
-                        const hostName = hostData ? `${hostData.firstName} ${hostData.lastName}` : 'Unknown';
+                        const hostAlias = hostData?.firstName || 'CarHopGo';
                         
                         return (
                           <div key={vehicle.id} className="bg-zinc-900 rounded-lg p-2 sm:p-3 border border-zinc-800">
@@ -4410,7 +4410,7 @@ export default function CarHopApp() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start gap-1">
                                   <div>
-                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model} - @{hostName}</h4>
+                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model} <span className="text-blue-400 text-[10px] sm:text-xs">@{hostAlias}</span></h4>
                                     <p className="text-[8px] sm:text-[10px] text-zinc-500">{vehicle.category}</p>
                                   </div>
                                   <button 
