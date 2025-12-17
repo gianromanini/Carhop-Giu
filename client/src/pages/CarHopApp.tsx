@@ -486,7 +486,6 @@ export default function CarHopApp() {
   const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
   const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
   const [checkingOutByAdminBookingId, setCheckingOutByAdminBookingId] = useState<number | null>(null);
-  const [customAdditionalCharges, setCustomAdditionalCharges] = useState<Record<string, string>>({});
 
   const [newLocation, setNewLocation] = useState('');
   
@@ -4045,29 +4044,9 @@ export default function CarHopApp() {
                                             </div>
                                           )}
                                         </div>
-                                        <div className="flex gap-2 items-center justify-between border-t border-zinc-600 pt-2 text-xs">
-                                          <span className="text-white font-bold">Additional Charges Total</span>
-                                          <div className="flex gap-2 items-center">
-                                            <div className="relative flex items-center">
-                                              <span className="absolute left-2 text-zinc-400">$</span>
-                                              <input
-                                                type="number"
-                                                value={customAdditionalCharges[b.id] ?? additionalCharges.toFixed(2)}
-                                                onChange={(e) => setCustomAdditionalCharges(prev => ({ ...prev, [b.id]: e.target.value }))}
-                                                placeholder="0.00"
-                                                className="w-20 bg-zinc-700 border border-zinc-600 rounded px-2 py-1 pl-6 text-white text-xs font-bold focus:outline-none focus:border-green-500"
-                                                data-testid={`input-additional-charges-${b.id}`}
-                                              />
-                                            </div>
-                                            <button
-                                              onClick={() => setCustomAdditionalCharges(prev => { const newState = { ...prev }; delete newState[b.id]; return newState; })}
-                                              className="text-red-400 hover:text-red-300 text-xs"
-                                              data-testid={`button-clear-charges-${b.id}`}
-                                              title="Clear"
-                                            >
-                                              <X size={14} />
-                                            </button>
-                                          </div>
+                                        <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2 text-xs">
+                                          <span>Additional Charges Total</span>
+                                          <span>${additionalCharges.toFixed(2)}</span>
                                         </div>
                                       </div>
                                     )}
@@ -4086,7 +4065,7 @@ export default function CarHopApp() {
                               
                               {/* Extra Payment Charge */}
                               <div className="mt-4 pt-4 border-t border-zinc-700">
-                                <div className="text-xs text-zinc-500 mb-2">Charge {b.paymentMethod || 'Credit Card'}</div>
+                                <div className="text-xs text-zinc-500 mb-2">Charge Extras by original Payment Method</div>
                                 <div className="flex gap-2 mb-3">
                                   <div className="relative flex-1">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
