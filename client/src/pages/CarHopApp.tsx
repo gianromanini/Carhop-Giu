@@ -3953,7 +3953,9 @@ export default function CarHopApp() {
                                 const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const discount = b.details.discount || 0;
-                                const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal + tax - discount;
+                                const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                                const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const additionalCharges = additionalChargesBeforeTax + additionalTax;
                                 
                                 return (
                                   <>
@@ -4022,12 +4024,6 @@ export default function CarHopApp() {
                                               <span>+${p.amount.toFixed(2)}</span>
                                             </div>
                                           ))}
-                                          {tax > 0 && (
-                                            <div className="flex justify-between text-purple-300 text-xs">
-                                              <span>Tax</span>
-                                              <span>+${tax.toFixed(2)}</span>
-                                            </div>
-                                          )}
                                           {discount > 0 && (
                                             <div className="flex justify-between text-green-400 text-xs">
                                               <span className="flex items-center gap-1">
@@ -4041,6 +4037,12 @@ export default function CarHopApp() {
                                                 </button>
                                               </span>
                                               <span>-${discount.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          {additionalTax > 0 && (
+                                            <div className="flex justify-between text-purple-300 text-xs">
+                                              <span>Tax on Additional Charges</span>
+                                              <span>+${additionalTax.toFixed(2)}</span>
                                             </div>
                                           )}
                                         </div>
