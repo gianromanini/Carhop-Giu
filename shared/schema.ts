@@ -193,7 +193,7 @@ export const hosts = pgTable("hosts", {
   licenseFrontImage: text("license_front_image"),
   licenseBackImage: text("license_back_image"),
   proofOfResidenceImage: text("proof_of_residence_image").notNull(),
-  socialSecurityNumber: varchar("social_security_number").notNull(),
+  socialSecurityNumber: varchar("social_security_number"),
   username: varchar("username").notNull().unique(),
   passwordHash: varchar("password_hash").notNull(),
   agreementAccepted: boolean("agreement_accepted").notNull().default(false),
