@@ -856,7 +856,7 @@ export default function CarHopApp() {
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), tax: totalData.taxAmount }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), tax: totalData.taxAmount }, 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -3965,7 +3965,7 @@ export default function CarHopApp() {
                                       <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
                                       <div className="space-y-1 mb-2">
                                         <div className="flex justify-between text-zinc-300 text-xs">
-                                          <span>Base Rate</span>
+                                          <span>Base Rate - {b.days} Days</span>
                                           <span>${rate.toFixed(2)}</span>
                                         </div>
                                         {extras > 0 && (
@@ -3976,7 +3976,7 @@ export default function CarHopApp() {
                                         )}
                                         {protection > 0 && (
                                           <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Protection</span>
+                                            <span>Protection - {b.details?.protectionType || 'Standard'}</span>
                                             <span>+${protection.toFixed(2)}</span>
                                           </div>
                                         )}
@@ -4777,7 +4777,7 @@ export default function CarHopApp() {
                               </div>
                               {protection > 0 && (
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-zinc-600 dark:text-zinc-400">Protection</span>
+                                  <span className="text-zinc-600 dark:text-zinc-400">Protection - {receiptBooking.details?.protectionType || 'Standard'}</span>
                                   <span className="text-zinc-900 dark:text-white">+${protection.toFixed(2)}</span>
                                 </div>
                               )}
