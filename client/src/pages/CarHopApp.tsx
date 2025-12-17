@@ -4062,6 +4062,7 @@ export default function CarHopApp() {
                                 );
                               })()}
                             </div>
+                          </div>
 
                           {/* Vehicle & License Evidence */}
                           <div>
