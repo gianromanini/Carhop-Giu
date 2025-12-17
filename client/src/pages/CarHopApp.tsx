@@ -4058,6 +4058,31 @@ export default function CarHopApp() {
                                         <span>${b.total.toFixed(2)}</span>
                                       </div>
                                     </div>
+
+                                    {/* Charge Extra Payment */}
+                                    <div className="mt-4 pt-4 border-t border-zinc-700">
+                                      <div className="text-xs text-zinc-500 mb-2">Charge Extras by original Payment Method</div>
+                                      <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
+                                          <input
+                                            type="number"
+                                            value={extraPaymentAmount}
+                                            onChange={(e) => setExtraPaymentAmount(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white"
+                                            data-testid="input-extra-payment-amount"
+                                          />
+                                        </div>
+                                        <button 
+                                          onClick={() => handleChargeExtraPayment(b)}
+                                          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap"
+                                          data-testid="button-charge-extra-payment"
+                                        >
+                                          Charge Extra Payment Trip
+                                        </button>
+                                      </div>
+                                    </div>
                                   </>
                                 );
                               })()}
