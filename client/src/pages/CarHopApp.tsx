@@ -3946,8 +3946,9 @@ export default function CarHopApp() {
                                 const extras = b.details.extras || 0;
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                const tax = b.details.tax || 0;
-                                const originalBookingAmount = rate + extras + protection + cleaningFee;
+                                const subtotalBeforeTax = rate + extras + protection + cleaningFee;
+                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
                                 const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
@@ -3984,6 +3985,16 @@ export default function CarHopApp() {
                                           <span>+${cleaningFee.toFixed(2)}</span>
                                         </div>
                                       </div>
+                                      <div className="flex justify-between text-zinc-400 text-xs border-t border-zinc-600 pt-2 mb-2">
+                                        <span>Subtotal</span>
+                                        <span>${subtotalBeforeTax.toFixed(2)}</span>
+                                      </div>
+                                      {originalTax > 0 && (
+                                        <div className="flex justify-between text-purple-300 text-xs mb-2">
+                                          <span>Tax</span>
+                                          <span>+${originalTax.toFixed(2)}</span>
+                                        </div>
+                                      )}
                                       <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2">
                                         <span>Initial Payment</span>
                                         <span>${originalBookingAmount.toFixed(2)}</span>
