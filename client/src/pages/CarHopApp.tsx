@@ -3947,13 +3947,13 @@ export default function CarHopApp() {
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
                                 const tax = b.details.tax || 0;
-                                const originalBookingAmount = rate + extras + protection + cleaningFee + tax;
+                                const originalBookingAmount = rate + extras + protection + cleaningFee;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
                                 const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const discount = b.details.discount || 0;
-                                const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                                const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal + tax - discount;
                                 
                                 return (
                                   <>
@@ -3981,12 +3981,6 @@ export default function CarHopApp() {
                                           <span>Cleaning Fee</span>
                                           <span>+${cleaningFee.toFixed(2)}</span>
                                         </div>
-                                        {tax > 0 && (
-                                          <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Tax</span>
-                                            <span>+${tax.toFixed(2)}</span>
-                                          </div>
-                                        )}
                                       </div>
                                       <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2">
                                         <span>Initial Payment</span>
@@ -4028,6 +4022,12 @@ export default function CarHopApp() {
                                               <span>+${p.amount.toFixed(2)}</span>
                                             </div>
                                           ))}
+                                          {tax > 0 && (
+                                            <div className="flex justify-between text-purple-300 text-xs">
+                                              <span>Tax</span>
+                                              <span>+${tax.toFixed(2)}</span>
+                                            </div>
+                                          )}
                                           {discount > 0 && (
                                             <div className="flex justify-between text-green-400 text-xs">
                                               <span className="flex items-center gap-1">
