@@ -3296,7 +3296,7 @@ export default function CarHopApp() {
                             <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-500 font-semibold">@{hostOwner.username}</span>}</p>
+                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-400 font-semibold">@{hostOwner.firstName} {hostOwner.lastName}</span>}</p>
                             </div>
                             <div className="flex gap-1">
                               <button onClick={() => handleEditVehicle(car)} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors" data-testid={`button-edit-${car.id}`} title="Edit vehicle"><Edit size={14}/></button>
@@ -4429,9 +4429,11 @@ export default function CarHopApp() {
                     <div className="space-y-2 sm:space-y-3 max-h-[400px] overflow-y-auto pr-2">
                       {vehicles.sort((a, b) => {
                         if (earningsSortBy === 'hostName') {
-                          const hostA = hostsData?.find(h => h.id === parseInt(a.hostId || '0'))?.firstName || 'CarHopGo';
-                          const hostB = hostsData?.find(h => h.id === parseInt(b.hostId || '0'))?.firstName || 'CarHopGo';
-                          return hostA.localeCompare(hostB);
+                          const hostA = hostsData?.find(h => h.id === parseInt(a.hostId || '0'));
+                          const hostAName = (hostA?.firstName && hostA?.lastName) ? `${hostA.firstName} ${hostA.lastName}` : 'CarHopGo';
+                          const hostB = hostsData?.find(h => h.id === parseInt(b.hostId || '0'));
+                          const hostBName = (hostB?.firstName && hostB?.lastName) ? `${hostB.firstName} ${hostB.lastName}` : 'CarHopGo';
+                          return hostAName.localeCompare(hostBName);
                         }
                         return a.model.localeCompare(b.model);
                       }).map(vehicle => {
@@ -4440,7 +4442,7 @@ export default function CarHopApp() {
                         const expenses = vehicleData.expenses || 0;
                         const balance = gross - expenses;
                         const hostData = hostsData?.find(h => h.id === parseInt(vehicle.hostId || '0'));
-                        const hostAlias = hostData?.firstName || 'CarHopGo';
+                        const hostAlias = (hostData?.firstName && hostData?.lastName) ? `${hostData.firstName} ${hostData.lastName}` : 'CarHopGo';
                         
                         return (
                           <div key={vehicle.id} className="bg-zinc-900 rounded-lg p-2 sm:p-3 border border-zinc-800">
