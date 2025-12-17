@@ -4008,7 +4008,7 @@ export default function CarHopApp() {
                                         <div className="space-y-1 mb-2">
                                           {extendedRate > 0 && (
                                             <div className="flex justify-between text-blue-300 text-xs">
-                                              <span>Extended Days</span>
+                                              <span>Extended Days - {Math.round(extendedRate / (vehicles.find(v => v.id === b.vehicleId)?.price || 1))} Days</span>
                                               <span>+${extendedRate.toFixed(2)}</span>
                                             </div>
                                           )}
@@ -4811,7 +4811,7 @@ export default function CarHopApp() {
                               <div className="space-y-2">
                                 {extendedRate > 0 && (
                                   <div className="flex justify-between text-sm">
-                                    <span className="text-zinc-600 dark:text-zinc-400">Extended Days</span>
+                                    <span className="text-zinc-600 dark:text-zinc-400">Extended Days - {Math.round(extendedRate / (vehicles.find(v => v.id === receiptBooking.vehicleId)?.price || 1))} Days</span>
                                     <span className="text-blue-600 dark:text-blue-400">+${extendedRate.toFixed(2)}</span>
                                   </div>
                                 )}
