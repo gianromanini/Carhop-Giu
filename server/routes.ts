@@ -601,7 +601,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.post("/api/hosts/register", async (req, res) => {
     try {
       const { firstName, lastName, email, phone, address, city, state, zipCode,
-              licenseNumber, licenseFrontImage, licenseBackImage, proofOfResidenceImage, username, password,
+              licenseNumber, licenseFrontImage, licenseBackImage, proofOfResidenceImage, socialSecurityNumber, username, password,
               agreementAccepted, agreementAcceptedAt } = req.body;
 
       // Validate agreement acceptance
@@ -627,7 +627,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       const host = await storage.createHost({
         firstName, lastName, email, phone, address, city, state, zipCode,
-        licenseNumber, licenseFrontImage, licenseBackImage, proofOfResidenceImage, username, passwordHash, 
+        licenseNumber, licenseFrontImage, licenseBackImage, proofOfResidenceImage, socialSecurityNumber, username, passwordHash, 
         agreementAccepted: true,
         agreementAcceptedAt: agreementAcceptedAt ? new Date(agreementAcceptedAt) : new Date(),
         status: 'pending'
