@@ -411,7 +411,7 @@ export default function CarHopApp() {
   const [hostLoginForm, setHostLoginForm] = useState({ username: '', password: '' });
   const [hostRegisterForm, setHostRegisterForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '',
-    licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', proofOfResidenceImage: '', username: '', password: '', confirmPassword: ''
+    licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', proofOfResidenceImage: '', socialSecurityNumber: '', username: '', password: '', confirmPassword: ''
   });
   const [hostRegisterMessage, setHostRegisterMessage] = useState('');
   const [showHostAgreementModal, setShowHostAgreementModal] = useState(false);
@@ -1583,7 +1583,7 @@ export default function CarHopApp() {
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">{hostRegisterMessage}</p>
                 <Button onClick={() => { 
                   setShowHostRegisterModal(false); 
-                  setHostRegisterForm({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '', licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', proofOfResidenceImage: '', username: '', password: '', confirmPassword: '' }); 
+                  setHostRegisterForm({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', zipCode: '', licenseNumber: '', licenseFrontImage: '', licenseBackImage: '', proofOfResidenceImage: '', socialSecurityNumber: '', username: '', password: '', confirmPassword: '' }); 
                   setHostRegisterMessage(''); 
                 }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-host-register-success">Done</Button>
               </div>
@@ -1618,6 +1618,7 @@ export default function CarHopApp() {
                         licenseFrontImage: hostRegisterForm.licenseFrontImage,
                         licenseBackImage: hostRegisterForm.licenseBackImage,
                         proofOfResidenceImage: hostRegisterForm.proofOfResidenceImage,
+                        socialSecurityNumber: hostRegisterForm.socialSecurityNumber,
                         username: hostRegisterForm.username,
                         password: hostRegisterForm.password,
                         agreementAccepted: hostAgreementAccepted,
@@ -1700,6 +1701,15 @@ export default function CarHopApp() {
                       }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-proof-residence" />
                       {hostRegisterForm.proofOfResidenceImage && <img src={hostRegisterForm.proofOfResidenceImage} alt="Proof" className="mt-2 w-full h-20 object-cover rounded border" />}
                     </div>
+                  </div>
+
+                  <div className="border-b border-zinc-200 dark:border-zinc-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
+                    <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Tax Information</h3>
+                    <input type="text" value={hostRegisterForm.socialSecurityNumber} onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      setHostRegisterForm({...hostRegisterForm, socialSecurityNumber: value});
+                    }} placeholder="Social Security or Tax ID (ITIN Number) *" required maxLength={9} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-ssn" />
+                    <p className="text-xs text-zinc-500 mt-1">9 digits required</p>
                   </div>
 
                   <div>
@@ -3540,12 +3550,16 @@ export default function CarHopApp() {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <input type="text" value={editingHost.licenseNumber} onChange={(e) => setEditingHost({...editingHost, licenseNumber: e.target.value})} placeholder="License Number" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
-                            <select value={editingHost.status} onChange={(e) => setEditingHost({...editingHost, status: e.target.value})} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs">
-                              <option value="active">Active</option>
-                              <option value="suspended">Suspended</option>
-                              <option value="pending">Pending</option>
-                            </select>
+                            <input type="text" value={editingHost.socialSecurityNumber || ''} onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                              setEditingHost({...editingHost, socialSecurityNumber: value});
+                            }} placeholder="SSN/Tax ID" maxLength={9} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                           </div>
+                          <select value={editingHost.status} onChange={(e) => setEditingHost({...editingHost, status: e.target.value})} className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs">
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="pending">Pending</option>
+                          </select>
                           <div className="relative">
                             <input type={showHostEditPassword ? "text" : "password"} value={editingHost.password || ''} onChange={(e) => setEditingHost({...editingHost, password: e.target.value})} placeholder="New Password (leave blank to keep current)" className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
                             <button type="button" onClick={() => setShowHostEditPassword(!showHostEditPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors" data-testid="button-toggle-host-edit-password">{showHostEditPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
@@ -3575,6 +3589,10 @@ export default function CarHopApp() {
                             <div>
                               <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">License</h4>
                               <div className="text-sm text-zinc-900 dark:text-white">{selectedHost.licenseNumber}</div>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Tax ID</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white font-mono">{selectedHost.socialSecurityNumber || 'N/A'}</div>
                             </div>
                             <div>
                               <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Status</h4>
