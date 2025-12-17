@@ -3408,7 +3408,7 @@ export default function CarHopApp() {
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {clientTrips.length > 0 ? (
                               clientTrips.map((trip, idx) => (
-                                <div key={idx} className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs">
+                                <div key={idx} onClick={() => setSelectedBooking(trip)} className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs cursor-pointer hover:border-green-500 hover:bg-zinc-800 transition-colors" data-testid={`card-trip-${trip.id}`}>
                                   <div className="flex justify-between items-start mb-1">
                                     <span className="font-bold text-zinc-900 dark:text-white">{trip.carName}</span>
                                     <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${trip.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{trip.status}</span>
