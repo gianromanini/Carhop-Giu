@@ -4354,8 +4354,6 @@ export default function CarHopApp() {
                           {/* Customer Rating Section */}
                           {(() => {
                             const bookingRating = ratingsData.find(r => r.bookingId === b.id);
-                            const vehicle = vehicles.find(v => v.id === b.vehicleId);
-                            const host = hosts.find(h => h.id === vehicle?.hostId);
                             
                             return (
                               <div className={`p-4 rounded-lg border ${bookingRating ? 'bg-yellow-950/30 border-yellow-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
