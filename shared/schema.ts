@@ -213,9 +213,25 @@ export const settings = pgTable("settings", {
   value: jsonb("value").notNull(),
 });
 
+export const ratings = pgTable("ratings", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull(),
+  vehicleId: integer("vehicle_id").notNull(),
+  clientName: varchar("client_name").notNull(),
+  clientEmail: varchar("client_email").notNull(),
+  hostId: varchar("host_id"),
+  stars: integer("stars").notNull(),
+  comment: text("comment"),
+  hostResponse: text("host_response"),
+  hostResponseAt: timestamp("host_response_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({ id: true, createdAt: true });
 export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true });
+
+export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true, hostResponseAt: true });
 
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;
@@ -223,3 +239,5 @@ export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type Settings = typeof settings.$inferSelect;
+export type InsertRating = z.infer<typeof insertRatingSchema>;
+export type Rating = typeof ratings.$inferSelect;

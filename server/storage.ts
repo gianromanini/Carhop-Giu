@@ -1,10 +1,11 @@
 import { 
-  vehicles, bookings, settings, hosts, users,
+  vehicles, bookings, settings, hosts, users, ratings,
   type Vehicle, type InsertVehicle,
   type Booking, type InsertBooking,
   type Settings, type InsertSettings,
   type User, type UpsertUser,
-  type Host, type InsertHost
+  type Host, type InsertHost,
+  type Rating, type InsertRating
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, ilike } from "drizzle-orm";
@@ -49,6 +50,15 @@ export interface IStorage {
   createHost(host: InsertHost): Promise<Host>;
   updateHost(id: number, host: Partial<InsertHost>): Promise<Host | undefined>;
   deleteHost(id: number): Promise<boolean>;
+
+  // Ratings
+  getRatings(): Promise<Rating[]>;
+  getRating(id: number): Promise<Rating | undefined>;
+  getRatingsByVehicle(vehicleId: number): Promise<Rating[]>;
+  getRatingByBooking(bookingId: number): Promise<Rating | undefined>;
+  createRating(rating: InsertRating): Promise<Rating>;
+  updateRating(id: number, rating: Partial<InsertRating>): Promise<Rating | undefined>;
+  deleteRating(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -826,6 +836,61 @@ export class MemStorage implements IStorage {
   async deleteHost(id: number): Promise<boolean> {
     return this.hosts.delete(id);
   }
+
+  // Ratings (MemStorage stub)
+  private ratingsMap: Map<number, Rating> = new Map();
+  private ratingId = 1;
+
+  async getRatings(): Promise<Rating[]> {
+    return Array.from(this.ratingsMap.values());
+  }
+
+  async getRating(id: number): Promise<Rating | undefined> {
+    return this.ratingsMap.get(id);
+  }
+
+  async getRatingsByVehicle(vehicleId: number): Promise<Rating[]> {
+    return Array.from(this.ratingsMap.values()).filter(r => r.vehicleId === vehicleId);
+  }
+
+  async getRatingByBooking(bookingId: number): Promise<Rating | undefined> {
+    return Array.from(this.ratingsMap.values()).find(r => r.bookingId === bookingId);
+  }
+
+  async createRating(ratingData: InsertRating): Promise<Rating> {
+    const id = this.ratingId++;
+    const newRating: Rating = {
+      id,
+      bookingId: ratingData.bookingId,
+      vehicleId: ratingData.vehicleId,
+      clientName: ratingData.clientName,
+      clientEmail: ratingData.clientEmail,
+      hostId: ratingData.hostId ?? null,
+      stars: ratingData.stars,
+      comment: ratingData.comment ?? null,
+      hostResponse: ratingData.hostResponse ?? null,
+      hostResponseAt: null,
+      createdAt: new Date(),
+    };
+    this.ratingsMap.set(id, newRating);
+    return newRating;
+  }
+
+  async updateRating(id: number, ratingData: Partial<InsertRating>): Promise<Rating | undefined> {
+    const existing = this.ratingsMap.get(id);
+    if (!existing) return undefined;
+    const updated: Rating = {
+      ...existing,
+      ...ratingData,
+      hostResponseAt: ratingData.hostResponse ? new Date() : existing.hostResponseAt,
+    };
+    this.ratingsMap.set(id, updated);
+    return updated;
+  }
+
+  async deleteRating(id: number): Promise<boolean> {
+    return this.ratingsMap.delete(id);
+  }
 }
 
 // Database Storage Implementation
@@ -1175,6 +1240,86 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting host:", error);
+      return false;
+    }
+  }
+
+  // Ratings
+  async getRatings(): Promise<Rating[]> {
+    if (!this.initialized) return [];
+    try {
+      return await this.db.select().from(ratings);
+    } catch (error) {
+      console.error("Error getting ratings:", error);
+      return [];
+    }
+  }
+
+  async getRating(id: number): Promise<Rating | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const result = await this.db.select().from(ratings).where(eq(ratings.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting rating:", error);
+      return undefined;
+    }
+  }
+
+  async getRatingsByVehicle(vehicleId: number): Promise<Rating[]> {
+    if (!this.initialized) return [];
+    try {
+      return await this.db.select().from(ratings).where(eq(ratings.vehicleId, vehicleId));
+    } catch (error) {
+      console.error("Error getting ratings by vehicle:", error);
+      return [];
+    }
+  }
+
+  async getRatingByBooking(bookingId: number): Promise<Rating | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const result = await this.db.select().from(ratings).where(eq(ratings.bookingId, bookingId)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting rating by booking:", error);
+      return undefined;
+    }
+  }
+
+  async createRating(rating: InsertRating): Promise<Rating> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    try {
+      const result = await this.db.insert(ratings).values(rating).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating rating:", error);
+      throw error;
+    }
+  }
+
+  async updateRating(id: number, ratingData: Partial<InsertRating>): Promise<Rating | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const updateData: any = { ...ratingData };
+      if (ratingData.hostResponse) {
+        updateData.hostResponseAt = new Date();
+      }
+      const result = await this.db.update(ratings).set(updateData).where(eq(ratings.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating rating:", error);
+      return undefined;
+    }
+  }
+
+  async deleteRating(id: number): Promise<boolean> {
+    if (!this.initialized) return false;
+    try {
+      const result = await this.db.delete(ratings).where(eq(ratings.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting rating:", error);
       return false;
     }
   }

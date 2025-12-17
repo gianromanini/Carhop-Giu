@@ -1072,4 +1072,104 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
+
+  // ========== RATINGS ==========
+  
+  // Get all ratings
+  app.get("/api/ratings", async (req, res) => {
+    try {
+      const allRatings = await storage.getRatings();
+      res.json(allRatings);
+    } catch (error) {
+      console.error("Error getting ratings:", error);
+      res.status(500).json({ message: "Failed to get ratings" });
+    }
+  });
+
+  // Get ratings by vehicle
+  app.get("/api/ratings/vehicle/:vehicleId", async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const vehicleRatings = await storage.getRatingsByVehicle(vehicleId);
+      res.json(vehicleRatings);
+    } catch (error) {
+      console.error("Error getting vehicle ratings:", error);
+      res.status(500).json({ message: "Failed to get vehicle ratings" });
+    }
+  });
+
+  // Get rating by booking
+  app.get("/api/ratings/booking/:bookingId", async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.bookingId);
+      const rating = await storage.getRatingByBooking(bookingId);
+      res.json(rating || null);
+    } catch (error) {
+      console.error("Error getting booking rating:", error);
+      res.status(500).json({ message: "Failed to get booking rating" });
+    }
+  });
+
+  // Create rating (client rates trip)
+  app.post("/api/ratings", async (req, res) => {
+    try {
+      const { bookingId, vehicleId, clientName, clientEmail, hostId, stars, comment } = req.body;
+      
+      // Check if rating already exists for this booking
+      const existing = await storage.getRatingByBooking(bookingId);
+      if (existing) {
+        return res.status(400).json({ message: "Rating already exists for this booking" });
+      }
+      
+      const newRating = await storage.createRating({
+        bookingId,
+        vehicleId,
+        clientName,
+        clientEmail,
+        hostId,
+        stars,
+        comment: comment || null,
+      });
+      
+      res.status(201).json(newRating);
+    } catch (error) {
+      console.error("Error creating rating:", error);
+      res.status(500).json({ message: "Failed to create rating" });
+    }
+  });
+
+  // Update rating (host response)
+  app.put("/api/ratings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { hostResponse } = req.body;
+      
+      const updatedRating = await storage.updateRating(id, { hostResponse });
+      if (!updatedRating) {
+        return res.status(404).json({ message: "Rating not found" });
+      }
+      
+      res.json(updatedRating);
+    } catch (error) {
+      console.error("Error updating rating:", error);
+      res.status(500).json({ message: "Failed to update rating" });
+    }
+  });
+
+  // Delete rating (admin only)
+  app.delete("/api/ratings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteRating(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Rating not found" });
+      }
+      
+      res.json({ message: "Rating deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting rating:", error);
+      res.status(500).json({ message: "Failed to delete rating" });
+    }
+  });
 }
