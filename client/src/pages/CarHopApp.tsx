@@ -4720,14 +4720,20 @@ export default function CarHopApp() {
 
                   {/* Mileage Info */}
                   {receiptBooking.checkInData?.miles && receiptBooking.checkOutData?.miles && (
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                      <div>
-                        <p className="text-xs text-zinc-500 uppercase">Check-in Mileage</p>
-                        <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.checkInData.miles} mi</p>
+                    <div className="space-y-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase">Check-in Mileage</p>
+                          <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.checkInData.miles} mi</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase">Check-out Mileage</p>
+                          <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.checkOutData.miles} mi</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-zinc-500 uppercase">Check-out Mileage</p>
-                        <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.checkOutData.miles} mi</p>
+                      <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                        <p className="text-xs text-zinc-500 uppercase">Included Miles</p>
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">{vehicles.find(v => v.id === receiptBooking.vehicleId)?.pricing?.includedMiles || settings.includedMiles} miles/day × {receiptBooking.days} days = {((vehicles.find(v => v.id === receiptBooking.vehicleId)?.pricing?.includedMiles || settings.includedMiles) * receiptBooking.days)} miles total</p>
                       </div>
                     </div>
                   )}
@@ -5616,7 +5622,7 @@ export default function CarHopApp() {
                   const canComplete = checkData.photosOutside.length === 1 && checkData.photosInside.length === 1 && checkData.miles && checkData.gas;
                   
                   const calculateCheckoutCharges = () => {
-                    if (!isCheckOutMode || !activeBooking?.checkInData) return { excessMileageFee: 0, refuelingFee: 0, totalDifference: 0 };
+                    if (!isCheckOutMode || !activeBooking?.checkInData) return { excessMileageFee: 0, refuelingFee: 0, totalDifference: 0, excessMiles: 0 };
                     
                     const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
                     const checkOutMiles = parseInt(checkData.miles || '0');
@@ -5633,7 +5639,7 @@ export default function CarHopApp() {
                     const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
                     const refuelingFee = gasDiff * 10;
                     
-                    return { excessMileageFee, refuelingFee, totalDifference: excessMileageFee + refuelingFee };
+                    return { excessMileageFee, refuelingFee, totalDifference: excessMileageFee + refuelingFee, excessMiles };
                   };
                   
                   const charges = calculateCheckoutCharges();
@@ -5664,7 +5670,7 @@ export default function CarHopApp() {
                           
                           {charges.excessMileageFee > 0 && (
                             <div className="flex justify-between text-sm">
-                              <span className="text-orange-600 dark:text-orange-400">Extra Miles Charged</span>
+                              <span className="text-orange-600 dark:text-orange-400">Extra Miles Charged ({charges.excessMiles} miles)</span>
                               <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.excessMileageFee.toFixed(2)}</span>
                             </div>
                           )}
