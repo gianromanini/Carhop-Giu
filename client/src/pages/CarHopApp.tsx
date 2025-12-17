@@ -3550,10 +3550,17 @@ export default function CarHopApp() {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <input type="text" value={editingHost.licenseNumber} onChange={(e) => setEditingHost({...editingHost, licenseNumber: e.target.value})} placeholder="License Number" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
-                            <input type="text" value={editingHost.socialSecurityNumber || ''} onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '').slice(0, 9);
-                              setEditingHost({...editingHost, socialSecurityNumber: value});
-                            }} placeholder="SSN/Tax ID" maxLength={9} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
+                            <div>
+                              <input type="text" value={editingHost.socialSecurityNumber || ''} onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                                setEditingHost({...editingHost, socialSecurityNumber: value});
+                              }} placeholder="9-digit Tax ID" maxLength={9} className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs w-full" data-testid="input-host-tax-id-edit" />
+                              {editingHost.socialSecurityNumber && (
+                                <p className="text-xs text-zinc-400 mt-1">
+                                  {editingHost.socialSecurityNumber.startsWith('9') ? '🔵 ITIN Number' : '🟢 SSN'}
+                                </p>
+                              )}
+                            </div>
                           </div>
                           <select value={editingHost.status} onChange={(e) => setEditingHost({...editingHost, status: e.target.value})} className="w-full px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs">
                             <option value="active">Active</option>
@@ -3592,7 +3599,16 @@ export default function CarHopApp() {
                             </div>
                             <div>
                               <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Tax ID</h4>
-                              <div className="text-sm text-zinc-900 dark:text-white font-mono">{selectedHost.socialSecurityNumber || 'N/A'}</div>
+                              <div className="text-sm text-zinc-900 dark:text-white font-mono">
+                                {selectedHost.socialSecurityNumber ? (
+                                  <>
+                                    {selectedHost.socialSecurityNumber}
+                                    <span className="block text-xs text-zinc-500 mt-1">
+                                      {selectedHost.socialSecurityNumber.startsWith('9') ? '✓ ITIN Number' : '✓ Social Security Number'}
+                                    </span>
+                                  </>
+                                ) : 'N/A'}
+                              </div>
                             </div>
                             <div>
                               <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Status</h4>

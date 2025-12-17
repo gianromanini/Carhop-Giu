@@ -776,7 +776,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       // Build update object with only safe fields
       const updates: any = {};
-      const allowedFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'status'];
+      const allowedFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'status', 'socialSecurityNumber', 'licenseNumber'];
       
       for (const field of allowedFields) {
         if (field in safeUpdates) {
