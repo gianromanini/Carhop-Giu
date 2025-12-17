@@ -4063,50 +4063,6 @@ export default function CarHopApp() {
                               })()}
                             </div>
 
-                            {/* Extra Payment Charge */}
-                            {(() => {
-                              const extendedRate = b.details.extendedRate || 0;
-                              const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
-                              const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                              const discount = b.details.discount || 0;
-                              const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
-                              
-                              return (
-                                <div className="mt-4 pt-4 border-t border-zinc-700">
-                                  <div className="text-xs text-zinc-500 mb-2">Charge Extras by original Payment Method</div>
-                                  <div className="flex gap-2 mb-3">
-                                    <div className="relative flex-1">
-                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
-                                      <input
-                                        type="number"
-                                        value={extraPaymentAmount}
-                                        onChange={(e) => setExtraPaymentAmount(e.target.value)}
-                                        placeholder="0.00"
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white"
-                                        data-testid="input-extra-payment-amount"
-                                      />
-                                    </div>
-                                    <button 
-                                      onClick={() => handleChargeExtraPayment(b)}
-                                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap"
-                                      data-testid="button-charge-extra-payment"
-                                    >
-                                      Charge extra payment Trip
-                                    </button>
-                                  </div>
-                                  {b.checkInStatus && !b.checkOutStatus && (
-                                    <button 
-                                      onClick={() => setCheckingOutByAdminBookingId(b.id)}
-                                      className="w-full px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors"
-                                      data-testid="button-checkout-by-admin"
-                                    >
-                                      Checkout By Admin
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })()}
-
                           {/* Vehicle & License Evidence */}
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
