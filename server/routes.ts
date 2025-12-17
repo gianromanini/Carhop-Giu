@@ -361,22 +361,34 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const newDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       updateData.days = Math.max(1, newDays);
       
-      // Calculate the difference in days from original booking
+      // Calculate the difference in days from current booking
       const oldDays = booking.days || 1;
       const daysDifference = newDays - oldDays;
       
-      // Calculate the daily rate based on original booking
-      const baseRate = booking.details?.rate || 0;
-      const dailyRate = baseRate / oldDays;
+      // Get the car price per day
+      const vehicleId = booking.vehicleId;
+      const vehicle = await storage.getVehicle(vehicleId);
+      const pricePerDay = vehicle?.price || 0;
       
-      // Adjust total based on days difference
-      const rateDifference = dailyRate * daysDifference;
-      const taxOnDifference = rateDifference * ((booking.details?.tax || 0) / (baseRate || 1));
+      // Adjust total and extended rate based on days difference
+      const rateDifference = pricePerDay * daysDifference;
+      const oldExtendedRate = booking.details?.extendedRate || 0;
+      const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
       
-      updateData.total = booking.total + rateDifference + taxOnDifference;
+      // Calculate tax adjustment
+      const oldTax = booking.details?.tax || 0;
+      let newTax = oldTax;
+      if (daysDifference !== 0) {
+        const taxRate = settings.taxes / 100;
+        const taxAdjustment = rateDifference * taxRate;
+        newTax = oldTax + taxAdjustment;
+      }
+      
+      updateData.total = booking.total + rateDifference + (newTax - oldTax);
       updateData.details = {
         ...booking.details,
-        extendedRate: (booking.details?.extendedRate || 0) + rateDifference
+        extendedRate: newExtendedRate,
+        tax: newTax
       };
     }
     
