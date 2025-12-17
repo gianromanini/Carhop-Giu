@@ -339,6 +339,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const booking = await storage.getBooking(id);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
     
+    // Get settings for tax calculation
+    const allSettings = await storage.getAllSettings();
+    const settingsObj: Record<string, any> = {};
+    allSettings.forEach(s => (settingsObj[s.key] = s.value));
+    
     const { status } = req.body; // 'approved' or 'rejected'
     const extensionRequests = (booking.extensionRequests || []).map(r => {
       if (r.id === requestId) {
@@ -379,7 +384,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const oldTax = booking.details?.tax || 0;
       let newTax = oldTax;
       if (daysDifference !== 0) {
-        const taxRate = settings.taxes / 100;
+        const taxRate = (settingsObj.taxes || 0) / 100;
         const taxAdjustment = rateDifference * taxRate;
         newTax = oldTax + taxAdjustment;
       }
