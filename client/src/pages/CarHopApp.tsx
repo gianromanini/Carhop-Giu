@@ -1705,11 +1705,20 @@ export default function CarHopApp() {
 
                   <div className="border-b border-zinc-200 dark:border-zinc-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
                     <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-2 sm:mb-3">Tax Information</h3>
-                    <input type="text" value={hostRegisterForm.socialSecurityNumber} onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 9);
-                      setHostRegisterForm({...hostRegisterForm, socialSecurityNumber: value});
-                    }} placeholder="Social Security or Tax ID (ITIN Number) *" required maxLength={9} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-ssn" />
-                    <p className="text-xs text-zinc-500 mt-1">9 digits required</p>
+                    <div>
+                      <input type="text" value={hostRegisterForm.socialSecurityNumber} onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                        setHostRegisterForm({...hostRegisterForm, socialSecurityNumber: value});
+                      }} placeholder="Social Security or Tax ID (ITIN Number) *" required maxLength={9} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-ssn" />
+                      {hostRegisterForm.socialSecurityNumber && (
+                        <p className={`text-xs mt-1 font-medium ${hostRegisterForm.socialSecurityNumber.startsWith('9') ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                          {hostRegisterForm.socialSecurityNumber.startsWith('9') ? '• TAX ID (ITIN Number)' : '• Social Security Number (SSN)'}
+                        </p>
+                      )}
+                      {!hostRegisterForm.socialSecurityNumber && (
+                        <p className="text-xs text-zinc-500 mt-1">9 digits required</p>
+                      )}
+                    </div>
                   </div>
 
                   <div>
