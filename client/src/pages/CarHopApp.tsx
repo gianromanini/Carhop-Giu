@@ -4363,6 +4363,27 @@ export default function CarHopApp() {
                                 
                                 {bookingRating ? (
                                   <div className="space-y-3">
+                                    {/* Alert Banner for Host */}
+                                    {!bookingRating.hostResponse && (
+                                      <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 flex items-start gap-3">
+                                        <AlertCircle size={16} className="text-orange-400 flex-shrink-0 mt-0.5"/>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-bold text-orange-400 mb-2">Customer Left a Review!</p>
+                                          <p className="text-xs text-orange-200 mb-3">Please review and respond to maintain good host reputation.</p>
+                                          <button
+                                            onClick={() => {
+                                              setHostResponseModal({ ratingId: bookingRating.id });
+                                              setHostResponseText('');
+                                            }}
+                                            className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded transition-colors flex items-center gap-1 font-bold"
+                                            data-testid="button-rate-trip-as-host"
+                                          >
+                                            <span className="text-lg">★</span> Rate Trip & Respond
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
                                     <div className="flex justify-between items-start">
                                       <div>
                                         <div className="flex gap-0.5 mb-1">
