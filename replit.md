@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 - Rental extension system with automatic pricing
 - Admin dashboard with Fleet, Bookings, Earnings, and Settings tabs
 - **Google Places Autocomplete** for Pickup Locations (Admin & Host Fleet)
-- **Client Mobile Menu**: My Bookings and Manage Booking options
+- **Client Mobile Menu**: My Bookings button in header + Chat option in menu
 - **Photo Lightbox**: Full-screen viewer with zoom and navigation for check-in/check-out photos
 
 ### Backend Architecture
@@ -147,9 +147,9 @@ Preferred communication style: Simple, everyday language.
     - Fixed check-in and check-out photos not showing on receipts
     - Now displays both `photosOutside` and `photosInside`
     - Photos displayed in responsive grid
-15. **Mobile Client Menu & Lightbox (Dec 18):**
-    - Added "My Bookings" button to mobile hamburger menu
-    - Added "Manage Booking" option to mobile menu
+15. **Mobile Client Menu Redesign (Dec 18):**
+    - Added "My Bookings" button next to hamburger menu (left side) for logged-in clients
+    - Renamed "Manage Booking" to "Chat" in mobile menu
     - Photo lightbox features:
       - Click photos to open full-screen viewer
       - Zoom in/out toggle functionality
