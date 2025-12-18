@@ -2717,6 +2717,11 @@ export default function CarHopApp() {
                         <label className="block text-xs font-bold text-zinc-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
                           <MapPin size={14}/> Pickup Locations
                         </label>
+                        <div className="mb-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-700">
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a new location using Google Maps:</p>
+                          <GooglePlacesAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                          <Button onClick={addLocation} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
+                        </div>
                         <div className="grid grid-cols-2 gap-3 mb-4">
                           {(settings?.locations || ['JFK Airport', 'Downtown Center', 'Fairfield County']).map((loc) => (
                             <label key={loc} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
@@ -3857,7 +3862,7 @@ export default function CarHopApp() {
                       Pickup Locations
                     </h3>
                     <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                      <Input placeholder="New Location Name (e.g. Airport JFK)" value={newLocation} onChange={(e: any) => setNewLocation(e.target.value)} className="mb-0 flex-1" data-testid="input-new-location" />
+                      <GooglePlacesAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
                       <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">

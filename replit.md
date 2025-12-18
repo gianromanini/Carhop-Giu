@@ -32,6 +32,7 @@ Preferred communication style: Simple, everyday language.
 - Check-in/check-out workflow with mileage and fuel tracking
 - Rental extension system with automatic pricing
 - Admin dashboard with Fleet, Bookings, Earnings, and Settings tabs
+- **Google Places Autocomplete** for Pickup Locations (Admin & Host Fleet)
 
 ### Backend Architecture
 
@@ -121,6 +122,19 @@ Preferred communication style: Simple, everyday language.
    - Admin can select which locations each vehicle is available at
    - Home page filters fleet based on selected location
    - Vehicles without location restrictions appear for all locations
+9. **Tax Calculation Fix (Dec 18):**
+   - Created `calculateCorrectTotal()` helper function
+   - Properly separates Initial Payment tax and Additional Charges tax
+   - Total: (rate + protection + extras + fees) + tax + (extended + charges - discount) + tax
+10. **Google Places Autocomplete for Pickup Locations (Dec 18):**
+    - Integrated GooglePlacesAutocomplete component in Admin Fleet
+    - Integrated GooglePlacesAutocomplete component in Host Fleet
+    - Both use same Google Maps API as client
+    - Saves exact address coordinates for pickup locations
+11. **Rating System Improvements (Dec 18):**
+    - Fixed exclamation mark visibility on completed bookings
+    - Exclamation disappears immediately after host rates guest
+    - Shows "✓ Rated" indicator once rating is complete
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
