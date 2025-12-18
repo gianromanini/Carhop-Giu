@@ -33,6 +33,8 @@ Preferred communication style: Simple, everyday language.
 - Rental extension system with automatic pricing
 - Admin dashboard with Fleet, Bookings, Earnings, and Settings tabs
 - **Google Places Autocomplete** for Pickup Locations (Admin & Host Fleet)
+- **Client Mobile Menu**: My Bookings and Manage Booking options
+- **Photo Lightbox**: Full-screen viewer with zoom and navigation for check-in/check-out photos
 
 ### Backend Architecture
 
@@ -135,6 +137,25 @@ Preferred communication style: Simple, everyday language.
     - Fixed exclamation mark visibility on completed bookings
     - Exclamation disappears immediately after host rates guest
     - Shows "✓ Rated" indicator once rating is complete
+12. **Security Fix (Dec 18):**
+    - Generated demo password hashes at runtime instead of hardcoding
+    - Installed missing `tsx` package for Node.js runtime
+13. **Mobile Edit Profile (Dec 18):**
+    - Added City and State fields to profile editing modal
+    - Added tooltips on hover showing field descriptions
+14. **Client Rental Receipt Photos (Dec 18):**
+    - Fixed check-in and check-out photos not showing on receipts
+    - Now displays both `photosOutside` and `photosInside`
+    - Photos displayed in responsive grid
+15. **Mobile Client Menu & Lightbox (Dec 18):**
+    - Added "My Bookings" button to mobile hamburger menu
+    - Added "Manage Booking" option to mobile menu
+    - Photo lightbox features:
+      - Click photos to open full-screen viewer
+      - Zoom in/out toggle functionality
+      - Navigate between photos with arrow buttons
+      - Close button to exit lightbox
+      - Photo counter showing current/total
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
