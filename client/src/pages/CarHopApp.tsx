@@ -407,7 +407,7 @@ export default function CarHopApp() {
   const [showHostRegisterModal, setShowHostRegisterModal] = useState(false);
   const [showHostLoginModal, setShowHostLoginModal] = useState(false);
   const [signupForm, setSignupForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
-  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '' });
+  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '', city: '', state: '' });
   const [adminLoginForm, setAdminLoginForm] = useState({ unit: '', password: '' });
   const [hostLoginForm, setHostLoginForm] = useState({ username: '', password: '' });
   const [hostRegisterForm, setHostRegisterForm] = useState({
@@ -2136,34 +2136,65 @@ export default function CarHopApp() {
               }
             }} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <input 
-                  type="text" 
-                  value={profileForm.firstName}
-                  onChange={(e) => setProfileForm({...profileForm, firstName: e.target.value})}
-                  placeholder="First Name" 
-                  required 
-                  className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                  data-testid="input-profile-first-name" 
-                />
-                <input 
-                  type="text" 
-                  value={profileForm.lastName}
-                  onChange={(e) => setProfileForm({...profileForm, lastName: e.target.value})}
-                  placeholder="Last Name" 
-                  required 
-                  className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                  data-testid="input-profile-last-name" 
-                />
+                <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={profileForm.firstName}
+                    onChange={(e) => setProfileForm({...profileForm, firstName: e.target.value})}
+                    placeholder="First Name" 
+                    required 
+                    className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm w-full" 
+                    data-testid="input-profile-first-name" 
+                  />
+                  <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-zinc-900 dark:bg-zinc-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Your first name</div>
+                </div>
+                <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={profileForm.lastName}
+                    onChange={(e) => setProfileForm({...profileForm, lastName: e.target.value})}
+                    placeholder="Last Name" 
+                    required 
+                    className="px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm w-full" 
+                    data-testid="input-profile-last-name" 
+                  />
+                  <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-zinc-900 dark:bg-zinc-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Your last name</div>
+                </div>
               </div>
-              <input 
-                type="tel" 
-                value={profileForm.phone}
-                onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
-                placeholder="Phone Number" 
-                required 
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                data-testid="input-profile-phone" 
-              />
+              <div className="relative group">
+                <input 
+                  type="tel" 
+                  value={profileForm.phone}
+                  onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                  placeholder="Phone Number" 
+                  required 
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-profile-phone" 
+                />
+                <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-zinc-900 dark:bg-zinc-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Your phone number</div>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  value={profileForm.city}
+                  onChange={(e) => setProfileForm({...profileForm, city: e.target.value})}
+                  placeholder="City" 
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-profile-city" 
+                />
+                <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-zinc-900 dark:bg-zinc-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Your city</div>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  value={profileForm.state}
+                  onChange={(e) => setProfileForm({...profileForm, state: e.target.value})}
+                  placeholder="State" 
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                  data-testid="input-profile-state" 
+                />
+                <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-zinc-900 dark:bg-zinc-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Your state</div>
+              </div>
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" data-testid="button-profile-save">Save Changes</Button>
             </form>
           </div>
