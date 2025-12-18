@@ -1065,10 +1065,10 @@ export default function CarHopApp() {
     if (extraDays > 0) alert(`Rental updated by ${extraDays} days.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
   };
 
-  const sendChatMessage = async (bookingId: number, sender: 'client' | 'admin') => {
+  const sendChatMessage = async (bookingId: number, sender: 'client' | 'admin' | 'host') => {
     if (!chatMessage.trim()) return;
     await apiRequest('POST', `/api/bookings/${bookingId}/messages`, { sender, text: chatMessage });
-    // Mark messages as read when admin/client sends a message (they've seen the conversation)
+    // Mark messages as read when admin/client/host sends a message (they've seen the conversation)
     await apiRequest('PUT', `/api/bookings/${bookingId}/messages/read`, { reader: sender });
     queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
     setChatMessage('');
@@ -1080,13 +1080,17 @@ export default function CarHopApp() {
     queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] });
   };
 
-  const markMessagesAsRead = async (bookingId: number, reader: 'client' | 'admin') => {
+  const markMessagesAsRead = async (bookingId: number, reader: 'client' | 'admin' | 'host') => {
     await apiRequest('PUT', `/api/bookings/${bookingId}/messages/read`, { reader });
     queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
   };
 
-  const getUnreadMessagesCount = (booking: Booking, reader: 'client' | 'admin') => {
+  const getUnreadMessagesCount = (booking: Booking, reader: 'client' | 'admin' | 'host') => {
     const messages = booking.messages || [];
+    // For host, filter out host messages; for client, filter out messages from admin/host
+    if (reader === 'host') {
+      return messages.filter(m => m.sender === 'client' && !m.read).length;
+    }
     return messages.filter(m => m.sender !== reader && !m.read).length;
   };
 

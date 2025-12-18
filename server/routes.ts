@@ -372,7 +372,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       // Get the car price per day
       const vehicleId = booking.vehicleId;
-      const vehicle = await storage.getVehicle(vehicleId);
+      const vehicle = vehicleId ? await storage.getVehicle(vehicleId) : null;
       const pricePerDay = vehicle?.price || 0;
       
       // Adjust total and extended rate based on days difference
@@ -461,7 +461,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
   app.put("/api/bookings/:id/messages/read", async (req, res) => {
     const id = parseInt(req.params.id);
-    const { reader } = req.body; // 'client' or 'admin'
+    const { reader } = req.body; // 'client', 'admin', or 'host'
     const booking = await storage.getBooking(id);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
     
