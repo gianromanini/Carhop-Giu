@@ -4393,11 +4393,15 @@ export default function CarHopApp() {
                         const returnIsToday = returnDate === today;
                         const returnIsTomorrow = returnDate === tomorrow;
                         
+                        // Check if host has rated this booking's guest
+                        const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                        const hasRated = bookingRating?.hostStarsToClient;
+                        
                         return (
                           <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
                             <div className="flex justify-between items-start mb-1">
                               <div className="flex items-center gap-2">
-                                {b.status === 'Completed' && (
+                                {b.status === 'Completed' && !hasRated && (
                                   <span className="text-red-500 text-lg" title="Completed trip - Rate your guest!">!</span>
                                 )}
                                 {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
@@ -4439,8 +4443,6 @@ export default function CarHopApp() {
                               </div>
                             )}
                             {b.status === 'Completed' && (() => {
-                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                              const hasRated = bookingRating?.hostStarsToClient;
                               return (
                                 <>
                                   {!hasRated ? (
