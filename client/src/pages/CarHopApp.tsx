@@ -4657,12 +4657,6 @@ export default function CarHopApp() {
                                           <span>-${discount.toFixed(2)}</span>
                                         </div>
                                       )}
-                                      {additionalTax > 0 && (
-                                        <div className="flex justify-between text-purple-300">
-                                          <span>Tax on Additional Charges</span>
-                                          <span>+${additionalTax.toFixed(2)}</span>
-                                        </div>
-                                      )}
                                     </div>
                                   )}
                                   
@@ -4671,18 +4665,6 @@ export default function CarHopApp() {
                                     <div className="flex justify-between text-green-200 font-bold text-sm">
                                       <span>TOTAL BILLED</span>
                                       <span>${b.total.toFixed(2)}</span>
-                                    </div>
-                                  </div>
-
-                                  {/* Charge Extras by Original Payment Method */}
-                                  <div className="mt-4 pt-4 border-t border-zinc-700">
-                                    <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
-                                    <div className="flex gap-2">
-                                      <div className="relative flex-1">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
-                                        <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount"/>
-                                      </div>
-                                      <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment">Charge Extra Payment Trip</button>
                                     </div>
                                   </div>
                                 </>
@@ -4867,10 +4849,20 @@ export default function CarHopApp() {
                                           <span>Additional Charges Total</span>
                                           <span>${additionalCharges.toFixed(2)}</span>
                                         </div>
+
+                                        {/* Charge Extras by Original Payment Method */}
+                                        <div className="mt-4 pt-4 border-t border-zinc-600">
+                                          <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                          <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                              <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount"/>
+                                            </div>
+                                            <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment">Charge Extra Payment Trip</button>
+                                          </div>
+                                        </div>
                                       </div>
                                     )}
-
-                                    {/* Note: Charge Extra Payment moved to Manage Charges & Adjustments section */}
                                   </>
                                 );
                               })()}
