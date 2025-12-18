@@ -9,6 +9,7 @@ type User = typeof import('@shared/schema').users.$inferSelect;
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { GooglePlacesAutocomplete } from '@/components/GooglePlacesAutocomplete';
 
 const generateTimeOptions = () => {
   const options = [];
@@ -562,6 +563,7 @@ export default function CarHopApp() {
   const [hostResponseText, setHostResponseText] = useState('');
   const [hostRatingStars, setHostRatingStars] = useState(5);
   const [hostRatingComment, setHostRatingComment] = useState('');
+  const [pickupAddress, setPickupAddress] = useState('');
   
   const { toast } = useToast();
 
@@ -843,6 +845,7 @@ export default function CarHopApp() {
     const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime); 
     setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '1000' }); 
     if (clientUser) setDriverDetails(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' })); 
+    setPickupAddress('');
     setView('checkout'); 
   };
 
@@ -894,7 +897,7 @@ export default function CarHopApp() {
       status: 'Active', 
       carName: cart.car!.model, 
       vehicleId: cart.car!.id,
-      location: searchParams.location || 'Main Office', 
+      location: pickupAddress || searchParams.location || 'Main Office', 
       startDate: searchParams.start, 
       startTime: searchParams.startTime, 
       returnDate: searchParams.end, 
@@ -915,6 +918,7 @@ export default function CarHopApp() {
     
     await createBookingMutation.mutateAsync(newBooking);
     setIsProcessingPayment(false);
+    setPickupAddress('');
     setView('confirmation');
     window.scrollTo(0, 0);
   };
@@ -6069,6 +6073,24 @@ export default function CarHopApp() {
               {/* Left Column - Forms */}
               <div className="lg:col-span-2 space-y-6">
                 
+                {/* Pickup Location Section */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                  <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
+                    <MapPin size={18} /> Pickup Location
+                  </h2>
+                  <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">PICKUP ADDRESS</label>
+                  <GooglePlacesAutocomplete 
+                    value={pickupAddress}
+                    onChange={setPickupAddress}
+                    placeholder="Search address (Street, City, etc.)"
+                  />
+                  {pickupAddress && (
+                    <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
+                      <Check size={12} /> Address confirmed: {pickupAddress}
+                    </p>
+                  )}
+                </div>
+
                 {/* Rental Period Section */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                   <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
