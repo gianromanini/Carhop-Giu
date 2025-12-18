@@ -873,6 +873,9 @@ export class MemStorage implements IStorage {
       comment: ratingData.comment ?? null,
       hostResponse: ratingData.hostResponse ?? null,
       hostResponseAt: null,
+      hostStarsToClient: null,
+      hostCommentToClient: null,
+      hostRatedClientAt: null,
       createdAt: new Date(),
     };
     this.ratingsMap.set(id, newRating);
