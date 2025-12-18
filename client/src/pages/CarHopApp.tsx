@@ -5647,7 +5647,7 @@ export default function CarHopApp() {
                           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                             <div className="flex justify-between items-center">
                               <span className="text-lg font-bold text-green-900 dark:text-green-200">Total Amount</span>
-                              <span className="text-2xl font-bold text-green-600 dark:text-green-400">${receiptBooking.total.toFixed(2)}</span>
+                              <span className="text-2xl font-bold text-green-600 dark:text-green-400">${(initialPayment + additionalCharges).toFixed(2)}</span>
                             </div>
                           </div>
                         </>
