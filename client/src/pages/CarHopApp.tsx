@@ -6905,7 +6905,7 @@ export default function CarHopApp() {
                 <div className="flex gap-2 pt-4">
                   <button onClick={() => setShowRateGuestModal(false)} className="flex-1 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-bold rounded-lg transition-colors" data-testid="button-cancel-rating">Cancel</button>
                   <button onClick={() => {
-                    const rating = ratings?.find(r => r.bookingId === b.id);
+                    const rating = ratingsData?.find(r => r.bookingId === b.id);
                     if (rating) {
                       updateRatingMutation.mutate({ id: rating.id, hostStarsToClient: hostRatingStars, hostCommentToClient: hostRatingComment });
                     }
