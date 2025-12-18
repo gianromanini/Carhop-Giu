@@ -475,6 +475,7 @@ export default function CarHopApp() {
   const [extensionDate, setExtensionDate] = useState('');
   const [extensionTime, setExtensionTime] = useState('10:00 AM');
   const [manageBookingId, setManageBookingId] = useState<number | null>(null);
+  const [hostManageBookingId, setHostManageBookingId] = useState<number | null>(null);
   const [selectedExpenseVehicleId, setSelectedExpenseVehicleId] = useState<number | null>(null);
   const [expenseForm, setExpenseForm] = useState<{lease: number; insurance: number; carWash: number; maintenance: number; trackApp: number; downPayment: number}>({ lease: 0, insurance: 0, carWash: 0, maintenance: 0, trackApp: 0, downPayment: 0 });
   
@@ -2907,32 +2908,532 @@ export default function CarHopApp() {
             const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
             const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId));
             return (
-              <Card className="p-6">
-                <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Bookings ({hostBookings.length})</h3>
-                {hostBookings.length > 0 ? (
-                  <div className="space-y-3">
-                    {hostBookings.map(b => (
-                      <div key={b.id} className="p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{b.bookingCode}</h4>
-                            <p className="text-xs text-zinc-500">{b.carName}</p>
-                          </div>
-                          <span className={`text-xs px-2 py-1 rounded font-bold ${b.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{b.status}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-                          <div><span className="text-zinc-500">Client:</span> {b.driver.name}</div>
-                          <div><span className="text-zinc-500">Total:</span> <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></div>
-                          <div><span className="text-zinc-500">From:</span> {b.startDate}</div>
-                          <div><span className="text-zinc-500">To:</span> {b.returnDate}</div>
-                        </div>
-                      </div>
-                    ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Left Column - Bookings List */}
+                <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
+                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">My Bookings ({hostBookings.length})</h3>
+                  
+                  <div className="space-y-2 mb-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Filter Bookings</label>
+                      <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-filter">
+                        <option value="end-soon">End Soon (Next 3 Days)</option>
+                        <option value="start-first">Start First</option>
+                      </select>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-zinc-500 text-center py-8">No bookings yet</p>
-                )}
-              </Card>
+                  
+                  <div className="space-y-2">
+                    {hostBookings
+                      .sort((a, b) => {
+                        if (bookingFilterType === 'end-soon') {
+                          const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
+                          const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
+                          return aDateTime - bDateTime;
+                        } else {
+                          const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
+                          const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
+                          return aDateTime - bDateTime;
+                        }
+                      })
+                      .map(b => {
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
+                        const pendingRequests = getPendingRequestsCount(b);
+                        const unreadMessages = getUnreadMessagesCount(b, 'host');
+                        const hasNotifications = pendingRequests > 0 || unreadMessages > 0;
+                        
+                        const today = getTodayString();
+                        const tomorrow = addDaysToDate(today, 1);
+                        const returnDate = b.returnDate;
+                        const pickupDate = b.startDate;
+                        
+                        const pickupIsToday = pickupDate === today;
+                        const pickupIsTomorrow = pickupDate === tomorrow;
+                        const returnIsToday = returnDate === today;
+                        const returnIsTomorrow = returnDate === tomorrow;
+                        
+                        return (
+                          <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
+                            <div className="flex justify-between items-start mb-1">
+                              <div className="flex items-center gap-2">
+                                {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
+                                  <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
+                                    <AlertTriangle size={14}/>
+                                  </span>
+                                )}
+                                {hasNotifications && (
+                                  <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
+                                    <AlertCircle size={14}/>
+                                  </span>
+                                )}
+                                <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                              </div>
+                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
+                            </div>
+                            <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
+                            <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
+                            <div className="text-[10px] text-zinc-400 mt-2">
+                              <div>Pickup: {b.startDate} at {b.startTime}</div>
+                              <div>Return: {b.returnDate} at {b.returnTime}</div>
+                              {(pickupIsToday || pickupIsTomorrow) && (
+                                <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
+                                  Pickup {pickupIsToday ? 'TODAY' : 'TOMORROW'}
+                                </div>
+                              )}
+                              {(returnIsToday || returnIsTomorrow) && (
+                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
+                                  Return {returnIsToday ? 'TODAY' : 'TOMORROW'}
+                                </div>
+                              )}
+                            </div>
+                            {hasNotifications && (
+                              <div className="mt-2 text-[10px] text-yellow-400 flex items-center gap-1">
+                                <Bell size={10}/>
+                                {pendingRequests > 0 && <span>{pendingRequests} request{pendingRequests > 1 ? 's' : ''}</span>}
+                                {pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}
+                                {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    {hostBookings.length === 0 && (
+                      <p className="text-sm text-zinc-500 text-center py-8">No bookings yet</p>
+                    )}
+                  </div>
+                </Card>
+
+                {/* Right Column - Booking Details */}
+                <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
+                  {hostManageBookingId ? (
+                    (() => {
+                      const b = hostBookings.find(bk => bk.id === hostManageBookingId);
+                      if (!b) return null;
+                      return (
+                        <div className="space-y-4 sm:space-y-6">
+                          {/* Header */}
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
+                            <div>
+                              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-host-booking-code">Booking {b.bookingCode}</h2>
+                              <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-left sm:text-right text-[10px] sm:text-xs text-zinc-500">
+                                <div>{b.date}</div>
+                                <div>{b.paymentMethod || 'Credit Card'}</div>
+                              </div>
+                              <button onClick={() => setHostManageBookingId(null)} className="px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-1" data-testid="button-close-host-booking">
+                                <ChevronLeft size={14}/>
+                                Close
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Customer & Rental Info */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                <p className="font-medium">{b.driver.name}</p>
+                                <p className="text-zinc-500">{b.driver.phone}</p>
+                                <p className="text-zinc-500">{b.driver.email}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
+                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                <p className="font-medium">{b.carName}</p>
+                                <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
+                                <p className="text-zinc-500">{b.location}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Chat Messages */}
+                          {(b.messages || []).length > 0 && (
+                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                <MessageCircle size={14}/> Customer Messages
+                              </h4>
+                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'host')}>
+                                {(b.messages || []).map(msg => (
+                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'host' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'host' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
+                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-zinc-300">{msg.text}</p>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={chatMessage}
+                                  onChange={(e) => setChatMessage(e.target.value)}
+                                  placeholder="Type a message..."
+                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                  data-testid="input-host-message"
+                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'host')}
+                                />
+                                <button 
+                                  onClick={() => sendChatMessage(b.id, 'host')}
+                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                  data-testid="button-send-host-message"
+                                >
+                                  <Send size={16}/>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Client Requests */}
+                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
+                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
+                                <AlertCircle size={14}/> Client Requests
+                              </h4>
+                              <div className="space-y-3">
+                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
+                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                          {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
+                                        </span>
+                                        <div className="text-sm text-zinc-300 mt-1">
+                                          New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                        </div>
+                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                      </div>
+                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                    <div className="flex gap-2 mt-3">
+                                      <button 
+                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
+                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                        data-testid={`button-host-approve-${req.id}`}
+                                      >
+                                        Approve
+                                      </button>
+                                      <button 
+                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
+                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                        data-testid={`button-host-reject-${req.id}`}
+                                      >
+                                        Reject
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Manage Charges & Adjustments */}
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
+                            
+                            <div className="mb-4">
+                              <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <select 
+                                  value={adjustment.type} 
+                                  onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
+                                  data-testid="select-host-discount-type"
+                                >
+                                  <option value="fixed">Fixed Value ($)</option>
+                                  <option value="percent">Percentage (%)</option>
+                                </select>
+                                <Input 
+                                  placeholder="Value" 
+                                  type="number"
+                                  value={adjustment.value}
+                                  onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
+                                  className="flex-1 mb-0 text-xs" 
+                                  data-testid="input-host-discount-value" 
+                                />
+                                <button 
+                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
+                                  onClick={() => handleApplyDiscount(b)}
+                                  data-testid="button-host-apply-discount"
+                                >
+                                  Apply
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <select 
+                                  value={extraCharge.type}
+                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
+                                  data-testid="select-host-charge-type"
+                                >
+                                  <option value="refuel">Refuel</option>
+                                  <option value="mileage">Extra Mileage</option>
+                                  <option value="damage">Damage</option>
+                                  <option value="cleaning">Extra Cleaning</option>
+                                  <option value="other">Other</option>
+                                </select>
+                                <Input 
+                                  placeholder="Value ($)" 
+                                  type="number"
+                                  value={extraCharge.amount}
+                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                  className="flex-1 mb-0 text-xs" 
+                                  data-testid="input-host-charge-value" 
+                                />
+                                <button 
+                                  className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
+                                  onClick={() => handleAddCharge(b)}
+                                  data-testid="button-host-charge"
+                                >
+                                  Add Charge
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Financial Details */}
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Financial Details</h4>
+                            <div className="space-y-4 text-sm">
+                              {(() => {
+                                const rate = b.details.rate || 0;
+                                const extras = b.details.extras || 0;
+                                const protection = b.details.protection || 0;
+                                const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
+                                const subtotalBeforeTax = rate + extras + protection + cleaningFee;
+                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const originalBookingAmount = subtotalBeforeTax + originalTax;
+                                
+                                const extendedRate = b.details.extendedRate || 0;
+                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                const discount = b.details.discount || 0;
+                                
+                                return (
+                                  <>
+                                    <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
+                                      <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
+                                      <div className="space-y-1 mb-2">
+                                        <div className="flex justify-between text-zinc-300 text-xs">
+                                          <span>Base Rate - {b.days} Days</span>
+                                          <span>${rate.toFixed(2)}</span>
+                                        </div>
+                                        {extras > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Extras</span>
+                                            <span>+${extras.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {protection > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Protection - {b.details?.protectionType || 'Standard'}</span>
+                                            <span>+${protection.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between text-zinc-300 text-xs">
+                                          <span>Cleaning Fee</span>
+                                          <span>+${cleaningFee.toFixed(2)}</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex justify-between text-zinc-400 text-xs border-t border-zinc-600 pt-2 mb-2">
+                                        <span>Subtotal</span>
+                                        <span>${subtotalBeforeTax.toFixed(2)}</span>
+                                      </div>
+                                      {originalTax > 0 && (
+                                        <div className="flex justify-between text-purple-300 text-xs mb-2">
+                                          <span>Tax</span>
+                                          <span>+${originalTax.toFixed(2)}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2">
+                                        <span>Initial Payment</span>
+                                        <span>${originalBookingAmount.toFixed(2)}</span>
+                                      </div>
+                                    </div>
+
+                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0 || discount > 0) && (
+                                      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
+                                        <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
+                                        <div className="space-y-1 mb-2">
+                                          {extendedRate > 0 && (
+                                            <div className="flex justify-between text-blue-300 text-xs">
+                                              <span>Extended Days</span>
+                                              <span>+${extendedRate.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
+                                            <div key={i} className="flex justify-between text-orange-300 text-xs">
+                                              <span className="flex items-center gap-1">
+                                                {c.type}
+                                                <button 
+                                                  onClick={() => handleRemoveCharge(b, i)} 
+                                                  className="text-red-400 hover:text-red-300"
+                                                  data-testid={`button-host-remove-charge-${i}`}
+                                                >
+                                                  <X size={10}/>
+                                                </button>
+                                              </span>
+                                              <span>+${c.amount.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                          {discount > 0 && (
+                                            <div className="flex justify-between text-green-300 text-xs">
+                                              <span>Discount</span>
+                                              <span>-${discount.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="bg-green-900/30 rounded-lg p-3 border border-green-700">
+                                      <div className="flex justify-between text-green-400 font-bold">
+                                        <span>TOTAL</span>
+                                        <span>${b.total.toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Check-in / Check-out Status */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className={`p-4 rounded-lg border ${b.checkInStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
+                                <Unlock size={14}/> Check-In Status
+                              </h4>
+                              {b.checkInStatus === 'completed' ? (
+                                <div className="space-y-2">
+                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
+                                  {b.checkInData && (
+                                    <>
+                                      <p className="text-xs text-zinc-400">Miles: {b.checkInData.miles}</p>
+                                      <p className="text-xs text-zinc-400">Gas: {b.checkInData.gas}</p>
+                                      <p className="text-xs text-zinc-400">Photos: {(b.checkInData.photosOutside?.length || 0) + (b.checkInData.photosInside?.length || 0)}</p>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-yellow-400 text-sm">Pending</p>
+                              )}
+                            </div>
+                            <div className={`p-4 rounded-lg border ${b.checkOutStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
+                                <Lock size={14}/> Check-Out Status
+                              </h4>
+                              {b.checkOutStatus === 'completed' ? (
+                                <div className="space-y-2">
+                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
+                                  {b.checkOutData && (
+                                    <>
+                                      <p className="text-xs text-zinc-400">Miles: {b.checkOutData.miles}</p>
+                                      <p className="text-xs text-zinc-400">Gas: {b.checkOutData.gas}</p>
+                                      <p className="text-xs text-zinc-400">Photos: {(b.checkOutData.photosOutside?.length || 0) + (b.checkOutData.photosInside?.length || 0)}</p>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-yellow-400 text-sm">Pending</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Customer Rating Section */}
+                          {(() => {
+                            const bookingRating = ratingsData.find(r => r.bookingId === b.id);
+                            
+                            return (
+                              <div className={`p-4 rounded-lg border ${bookingRating ? 'bg-yellow-950/30 border-yellow-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                                <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-3 ${bookingRating ? 'text-yellow-400' : 'text-zinc-500'}`}>
+                                  <span className="text-lg">★</span> Customer Rating
+                                </h4>
+                                
+                                {bookingRating ? (
+                                  <div className="space-y-3">
+                                    {!bookingRating.hostResponse && (
+                                      <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 flex items-start gap-3">
+                                        <AlertCircle size={16} className="text-orange-400 flex-shrink-0 mt-0.5"/>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-bold text-orange-400 mb-2">Customer Left a Review!</p>
+                                          <p className="text-xs text-orange-200 mb-3">Please review and respond to maintain good host reputation.</p>
+                                          <button
+                                            onClick={() => {
+                                              setHostResponseModal({ ratingId: bookingRating.id });
+                                              setHostResponseText('');
+                                            }}
+                                            className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded transition-colors flex items-center gap-1 font-bold"
+                                            data-testid="button-host-rate-trip"
+                                          >
+                                            <span className="text-lg">★</span> Rate Trip & Respond
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <div className="flex gap-0.5 mb-1">
+                                          {[1,2,3,4,5].map(star => (
+                                            <span key={star} className={`text-lg ${star <= bookingRating.stars ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                          ))}
+                                        </div>
+                                        <p className="text-xs text-zinc-400">Rated by: {bookingRating.clientName}</p>
+                                        <p className="text-xs text-zinc-500">{new Date(bookingRating.createdAt).toLocaleDateString()}</p>
+                                      </div>
+                                    </div>
+                                    
+                                    {bookingRating.comment && (
+                                      <div className="bg-zinc-800 rounded p-3">
+                                        <p className="text-sm text-zinc-300">"{bookingRating.comment}"</p>
+                                      </div>
+                                    )}
+                                    
+                                    {bookingRating.hostResponse ? (
+                                      <div className="bg-blue-900/30 rounded p-3 border border-blue-800/50">
+                                        <p className="text-xs text-blue-400 font-bold mb-1">Your Response:</p>
+                                        <p className="text-sm text-zinc-300">"{bookingRating.hostResponse}"</p>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setHostResponseModal({ ratingId: bookingRating.id });
+                                          setHostResponseText('');
+                                        }}
+                                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                        data-testid="button-host-add-response"
+                                      >
+                                        <MessageCircle size={12}/> Add Response
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-zinc-500">No rating submitted for this trip yet.</p>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-zinc-500 py-20">
+                      <List size={48} className="mb-4 opacity-30"/>
+                      <p>Select a booking from the list to view details.</p>
+                    </div>
+                  )}
+                </Card>
+              </div>
             );
           })()}
 
