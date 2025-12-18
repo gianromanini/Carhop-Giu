@@ -5546,14 +5546,18 @@ export default function CarHopApp() {
                       const rentalRate = receiptBooking.details?.rate || 0;
                       const protection = receiptBooking.details?.protection || 0;
                       const extras = receiptBooking.details?.extras || 0;
-                      const tax = receiptBooking.details?.tax || 0;
-                      const initialPayment = rentalRate + protection + extras + cleaningFeeForReceipt + tax;
+                      const initialSubtotal = rentalRate + protection + extras + cleaningFeeForReceipt;
+                      const initialTax = initialSubtotal > 0 ? initialSubtotal * ((settings.taxes || 0) / 100) : 0;
+                      const initialPayment = initialSubtotal + initialTax;
                       
                       // Calculate additional charges
                       const extendedRate = receiptBooking.details?.extendedRate || 0;
                       const manualChargesTotal = (receiptBooking.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
                       const extraPaymentsTotal = (receiptBooking.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                      const additionalCharges = extendedRate + manualChargesTotal + extraPaymentsTotal;
+                      const discount = receiptBooking.details?.discount || 0;
+                      const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                      const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                      const additionalCharges = additionalChargesBeforeTax + additionalTax;
                       
                       return (
                         <>
@@ -5581,10 +5585,10 @@ export default function CarHopApp() {
                                 <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
                                 <span className="text-zinc-900 dark:text-white">+${cleaningFeeForReceipt.toFixed(2)}</span>
                               </div>
-                              {tax > 0 && (
+                              {initialTax > 0 && (
                                 <div className="flex justify-between text-sm">
                                   <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                                  <span className="text-zinc-900 dark:text-white">+${tax.toFixed(2)}</span>
+                                  <span className="text-purple-600 dark:text-purple-400">+${initialTax.toFixed(2)}</span>
                                 </div>
                               )}
                               <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
@@ -5595,7 +5599,7 @@ export default function CarHopApp() {
                           </div>
 
                           {/* Additional Charges Section */}
-                          {additionalCharges > 0 && (
+                          {additionalChargesBeforeTax > 0 && (
                             <div>
                               <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Additional Charges</h4>
                               <div className="space-y-2">
@@ -5619,6 +5623,18 @@ export default function CarHopApp() {
                                     <span className="text-green-600 dark:text-green-400">+${payment.amount.toFixed(2)}</span>
                                   </div>
                                 ))}
+                                {discount > 0 && (
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-zinc-600 dark:text-zinc-400">Discount</span>
+                                    <span className="text-green-600 dark:text-green-400">-${discount.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {additionalTax > 0 && (
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
+                                    <span className="text-purple-600 dark:text-purple-400">+${additionalTax.toFixed(2)}</span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
                                   <span className="font-bold text-zinc-900 dark:text-white">Additional Charges</span>
                                   <span className="font-bold text-zinc-900 dark:text-white">+${additionalCharges.toFixed(2)}</span>
