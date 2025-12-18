@@ -1,6 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+function loadGoogleMapsScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.google?.maps) {
+      resolve();
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve());
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      reject(new Error('Google Maps API key not configured'));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Google Maps'));
+    document.head.appendChild(script);
+  });
+}
+
 interface GooglePlacesAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
@@ -13,12 +48,13 @@ export function GooglePlacesAutocomplete({ value, onChange, placeholder = 'Enter
   const autocompleteRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!window.google) {
-      setIsLoaded(false);
-      return;
-    }
+    loadGoogleMapsScript()
+      .then(() => setIsLoaded(true))
+      .catch((err) => console.error('Google Maps load error:', err));
+  }, []);
 
-    setIsLoaded(true);
+  useEffect(() => {
+    if (!isLoaded || !window.google) return;
     if (!inputRef.current || autocompleteRef.current) return;
 
     try {
