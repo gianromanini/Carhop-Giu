@@ -501,6 +501,7 @@ export default function CarHopApp() {
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
+  const [showRateGuestModal, setShowRateGuestModal] = useState(false);
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -4341,6 +4342,9 @@ export default function CarHopApp() {
                           <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
                             <div className="flex justify-between items-start mb-1">
                               <div className="flex items-center gap-2">
+                                {b.status === 'Completed' && (
+                                  <span className="text-red-500 text-lg" title="Completed trip - Rate your guest!">!</span>
+                                )}
                                 {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
                                   <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
                                     <AlertTriangle size={14}/>
@@ -4378,6 +4382,19 @@ export default function CarHopApp() {
                                 {pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
+                            )}
+                            {b.status === 'Completed' && !b.hostStarsToClient && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setManageBookingId(b.id);
+                                  setShowRateGuestModal(true);
+                                }}
+                                className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
+                                data-testid={`button-rate-guest-${b.id}`}
+                              >
+                                Rate your Guest
+                              </button>
                             )}
                           </div>
                         );
@@ -6854,6 +6871,52 @@ export default function CarHopApp() {
           </div>
         </div>
       )}
+
+      {/* Rate your Guest Modal */}
+      {showRateGuestModal && manageBookingId && (() => {
+        const b = bookings.find(bk => bk.id === manageBookingId);
+        if (!b || b.status !== 'Completed' || !b.driver) return null;
+        return (
+          <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
+            <div className="bg-zinc-900 rounded-lg border border-zinc-700 p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Rate {b.driver.name}</h3>
+                  <p className="text-xs text-zinc-400 mt-1">Trip {b.bookingCode}</p>
+                </div>
+                <button onClick={() => setShowRateGuestModal(false)} className="text-zinc-400 hover:text-white"><X size={20}/></button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-zinc-300 mb-3">Your Rating</label>
+                  <div className="flex gap-2">
+                    {[1,2,3,4,5].map(star => (
+                      <button key={star} onClick={() => setHostRatingStars(star)} className={`text-3xl transition-colors ${hostRatingStars >= star ? 'text-yellow-400' : 'text-zinc-600'}`} data-testid={`button-star-${star}`}>★</button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-zinc-300 mb-2">Comments</label>
+                  <textarea value={hostRatingComment} onChange={(e) => setHostRatingComment(e.target.value)} placeholder="Share your experience..." className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 min-h-24 resize-none" data-testid="textarea-rate-comment"/>
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  <button onClick={() => setShowRateGuestModal(false)} className="flex-1 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-bold rounded-lg transition-colors" data-testid="button-cancel-rating">Cancel</button>
+                  <button onClick={() => {
+                    const rating = ratings?.find(r => r.bookingId === b.id);
+                    if (rating) {
+                      updateRatingMutation.mutate({ id: rating.id, hostStarsToClient: hostRatingStars, hostCommentToClient: hostRatingComment });
+                    }
+                    setShowRateGuestModal(false);
+                  }} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors" data-testid="button-submit-rating">Submit Rating</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
     </div>
   );
