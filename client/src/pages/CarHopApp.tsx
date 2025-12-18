@@ -4592,34 +4592,6 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* Charge Extras by Original Payment Method */}
-                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                            <label className="text-xs text-zinc-500 mb-3 block font-bold uppercase">Charge Extras by Original Payment Method</label>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <div className="flex-1 relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400">$</span>
-                                <Input 
-                                  placeholder="0.00" 
-                                  type="number"
-                                  value={extraCharge.amount}
-                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs pl-7" 
-                                  data-testid="input-host-extra-payment" 
-                                />
-                              </div>
-                              <button 
-                                className="px-4 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" 
-                                onClick={() => {
-                                  if (!extraCharge.amount) { alert("Please enter an amount."); return; }
-                                  handleAddCharge(b);
-                                }}
-                                data-testid="button-charge-extra-payment"
-                              >
-                                Charge Extra Payment Trip
-                              </button>
-                            </div>
-                          </div>
-
                           {/* Vehicle & License Evidence */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
