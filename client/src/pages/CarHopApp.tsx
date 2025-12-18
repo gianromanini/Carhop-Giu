@@ -4438,28 +4438,32 @@ export default function CarHopApp() {
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
                             )}
-                            {b.status === 'Completed' && (
-                              <>
-                                {!b.hostStarsToClient ? (
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setManageBookingId(b.id);
-                                      setShowRateGuestModal(true);
-                                    }}
-                                    className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
-                                    data-testid={`button-rate-guest-${b.id}`}
-                                  >
-                                    Rate your Guest
-                                  </button>
-                                ) : (
-                                  <div className="mt-1 flex items-center gap-1 text-xs text-green-400">
-                                    <Check size={14}/>
-                                    <span>Rated</span>
-                                  </div>
-                                )}
-                              </>
-                            )}
+                            {b.status === 'Completed' && (() => {
+                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                              const hasRated = bookingRating?.hostStarsToClient;
+                              return (
+                                <>
+                                  {!hasRated ? (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setManageBookingId(b.id);
+                                        setShowRateGuestModal(true);
+                                      }}
+                                      className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
+                                      data-testid={`button-rate-guest-${b.id}`}
+                                    >
+                                      Rate your Guest
+                                    </button>
+                                  ) : (
+                                    <div className="mt-1 flex items-center gap-1 text-xs text-green-400">
+                                      <Check size={14}/>
+                                      <span>Rated</span>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         );
                       })}
