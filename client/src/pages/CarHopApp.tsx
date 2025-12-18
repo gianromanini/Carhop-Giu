@@ -4438,18 +4438,27 @@ export default function CarHopApp() {
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
                             )}
-                            {b.status === 'Completed' && !b.hostStarsToClient && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setManageBookingId(b.id);
-                                  setShowRateGuestModal(true);
-                                }}
-                                className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
-                                data-testid={`button-rate-guest-${b.id}`}
-                              >
-                                Rate your Guest
-                              </button>
+                            {b.status === 'Completed' && (
+                              <>
+                                {!b.hostStarsToClient ? (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setManageBookingId(b.id);
+                                      setShowRateGuestModal(true);
+                                    }}
+                                    className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
+                                    data-testid={`button-rate-guest-${b.id}`}
+                                  >
+                                    Rate your Guest
+                                  </button>
+                                ) : (
+                                  <div className="mt-1 flex items-center gap-1 text-xs text-green-400">
+                                    <Check size={14}/>
+                                    <span>Rated</span>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         );
@@ -4695,45 +4704,6 @@ export default function CarHopApp() {
                                 </button>
                               </div>
                             </div>
-
-                            {/* Charges Summary & Adjustments Display */}
-                            {(() => {
-                              const discount = b.details.discount || 0;
-                              const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
-                              const additionalChargesBeforeTax = (b.details.extendedRate || 0) + manualChargesTotal - discount;
-                              const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
-                              
-                              return (
-                                <>
-                                  {(discount > 0 || manualChargesTotal > 0 || additionalTax > 0) && (
-                                    <div className="mt-4 pt-4 border-t border-zinc-700 space-y-2 text-xs">
-                                      {(b.details.manualCharges || []).map((c, i) => (
-                                        <div key={`charge-${i}`} className="flex justify-between text-red-300 items-center">
-                                          <span className="flex items-center gap-2">
-                                            {c.type}
-                                            <button onClick={() => handleRemoveCharge(b, i)} className="text-red-400 hover:text-red-300" data-testid={`button-remove-charge-${i}`}>
-                                              <X size={12}/>
-                                            </button>
-                                          </span>
-                                          <span>+${c.amount.toFixed(2)}</span>
-                                        </div>
-                                      ))}
-                                      {discount > 0 && (
-                                        <div className="flex justify-between text-green-400 items-center">
-                                          <span className="flex items-center gap-2">
-                                            Discount Applied
-                                            <button onClick={() => handleRemoveDiscount(b)} className="text-red-400 hover:text-red-300" data-testid="button-remove-discount">
-                                              <X size={12}/>
-                                            </button>
-                                          </span>
-                                          <span>-${discount.toFixed(2)}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </>
-                              );
-                            })()}
                           </div>
 
                           {/* Guest Ratings Section */}
