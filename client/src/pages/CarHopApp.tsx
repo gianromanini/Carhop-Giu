@@ -3374,12 +3374,12 @@ export default function CarHopApp() {
 
                           {/* Host Ratings Section */}
                           {(() => {
-                            const hostRatings = ratingsData.filter(r => r.hostId === String(currentHost.id) && r.bookingId === b.id);
+                            const bookingRatings = ratingsData.filter(r => r.bookingId === b.id);
                             return (
-                              hostRatings.length > 0 && (
+                              bookingRatings.length > 0 && (
                                 <div className="bg-yellow-950/30 rounded-lg p-4 border border-yellow-900/50">
                                   <h4 className="text-xs font-bold uppercase text-yellow-400 mb-3 flex items-center gap-2">Rating Received from Client</h4>
-                                  {hostRatings.map((rating, idx) => (
+                                  {bookingRatings.map((rating, idx) => (
                                     <div key={idx}>
                                       <div className="flex items-center gap-2 mb-2">
                                         <span className="text-xs text-zinc-400">Client Rating:</span>
@@ -3397,8 +3397,8 @@ export default function CarHopApp() {
 
                           {/* Rate Client Option */}
                           {b.status === 'Completed' && (() => {
-                            const existingRating = ratingsData.find(r => r.bookingId === b.id && r.hostId === String(currentHost.id));
-                            return !existingRating ? (
+                            const bookingRating = ratingsData.find(r => r.bookingId === b.id);
+                            return bookingRating && !bookingRating.hostStarsToClient ? (
                               <button onClick={() => setRatingModal({ bookingId: b.id, vehicleId: b.vehicleId || 0, hostId: String(currentHost.id), clientName: b.driver.name, clientEmail: b.driver.email })} className="w-full py-3 px-4 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid={`button-rate-client-${b.id}`}>
                                 <span className="text-lg">★</span> Rate This Client
                               </button>
