@@ -30,6 +30,28 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password required"),
 });
 
+// Helper function to calculate correct booking total
+async function calculateCorrectTotal(booking: any): Promise<number> {
+  const settings = await storage.getAllSettings();
+  const settingsObj: Record<string, any> = {};
+  settings.forEach(s => { settingsObj[s.key] = s.value; });
+  const taxRate = (settingsObj.taxes || 0) / 100;
+  
+  // Initial Payment = rate + protection + extras + cleaningFee
+  const initialSubtotal = (booking.details?.rate || 0) + (booking.details?.protection || 0) + (booking.details?.extras || 0) + (booking.details?.fees || 0);
+  const initialTax = initialSubtotal > 0 ? initialSubtotal * taxRate : 0;
+  
+  // Additional Charges = extendedRate + manualCharges + extraPayments - discount
+  const extendedRate = booking.details?.extendedRate || 0;
+  const manualChargesTotal = (booking.details?.manualCharges || []).reduce((sum: number, c: any) => sum + c.amount, 0);
+  const extraPaymentsTotal = (booking.extraPayments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
+  const discount = booking.details?.discount || 0;
+  const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+  const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * taxRate : 0;
+  
+  return initialSubtotal + initialTax + additionalChargesBeforeTax + additionalTax;
+}
+
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
   // ========== AUTHENTICATION (Google OAuth) ==========
   await setupAuth(app);
@@ -389,7 +411,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         newTax = oldTax + taxAdjustment;
       }
       
-      updateData.total = booking.total + rateDifference + (newTax - oldTax);
+      // Total will be recalculated correctly
+      updateData.details = newDetails;
       updateData.details = {
         ...booking.details,
         extendedRate: newExtendedRate,
@@ -447,9 +470,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const extraPayments = [...(booking.extraPayments || []), newPayment];
     const newTotal = (booking.total || 0) + parseFloat(amount);
     
+    const bookingForTotal = { ...booking, extraPayments };
+    const correctTotal = await calculateCorrectTotal(bookingForTotal);
     const updated = await storage.updateBooking(id, { 
       extraPayments,
-      total: newTotal 
+      total: correctTotal 
     });
     
     res.json({ 
