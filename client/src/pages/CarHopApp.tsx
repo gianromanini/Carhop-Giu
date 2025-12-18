@@ -4659,70 +4659,9 @@ export default function CarHopApp() {
                                       )}
                                     </div>
                                   )}
-                                  
-                                  {/* Total Billed */}
-                                  <div className="mt-4 pt-4 border-t border-zinc-700 bg-green-950/30 rounded-lg p-3 border border-green-700">
-                                    <div className="flex justify-between text-green-200 font-bold text-sm">
-                                      <span>TOTAL BILLED</span>
-                                      <span>${b.total.toFixed(2)}</span>
-                                    </div>
-                                  </div>
                                 </>
                               );
                             })()}
-                          </div>
-
-                          {/* Vehicle & License Evidence */}
-                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
-                            <div className="grid grid-cols-3 gap-4">
-                              {/* Driver's License */}
-                              <div>
-                                <p className="text-xs font-bold text-zinc-400 mb-2">Driver's License</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(b.driver?.licenseImages || []).map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-driver-license-${idx}`}/>
-                                      <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Check-in Photos */}
-                              <div>
-                                <p className="text-xs font-bold text-zinc-400 mb-2">Check-in (Start)</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(b.checkInData?.photosOutside || []).concat(b.checkInData?.photosInside || []).slice(0, 2).map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`Check-in ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkin-${idx}`}/>
-                                      <div className="absolute inset-0 rounded border border-blue-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Check-out Photos */}
-                              <div>
-                                <p className="text-xs font-bold text-zinc-400 mb-2">Check-out (End)</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(b.checkOutData?.photosOutside || []).concat(b.checkOutData?.photosInside || []).slice(0, 2).map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`Check-out ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkout-${idx}`}/>
-                                      {idx === 1 && (
-                                        <button
-                                          onClick={() => window.open(img, '_blank')}
-                                          className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 rounded-full p-1 transition-colors"
-                                          data-testid={`button-expand-checkout-${idx}`}
-                                        >
-                                          <ChevronRight size={12} className="text-white"/>
-                                        </button>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
                           </div>
 
                           {/* Financial Details */}
@@ -4848,6 +4787,14 @@ export default function CarHopApp() {
                                         <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2 text-xs">
                                           <span>Additional Charges Total</span>
                                           <span>${additionalCharges.toFixed(2)}</span>
+                                        </div>
+
+                                        {/* Total Billed */}
+                                        <div className="mt-4 pt-4 border-t border-zinc-700 bg-green-950/30 rounded-lg p-3 border border-green-700">
+                                          <div className="flex justify-between text-green-200 font-bold text-sm">
+                                            <span>TOTAL BILLED</span>
+                                            <span>${b.total.toFixed(2)}</span>
+                                          </div>
                                         </div>
 
                                         {/* Charge Extras by Original Payment Method */}
