@@ -10,6 +10,9 @@ import {
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, ilike } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcryptjs";
+
+const DEMO_PASSWORD_HASH = bcrypt.hashSync("demo123", 10);
 
 export interface IStorage {
   // Users (required for Replit Auth)
@@ -200,7 +203,7 @@ export class MemStorage implements IStorage {
         proofOfResidenceImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
         socialSecurityNumber: null,
         username: 'johnmartinez',
-        passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DRj1C2',
+        passwordHash: DEMO_PASSWORD_HASH,
         agreementAccepted: true,
         agreementAcceptedAt: new Date(),
         status: 'active'
@@ -220,7 +223,7 @@ export class MemStorage implements IStorage {
         proofOfResidenceImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
         socialSecurityNumber: null,
         username: 'sarahjohnson',
-        passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DRj1C2',
+        passwordHash: DEMO_PASSWORD_HASH,
         agreementAccepted: true,
         agreementAcceptedAt: new Date(),
         status: 'active'
@@ -240,7 +243,7 @@ export class MemStorage implements IStorage {
         proofOfResidenceImage: 'https://images.unsplash.com/photo-1579274455169-25c00b8e3102?w=300',
         socialSecurityNumber: null,
         username: 'michaelchen',
-        passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DRj1C2',
+        passwordHash: DEMO_PASSWORD_HASH,
         agreementAccepted: true,
         agreementAcceptedAt: new Date(),
         status: 'active'
