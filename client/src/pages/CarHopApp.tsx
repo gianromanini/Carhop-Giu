@@ -3266,6 +3266,61 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
+                          {/* Guest Ratings Section */}
+                          {b.status === 'Completed' && (() => {
+                            const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                            return (
+                              <div className="space-y-4">
+                                {/* Guest's Rating of Host */}
+                                {bookingRating?.stars && (
+                                  <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-700/30">
+                                    <div className="text-xs font-bold uppercase text-blue-400 mb-2">Guest's Rating of You</div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="flex gap-1">
+                                        {[1,2,3,4,5].map(star => (
+                                          <span key={star} className={`text-sm ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                        ))}
+                                      </div>
+                                      <span className="text-sm font-bold text-white">{bookingRating.stars}/5</span>
+                                    </div>
+                                    {bookingRating.comment && (
+                                      <p className="text-xs text-zinc-300 italic">"{bookingRating.comment}"</p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Rate Your Guest Button */}
+                                {!b.hostStarsToClient && (
+                                  <button 
+                                    onClick={() => setShowRateGuestModal(true)}
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
+                                    data-testid={`button-rate-guest-${b.id}`}
+                                  >
+                                    Rate your Guest
+                                  </button>
+                                )}
+
+                                {/* Your Rating of Guest */}
+                                {b.hostStarsToClient && (
+                                  <div className="bg-green-900/20 rounded-lg p-4 border border-green-700/30">
+                                    <div className="text-xs font-bold uppercase text-green-400 mb-2">Your Rating of Guest</div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="flex gap-1">
+                                        {[1,2,3,4,5].map(star => (
+                                          <span key={star} className={`text-sm ${star <= (b.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                        ))}
+                                      </div>
+                                      <span className="text-sm font-bold text-white">{b.hostStarsToClient}/5</span>
+                                    </div>
+                                    {b.hostCommentToClient && (
+                                      <p className="text-xs text-zinc-300 italic">"{b.hostCommentToClient}"</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
                           {/* Financial Details */}
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Financial Details</h4>
@@ -4383,19 +4438,6 @@ export default function CarHopApp() {
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
                             )}
-                            {b.status === 'Completed' && !b.hostStarsToClient && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setManageBookingId(b.id);
-                                  setShowRateGuestModal(true);
-                                }}
-                                className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
-                                data-testid={`button-rate-guest-${b.id}`}
-                              >
-                                Rate your Guest
-                              </button>
-                            )}
                           </div>
                         );
                       })}
@@ -4680,6 +4722,61 @@ export default function CarHopApp() {
                               );
                             })()}
                           </div>
+
+                          {/* Guest Ratings Section */}
+                          {b.status === 'Completed' && (() => {
+                            const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                            return (
+                              <div className="space-y-4">
+                                {/* Guest's Rating of Host */}
+                                {bookingRating?.stars && (
+                                  <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-700/30">
+                                    <div className="text-xs font-bold uppercase text-blue-400 mb-2">Guest's Rating of You</div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="flex gap-1">
+                                        {[1,2,3,4,5].map(star => (
+                                          <span key={star} className={`text-sm ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                        ))}
+                                      </div>
+                                      <span className="text-sm font-bold text-white">{bookingRating.stars}/5</span>
+                                    </div>
+                                    {bookingRating.comment && (
+                                      <p className="text-xs text-zinc-300 italic">"{bookingRating.comment}"</p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Rate Your Guest Button */}
+                                {!b.hostStarsToClient && (
+                                  <button 
+                                    onClick={() => setShowRateGuestModal(true)}
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
+                                    data-testid={`button-rate-guest-${b.id}`}
+                                  >
+                                    Rate your Guest
+                                  </button>
+                                )}
+
+                                {/* Your Rating of Guest */}
+                                {b.hostStarsToClient && (
+                                  <div className="bg-green-900/20 rounded-lg p-4 border border-green-700/30">
+                                    <div className="text-xs font-bold uppercase text-green-400 mb-2">Your Rating of Guest</div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="flex gap-1">
+                                        {[1,2,3,4,5].map(star => (
+                                          <span key={star} className={`text-sm ${star <= (b.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                        ))}
+                                      </div>
+                                      <span className="text-sm font-bold text-white">{b.hostStarsToClient}/5</span>
+                                    </div>
+                                    {b.hostCommentToClient && (
+                                      <p className="text-xs text-zinc-300 italic">"{b.hostCommentToClient}"</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                           {/* Financial Details */}
                           <div>
