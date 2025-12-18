@@ -1138,13 +1138,21 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
-  // Update rating (host response)
+  // Update rating (host response and/or host rating to client)
   app.put("/api/ratings/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { hostResponse } = req.body;
+      const { hostResponse, hostStarsToClient, hostCommentToClient } = req.body;
       
-      const updatedRating = await storage.updateRating(id, { hostResponse });
+      const updateData: any = {};
+      if (hostResponse !== undefined) updateData.hostResponse = hostResponse;
+      if (hostStarsToClient !== undefined) {
+        updateData.hostStarsToClient = hostStarsToClient;
+        updateData.hostCommentToClient = hostCommentToClient || null;
+        updateData.hostRatedClientAt = new Date();
+      }
+      
+      const updatedRating = await storage.updateRating(id, updateData);
       if (!updatedRating) {
         return res.status(404).json({ message: "Rating not found" });
       }

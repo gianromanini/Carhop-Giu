@@ -125,6 +125,7 @@ export const bookings = pgTable("bookings", {
     rate: number;
     extras: number;
     protection: number;
+    protectionType?: string;
     fees: number;
     tax: number;
     discount?: number;
@@ -162,7 +163,7 @@ export const bookings = pgTable("bookings", {
   }[]>().default([]),
   messages: jsonb("messages").$type<{
     id: string;
-    sender: 'client' | 'admin';
+    sender: 'client' | 'admin' | 'host';
     text: string;
     createdAt: string;
     read: boolean;
@@ -224,6 +225,9 @@ export const ratings = pgTable("ratings", {
   comment: text("comment"),
   hostResponse: text("host_response"),
   hostResponseAt: timestamp("host_response_at"),
+  hostStarsToClient: integer("host_stars_to_client"),
+  hostCommentToClient: text("host_comment_to_client"),
+  hostRatedClientAt: timestamp("host_rated_client_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

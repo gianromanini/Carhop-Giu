@@ -557,8 +557,11 @@ export default function CarHopApp() {
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingComment, setRatingComment] = useState('');
   const [viewingVehicleRatings, setViewingVehicleRatings] = useState<number | null>(null);
-  const [hostResponseModal, setHostResponseModal] = useState<{ ratingId: number; existingResponse?: string } | null>(null);
+  const [viewingClientRatings, setViewingClientRatings] = useState<string | null>(null);
+  const [hostResponseModal, setHostResponseModal] = useState<{ ratingId: number; existingResponse?: string; existingHostStars?: number } | null>(null);
   const [hostResponseText, setHostResponseText] = useState('');
+  const [hostRatingStars, setHostRatingStars] = useState(5);
+  const [hostRatingComment, setHostRatingComment] = useState('');
   
   const { toast } = useToast();
 
@@ -680,13 +683,15 @@ export default function CarHopApp() {
   });
 
   const updateRatingMutation = useMutation({
-    mutationFn: ({ id, hostResponse }: { id: number; hostResponse: string }) => 
-      apiRequest('PUT', `/api/ratings/${id}`, { hostResponse }),
+    mutationFn: ({ id, hostResponse, hostStarsToClient, hostCommentToClient }: { id: number; hostResponse?: string; hostStarsToClient?: number; hostCommentToClient?: string }) => 
+      apiRequest('PUT', `/api/ratings/${id}`, { hostResponse, hostStarsToClient, hostCommentToClient }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ratings'] });
       setHostResponseModal(null);
       setHostResponseText('');
-      toast({ title: 'Response added successfully' });
+      setHostRatingStars(5);
+      setHostRatingComment('');
+      toast({ title: 'Rating submitted successfully' });
     }
   });
 
@@ -3522,14 +3527,14 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Pick-up Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 sm:px-2 sm:py-1.5 cursor-pointer" onClick={(e) => {if (e.target.tagName !== 'INPUT') document.querySelector('[data-testid="input-start-date"]').click()}}>
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 sm:px-2 sm:py-1.5 cursor-pointer" onClick={(e) => {if ((e.target as HTMLElement).tagName !== 'INPUT') (document.querySelector('[data-testid="input-start-date"]') as HTMLElement)?.click()}}>
                           <Calendar size={13} className="text-black dark:text-white mr-1 flex-shrink-0 cursor-pointer" />
                           <input type="date" value={searchParams.start} onChange={e => handleSearchParamsChange('start', e.target.value)} min={getTodayString()} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white cursor-pointer" data-testid="input-start-date" />
                         </div>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Return Date</label>
-                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 sm:px-2 sm:py-1.5 cursor-pointer" onClick={(e) => {if (e.target.tagName !== 'INPUT') document.querySelector('[data-testid="input-end-date"]').click()}}>
+                        <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 sm:px-2 sm:py-1.5 cursor-pointer" onClick={(e) => {if ((e.target as HTMLElement).tagName !== 'INPUT') (document.querySelector('[data-testid="input-end-date"]') as HTMLElement)?.click()}}>
                           <Calendar size={13} className="text-black dark:text-white mr-1 flex-shrink-0 cursor-pointer" />
                           <input type="date" value={searchParams.end} onChange={e => handleSearchParamsChange('end', e.target.value)} min={searchParams.start} className="bg-transparent w-full outline-none text-xs sm:text-sm text-zinc-900 dark:text-white cursor-pointer" data-testid="input-end-date" />
                         </div>
@@ -3926,9 +3931,24 @@ export default function CarHopApp() {
                     <div className="space-y-2">
                       {usersData.map((user) => {
                         const { trips, total } = getUserTripsAndTotal(user.email);
+                        const clientRatings = ratingsData.filter(r => r.clientEmail === user.email && r.hostStarsToClient);
+                        const avgRating = clientRatings.length > 0 ? clientRatings.reduce((sum, r) => sum + (r.hostStarsToClient || 0), 0) / clientRatings.length : 0;
                         return (
                           <div key={user.id} onClick={() => setSelectedClient(user)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedClient?.id === user.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-client-${user.id}`}>
-                            <div className="font-bold text-sm text-white">{user.firstName} {user.lastName}</div>
+                            <div className="flex justify-between items-start">
+                              <div className="font-bold text-sm text-white">{user.firstName} {user.lastName}</div>
+                              {avgRating > 0 && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setViewingClientRatings(user.email); }}
+                                  className="flex items-center gap-0.5 text-yellow-400 hover:text-yellow-300 transition-colors"
+                                  data-testid={`button-view-client-rating-${user.id}`}
+                                >
+                                  {[1,2,3,4,5].map(star => (
+                                    <span key={star} className={`text-xs ${star <= Math.round(avgRating) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                  ))}
+                                </button>
+                              )}
+                            </div>
                             <div className="text-xs text-zinc-500 truncate">{user.email}</div>
                             <div className="text-xs text-zinc-400 mt-2 flex justify-between">
                               <span>{trips} Trip{trips !== 1 ? 's' : ''}</span>
@@ -5295,7 +5315,7 @@ export default function CarHopApp() {
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE AND FUEL</h4>
-                      <p>The Lessee is entitled to {activeBooking?.car?.pricing?.includedMiles || settings.includedMiles} miles per day included in the rental. Excess mileage will be charged at ${(activeBooking?.car?.pricing?.extraMileRate || settings.extraMileRate).toFixed(2)} per mile. The vehicle must be returned with a full fuel tank. Refueling charges will apply if the vehicle is returned with less fuel.</p>
+                      <p>The Lessee is entitled to {settings.includedMiles} miles per day included in the rental. Excess mileage will be charged at ${settings.extraMileRate.toFixed(2)} per mile. The vehicle must be returned with a full fuel tank. Refueling charges will apply if the vehicle is returned with less fuel.</p>
                     </div>
 
                     <div>
@@ -5925,19 +5945,89 @@ export default function CarHopApp() {
           </div>
         )}
 
+        {/* Client Ratings Modal - Shows ratings given by hosts to a specific client */}
+        {viewingClientRatings && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Client Ratings from Hosts</h2>
+                <button onClick={() => setViewingClientRatings(null)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white" data-testid="button-close-client-ratings"><X size={20}/></button>
+              </div>
+              
+              {(() => {
+                const clientRatings = ratingsData.filter(r => r.clientEmail === viewingClientRatings && r.hostStarsToClient);
+                if (clientRatings.length === 0) {
+                  return <p className="text-center text-zinc-500 py-8">No ratings yet for this client.</p>;
+                }
+                return (
+                  <div className="space-y-4">
+                    {clientRatings.map((rating: any) => {
+                      const vehicle = vehicles.find(v => v.id === rating.vehicleId);
+                      const booking = bookings.find(b => b.id === rating.bookingId);
+                      return (
+                        <div key={rating.id} className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-bold text-sm text-zinc-900 dark:text-white">{vehicle?.model || 'Vehicle'}</p>
+                              <p className="text-xs text-zinc-500">{rating.hostRatedClientAt ? new Date(rating.hostRatedClientAt).toLocaleDateString() : 'Date unknown'}</p>
+                              {booking && <p className="text-xs text-zinc-400">Trip: {booking.startDate} - {booking.returnDate}</p>}
+                            </div>
+                            <div className="flex gap-0.5">
+                              {[1,2,3,4,5].map(star => (
+                                <span key={star} className={`text-sm ${star <= (rating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-300 dark:text-zinc-600'}`}>★</span>
+                              ))}
+                            </div>
+                          </div>
+                          {rating.hostCommentToClient && <p className="text-sm text-zinc-600 dark:text-zinc-400">"{rating.hostCommentToClient}"</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* Host Response Modal */}
         {hostResponseModal && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-md border border-zinc-200 dark:border-zinc-800 shadow-2xl">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Respond to Review</h2>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-md border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Rate Trip & Respond</h2>
               
+              {/* Host Rating to Client */}
+              <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <label className="block text-xs font-bold text-yellow-700 dark:text-yellow-400 uppercase tracking-wider mb-2">Rate This Client</label>
+                <div className="flex gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      onClick={() => setHostRatingStars(star)}
+                      className={`text-2xl transition-colors ${star <= hostRatingStars ? 'text-yellow-400' : 'text-zinc-300 dark:text-zinc-600'}`}
+                      data-testid={`button-host-rate-star-${star}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={hostRatingComment}
+                  onChange={(e) => setHostRatingComment(e.target.value)}
+                  placeholder="Comment about this client (optional)..."
+                  rows={2}
+                  className="w-full p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white resize-none focus:ring-2 focus:ring-yellow-500 outline-none text-sm"
+                  data-testid="textarea-host-rate-client"
+                />
+              </div>
+              
+              {/* Host Response to Client's Review */}
               <div className="mb-4">
-                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Your Response</label>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Respond to Client's Review</label>
                 <textarea
                   value={hostResponseText}
                   onChange={(e) => setHostResponseText(e.target.value)}
                   placeholder="Thank your customer or address their feedback..."
-                  rows={4}
+                  rows={3}
                   className="w-full p-3 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 outline-none"
                   data-testid="textarea-host-response"
                 />
@@ -5945,19 +6035,24 @@ export default function CarHopApp() {
               
               <div className="flex gap-3">
                 <button
-                  onClick={() => { setHostResponseModal(null); setHostResponseText(''); }}
+                  onClick={() => { setHostResponseModal(null); setHostResponseText(''); setHostRatingStars(5); setHostRatingComment(''); }}
                   className="flex-1 px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
                   data-testid="button-cancel-host-response"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => updateRatingMutation.mutate({ id: hostResponseModal.ratingId, hostResponse: hostResponseText })}
-                  disabled={updateRatingMutation.isPending || !hostResponseText.trim()}
+                  onClick={() => updateRatingMutation.mutate({ 
+                    id: hostResponseModal.ratingId, 
+                    hostResponse: hostResponseText || undefined,
+                    hostStarsToClient: hostRatingStars,
+                    hostCommentToClient: hostRatingComment || undefined
+                  })}
+                  disabled={updateRatingMutation.isPending}
                   className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
                   data-testid="button-submit-host-response"
                 >
-                  {updateRatingMutation.isPending ? 'Saving...' : 'Submit Response'}
+                  {updateRatingMutation.isPending ? 'Saving...' : 'Submit'}
                 </button>
               </div>
             </div>
