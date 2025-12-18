@@ -2910,7 +2910,7 @@ export default function CarHopApp() {
 
           {hostTab === 'bookings' && (() => {
             const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
-            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId));
+            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId)));
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - Bookings List */}
@@ -3350,82 +3350,7 @@ export default function CarHopApp() {
                                 <p className="text-yellow-400 text-sm">Pending</p>
                               )}
                             </div>
-                          </div>
-
-                          {/* Customer Rating Section */}
-                          {(() => {
-                            const bookingRating = ratingsData.find(r => r.bookingId === b.id);
-                            
-                            return (
-                              <div className={`p-4 rounded-lg border ${bookingRating ? 'bg-yellow-950/30 border-yellow-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
-                                <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-3 ${bookingRating ? 'text-yellow-400' : 'text-zinc-500'}`}>
-                                  <span className="text-lg">★</span> Customer Rating
-                                </h4>
-                                
-                                {bookingRating ? (
-                                  <div className="space-y-3">
-                                    {!bookingRating.hostResponse && (
-                                      <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 flex items-start gap-3">
-                                        <AlertCircle size={16} className="text-orange-400 flex-shrink-0 mt-0.5"/>
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-bold text-orange-400 mb-2">Customer Left a Review!</p>
-                                          <p className="text-xs text-orange-200 mb-3">Please review and respond to maintain good host reputation.</p>
-                                          <button
-                                            onClick={() => {
-                                              setHostResponseModal({ ratingId: bookingRating.id });
-                                              setHostResponseText('');
-                                            }}
-                                            className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded transition-colors flex items-center gap-1 font-bold"
-                                            data-testid="button-host-rate-trip"
-                                          >
-                                            <span className="text-lg">★</span> Rate Trip & Respond
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <div className="flex gap-0.5 mb-1">
-                                          {[1,2,3,4,5].map(star => (
-                                            <span key={star} className={`text-lg ${star <= bookingRating.stars ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                          ))}
-                                        </div>
-                                        <p className="text-xs text-zinc-400">Rated by: {bookingRating.clientName}</p>
-                                        <p className="text-xs text-zinc-500">{new Date(bookingRating.createdAt).toLocaleDateString()}</p>
-                                      </div>
-                                    </div>
-                                    
-                                    {bookingRating.comment && (
-                                      <div className="bg-zinc-800 rounded p-3">
-                                        <p className="text-sm text-zinc-300">"{bookingRating.comment}"</p>
-                                      </div>
-                                    )}
-                                    
-                                    {bookingRating.hostResponse ? (
-                                      <div className="bg-blue-900/30 rounded p-3 border border-blue-800/50">
-                                        <p className="text-xs text-blue-400 font-bold mb-1">Your Response:</p>
-                                        <p className="text-sm text-zinc-300">"{bookingRating.hostResponse}"</p>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        onClick={() => {
-                                          setHostResponseModal({ ratingId: bookingRating.id });
-                                          setHostResponseText('');
-                                        }}
-                                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1"
-                                        data-testid="button-host-add-response"
-                                      >
-                                        <MessageCircle size={12}/> Add Response
-                                      </button>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-zinc-500">No rating submitted for this trip yet.</p>
-                                )}
-                              </div>
-                            );
-                          })()}
+                          </div>}
 
                         </div>
                       );
@@ -3444,7 +3369,7 @@ export default function CarHopApp() {
           {hostTab === 'earnings' && (() => {
             const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
             const hostVehicleMap = Object.fromEntries(vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => [v.id, v]));
-            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(b.vehicleId) && b.status === 'Completed');
+            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId)) && b.status === 'Completed');
             
             let totalGross = 0;
             let totalCommission = 0;
