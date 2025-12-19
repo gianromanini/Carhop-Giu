@@ -747,7 +747,7 @@ export default function CarHopApp() {
       const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
       setClientUser({ name: fullName, email: authUser.email || '' });
       setDriverDetails(prev => ({ ...prev, name: fullName, email: authUser.email || '' }));
-      setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '' });
+      setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '', city: authUser.city || '', state: authUser.state || '' });
       setShowLoginModal(false);
     }
   }, [isAuthenticated, authUser]);
