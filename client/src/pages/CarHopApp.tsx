@@ -568,9 +568,9 @@ export default function CarHopApp() {
   const [hostRatingStars, setHostRatingStars] = useState(5);
   const [hostRatingComment, setHostRatingComment] = useState('');
   const [pickupAddress, setPickupAddress] = useState('');
-  const [bookingDeliveryMode, setBookingDeliveryMode] = useState<'pickup' | 'delivery'>('pickup');
   const [deliveryAddressBooking, setDeliveryAddressBooking] = useState('');
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryValidationStatus, setDeliveryValidationStatus] = useState<'valid' | 'invalid' | 'not-checked'>('not-checked');
   
   const { toast } = useToast();
 
@@ -813,9 +813,9 @@ export default function CarHopApp() {
     const nextTime = getNext30MinSlot();
     const returnDay = addDaysToDate(today, 3);
     setCarDetailsBooking({ startDate: today, startTime: nextTime, endDate: returnDay, endTime: nextTime });
-    setBookingDeliveryMode('pickup');
     setDeliveryAddressBooking('');
     setDeliveryFee(0);
+    setDeliveryValidationStatus('not-checked');
     window.scrollTo(0, 0); 
   };
   const handleImageClick = (src: string) => { setSelectedImage(src); };
@@ -856,9 +856,9 @@ export default function CarHopApp() {
     setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '1000' }); 
     if (clientUser) setDriverDetails(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' })); 
     setPickupAddress('');
-    setBookingDeliveryMode('pickup');
     setDeliveryAddressBooking('');
     setDeliveryFee(0);
+    setDeliveryValidationStatus('not-checked');
     setView('checkout'); 
   };
 
@@ -876,9 +876,9 @@ export default function CarHopApp() {
     if (cart.insuranceOption === '500') runningTotal += (settings.prices.insurance500 * days); 
     if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days); 
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
-    if (bookingDeliveryMode === 'delivery') runningTotal += deliveryFee;
+    if (deliveryValidationStatus === 'valid') runningTotal += deliveryFee;
     const taxAmount = runningTotal * ((carPricing.taxes || settings.taxes) / 100); 
-    return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount, deliveryFee: bookingDeliveryMode === 'delivery' ? deliveryFee : 0 }; 
+    return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount, deliveryFee: deliveryValidationStatus === 'valid' ? deliveryFee : 0 }; 
   };
 
   const handleProceedToPayment = () => { 
@@ -6224,100 +6224,101 @@ export default function CarHopApp() {
             
             <div className="grid lg:grid-cols-3 gap-8">
               {/* Left Column - Forms */}
-              <div className="lg:col-span-2 space-y-6" onMouseLeave={() => { if (view !== 'checkout') { setPickupAddress(''); setBookingDeliveryMode('pickup'); setDeliveryAddressBooking(''); setDeliveryFee(0); } }}>
+              <div className="lg:col-span-2 space-y-6">
                 
-                {/* Pickup/Delivery Mode Section */}
+                {/* Delivery Address - FIRST FIELD */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                   <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
-                    <MapPin size={18} /> Delivery Method
+                    <MapPin size={18} /> Delivery Information
                   </h2>
                   
-                  {/* Mode Toggle */}
-                  <div className="flex gap-2 mb-6">
-                    <button
-                      onClick={() => { setBookingDeliveryMode('pickup'); setDeliveryAddressBooking(''); setDeliveryFee(0); }}
-                      className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${
-                        bookingDeliveryMode === 'pickup'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                      }`}
-                      data-testid="button-mode-pickup"
-                    >
-                      Pickup
-                    </button>
-                    {cart.car?.deliveryPricePerMile && cart.car?.deliveryPricePerMile > 0 && (
-                      <button
-                        onClick={() => setBookingDeliveryMode('delivery')}
-                        className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${
-                          bookingDeliveryMode === 'delivery'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                        }`}
-                        data-testid="button-mode-delivery"
-                      >
-                        Delivery (If Available)
-                      </button>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">YOUR DELIVERY ADDRESS *</label>
+                      <LocationAutocomplete 
+                        value={deliveryAddressBooking}
+                        onChange={(val) => {
+                          setDeliveryAddressBooking(val);
+                          if (val && cart.car?.deliveryPricePerMile && cart.car?.deliveryPricePerMile > 0) {
+                            const estimatedMiles = Math.random() * (cart.car.maxDeliveryDistance || 50);
+                            const calculatedFee = estimatedMiles * cart.car.deliveryPricePerMile;
+                            if (estimatedMiles <= (cart.car.maxDeliveryDistance || 50)) {
+                              setDeliveryFee(calculatedFee);
+                              setDeliveryValidationStatus('valid');
+                            } else {
+                              setDeliveryFee(0);
+                              setDeliveryValidationStatus('invalid');
+                            }
+                          }
+                        }}
+                        placeholder="Enter the address where you want the car delivered"
+                      />
+                    </div>
+
+                    {deliveryAddressBooking && (
+                      <div>
+                        {deliveryValidationStatus === 'valid' ? (
+                          <div className="bg-green-900/30 border border-green-800 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <Check size={20} className="text-green-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm font-bold text-green-400 mb-2">Delivery Available</p>
+                                <p className="text-xs text-green-300 mb-3">{deliveryAddressBooking}</p>
+                                <div className="bg-green-900/50 rounded p-2">
+                                  <p className="text-xs text-green-300">
+                                    Delivery Fee: <span className="font-bold text-green-400">${deliveryFee.toFixed(2)}</span>
+                                  </p>
+                                  <p className="text-xs text-green-300 mt-1">
+                                    (${cart.car?.deliveryPricePerMile}/mile, Max: {cart.car?.maxDeliveryDistance} miles)
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <AlertCircle size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm font-bold text-red-400 mb-2">Pickup Only Available</p>
+                                <p className="text-xs text-red-300">Your delivery address is beyond the maximum distance ({cart.car?.maxDeliveryDistance} miles) from our pickup location. Please select a pickup instead or choose a closer delivery address.</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  {bookingDeliveryMode === 'pickup' ? (
-                    <div>
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">PICKUP ADDRESS</label>
-                      <LocationAutocomplete 
-                        value={pickupAddress}
-                        onChange={setPickupAddress}
-                        placeholder="Search address (Street, City, etc.)"
-                        availableLocations={cart.car?.availableLocations || []}
-                      />
-                      {pickupAddress && (
-                        <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
-                          <Check size={12} /> Address confirmed: {pickupAddress}
-                        </p>
-                      )}
+                  {/* Pickup Location Display */}
+                  <div className="mt-6 pt-6 border-t border-zinc-700">
+                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">OUR PICKUP LOCATION</label>
+                    <div className="bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+                      <p className="text-sm text-white">{cart.car?.deliveryAddress || 'Main Location'}</p>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">PICKUP LOCATION</label>
-                        <p className="text-sm text-white bg-zinc-800 rounded-lg p-3 border border-zinc-700">{cart.car?.deliveryAddress || 'Host Location'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">YOUR DELIVERY ADDRESS</label>
-                        <LocationAutocomplete 
-                          value={deliveryAddressBooking}
-                          onChange={(val) => {
-                            setDeliveryAddressBooking(val);
-                            if (val && cart.car?.deliveryPricePerMile && cart.car?.deliveryPricePerMile > 0) {
-                              const estimatedMiles = Math.random() * (cart.car.maxDeliveryDistance || 50);
-                              const calculatedFee = estimatedMiles * cart.car.deliveryPricePerMile;
-                              if (estimatedMiles <= (cart.car.maxDeliveryDistance || 50)) {
-                                setDeliveryFee(calculatedFee);
-                              } else {
-                                setDeliveryFee(0);
-                                alert(`Delivery address is beyond maximum distance of ${cart.car.maxDeliveryDistance} miles. Please select a closer address.`);
-                              }
-                            }
-                          }}
-                          placeholder="Enter your delivery address"
-                        />
-                        {deliveryAddressBooking && (
-                          <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
-                            <Check size={12} /> Address confirmed: {deliveryAddressBooking}
-                          </p>
-                        )}
-                      </div>
-                      {deliveryAddressBooking && deliveryFee > 0 && (
-                        <div className="bg-blue-900/30 border border-blue-800 rounded-lg p-3">
-                          <p className="text-xs text-blue-300">
-                            Delivery Fee: <span className="font-bold text-blue-400">${deliveryFee.toFixed(2)}</span>
-                            <br/>
-                            <span className="text-zinc-400">(${cart.car?.deliveryPricePerMile}/mile, Max: {cart.car?.maxDeliveryDistance} miles)</span>
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* Pickup Address - Only if delivery not valid */}
+                {deliveryValidationStatus !== 'valid' && (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                    <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
+                      <MapPin size={18} /> Pickup Location
+                    </h2>
+                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">SELECT YOUR PICKUP ADDRESS *</label>
+                    <LocationAutocomplete 
+                      value={pickupAddress}
+                      onChange={setPickupAddress}
+                      placeholder="Search address (Street, City, etc.)"
+                      availableLocations={cart.car?.availableLocations || []}
+                    />
+                    {pickupAddress && (
+                      <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
+                        <Check size={12} /> Address confirmed: {pickupAddress}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Rental Period Section */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
@@ -6606,10 +6607,10 @@ export default function CarHopApp() {
                       <span className="text-zinc-400">Taxes ({(cart.car.pricing?.taxes || settings.taxes)}%)</span>
                       <span className="text-white">${calculateTotal().taxAmount.toFixed(2)}</span>
                     </div>
-                    {bookingDeliveryMode === 'delivery' && deliveryFee > 0 && (
+                    {deliveryValidationStatus === 'valid' && deliveryFee > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-blue-400">Delivery Fee</span>
-                        <span className="text-blue-400">+${deliveryFee.toFixed(2)}</span>
+                        <span className="text-green-400">Delivery Fee</span>
+                        <span className="text-green-400">+${deliveryFee.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
