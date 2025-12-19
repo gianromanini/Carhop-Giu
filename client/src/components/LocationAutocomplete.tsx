@@ -5,6 +5,7 @@ interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  availableLocations?: string[];
 }
 
 interface LocationSuggestion {
@@ -16,7 +17,8 @@ interface LocationSuggestion {
 export function LocationAutocomplete({
   value,
   onChange,
-  placeholder = 'Enter pickup address'
+  placeholder = 'Enter pickup address',
+  availableLocations
 }: LocationAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
@@ -25,14 +27,29 @@ export function LocationAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Debounced search function
+  // If availableLocations is provided, filter from those instead of searching OSM
   const searchLocations = async (query: string) => {
+    if (availableLocations && availableLocations.length > 0) {
+      // Filter from available locations
+      const filtered = availableLocations
+        .filter(loc => loc.toLowerCase().includes(query.toLowerCase()))
+        .map(loc => ({
+          display_name: loc,
+          lat: '0',
+          lon: '0'
+        }));
+      
+      setSuggestions(filtered);
+      setIsOpen(true);
+      return;
+    }
+
+    // Original OSM search behavior
     if (query.length < 2) {
       setSuggestions([]);
       return;
     }
 
-    // Cancel previous request if still pending
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -64,13 +81,11 @@ export function LocationAutocomplete({
   // Debounce the search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (inputValue !== value) {
-        searchLocations(inputValue);
-      }
+      searchLocations(inputValue);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [inputValue, value]);
+  }, [inputValue, availableLocations]);
 
   const handleSelectLocation = (location: LocationSuggestion) => {
     setInputValue(location.display_name);
@@ -145,10 +160,10 @@ export function LocationAutocomplete({
       )}
 
       {/* No results message */}
-      {isOpen && !isLoading && inputValue.length >= 2 && suggestions.length === 0 && (
+      {isOpen && !isLoading && inputValue.length >= 1 && suggestions.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 px-4 py-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Nenhuma localização encontrada
+            {availableLocations?.length === 0 ? 'Nenhuma localização disponível' : 'Nenhuma localização encontrada'}
           </p>
         </div>
       )}

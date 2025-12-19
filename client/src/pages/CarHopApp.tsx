@@ -6192,6 +6192,7 @@ export default function CarHopApp() {
                     value={pickupAddress}
                     onChange={setPickupAddress}
                     placeholder="Search address (Street, City, etc.)"
+                    availableLocations={cart.car.availableLocations || []}
                   />
                   {pickupAddress && (
                     <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
