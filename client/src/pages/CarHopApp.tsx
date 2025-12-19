@@ -332,7 +332,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], deliveryAddress: '', maxDeliveryDistance: 50, deliveryPricePerMile: 0, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -382,6 +382,9 @@ interface FormDataType {
   commission: number;
   deductible: number;
   availableLocations: string[];
+  deliveryAddress: string;
+  maxDeliveryDistance: number;
+  deliveryPricePerMile: number;
   pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean } };
 }
 
@@ -1283,6 +1286,9 @@ export default function CarHopApp() {
       hasDriveAssist: formData.hasDriveAssist,
       hasUSBCharger: formData.hasUSBCharger,
       availableLocations: formData.availableLocations || [],
+      deliveryAddress: formData.deliveryAddress || '',
+      maxDeliveryDistance: formData.maxDeliveryDistance || 50,
+      deliveryPricePerMile: formData.deliveryPricePerMile || 0,
       pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
     };
 
@@ -1321,6 +1327,9 @@ export default function CarHopApp() {
       commission: car.commission || 10,
       deductible: car.deductible || 1000,
       availableLocations: car.availableLocations || [],
+      deliveryAddress: car.deliveryAddress || '',
+      maxDeliveryDistance: car.maxDeliveryDistance || 50,
+      deliveryPricePerMile: car.deliveryPricePerMile || 0,
       pricing: pricing,
     });
     setPricingStrings({
@@ -3909,6 +3918,31 @@ export default function CarHopApp() {
                       ))}
                     </div>
                     <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
+                  </Card>
+
+                  {/* Delivery to Guest */}
+                  <Card className="p-3 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <Route size={16} className="text-blue-500"/>
+                      Delivery to Guest
+                    </h3>
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="mb-3 w-full">
+                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Delivery Address</label>
+                        <LocationAutocomplete value={formData.deliveryAddress || ''} onChange={(val) => setFormData({...formData, deliveryAddress: val})} placeholder="Enter delivery address (e.g. Customer Location)" />
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">Address where customers can be delivered</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Max Distance (miles)</label>
+                          <input type="number" value={formData.maxDeliveryDistance || 50} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 50})} placeholder="e.g., 50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-max-delivery-distance" />
+                        </div>
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price per Mile ($)</label>
+                          <input type="number" step="0.01" value={formData.deliveryPricePerMile || 0} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 0})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
+                        </div>
+                      </div>
+                    </div>
                   </Card>
 
                   {/* Pricing Configuration */}

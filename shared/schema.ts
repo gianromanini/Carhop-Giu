@@ -62,6 +62,9 @@ export const vehicles = pgTable("vehicles", {
   commission: integer("commission").default(10),
   deductible: integer("deductible").default(1000),
   availableLocations: text("available_locations").array().default([]),
+  deliveryAddress: text("delivery_address").default(''),
+  maxDeliveryDistance: integer("max_delivery_distance").default(50),
+  deliveryPricePerMile: real("delivery_price_per_mile").default(0),
   pricing: jsonb("pricing").$type<{
     taxes: number;
     cleaningFee: number;
