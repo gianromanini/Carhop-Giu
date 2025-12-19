@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 
 declare global {
@@ -22,9 +22,11 @@ function loadGoogleMapsScript(): Promise<void> {
 
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
-      existingScript.addEventListener('load', () => {
-        setTimeout(() => resolve(), 100);
-      });
+      if ((existingScript as any).loaded) {
+        resolve();
+      } else {
+        existingScript.addEventListener('load', () => resolve());
+      }
       return;
     }
 
@@ -35,11 +37,11 @@ function loadGoogleMapsScript(): Promise<void> {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     script.async = true;
-    script.defer = true;
     script.onload = () => {
-      setTimeout(() => resolve(), 100);
+      (script as any).loaded = true;
+      resolve();
     };
     script.onerror = () => reject(new Error('Failed to load Google Maps'));
     document.head.appendChild(script);
@@ -51,9 +53,9 @@ export function GooglePlacesAutocomplete({
   onChange,
   placeholder = 'Enter pickup address'
 }: GooglePlacesAutocompleteProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const autocompleteRef = useRef<any>(null);
 
   useEffect(() => {
     loadGoogleMapsScript()
@@ -62,44 +64,43 @@ export function GooglePlacesAutocomplete({
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !window.google?.maps?.places || !containerRef.current || autocompleteRef.current) {
-      return;
-    }
+    if (!isLoaded || !window.google?.maps?.places) return;
+    if (!inputRef.current || autocompleteRef.current) return;
 
     try {
-      const placeAutocompleteElement = new (window as any).google.maps.places.PlaceAutocompleteElement(
-        {
-          componentRestrictions: { country: ['us'] }
-        }
-      );
-
-      autocompleteRef.current = placeAutocompleteElement;
-      containerRef.current.innerHTML = '';
-      containerRef.current.appendChild(placeAutocompleteElement);
-
-      placeAutocompleteElement.addEventListener('gmp-placeselect', async () => {
-        const place = placeAutocompleteElement.value?.formattedAddress;
-        if (place) {
-          onChange(place);
-        }
+      const autocomplete = new (window as any).google.maps.places.Autocomplete(inputRef.current, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'us' }
       });
 
-      const input = placeAutocompleteElement.querySelector('input');
-      if (input) {
-        input.placeholder = placeholder;
-        input.value = value;
-      }
+      autocompleteRef.current = autocomplete;
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place?.formatted_address) {
+          onChange(place.formatted_address);
+        }
+      });
     } catch (error) {
-      console.error('Error initializing place autocomplete:', error);
+      console.error('Error initializing autocomplete:', error);
     }
-  }, [isLoaded, onChange, placeholder, value]);
+  }, [isLoaded, onChange]);
 
   return (
     <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg">
       <div className="pl-2 sm:pl-3">
         <MapPin size={16} className="text-green-600" />
       </div>
-      <div ref={containerRef} className="w-full" data-testid="place-autocomplete-container" />
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="bg-transparent w-full p-2 sm:p-3 outline-none text-xs sm:text-sm text-zinc-900 dark:text-white"
+        data-testid="input-autocomplete-location"
+        autoComplete="off"
+      />
     </div>
   );
 }
