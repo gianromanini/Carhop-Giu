@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 
 declare global {
@@ -7,16 +7,24 @@ declare global {
   }
 }
 
+interface GooglePlacesAutocompleteProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
 function loadGoogleMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.google?.maps) {
+    if (window.google?.maps?.places) {
       resolve();
       return;
     }
 
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
-      existingScript.addEventListener('load', () => resolve());
+      existingScript.addEventListener('load', () => {
+        setTimeout(() => resolve(), 100);
+      });
       return;
     }
 
@@ -30,22 +38,22 @@ function loadGoogleMapsScript(): Promise<void> {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      setTimeout(() => resolve(), 100);
+    };
     script.onerror = () => reject(new Error('Failed to load Google Maps'));
     document.head.appendChild(script);
   });
 }
 
-interface GooglePlacesAutocompleteProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}
-
-export function GooglePlacesAutocomplete({ value, onChange, placeholder = 'Enter pickup address' }: GooglePlacesAutocompleteProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+export function GooglePlacesAutocomplete({
+  value,
+  onChange,
+  placeholder = 'Enter pickup address'
+}: GooglePlacesAutocompleteProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const autocompleteRef = useRef<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     loadGoogleMapsScript()
@@ -54,42 +62,44 @@ export function GooglePlacesAutocomplete({ value, onChange, placeholder = 'Enter
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !window.google) return;
-    if (!inputRef.current || autocompleteRef.current) return;
+    if (!isLoaded || !window.google?.maps?.places || !containerRef.current || autocompleteRef.current) {
+      return;
+    }
 
     try {
-      const autocomplete = new (window as any).google.maps.places.Autocomplete(inputRef.current, {
-        types: ['establishment', 'geocode'],
-        componentRestrictions: { country: 'us' }
-      });
+      const placeAutocompleteElement = new (window as any).google.maps.places.PlaceAutocompleteElement(
+        {
+          componentRestrictions: { country: ['us'] }
+        }
+      );
 
-      autocompleteRef.current = autocomplete;
+      autocompleteRef.current = placeAutocompleteElement;
+      containerRef.current.innerHTML = '';
+      containerRef.current.appendChild(placeAutocompleteElement);
 
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place && place.formatted_address) {
-          onChange(place.formatted_address);
+      placeAutocompleteElement.addEventListener('gmp-placeselect', async () => {
+        const place = placeAutocompleteElement.value?.formattedAddress;
+        if (place) {
+          onChange(place);
         }
       });
+
+      const input = placeAutocompleteElement.querySelector('input');
+      if (input) {
+        input.placeholder = placeholder;
+        input.value = value;
+      }
     } catch (error) {
-      console.error('Error initializing autocomplete:', error);
+      console.error('Error initializing place autocomplete:', error);
     }
-  }, [isLoaded, onChange]);
+  }, [isLoaded, onChange, placeholder, value]);
 
   return (
     <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg">
       <div className="pl-2 sm:pl-3">
         <MapPin size={16} className="text-green-600" />
       </div>
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="bg-transparent w-full p-2 sm:p-3 outline-none text-xs sm:text-sm text-zinc-900 dark:text-white"
-        data-testid="input-autocomplete-location"
-      />
+      <div ref={containerRef} className="w-full" data-testid="place-autocomplete-container" />
     </div>
   );
 }
