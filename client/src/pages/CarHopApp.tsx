@@ -9,7 +9,7 @@ type User = typeof import('@shared/schema').users.$inferSelect;
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
-import { GooglePlacesAutocomplete } from '@/components/GooglePlacesAutocomplete';
+import { LocationAutocomplete } from '@/components/LocationAutocomplete';
 
 const generateTimeOptions = () => {
   const options = [];
@@ -2753,8 +2753,8 @@ export default function CarHopApp() {
                           <MapPin size={14}/> Pickup Locations
                         </label>
                         <div className="mb-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-700">
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a new location using Google Maps:</p>
-                          <GooglePlacesAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a new location:</p>
+                          <LocationAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
                           <Button onClick={addLocation} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -3897,7 +3897,7 @@ export default function CarHopApp() {
                       Pickup Locations
                     </h3>
                     <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                      <GooglePlacesAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                      <LocationAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
                       <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
@@ -6188,7 +6188,7 @@ export default function CarHopApp() {
                     <MapPin size={18} /> Pickup Location
                   </h2>
                   <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">PICKUP ADDRESS</label>
-                  <GooglePlacesAutocomplete 
+                  <LocationAutocomplete 
                     value={pickupAddress}
                     onChange={setPickupAddress}
                     placeholder="Search address (Street, City, etc.)"
