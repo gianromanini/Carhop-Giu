@@ -66,26 +66,38 @@ const formatAddressForDisplay = (fullAddress: string): string => {
   // Want: "40 Lindeman Drive, Trumbull, CT 06611"
   
   const parts = fullAddress.split(',').map(p => p.trim());
-  if (parts.length < 3) return fullAddress; // Return as-is if can't parse
+  if (parts.length < 2) return fullAddress; // Return as-is if can't parse
   
-  const street = parts[0]; // "40 Lindeman Drive"
-  const city = parts[1]; // "Trumbull"
+  // Extract street number and name from first part
+  // Example: "40 Lindeman Drive" -> number: "40", streetName: "Lindeman Drive"
+  const streetParts = parts[0].match(/^(\d+)\s+(.+)$/);
+  const number = streetParts ? streetParts[1] : '';
+  const streetName = streetParts ? streetParts[2] : parts[0];
   
+  // Extract city, state, and zip from remaining parts
+  // Example: "Trumbull CT 06611" -> city: "Trumbull", state: "CT", zip: "06611"
+  const secondPart = parts[1];
+  const cityStateZipMatch = secondPart.match(/^(.+?)\s+([A-Z]{2})\s+(\d{5})$/);
+  
+  let city = '';
   let state = '';
   let zip = '';
   
-  // Look for state and zip in remaining parts (usually "CT 06611" format)
-  const remainingText = parts.slice(2).join(' ');
-  
-  // Match pattern: 2 uppercase letters + optional space + 5 digits
-  const stateZipMatch = remainingText.match(/\b([A-Z]{2})\s+(\d{5})\b/);
-  if (stateZipMatch) {
-    state = stateZipMatch[1];
-    zip = stateZipMatch[2];
+  if (cityStateZipMatch) {
+    city = cityStateZipMatch[1].trim();
+    state = cityStateZipMatch[2];
+    zip = cityStateZipMatch[3];
   }
   
-  // Build formatted address: Street, City, State Zip
-  let formatted = `${street}, ${city}`;
+  // Build formatted address: Number Street, City, State Zip
+  let formatted = '';
+  if (number && streetName) {
+    formatted = `${number} ${streetName}`;
+  } else {
+    formatted = parts[0];
+  }
+  
+  if (city) formatted += `, ${city}`;
   if (state) formatted += `, ${state}`;
   if (zip) formatted += ` ${zip}`;
   
