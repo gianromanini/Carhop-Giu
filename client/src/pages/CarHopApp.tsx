@@ -58,6 +58,15 @@ const convertTo24Hour = (timeStr: string) => {
   }
 };
 
+const detectCardType = (cardNumber: string): string => {
+  const num = cardNumber.replace(/\s/g, '');
+  if (/^4[0-9]{12}(?:[0-9]{3})?$/.test(num)) return 'visa';
+  if (/^5[1-5][0-9]{14}$/.test(num)) return 'mastercard';
+  if (/^3[47][0-9]{13}$/.test(num)) return 'amex';
+  if (/^6(?:011|5[0-9]{2})[0-9]{12}$/.test(num)) return 'discover';
+  return '';
+};
+
 const STATE_ABBREVIATIONS: { [key: string]: string } = {
   'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
   'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
@@ -6966,16 +6975,27 @@ export default function CarHopApp() {
               {/* Credit Card Form */}
               {paymentMethod === 'credit' && (
                 <div className="space-y-4">
-                  <div className="flex gap-3 mb-6">
-                    {['visa', 'mastercard', 'amex', 'discover'].map(type => (
-                      <div 
-                        key={type} 
-                        onClick={() => setPaymentDetails({...paymentDetails, type})} 
-                        className={`cursor-pointer border px-3 py-2 rounded-lg transition-all ${paymentDetails.type === type ? 'border-green-500 bg-green-900/20' : 'border-zinc-700 hover:border-zinc-600'}`}
-                      >
-                        <span className="uppercase font-bold text-xs text-zinc-400">{type}</span>
-                      </div>
-                    ))}
+                  <div>
+                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
+                    <div className="flex gap-3 items-center">
+                      <input 
+                        type="text"
+                        value={paymentDetails.cardNumber} 
+                        onChange={(e: any) => {
+                          const num = e.target.value;
+                          const detectedType = detectCardType(num);
+                          setPaymentDetails({...paymentDetails, cardNumber: num, type: detectedType || paymentDetails.type})} 
+                        } 
+                        placeholder="4242 4242 4242 4242"
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-card-number" 
+                      />
+                      {detectCardType(paymentDetails.cardNumber) && (
+                        <div className="text-xs font-bold uppercase text-green-400 bg-green-900/20 px-3 py-2 rounded-lg border border-green-700 whitespace-nowrap">
+                          {detectCardType(paymentDetails.cardNumber)}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">NAME ON CARD</label>
@@ -6988,20 +7008,9 @@ export default function CarHopApp() {
                       data-testid="input-card-name" 
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
-                    <input 
-                      type="text"
-                      value={paymentDetails.cardNumber} 
-                      onChange={(e: any) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} 
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                      data-testid="input-card-number" 
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY</label>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY (MM/YY)</label>
                       <input 
                         type="text"
                         value={paymentDetails.expiry} 
