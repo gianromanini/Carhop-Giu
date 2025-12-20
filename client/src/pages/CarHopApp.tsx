@@ -458,10 +458,10 @@ interface FormDataType {
   deductible: number;
   availableLocations: string[];
   isDeliveryEnabled: boolean;
-  maxDeliveryDistance: number;
-  minDeliveryFeeMiles: number;
-  minDeliveryFee: number;
-  deliveryPricePerMile: number;
+  maxDeliveryDistance: number | undefined;
+  minDeliveryFeeMiles: number | undefined;
+  minDeliveryFee: number | undefined;
+  deliveryPricePerMile: number | undefined;
   pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean } };
 }
 
@@ -4036,19 +4036,19 @@ export default function CarHopApp() {
                         <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-4 space-y-3">
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Fee Distance (miles)</label>
-                            <input type="number" value={formData.minDeliveryFeeMiles} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: e.target.value === '' ? 0 : parseInt(e.target.value)})} placeholder="e.g., 5" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee-miles" />
+                            <input type="number" value={formData.minDeliveryFeeMiles ?? ''} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: e.target.value === '' ? undefined : parseInt(e.target.value)})} placeholder="e.g., 5" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee-miles" />
                           </div>
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Fee Amount ($)</label>
-                            <input type="number" step="0.01" value={formData.minDeliveryFee} onChange={(e) => setFormData({...formData, minDeliveryFee: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="e.g., 15" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee" />
+                            <input type="number" step="0.01" value={formData.minDeliveryFee ?? ''} onChange={(e) => setFormData({...formData, minDeliveryFee: e.target.value === '' ? undefined : parseFloat(e.target.value)})} placeholder="e.g., 15" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee" />
                           </div>
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Max Distance (miles)</label>
-                            <input type="number" value={formData.maxDeliveryDistance} onChange={(e) => setFormData({...formData, maxDeliveryDistance: e.target.value === '' ? 0 : parseInt(e.target.value)})} placeholder="e.g., 50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-max-delivery-distance" />
+                            <input type="number" value={formData.maxDeliveryDistance ?? ''} onChange={(e) => setFormData({...formData, maxDeliveryDistance: e.target.value === '' ? undefined : parseInt(e.target.value)})} placeholder="e.g., 50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-max-delivery-distance" />
                           </div>
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price per Mile ($)</label>
-                            <input type="number" step="0.01" value={formData.deliveryPricePerMile} onChange={(e) => setFormData({...formData, deliveryPricePerMile: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
+                            <input type="number" step="0.01" value={formData.deliveryPricePerMile ?? ''} onChange={(e) => setFormData({...formData, deliveryPricePerMile: e.target.value === '' ? undefined : parseFloat(e.target.value)})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
                           </div>
                         </div>
                       )}
