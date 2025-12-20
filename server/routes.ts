@@ -423,6 +423,42 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json(updated);
   });
 
+  // ========== DELIVERY APPROVAL ==========
+  app.put("/api/bookings/:id/delivery-approval", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { status } = req.body; // 'approved' or 'rejected'
+    
+    // Update the delivery approval status in details
+    const updatedDetails = {
+      ...booking.details,
+      deliveryApprovalStatus: status,
+    };
+    
+    // Add automatic message to customer
+    const messageText = status === 'approved' 
+      ? 'Great news! Your delivery request has been approved. The vehicle will be delivered to your specified address at the scheduled time.'
+      : 'Your delivery request was declined. Please pick up the vehicle at the location address shown in your booking, or you may contact us to request a different delivery time.';
+    
+    const newMessage = {
+      id: `msg-${Date.now()}`,
+      sender: 'admin' as const,
+      text: messageText,
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    
+    const messages = [...(booking.messages || []), newMessage];
+    
+    const updated = await storage.updateBooking(id, { 
+      details: updatedDetails,
+      messages 
+    });
+    res.json(updated);
+  });
+
   // ========== CHAT MESSAGES ==========
   app.post("/api/bookings/:id/messages", async (req, res) => {
     const id = parseInt(req.params.id);

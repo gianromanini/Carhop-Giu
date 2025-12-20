@@ -68,6 +68,7 @@ export const vehicles = pgTable("vehicles", {
   minDeliveryFeeMiles: integer("min_delivery_fee_miles").default(5),
   minDeliveryFee: real("min_delivery_fee").default(15),
   deliveryPricePerMile: real("delivery_price_per_mile").default(2.50),
+  minDeliveryHours: integer("min_delivery_hours").default(6),
   pricing: jsonb("pricing").$type<{
     taxes: number;
     cleaningFee: number;
@@ -138,6 +139,9 @@ export const bookings = pgTable("bookings", {
     extendedRate?: number;
     manualCharges?: { type: string; amount: number }[];
     deliveryFee?: number;
+    deliveryType?: 'delivery' | 'pickup';
+    deliveryApprovalStatus?: 'pending' | 'approved' | 'rejected';
+    deliveryApprovalMessage?: string;
   }>().notNull(),
   carRentalAgreement: jsonb("car_rental_agreement").$type<{
     accepted: boolean;

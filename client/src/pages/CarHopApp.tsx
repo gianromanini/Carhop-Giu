@@ -416,7 +416,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -471,6 +471,7 @@ interface FormDataType {
   minDeliveryFeeMiles: number | undefined;
   minDeliveryFee: number | undefined;
   deliveryPricePerMile: number | undefined;
+  minDeliveryHours: number | undefined;
   pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean } };
 }
 
@@ -1102,7 +1103,8 @@ export default function CarHopApp() {
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
       deliveryType: selectedDeliveryType,
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType, deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined },
+      messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -1281,6 +1283,18 @@ export default function CarHopApp() {
     await apiRequest('PUT', `/api/bookings/${bookingId}/extension-request/${requestId}`, { status });
     queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
     queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] });
+  };
+
+  const handleDeliveryApproval = async (bookingId: number, status: 'approved' | 'rejected') => {
+    await apiRequest('PUT', `/api/bookings/${bookingId}/delivery-approval`, { status });
+    queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+    toast({
+      title: status === 'approved' ? 'Delivery Approved' : 'Delivery Declined',
+      description: status === 'approved' 
+        ? 'Customer will be notified that delivery is confirmed.' 
+        : 'Customer will be notified to pick up the vehicle at the location.',
+      variant: status === 'approved' ? 'default' : 'destructive'
+    });
   };
 
   const markMessagesAsRead = async (bookingId: number, reader: 'client' | 'admin' | 'host') => {
@@ -1481,6 +1495,7 @@ export default function CarHopApp() {
       minDeliveryFeeMiles: formData.minDeliveryFeeMiles || 5,
       minDeliveryFee: formData.minDeliveryFee || 15,
       deliveryPricePerMile: formData.deliveryPricePerMile || 2.50,
+      minDeliveryHours: formData.minDeliveryHours || 6,
       pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
     };
 
@@ -1524,6 +1539,7 @@ export default function CarHopApp() {
       minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
       minDeliveryFee: car.minDeliveryFee || 15,
       deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
+      minDeliveryHours: car.minDeliveryHours || 6,
       pricing: pricing,
     });
     setPricingStrings({
@@ -2717,7 +2733,12 @@ export default function CarHopApp() {
                                   <input type="number" value={formData.maxDeliveryDistance || 50} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-max-delivery-distance" />
                                 </div>
                               </div>
-                              <p className="text-[9px] sm:text-[10px] text-zinc-500 italic">Ex: $15 up to 5mi, then $2.50/mi extra</p>
+                              <div className="mt-2">
+                                <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Min Hours Advance</label>
+                                <input type="number" value={formData.minDeliveryHours || 6} onChange={(e) => setFormData({...formData, minDeliveryHours: parseInt(e.target.value) || 6})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-min-delivery-hours" />
+                                <p className="text-[8px] text-zinc-500 mt-0.5">Hours needed for delivery approval</p>
+                              </div>
+                              <p className="text-[9px] sm:text-[10px] text-zinc-500 italic mt-2">Ex: $15 up to 5mi, then $2.50/mi extra</p>
                             </div>
                           )}
                         </div>
@@ -3322,6 +3343,11 @@ export default function CarHopApp() {
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
                             )}
+                            {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                              <div className="mt-2 text-[10px] text-orange-400 flex items-center gap-1 font-bold">
+                                <Route size={10}/> Delivery Pending Approval
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -3372,11 +3398,51 @@ export default function CarHopApp() {
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500 font-bold">{(b as any).deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
+                                <p className="text-zinc-500 font-bold">{(b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                                 <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
+                                {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                                  <p className="text-yellow-500 font-bold text-xs">Approval Pending</p>
+                                )}
+                                {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
+                                  <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
+                                )}
+                                {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                                  <p className="text-red-500 font-bold text-xs">Delivery Declined</p>
+                                )}
                               </div>
                             </div>
                           </div>
+
+                          {/* Delivery Approval Section */}
+                          {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                                <Route size={14}/> Delivery Approval Required
+                              </h4>
+                              <p className="text-sm text-zinc-300 mb-3">
+                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay(b.location)}</span>
+                              </p>
+                              <p className="text-xs text-zinc-500 mb-4">
+                                Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
+                              </p>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => handleDeliveryApproval(b.id, 'approved')}
+                                  className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                  data-testid={`button-host-approve-delivery-${b.id}`}
+                                >
+                                  Approve Delivery
+                                </button>
+                                <button 
+                                  onClick={() => handleDeliveryApproval(b.id, 'rejected')}
+                                  className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                  data-testid={`button-host-reject-delivery-${b.id}`}
+                                >
+                                  Decline (Pickup Only)
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Chat Messages */}
                           {(b.messages || []).length > 0 && (
@@ -4231,6 +4297,11 @@ export default function CarHopApp() {
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price per Mile ($)</label>
                             <input type="number" step="0.01" value={formData.deliveryPricePerMile ?? ''} onChange={(e) => setFormData({...formData, deliveryPricePerMile: e.target.value === '' ? undefined : parseFloat(e.target.value)})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
                           </div>
+                          <div className="mb-3 w-full col-span-2">
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Hours Advance for Delivery</label>
+                            <input type="number" value={formData.minDeliveryHours ?? 6} onChange={(e) => setFormData({...formData, minDeliveryHours: e.target.value === '' ? undefined : parseInt(e.target.value)})} placeholder="e.g., 6" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-admin-min-delivery-hours" />
+                            <p className="text-xs text-zinc-500 mt-1">Minimum hours in advance required for delivery approval</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -4807,6 +4878,11 @@ export default function CarHopApp() {
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
                             )}
+                            {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                              <div className="mt-2 text-[10px] text-orange-400 flex items-center gap-1 font-bold">
+                                <Route size={10}/> Delivery Pending Approval
+                              </div>
+                            )}
                             {b.status === 'Completed' && (() => {
                               return (
                                 <>
@@ -4881,11 +4957,51 @@ export default function CarHopApp() {
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500 font-bold">{(b as any).deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
+                                <p className="text-zinc-500 font-bold">{(b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                                 <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
+                                {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                                  <p className="text-yellow-500 font-bold text-xs">Approval Pending</p>
+                                )}
+                                {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
+                                  <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
+                                )}
+                                {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                                  <p className="text-red-500 font-bold text-xs">Delivery Declined</p>
+                                )}
                               </div>
                             </div>
                           </div>
+
+                          {/* Delivery Approval Section */}
+                          {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                                <Route size={14}/> Delivery Approval Required
+                              </h4>
+                              <p className="text-sm text-zinc-300 mb-3">
+                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay(b.location)}</span>
+                              </p>
+                              <p className="text-xs text-zinc-500 mb-4">
+                                Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
+                              </p>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => handleDeliveryApproval(b.id, 'approved')}
+                                  className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                  data-testid={`button-admin-approve-delivery-${b.id}`}
+                                >
+                                  Approve Delivery
+                                </button>
+                                <button 
+                                  onClick={() => handleDeliveryApproval(b.id, 'rejected')}
+                                  className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                  data-testid={`button-admin-reject-delivery-${b.id}`}
+                                >
+                                  Decline (Pickup Only)
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Chat Messages */}
                           {(b.messages || []).length > 0 && (
@@ -6059,10 +6175,25 @@ export default function CarHopApp() {
                       <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
                     </div>
                     <div className="flex-1 w-full">
-                      {(b.details as any).deliveryType === 'delivery' ? (
+                      {(b.details as any)?.deliveryType === 'delivery' ? (
                         <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
                         <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                      )}
+                      {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                        <div className="text-xs font-bold text-yellow-500 mt-1 flex items-center gap-1">
+                          <AlertCircle size={12}/> Delivery Pending Approval
+                        </div>
+                      )}
+                      {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
+                        <div className="text-xs font-bold text-green-500 mt-1 flex items-center gap-1">
+                          <Check size={12}/> Delivery Approved
+                        </div>
+                      )}
+                      {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                        <div className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1">
+                          <X size={12}/> Delivery Declined - Pick up at location
+                        </div>
                       )}
                       <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
