@@ -2868,7 +2868,7 @@ export default function CarHopApp() {
                         </label>
                         <div className="mb-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-700">
                           <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a location for this specific car:</p>
-                          <LocationAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address" />
+                          <LocationAutocomplete value={newLocation} onChange={(val) => setNewLocation(val)} placeholder="Enter pickup address" />
                           <Button onClick={addLocation} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
                         </div>
                         <div className="mb-4">
@@ -4015,7 +4015,7 @@ export default function CarHopApp() {
                       Pickup Locations
                     </h3>
                     <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                      <LocationAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                      <LocationAutocomplete value={newLocation} onChange={(val) => setNewLocation(val)} placeholder="Enter pickup address (e.g. JFK Airport)" />
                       <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
