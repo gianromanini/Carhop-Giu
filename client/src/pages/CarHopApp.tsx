@@ -407,7 +407,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, deliveryPricePerMile: 0, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -459,6 +459,8 @@ interface FormDataType {
   availableLocations: string[];
   isDeliveryEnabled: boolean;
   maxDeliveryDistance: number;
+  minDeliveryFeeMiles: number;
+  minDeliveryFee: number;
   deliveryPricePerMile: number;
   pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean } };
 }
@@ -1373,7 +1375,9 @@ export default function CarHopApp() {
       availableLocations: formData.availableLocations || [],
       isDeliveryEnabled: formData.isDeliveryEnabled || false,
       maxDeliveryDistance: formData.maxDeliveryDistance || 50,
-      deliveryPricePerMile: formData.deliveryPricePerMile || 0,
+      minDeliveryFeeMiles: formData.minDeliveryFeeMiles || 5,
+      minDeliveryFee: formData.minDeliveryFee || 15,
+      deliveryPricePerMile: formData.deliveryPricePerMile || 2.50,
       pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
     };
 
@@ -1414,7 +1418,9 @@ export default function CarHopApp() {
       availableLocations: car.availableLocations || [],
       isDeliveryEnabled: car.isDeliveryEnabled || false,
       maxDeliveryDistance: car.maxDeliveryDistance || 50,
-      deliveryPricePerMile: car.deliveryPricePerMile || 0,
+      minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
+      minDeliveryFee: car.minDeliveryFee || 15,
+      deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
       pricing: pricing,
     });
     setPricingStrings({
@@ -4027,14 +4033,22 @@ export default function CarHopApp() {
                       </div>
                       
                       {formData.isDeliveryEnabled && (
-                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-4">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-4 space-y-3">
+                          <div className="mb-3 w-full">
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Fee Distance (miles)</label>
+                            <input type="number" value={formData.minDeliveryFeeMiles || 5} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: parseInt(e.target.value) || 5})} placeholder="e.g., 5" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee-miles" />
+                          </div>
+                          <div className="mb-3 w-full">
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Fee Amount ($)</label>
+                            <input type="number" step="0.01" value={formData.minDeliveryFee || 15} onChange={(e) => setFormData({...formData, minDeliveryFee: parseFloat(e.target.value) || 15})} placeholder="e.g., 15" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee" />
+                          </div>
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Max Distance (miles)</label>
                             <input type="number" value={formData.maxDeliveryDistance || 50} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 50})} placeholder="e.g., 50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-max-delivery-distance" />
                           </div>
                           <div className="mb-3 w-full">
                             <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price per Mile ($)</label>
-                            <input type="number" step="0.01" value={formData.deliveryPricePerMile || 0} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 0})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
+                            <input type="number" step="0.01" value={formData.deliveryPricePerMile || 2.50} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 2.50})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
                           </div>
                         </div>
                       )}
