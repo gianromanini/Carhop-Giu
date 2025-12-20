@@ -1570,8 +1570,8 @@ export default function CarHopApp() {
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-2">
           <div className="flex items-center gap-1 sm:gap-2 cursor-pointer flex-shrink-0" onClick={() => setView('home')} data-testid="link-home">
-            <div className="bg-green-600 p-1 sm:p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white w-4 h-4 sm:w-5 sm:h-5" /></div>
-            <span className="text-sm sm:text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
+            <div className="bg-green-600 p-1 sm:p-1.5 rounded-lg flex items-center justify-center"><Car className="text-white w-5 h-5 sm:w-6 sm:h-6" /></div>
+            <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
             <div className="hidden lg:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>(475) 449-8622</span></div>
@@ -1605,7 +1605,7 @@ export default function CarHopApp() {
             )}
             <div className="relative">
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
-                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               {mobileActionsMenuOpen && (
                 <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[150px] overflow-hidden">
