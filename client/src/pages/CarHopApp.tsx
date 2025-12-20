@@ -62,43 +62,30 @@ const formatAddressForDisplay = (fullAddress: string): string => {
   if (!fullAddress) return fullAddress;
   
   // Parse address components from Nominatim format
-  // Example: "456, Oak Street, Springfield, Illinois 62701, United States"
-  // Want: "456 Oak Street, Springfield, IL 62701"
+  // Example: "40 Lindeman Drive, Trumbull CT 06611, USA"
+  // Want: "40 Lindeman Drive, Trumbull, CT 06611"
   
   const parts = fullAddress.split(',').map(p => p.trim());
   if (parts.length < 3) return fullAddress; // Return as-is if can't parse
   
-  const street = parts[0]; // "456"
-  const streetName = parts[1]; // "Oak Street"  
-  const city = parts[2]; // "Springfield"
+  const street = parts[0]; // "40 Lindeman Drive"
+  const city = parts[1]; // "Trumbull"
   
   let state = '';
   let zip = '';
   
-  // Extract state and zip from remaining parts
-  for (let i = 3; i < parts.length; i++) {
-    const part = parts[i];
-    // Try to extract state (usually 2 letters at start of part)
-    const stateMatch = part.match(/([A-Z]{2})\s+(\d{5})/);
-    if (stateMatch) {
-      state = stateMatch[1];
-      zip = stateMatch[2];
-      break;
-    }
-    // Alternative: state might be followed by zip on next iteration
-    const justState = part.match(/^([A-Z]{2})$/);
-    if (justState) {
-      state = justState[1];
-    }
-    // Look for zip code (5 digits)
-    const zipMatch = part.match(/(\d{5})/);
-    if (zipMatch && !zip) {
-      zip = zipMatch[1];
-    }
+  // Look for state and zip in remaining parts (usually "CT 06611" format)
+  const remainingText = parts.slice(2).join(' ');
+  
+  // Match pattern: 2 uppercase letters + optional space + 5 digits
+  const stateZipMatch = remainingText.match(/\b([A-Z]{2})\s+(\d{5})\b/);
+  if (stateZipMatch) {
+    state = stateZipMatch[1];
+    zip = stateZipMatch[2];
   }
   
-  // Build formatted address: Street Number Street Name, City, State Zip
-  let formatted = `${street} ${streetName}, ${city}`;
+  // Build formatted address: Street, City, State Zip
+  let formatted = `${street}, ${city}`;
   if (state) formatted += `, ${state}`;
   if (zip) formatted += ` ${zip}`;
   
