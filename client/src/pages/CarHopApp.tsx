@@ -851,8 +851,14 @@ export default function CarHopApp() {
     window.scrollTo(0, 0);
   }, [view]);
 
-  // Recalculate delivery fee when pickup location changes
+  // Recalculate delivery fee when pickup location or delivery type changes
   useEffect(() => {
+    if (selectedDeliveryType === 'pickup') {
+      setDeliveryFee(0);
+      setDeliveryValidationStatus('not-checked');
+      return;
+    }
+    
     if (deliveryAddressBooking && pickupAddress && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
       // Fetch delivery address coordinates from cache or re-fetch
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(deliveryAddressBooking)}&countrycodes=us&limit=1`)
@@ -902,7 +908,7 @@ export default function CarHopApp() {
           }
         });
     }
-  }, [pickupAddress, cart.car?.id]);
+  }, [pickupAddress, selectedDeliveryType, deliveryAddressBooking, cart.car?.id]);
 
   const getMinReturnDate = () => {
     const today = getTodayString();
