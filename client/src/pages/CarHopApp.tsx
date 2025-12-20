@@ -6059,16 +6059,15 @@ export default function CarHopApp() {
                       <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
                     </div>
                     <div className="flex-1 w-full">
-                      <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
-                      {(b as any).deliveryType === 'delivery' && (
-                        <div className="text-xs md:text-sm font-bold text-green-600 mt-1">Delivery: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                      {(b as any).deliveryType === 'delivery' ? (
+                        <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                      ) : (
+                        <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       )}
-                      {(b as any).deliveryType === 'pickup' && (
-                        <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
-                      )}
+                      <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
-                      <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-1">{b.days} Days | {formatAddressForDisplay(b.location)}</p>
+                      <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 text-xs mt-1 underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{b.days} Days | {formatAddressForDisplay(b.location)}</a>
                       
                       {(b.status === 'Active' || b.status === 'Extended') ? (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
