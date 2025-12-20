@@ -846,6 +846,64 @@ export default function CarHopApp() {
     }
   }, [isAuthenticated, authUser]);
 
+  // Auto-scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
+
+  // Recalculate delivery fee when pickup location changes
+  useEffect(() => {
+    if (deliveryAddressBooking && pickupAddress && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
+      // Fetch delivery address coordinates from cache or re-fetch
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(deliveryAddressBooking)}&countrycodes=us&limit=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const deliveryLat = parseFloat(data[0].lat);
+            const deliveryLon = parseFloat(data[0].lon);
+            
+            // Geocodify pickup address to get its coordinates
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickupAddress)}&countrycodes=us&limit=1`)
+              .then(res => res.json())
+              .then(pickupData => {
+                if (pickupData && pickupData.length > 0) {
+                  const pickupLat = parseFloat(pickupData[0].lat);
+                  const pickupLon = parseFloat(pickupData[0].lon);
+                  
+                  // Calculate Haversine distance
+                  const R = 3959;
+                  const dLat = (deliveryLat - pickupLat) * Math.PI / 180;
+                  const dLon = (deliveryLon - pickupLon) * Math.PI / 180;
+                  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(pickupLat * Math.PI / 180) * Math.cos(deliveryLat * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                  const distanceInMiles = R * c;
+                  
+                  const minFee = cart.car.minDeliveryFee;
+                  const minMiles = cart.car.minDeliveryFeeMiles;
+                  const pricePerMile = cart.car.deliveryPricePerMile || 0;
+                  let calculatedFee = 0;
+                  
+                  if (distanceInMiles <= minMiles) {
+                    calculatedFee = minFee;
+                  } else {
+                    const excessMiles = distanceInMiles - minMiles;
+                    calculatedFee = minFee + (excessMiles * pricePerMile);
+                  }
+                  
+                  if (distanceInMiles <= (cart.car.maxDeliveryDistance || 50)) {
+                    setDeliveryFee(calculatedFee);
+                    setDeliveryValidationStatus('valid');
+                  } else {
+                    setDeliveryFee(0);
+                    setDeliveryValidationStatus('invalid');
+                  }
+                }
+              });
+          }
+        });
+    }
+  }, [pickupAddress, cart.car?.id]);
+
   const getMinReturnDate = () => {
     const today = getTodayString();
     const startTime = searchParams.startTime || getNext30MinSlot();
