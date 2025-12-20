@@ -2484,12 +2484,12 @@ export default function CarHopApp() {
                           <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
                           <div className="space-y-2">
                             {settings.locations.map(loc => (
-                              <label key={loc} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <label key={loc} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" title={loc}>
                                 <input type="checkbox" checked={formData.availableLocations?.includes(loc) || false} onChange={(e) => {
                                   const current = formData.availableLocations || [];
                                   setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
                                 }} className="w-4 h-4 accent-green-600" />
-                                {loc}
+                                {formatAddressForDisplay(loc)}
                               </label>
                             ))}
                           </div>
@@ -3895,7 +3895,7 @@ export default function CarHopApp() {
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
                       <div className="space-y-1">
                         {settings.locations.map(loc => (
-                          <Checkbox key={loc} label={loc} checked={formData.availableLocations?.includes(loc)} onChange={(e: any) => {
+                          <Checkbox key={loc} label={formatAddressForDisplay(loc)} checked={formData.availableLocations?.includes(loc)} onChange={(e: any) => {
                             const current = formData.availableLocations || [];
                             setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
                           }} />
@@ -6321,7 +6321,7 @@ export default function CarHopApp() {
                               <Check size={20} className="text-green-400 mt-0.5 flex-shrink-0" />
                               <div className="flex-1">
                                 <p className="text-sm font-bold text-green-400 mb-2">Delivery Available</p>
-                                <p className="text-xs text-green-300 mb-3">{deliveryAddressBooking}</p>
+                                <p className="text-xs text-green-300 mb-3">{formatAddressForDisplay(deliveryAddressBooking)}</p>
                                 <div className="bg-green-900/50 rounded p-2">
                                   <p className="text-xs text-green-300">
                                     Delivery Fee: <span className="font-bold text-green-400">${deliveryFee.toFixed(2)}</span>
@@ -6372,7 +6372,7 @@ export default function CarHopApp() {
                     />
                     {pickupAddress && (
                       <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
-                        <Check size={12} /> Address confirmed: {pickupAddress}
+                        <Check size={12} /> Address confirmed: {formatAddressForDisplay(pickupAddress)}
                       </p>
                     )}
                   </div>
