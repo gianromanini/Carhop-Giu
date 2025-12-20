@@ -65,43 +65,21 @@ const formatAddressForDisplay = (fullAddress: string): string => {
   // Example: "40 Lindeman Drive, Trumbull CT 06611, USA"
   // Want: "40 Lindeman Drive, Trumbull, CT 06611"
   
-  const parts = fullAddress.split(',').map(p => p.trim());
-  if (parts.length < 2) return fullAddress; // Return as-is if can't parse
+  // Use a comprehensive regex to extract all 5 components at once
+  const match = fullAddress.match(/^(\d+)\s+(.+?),\s+(.+?)\s+([A-Z]{2})\s+(\d{5})/);
   
-  // Extract street number and name from first part
-  // Example: "40 Lindeman Drive" -> number: "40", streetName: "Lindeman Drive"
-  const streetParts = parts[0].match(/^(\d+)\s+(.+)$/);
-  const number = streetParts ? streetParts[1] : '';
-  const streetName = streetParts ? streetParts[2] : parts[0];
-  
-  // Extract city, state, and zip from remaining parts
-  // Example: "Trumbull CT 06611" -> city: "Trumbull", state: "CT", zip: "06611"
-  const secondPart = parts[1];
-  const cityStateZipMatch = secondPart.match(/^(.+?)\s+([A-Z]{2})\s+(\d{5})$/);
-  
-  let city = '';
-  let state = '';
-  let zip = '';
-  
-  if (cityStateZipMatch) {
-    city = cityStateZipMatch[1].trim();
-    state = cityStateZipMatch[2];
-    zip = cityStateZipMatch[3];
+  if (match) {
+    const number = match[1];
+    const streetName = match[2];
+    const city = match[3];
+    const state = match[4];
+    const zip = match[5];
+    
+    return `${number} ${streetName}, ${city}, ${state} ${zip}`;
   }
   
-  // Build formatted address: Number Street, City, State Zip
-  let formatted = '';
-  if (number && streetName) {
-    formatted = `${number} ${streetName}`;
-  } else {
-    formatted = parts[0];
-  }
-  
-  if (city) formatted += `, ${city}`;
-  if (state) formatted += `, ${state}`;
-  if (zip) formatted += ` ${zip}`;
-  
-  return formatted;
+  // Fallback to original if regex doesn't match
+  return fullAddress;
 };
 
 const addDaysToDate = (dateStr: string, days: number) => {
