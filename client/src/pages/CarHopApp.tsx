@@ -1450,8 +1450,11 @@ export default function CarHopApp() {
   };
 
   const addLocation = () => { 
-    if (newLocation.trim()) { 
-      updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, newLocation.trim()] });
+    if (newLocation.trim() && editingHostVehicle) { 
+      const current = editingHostVehicle.availableLocations || [];
+      if (!current.includes(newLocation.trim())) {
+        setEditingHostVehicle({...editingHostVehicle, availableLocations: [...current, newLocation.trim()]});
+      }
       setNewLocation(''); 
     } 
   };
@@ -2861,32 +2864,36 @@ export default function CarHopApp() {
                       {/* Pickup Locations */}
                       <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 rounded-lg">
                         <label className="block text-xs font-bold text-zinc-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
-                          <MapPin size={14}/> Pickup Locations
+                          <MapPin size={14}/> Pickup Locations for This Car
                         </label>
                         <div className="mb-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-700">
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a new location:</p>
-                          <LocationAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a location for this specific car:</p>
+                          <LocationAutocomplete value={newLocation} onChange={setNewLocation} placeholder="Enter pickup address" />
                           <Button onClick={addLocation} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          {(settings?.locations || ['JFK Airport', 'Downtown Center', 'Fairfield County']).map((loc) => (
-                            <label key={loc} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                checked={(editingHostVehicle.availableLocations || []).includes(loc)}
-                                onChange={(e) => {
-                                  const current = editingHostVehicle.availableLocations || [];
-                                  if (e.target.checked) {
-                                    setEditingHostVehicle({...editingHostVehicle, availableLocations: [...current, loc]});
-                                  } else {
-                                    setEditingHostVehicle({...editingHostVehicle, availableLocations: current.filter(l => l !== loc)});
-                                  }
-                                }}
-                                className="w-4 h-4 accent-blue-600" 
-                              />
-                              {loc}
-                            </label>
-                          ))}
+                        <div className="mb-4">
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2 font-semibold">Locations assigned to this car:</p>
+                          {(editingHostVehicle.availableLocations || []).length > 0 ? (
+                            <div className="space-y-2">
+                              {(editingHostVehicle.availableLocations || []).map((loc) => (
+                                <div key={loc} className="flex items-center justify-between p-2 bg-white dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-700">
+                                  <span className="text-sm text-zinc-700 dark:text-zinc-300">{loc}</span>
+                                  <button
+                                    onClick={() => {
+                                      const current = editingHostVehicle.availableLocations || [];
+                                      setEditingHostVehicle({...editingHostVehicle, availableLocations: current.filter(l => l !== loc)});
+                                    }}
+                                    className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                    data-testid={`button-remove-location-${loc}`}
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-zinc-400 italic">No locations added yet</p>
+                          )}
                         </div>
                         <Button 
                           variant="primary" 
