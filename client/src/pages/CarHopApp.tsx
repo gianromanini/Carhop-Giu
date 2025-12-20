@@ -6327,159 +6327,153 @@ export default function CarHopApp() {
               {/* Left Column - Forms */}
               <div className="lg:col-span-2 space-y-6">
                 
-                {/* Delivery Type Selector - FIRST SECTION */}
+                {/* Car Method - ALL IN ONE BLOCK */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                   <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
-                    <MapPin size={18} /> Delivery Method
+                    <MapPin size={18} /> Car Method
                   </h2>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-3 cursor-pointer flex-1 p-4 border border-zinc-700 rounded-lg hover:border-green-500 transition-colors" style={{borderColor: selectedDeliveryType === 'delivery' ? '#22c55e' : undefined}}>
-                        <input 
-                          type="radio" 
-                          name="deliveryType" 
-                          value="delivery" 
-                          checked={selectedDeliveryType === 'delivery'}
-                          onChange={() => setSelectedDeliveryType('delivery')}
-                          className="w-5 h-5 cursor-pointer"
-                          data-testid="radio-delivery"
-                        />
-                        <div>
-                          <p className="text-sm font-bold text-white">Delivery to Your Address</p>
-                          <p className="text-xs text-zinc-400">We'll bring the car to you</p>
-                        </div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-3 cursor-pointer flex-1 p-4 border border-zinc-700 rounded-lg hover:border-green-500 transition-colors" style={{borderColor: selectedDeliveryType === 'pickup' ? '#22c55e' : undefined}}>
-                        <input 
-                          type="radio" 
-                          name="deliveryType" 
-                          value="pickup" 
-                          checked={selectedDeliveryType === 'pickup'}
-                          onChange={() => setSelectedDeliveryType('pickup')}
-                          className="w-5 h-5 cursor-pointer"
-                          data-testid="radio-pickup"
-                        />
-                        <div>
-                          <p className="text-sm font-bold text-white">Pickup at Our Location</p>
-                          <p className="text-xs text-zinc-400">Pick up the car yourself</p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Delivery Address Section - Only if Delivery Selected */}
-                {selectedDeliveryType === 'delivery' && (
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                    <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
-                      <MapPin size={18} /> Your Delivery Address
-                    </h2>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">ENTER YOUR DELIVERY ADDRESS *</label>
-                        <LocationAutocomplete 
-                          value={deliveryAddressBooking}
-                          onChange={(val) => {
-                            setDeliveryAddressBooking(val);
-                            if (val && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
-                              const estimatedMiles = Math.random() * (cart.car.maxDeliveryDistance || 50);
-                              const minFee = cart.car.minDeliveryFee;
-                              const minMiles = cart.car.minDeliveryFeeMiles;
-                              const pricePerMile = cart.car.deliveryPricePerMile || 0;
-                              let calculatedFee = 0;
-                              
-                              if (estimatedMiles <= minMiles) {
-                                calculatedFee = minFee;
-                              } else {
-                                const excessMiles = estimatedMiles - minMiles;
-                                calculatedFee = minFee + (excessMiles * pricePerMile);
-                              }
-                              
-                              if (estimatedMiles <= (cart.car.maxDeliveryDistance || 50)) {
-                                setDeliveryFee(calculatedFee);
-                                setDeliveryValidationStatus('valid');
-                              } else {
-                                setDeliveryFee(0);
-                                setDeliveryValidationStatus('invalid');
-                              }
-                            }
-                          }}
-                          placeholder="Enter the address where you want the car delivered"
-                        />
+                    {/* Delivery Type Selector */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-3 cursor-pointer flex-1 p-4 border border-zinc-700 rounded-lg hover:border-green-500 transition-colors" style={{borderColor: selectedDeliveryType === 'delivery' ? '#22c55e' : undefined}}>
+                          <input 
+                            type="radio" 
+                            name="deliveryType" 
+                            value="delivery" 
+                            checked={selectedDeliveryType === 'delivery'}
+                            onChange={() => setSelectedDeliveryType('delivery')}
+                            className="w-5 h-5 cursor-pointer"
+                            data-testid="radio-delivery"
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-white">Delivery to Your Address</p>
+                            <p className="text-xs text-zinc-400">We'll bring the car to you</p>
+                          </div>
+                        </label>
                       </div>
 
-                      {deliveryAddressBooking && (
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-3 cursor-pointer flex-1 p-4 border border-zinc-700 rounded-lg hover:border-green-500 transition-colors" style={{borderColor: selectedDeliveryType === 'pickup' ? '#22c55e' : undefined}}>
+                          <input 
+                            type="radio" 
+                            name="deliveryType" 
+                            value="pickup" 
+                            checked={selectedDeliveryType === 'pickup'}
+                            onChange={() => setSelectedDeliveryType('pickup')}
+                            className="w-5 h-5 cursor-pointer"
+                            data-testid="radio-pickup"
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-white">Pickup at Our Location</p>
+                            <p className="text-xs text-zinc-400">Pick up the car yourself</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Delivery Address Section - Only if Delivery Selected */}
+                    {selectedDeliveryType === 'delivery' && (
+                      <div className="pt-4 border-t border-zinc-700 space-y-3">
                         <div>
-                          {deliveryValidationStatus === 'valid' ? (
-                            <div className="bg-green-900/30 border border-green-800 rounded-lg p-4">
-                              <div className="flex items-start gap-3">
-                                <Check size={20} className="text-green-400 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <p className="text-sm font-bold text-green-400 mb-2">Delivery Available</p>
-                                  <p className="text-xs text-green-300 mb-3">{formatAddressForDisplay(deliveryAddressBooking)}</p>
-                                  <div className="bg-green-900/50 rounded p-2">
-                                    <p className="text-xs text-green-300">
-                                      Delivery Fee: <span className="font-bold text-green-400">${deliveryFee.toFixed(2)}</span>
-                                    </p>
-                                    <p className="text-xs text-green-300 mt-1">
-                                      ({cart.car?.minDeliveryFee && `$${cart.car.minDeliveryFee.toFixed(2)} up to ${cart.car.minDeliveryFeeMiles} miles, `}${cart.car?.deliveryPricePerMile && `$${cart.car.deliveryPricePerMile.toFixed(2)}/mile after`}, Max: {cart.car?.maxDeliveryDistance} miles)
-                                    </p>
+                          <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">ENTER YOUR DELIVERY ADDRESS *</label>
+                          <LocationAutocomplete 
+                            value={deliveryAddressBooking}
+                            onChange={(val) => {
+                              setDeliveryAddressBooking(val);
+                              if (val && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
+                                const estimatedMiles = Math.random() * (cart.car.maxDeliveryDistance || 50);
+                                const minFee = cart.car.minDeliveryFee;
+                                const minMiles = cart.car.minDeliveryFeeMiles;
+                                const pricePerMile = cart.car.deliveryPricePerMile || 0;
+                                let calculatedFee = 0;
+                                
+                                if (estimatedMiles <= minMiles) {
+                                  calculatedFee = minFee;
+                                } else {
+                                  const excessMiles = estimatedMiles - minMiles;
+                                  calculatedFee = minFee + (excessMiles * pricePerMile);
+                                }
+                                
+                                if (estimatedMiles <= (cart.car.maxDeliveryDistance || 50)) {
+                                  setDeliveryFee(calculatedFee);
+                                  setDeliveryValidationStatus('valid');
+                                } else {
+                                  setDeliveryFee(0);
+                                  setDeliveryValidationStatus('invalid');
+                                }
+                              }
+                            }}
+                            placeholder="Enter the address where you want the car delivered"
+                          />
+                        </div>
+
+                        {deliveryAddressBooking && (
+                          <div>
+                            {deliveryValidationStatus === 'valid' ? (
+                              <div className="bg-green-900/30 border border-green-800 rounded-lg p-4">
+                                <div className="flex items-start gap-3">
+                                  <Check size={20} className="text-green-400 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-green-400 mb-2">Delivery Available</p>
+                                    <p className="text-xs text-green-300 mb-3">{formatAddressForDisplay(deliveryAddressBooking)}</p>
+                                    <div className="bg-green-900/50 rounded p-2">
+                                      <p className="text-xs text-green-300">
+                                        Delivery Fee: <span className="font-bold text-green-400">${deliveryFee.toFixed(2)}</span>
+                                      </p>
+                                      <p className="text-xs text-green-300 mt-1">
+                                        ({cart.car?.minDeliveryFee && `$${cart.car.minDeliveryFee.toFixed(2)} up to ${cart.car.minDeliveryFeeMiles} miles, `}${cart.car?.deliveryPricePerMile && `$${cart.car.deliveryPricePerMile.toFixed(2)}/mile after`}, Max: {cart.car?.maxDeliveryDistance} miles)
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ) : (
-                            <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
-                              <div className="flex items-start gap-3">
-                                <AlertCircle size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <p className="text-sm font-bold text-red-400 mb-2">Delivery Not Available</p>
-                                  <p className="text-xs text-red-300">Your address is beyond our maximum delivery distance ({cart.car?.maxDeliveryDistance} miles). Please choose a closer address or select Pickup instead.</p>
+                            ) : (
+                              <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
+                                <div className="flex items-start gap-3">
+                                  <AlertCircle size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-red-400 mb-2">Delivery Not Available</p>
+                                    <p className="text-xs text-red-300">Your address is beyond our maximum delivery distance ({cart.car?.maxDeliveryDistance} miles). Please choose a closer address or select Pickup instead.</p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Pickup Location Selection - Show when delivery is valid OR when pickup is selected */}
-                {(deliveryValidationStatus === 'valid' || selectedDeliveryType === 'pickup') && (
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                    <h2 className="flex items-center gap-2 text-green-500 font-semibold mb-6">
-                      <MapPin size={18} /> Available Pickup Locations
-                    </h2>
-                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">SELECT YOUR PICKUP LOCATION *</label>
-                    {cart.car?.availableLocations && cart.car.availableLocations.length > 0 ? (
-                      <div className="space-y-2">
-                        {cart.car.availableLocations.map((location) => (
-                          <label key={location} className="flex items-center gap-3 cursor-pointer p-3 border border-zinc-700 rounded-lg hover:border-green-500 hover:bg-zinc-800/50 transition-colors" style={{borderColor: pickupAddress === location ? '#22c55e' : undefined, backgroundColor: pickupAddress === location ? 'rgba(34, 197, 94, 0.1)' : undefined}}>
-                            <input 
-                              type="radio" 
-                              name="pickupLocation" 
-                              value={location} 
-                              checked={pickupAddress === location}
-                              onChange={() => setPickupAddress(location)}
-                              className="w-5 h-5 cursor-pointer"
-                              data-testid={`radio-pickup-${location}`}
-                            />
-                            <span className="text-sm text-white flex-1">{formatAddressForDisplay(location)}</span>
-                            {pickupAddress === location && <Check size={16} className="text-green-400 flex-shrink-0" />}
-                          </label>
-                        ))}
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-xs text-zinc-400">No pickup locations available</p>
+                    )}
+
+                    {/* Pickup Location Selection - Show when delivery is valid OR when pickup is selected */}
+                    {(deliveryValidationStatus === 'valid' || selectedDeliveryType === 'pickup') && (
+                      <div className="pt-4 border-t border-zinc-700 space-y-3">
+                        <label className="block text-xs text-zinc-500 uppercase tracking-wider">SELECT YOUR PICKUP LOCATION *</label>
+                        {cart.car?.availableLocations && cart.car.availableLocations.length > 0 ? (
+                          <div className="space-y-2">
+                            {cart.car.availableLocations.map((location) => (
+                              <label key={location} className="flex items-center gap-3 cursor-pointer p-3 border border-zinc-700 rounded-lg hover:border-green-500 hover:bg-zinc-800/50 transition-colors" style={{borderColor: pickupAddress === location ? '#22c55e' : undefined, backgroundColor: pickupAddress === location ? 'rgba(34, 197, 94, 0.1)' : undefined}}>
+                                <input 
+                                  type="checkbox" 
+                                  name="pickupLocation" 
+                                  value={location} 
+                                  checked={pickupAddress === location}
+                                  onChange={() => setPickupAddress(location)}
+                                  className="w-5 h-5 cursor-pointer"
+                                  data-testid={`checkbox-pickup-${location}`}
+                                />
+                                <span className="text-sm text-white flex-1">{formatAddressForDisplay(location)}</span>
+                                {pickupAddress === location && <Check size={16} className="text-green-400 flex-shrink-0" />}
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-400">No pickup locations available</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
+                </div>
 
                 {/* Rental Period Section */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
