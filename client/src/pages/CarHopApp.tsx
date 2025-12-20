@@ -6339,9 +6339,20 @@ export default function CarHopApp() {
                         value={deliveryAddressBooking}
                         onChange={(val) => {
                           setDeliveryAddressBooking(val);
-                          if (val && cart.car?.deliveryPricePerMile && cart.car?.deliveryPricePerMile > 0) {
+                          if (val && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
                             const estimatedMiles = Math.random() * (cart.car.maxDeliveryDistance || 50);
-                            const calculatedFee = estimatedMiles * cart.car.deliveryPricePerMile;
+                            const minFee = cart.car.minDeliveryFee;
+                            const minMiles = cart.car.minDeliveryFeeMiles;
+                            const pricePerMile = cart.car.deliveryPricePerMile || 0;
+                            let calculatedFee = 0;
+                            
+                            if (estimatedMiles <= minMiles) {
+                              calculatedFee = minFee;
+                            } else {
+                              const excessMiles = estimatedMiles - minMiles;
+                              calculatedFee = minFee + (excessMiles * pricePerMile);
+                            }
+                            
                             if (estimatedMiles <= (cart.car.maxDeliveryDistance || 50)) {
                               setDeliveryFee(calculatedFee);
                               setDeliveryValidationStatus('valid');
@@ -6369,7 +6380,7 @@ export default function CarHopApp() {
                                     Delivery Fee: <span className="font-bold text-green-400">${deliveryFee.toFixed(2)}</span>
                                   </p>
                                   <p className="text-xs text-green-300 mt-1">
-                                    (${cart.car?.deliveryPricePerMile}/mile, Max: {cart.car?.maxDeliveryDistance} miles)
+                                    ({cart.car?.minDeliveryFee && `$${cart.car.minDeliveryFee.toFixed(2)} up to ${cart.car.minDeliveryFeeMiles} miles, `}${cart.car?.deliveryPricePerMile && `$${cart.car.deliveryPricePerMile.toFixed(2)}/mile after`}, Max: {cart.car?.maxDeliveryDistance} miles)
                                   </p>
                                 </div>
                               </div>
