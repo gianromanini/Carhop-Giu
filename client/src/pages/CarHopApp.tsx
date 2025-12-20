@@ -3715,14 +3715,14 @@ export default function CarHopApp() {
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
                                 const deliveryFee = (b.details as any).deliveryFee || 0;
-                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee;
+                                const discount = b.details.discount || 0;
+                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
                                 const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
                                 const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                                const discount = b.details.discount || 0;
                                 
                                 return (
                                   <>
@@ -3753,6 +3753,12 @@ export default function CarHopApp() {
                                           <div className="flex justify-between text-zinc-300 text-xs">
                                             <span>Delivery Fee Service</span>
                                             <span>+${deliveryFee.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {discount > 0 && (
+                                          <div className="flex justify-between text-green-400 text-xs">
+                                            <span>Discount Applied</span>
+                                            <span>-${discount.toFixed(2)}</span>
                                           </div>
                                         )}
                                       </div>
@@ -5263,15 +5269,15 @@ export default function CarHopApp() {
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
                                 const deliveryFee = (b.details as any).deliveryFee || 0;
-                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee;
+                                const discount = b.details.discount || 0;
+                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
                                 const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
                                 const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                                const discount = b.details.discount || 0;
-                                const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                                const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal;
                                 const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const additionalCharges = additionalChargesBeforeTax + additionalTax;
                                 
@@ -5305,6 +5311,12 @@ export default function CarHopApp() {
                                           <div className="flex justify-between text-zinc-300 text-xs">
                                             <span>Delivery Fee Service</span>
                                             <span>+${deliveryFee.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {discount > 0 && (
+                                          <div className="flex justify-between text-green-400 text-xs">
+                                            <span>Discount Applied</span>
+                                            <span>-${discount.toFixed(2)}</span>
                                           </div>
                                         )}
                                       </div>

@@ -462,8 +462,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Calculate delivery fee discount
       const deliveryFee = (booking.details as any)?.deliveryFee || 0;
       if (deliveryFee > 0) {
-        // Apply discount
-        updateData.discount = ((booking.discount || 0) + deliveryFee);
+        // Apply discount in details
+        updateData.details = {
+          ...updatedDetails,
+          discount: ((booking.details?.discount || 0) + deliveryFee)
+        };
       }
     }
     
