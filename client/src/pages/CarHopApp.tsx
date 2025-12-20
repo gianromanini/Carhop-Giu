@@ -2417,28 +2417,28 @@ export default function CarHopApp() {
       )}
 
       {view === 'host-dashboard' && currentHost && (
-        <div className="max-w-7xl mx-auto px-6 py-24">
-          <div className="flex items-start justify-between mb-8 gap-2">
-            <div>
-              <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-host-title">Host Dashboard</h1>
-              <p className="text-xs text-zinc-500">Welcome, {currentHost.firstName} {currentHost.lastName}</p>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-20 sm:py-24">
+          <div className="flex items-start justify-between mb-6 sm:mb-8 gap-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white truncate" data-testid="text-host-title">Host Dashboard</h1>
+              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">Welcome, {currentHost.firstName} {currentHost.lastName}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-host-theme">
                 {darkMode ? <Sun size={14} /> : <Moon size={14} />}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => { setCurrentHost(null); setView('home'); }} data-testid="button-host-logout">
-                <LogOut size={14} className="mr-1" /> Logout
+              <Button variant="ghost" size="sm" className="text-[10px] sm:text-xs px-2 sm:px-3" onClick={() => { setCurrentHost(null); setView('home'); }} data-testid="button-host-logout">
+                <LogOut size={12} className="sm:mr-1" /> <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
           
-          <div className="flex justify-center gap-2 mb-6 overflow-x-auto pb-2">
+          <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
             {['fleet', 'bookings', 'earnings'].map(tab => (
-              <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
-                {tab === 'fleet' && <Car size={18} />}
-                {tab === 'bookings' && <Briefcase size={18} />}
-                {tab === 'earnings' && <TrendingUp size={18} />}
+              <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
+                {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 <span>{tab}</span>
               </button>
             ))}
@@ -2447,11 +2447,11 @@ export default function CarHopApp() {
           {hostTab === 'fleet' && (() => {
             const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
             return (
-              <div className="space-y-6">
-                <div className="grid lg:grid-cols-3 gap-6">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                   <div className="lg:col-span-1">
-                    <Card className="p-6">
-                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
+                    <Card className="p-3 sm:p-6">
+                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
                       <form onSubmit={(e) => {
                         e.preventDefault();
                         const vehicleData = {
@@ -2462,20 +2462,20 @@ export default function CarHopApp() {
                           deductible: formData.deductible || 1000
                         };
                         createVehicleMutation.mutate(vehicleData);
-                      }} className="space-y-4">
+                      }} className="space-y-3 sm:space-y-4">
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Car Model *</label>
-                          <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. Tesla Model 3" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-model" />
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Car Model *</label>
+                          <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. Tesla Model 3" required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-model" />
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                           <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Daily Rate ($) *</label>
-                            <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="e.g. 45" required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-price" />
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Daily Rate ($) *</label>
+                            <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="e.g. 45" required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-price" />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
-                            <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
+                            <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm">
                               <option value="Gasoline">Gasoline</option>
                               <option value="Diesel">Diesel</option>
                               <option value="Electric">Electric</option>
@@ -2484,10 +2484,10 @@ export default function CarHopApp() {
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                           <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Seats</label>
-                            <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Seats</label>
+                            <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: parseInt(e.target.value)})} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm">
                               <option value="2">2</option>
                               <option value="4">4</option>
                               <option value="5">5</option>
@@ -2496,8 +2496,8 @@ export default function CarHopApp() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
-                            <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
+                            <select value={formData.transmission} onChange={(e) => setFormData({...formData, transmission: e.target.value})} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm">
                               <option value="Automatic">Automatic</option>
                               <option value="Manual">Manual</option>
                             </select>
@@ -2505,99 +2505,99 @@ export default function CarHopApp() {
                         </div>
                         
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
-                          <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="AWD">AWD (All-Wheel Drive)</option>
-                            <option value="FWD">FWD (Front-Wheel Drive)</option>
-                            <option value="RWD">RWD (Rear-Wheel Drive)</option>
-                            <option value="4WD">4WD (Four-Wheel Drive)</option>
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
+                          <select value={formData.driveType} onChange={(e) => setFormData({...formData, driveType: e.target.value})} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm">
+                            <option value="AWD">AWD</option>
+                            <option value="FWD">FWD</option>
+                            <option value="RWD">RWD</option>
+                            <option value="4WD">4WD</option>
                           </select>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                           <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Consumption / Range</label>
-                            <input type="text" value={formData.consumption} onChange={(e) => setFormData({...formData, consumption: e.target.value})} placeholder="e.g. 300mi range" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-consumption" />
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Consumption</label>
+                            <input type="text" value={formData.consumption} onChange={(e) => setFormData({...formData, consumption: e.target.value})} placeholder="e.g. 300mi" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-consumption" />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
-                            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                              <option value="">Select Category</option>
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
+                            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm">
+                              <option value="">Select</option>
                               <option value="SEDAN">SEDAN</option>
                               <option value="SUV">SUV</option>
-                              <option value="HATCHBACK">HATCHBACK</option>
+                              <option value="HATCHBACK">HATCH</option>
                               <option value="MINIVAN">MINIVAN</option>
                             </select>
                           </div>
                         </div>
                         
-                        <div className="border-t pt-4">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Features</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.isAWD} onChange={(e) => setFormData({...formData, isAWD: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Features</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.isAWD} onChange={(e) => setFormData({...formData, isAWD: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               AWD / 4x4
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasCarPlay} onChange={(e) => setFormData({...formData, hasCarPlay: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                              CarPlay / Auto
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasCarPlay} onChange={(e) => setFormData({...formData, hasCarPlay: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
+                              CarPlay
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasBluetooth} onChange={(e) => setFormData({...formData, hasBluetooth: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasBluetooth} onChange={(e) => setFormData({...formData, hasBluetooth: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               Bluetooth
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasReverseCamera} onChange={(e) => setFormData({...formData, hasReverseCamera: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                              Reverse Camera
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasReverseCamera} onChange={(e) => setFormData({...formData, hasReverseCamera: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
+                              Camera
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasHeatedSeats} onChange={(e) => setFormData({...formData, hasHeatedSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasHeatedSeats} onChange={(e) => setFormData({...formData, hasHeatedSeats: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               Heated Seats
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasHeatedSteering} onChange={(e) => setFormData({...formData, hasHeatedSteering: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                              Heated Steering
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasHeatedSteering} onChange={(e) => setFormData({...formData, hasHeatedSteering: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
+                              Heated Wheel
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasElectricSeats} onChange={(e) => setFormData({...formData, hasElectricSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasElectricSeats} onChange={(e) => setFormData({...formData, hasElectricSeats: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               Electric Seats
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasPaddleShifters} onChange={(e) => setFormData({...formData, hasPaddleShifters: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasPaddleShifters} onChange={(e) => setFormData({...formData, hasPaddleShifters: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               Paddle Shifters
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasKeylessEntry} onChange={(e) => setFormData({...formData, hasKeylessEntry: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasKeylessEntry} onChange={(e) => setFormData({...formData, hasKeylessEntry: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               Keyless Entry
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasBlindSpotWarning} onChange={(e) => setFormData({...formData, hasBlindSpotWarning: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                              Blind Spot Warning
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasBlindSpotWarning} onChange={(e) => setFormData({...formData, hasBlindSpotWarning: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
+                              Blind Spot
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasDriveAssist} onChange={(e) => setFormData({...formData, hasDriveAssist: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasDriveAssist} onChange={(e) => setFormData({...formData, hasDriveAssist: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               Drive Assist
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input type="checkbox" checked={formData.hasUSBCharger} onChange={(e) => setFormData({...formData, hasUSBCharger: e.target.checked})} className="w-4 h-4 accent-green-600" />
+                            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input type="checkbox" checked={formData.hasUSBCharger} onChange={(e) => setFormData({...formData, hasUSBCharger: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
                               USB Charger
                             </label>
                           </div>
                         </div>
                         
-                        <div className="border-t pt-4">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vehicle Photos ({formData.images.filter(img => img.trim()).length} photos)</label>
-                          <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 sm:mb-2 uppercase tracking-wider">Photos ({formData.images.filter(img => img.trim()).length})</label>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
                             {formData.images.filter(img => img.trim()).map((img, idx) => (
                               <div key={idx} className="relative group">
-                                <img src={img} alt={`Photo ${idx+1}`} className="w-16 h-16 object-cover rounded border border-zinc-300 dark:border-zinc-700" />
+                                <img src={img} alt={`Photo ${idx+1}`} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded border border-zinc-300 dark:border-zinc-700" />
                                 <button type="button" onClick={() => setFormData({...formData, images: formData.images.filter((_, i) => i !== idx)})} className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                   <X size={10}/>
                                 </button>
                               </div>
                             ))}
                           </div>
-                          <div className="flex gap-2 mb-2">
+                          <div className="flex gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                             <input type="file" accept="image/*" onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
@@ -2610,9 +2610,9 @@ export default function CarHopApp() {
                                 };
                                 reader.readAsDataURL(file);
                               }
-                            }} className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-vehicle-photo-upload" />
+                            }} className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] sm:text-sm" data-testid="input-host-vehicle-photo-upload" />
                           </div>
-                          <input type="text" placeholder="Or paste image URL and press Enter..." className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" onKeyDown={(e) => {
+                          <input type="text" placeholder="Paste URL + Enter" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] sm:text-sm" onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
                               const input = e.target as HTMLInputElement;
@@ -2625,36 +2625,71 @@ export default function CarHopApp() {
                           }} data-testid="input-host-vehicle-image-url" />
                         </div>
                         
-                        <div className="border-t pt-4">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
-                          <div className="space-y-2">
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Locations</label>
+                          <div className="space-y-1.5 sm:space-y-2 max-h-24 overflow-y-auto">
                             {settings.locations.map(loc => (
-                              <label key={loc} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" title={loc}>
+                              <label key={loc} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" title={loc}>
                                 <input type="checkbox" checked={formData.availableLocations?.includes(loc) || false} onChange={(e) => {
                                   const current = formData.availableLocations || [];
                                   setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
-                                }} className="w-4 h-4 accent-green-600" />
-                                {formatAddressForDisplay(loc)}
+                                }} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
+                                <span className="truncate">{formatAddressForDisplay(loc)}</span>
                               </label>
                             ))}
                           </div>
                         </div>
 
-                        <div className="border-t pt-4">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
-                          <div className="space-y-2">
-                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 750})}>
-                              <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: 750})} className="w-4 h-4" />
-                              <div className="ml-3">
-                                <p className="text-sm font-bold text-zinc-900 dark:text-white">15% Commission</p>
-                                <p className="text-xs text-zinc-500">$750 Deductible</p>
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider flex items-center gap-1.5">
+                            <Route size={12} className="text-blue-500"/> Delivery Settings
+                          </label>
+                          <label className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer mb-3">
+                            <input type="checkbox" checked={formData.isDeliveryEnabled || false} onChange={(e) => setFormData({...formData, isDeliveryEnabled: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
+                            Enable Delivery
+                          </label>
+                          {formData.isDeliveryEnabled && (
+                            <div className="space-y-2 sm:space-y-3 bg-blue-50 dark:bg-blue-950/20 p-2 sm:p-3 rounded-lg">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Base Fee ($)</label>
+                                  <input type="number" step="0.01" value={formData.minDeliveryFee || 15} onChange={(e) => setFormData({...formData, minDeliveryFee: parseFloat(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-min-delivery-fee" />
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Up to (mi)</label>
+                                  <input type="number" value={formData.minDeliveryFeeMiles || 5} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: parseInt(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-min-delivery-miles" />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">$/mile extra</label>
+                                  <input type="number" step="0.01" value={formData.deliveryPricePerMile || 2.50} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-delivery-per-mile" />
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Max (mi)</label>
+                                  <input type="number" value={formData.maxDeliveryDistance || 50} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-max-delivery-distance" />
+                                </div>
+                              </div>
+                              <p className="text-[9px] sm:text-[10px] text-zinc-500 italic">Ex: $15 up to 5mi, then $2.50/mi extra</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Commission</label>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 750})}>
+                              <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: 750})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <div className="ml-2 sm:ml-3">
+                                <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">15%</p>
+                                <p className="text-[10px] sm:text-xs text-zinc-500">$750 Ded.</p>
                               </div>
                             </div>
-                            <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${formData.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 25, deductible: 500})}>
-                              <input type="radio" name="commission" value="25" checked={formData.commission === 25} onChange={() => setFormData({...formData, commission: 25, deductible: 500})} className="w-4 h-4" />
-                              <div className="ml-3">
-                                <p className="text-sm font-bold text-zinc-900 dark:text-white">25% Commission</p>
-                                <p className="text-xs text-zinc-500">$500 Deductible</p>
+                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 25, deductible: 500})}>
+                              <input type="radio" name="commission" value="25" checked={formData.commission === 25} onChange={() => setFormData({...formData, commission: 25, deductible: 500})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <div className="ml-2 sm:ml-3">
+                                <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">25%</p>
+                                <p className="text-[10px] sm:text-xs text-zinc-500">$500 Ded.</p>
                               </div>
                             </div>
                           </div>
@@ -2664,138 +2699,138 @@ export default function CarHopApp() {
                       </form>
                     </Card>
                   </div>
-                  <div className="lg:col-span-2 space-y-6">
+                  <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                     {/* Pickup Locations */}
-                    <Card className="p-6">
-                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                        <MapPin size={18} className="text-green-500"/>
+                    <Card className="p-3 sm:p-6">
+                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
+                        <MapPin size={14} className="sm:w-[18px] sm:h-[18px] text-green-500"/>
                         Pickup Locations
                       </h3>
-                      <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                         {settings.locations.map(loc => (
-                          <span key={loc} className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-xs font-bold group">
-                            <MapPin size={12}/> {loc}
-                            <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
-                              <X size={12} className="text-red-500"/>
+                          <span key={loc} className="inline-flex items-center gap-0.5 sm:gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold group">
+                            <MapPin size={10} className="sm:w-3 sm:h-3"/> <span className="truncate max-w-[100px] sm:max-w-none">{formatAddressForDisplay(loc)}</span>
+                            <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                              <X size={10} className="sm:w-3 sm:h-3 text-red-500"/>
                             </button>
                           </span>
                         ))}
                       </div>
-                      <div className="flex gap-2">
-                        <input type="text" value={hostNewLocation} onChange={(e) => setHostNewLocation(e.target.value)} placeholder="Add new location..." className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-new-location" />
-                        <Button variant="primary" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
-                          <Plus size={16}/> Add
+                      <div className="flex gap-1.5 sm:gap-2">
+                        <input type="text" value={hostNewLocation} onChange={(e) => setHostNewLocation(e.target.value)} placeholder="Add location..." className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-new-location" />
+                        <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
+                          <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                         </Button>
                       </div>
                     </Card>
 
                     {/* Price Configuration Section */}
-                    <Card className="p-6">
-                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                        <DollarSign size={18} className="text-green-500"/>
-                        Price Configuration
+                    <Card className="p-3 sm:p-6">
+                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
+                        <DollarSign size={14} className="sm:w-[18px] sm:h-[18px] text-green-500"/>
+                        Price Config
                       </h3>
-                      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
-                          <input type="number" step="0.1" value={priceConfigForm?.taxes || settings.taxes} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, taxes: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-taxes" />
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Tax (%)</label>
+                          <input type="number" step="0.1" value={priceConfigForm?.taxes || settings.taxes} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, taxes: parseFloat(e.target.value) || 0})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-taxes" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
-                          <input type="number" value={priceConfigForm?.cleaningFee || settings.cleaningFee} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, cleaningFee: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-cleaning-fee" />
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Clean ($)</label>
+                          <input type="number" value={priceConfigForm?.cleaningFee || settings.cleaningFee} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, cleaningFee: parseFloat(e.target.value) || 0})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-cleaning-fee" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles/Day</label>
-                          <input type="number" value={priceConfigForm?.includedMiles || settings.includedMiles} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, includedMiles: parseInt(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-included-miles" />
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Miles/Day</label>
+                          <input type="number" value={priceConfigForm?.includedMiles || settings.includedMiles} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, includedMiles: parseInt(e.target.value) || 0})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-included-miles" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                          <input type="number" step="0.01" value={priceConfigForm?.extraMileRate ?? settings.extraMileRate} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, extraMileRate: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-host-extra-mile-rate" />
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$/Extra Mi</label>
+                          <input type="number" step="0.01" value={priceConfigForm?.extraMileRate ?? settings.extraMileRate} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, extraMileRate: parseFloat(e.target.value) || 0})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-extra-mile-rate" />
                         </div>
                       </div>
                       
-                      <h4 className="text-sm font-bold mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                        <Shield size={16} className="text-blue-500"/>
-                        Insurance Prices (per day)
+                      <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 sm:gap-2">
+                        <Shield size={12} className="sm:w-4 sm:h-4 text-blue-500"/>
+                        Insurance
                       </h4>
-                      <div className="grid md:grid-cols-2 gap-4 mb-6">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$500 Deductible Price (Fixed)</label>
-                          <input type="text" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} disabled className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-500" />
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$500 Ded.</label>
+                          <input type="text" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} disabled className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-xs sm:text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-500" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">$1000 Deductible Price (Fixed)</label>
-                          <input type="text" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} disabled className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-1000" />
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$1000 Ded.</label>
+                          <input type="text" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} disabled className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-xs sm:text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-1000" />
                         </div>
                       </div>
 
-                      <h4 className="text-sm font-bold mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                        <Shield size={16} className="text-green-500"/>
-                        Add-on Prices
+                      <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 sm:gap-2">
+                        <Shield size={12} className="sm:w-4 sm:h-4 text-green-500"/>
+                        Add-ons
                       </h4>
-                      <div className="grid md:grid-cols-2 gap-4 mb-6">
-                        <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat</label>
-                          <input type="number" value={priceConfigForm?.prices?.childSeat || settings.prices.childSeat} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeat: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-2" data-testid="input-host-child-seat" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Child Seat</label>
+                          <input type="number" value={priceConfigForm?.prices?.childSeat || settings.prices.childSeat} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeat: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-child-seat" />
                           <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="childSeatBilling" checked={!(priceConfigForm?.prices?.childSeatPerTrip ?? settings.prices.childSeatPerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeatPerTrip: false}})} className="accent-green-500" />
-                              Per Day
+                              /Day
                             </label>
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="childSeatBilling" checked={priceConfigForm?.prices?.childSeatPerTrip ?? settings.prices.childSeatPerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeatPerTrip: true}})} className="accent-green-500" />
-                              Per Trip
+                              /Trip
                             </label>
                           </div>
                         </div>
-                        <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Prepaid Fuel</label>
-                          <input type="number" value={priceConfigForm?.prices?.prepaidFuel ?? settings.prices.prepaidFuel} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuel: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-2" data-testid="input-host-prepaid-fuel" />
+                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Prepaid Fuel</label>
+                          <input type="number" value={priceConfigForm?.prices?.prepaidFuel ?? settings.prices.prepaidFuel} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuel: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-prepaid-fuel" />
                           <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="prepaidFuelBilling" checked={!(priceConfigForm?.prices?.prepaidFuelPerTrip ?? settings.prices.prepaidFuelPerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuelPerTrip: false}})} className="accent-green-500" />
-                              Per Day
+                              /Day
                             </label>
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="prepaidFuelBilling" checked={priceConfigForm?.prices?.prepaidFuelPerTrip ?? settings.prices.prepaidFuelPerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuelPerTrip: true}})} className="accent-green-500" />
-                              Per Trip
+                              /Trip
                             </label>
                           </div>
                         </div>
-                        <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">2hr Late Return Grace Period</label>
-                          <input type="number" value={priceConfigForm?.prices?.lateReturnGrace ?? settings.prices.lateReturnGrace} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGrace: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-2" data-testid="input-host-late-return-grace" />
+                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Late Grace 2hr</label>
+                          <input type="number" value={priceConfigForm?.prices?.lateReturnGrace ?? settings.prices.lateReturnGrace} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGrace: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-late-return-grace" />
                           <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="lateReturnGraceBilling" checked={!(priceConfigForm?.prices?.lateReturnGracePerTrip ?? settings.prices.lateReturnGracePerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGracePerTrip: false}})} className="accent-green-500" />
-                              Per Day
+                              /Day
                             </label>
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="lateReturnGraceBilling" checked={priceConfigForm?.prices?.lateReturnGracePerTrip ?? settings.prices.lateReturnGracePerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGracePerTrip: true}})} className="accent-green-500" />
-                              Per Trip
+                              /Trip
                             </label>
                           </div>
                         </div>
-                        <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-gradient-to-br from-green-50 to-transparent dark:from-green-900/20">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Stress-Free Package</label>
-                          <p className="text-[10px] text-zinc-400 mb-2">Includes Prepaid Fuel + 2hr Late Return Grace</p>
-                          <input type="number" value={priceConfigForm?.prices?.stressFreePackage ?? settings.prices.stressFreePackage} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackage: parseFloat(e.target.value) || 0}})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm mb-2" data-testid="input-host-stress-free-package" />
+                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-gradient-to-br from-green-50 to-transparent dark:from-green-900/20">
+                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Stress-Free</label>
+                          <p className="text-[8px] sm:text-[10px] text-zinc-400 mb-1 sm:mb-2">Fuel + Late Grace</p>
+                          <input type="number" value={priceConfigForm?.prices?.stressFreePackage ?? settings.prices.stressFreePackage} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackage: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-stress-free-package" />
                           <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="stressFreePackageBilling" checked={!(priceConfigForm?.prices?.stressFreePackagePerTrip ?? settings.prices.stressFreePackagePerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackagePerTrip: false}})} className="accent-green-500" />
-                              Per Day
+                              /Day
                             </label>
-                            <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="stressFreePackageBilling" checked={priceConfigForm?.prices?.stressFreePackagePerTrip ?? settings.prices.stressFreePackagePerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackagePerTrip: true}})} className="accent-green-500" />
-                              Per Trip
+                              /Trip
                             </label>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex gap-3">
-                        <Button variant="secondary" className="flex-1" onClick={() => setPriceConfigForm(settings)} data-testid="button-cancel-price-config">Cancel</Button>
-                        <Button variant="primary" className="flex-1" onClick={() => {
+                      <div className="flex gap-2 sm:gap-3">
+                        <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => setPriceConfigForm(settings)} data-testid="button-cancel-price-config">Cancel</Button>
+                        <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => {
                           if (priceConfigForm) {
                             updateSettingMutation.mutate({ key: 'taxes', value: priceConfigForm.taxes });
                             updateSettingMutation.mutate({ key: 'cleaningFee', value: priceConfigForm.cleaningFee });
@@ -2804,34 +2839,34 @@ export default function CarHopApp() {
                             updateSettingMutation.mutate({ key: 'prices', value: priceConfigForm.prices });
                           }
                         }} data-testid="button-save-price-config">
-                          <Check size={16}/> Save Configuration
+                          <Check size={12} className="sm:w-4 sm:h-4"/> Save
                         </Button>
                       </div>
                     </Card>
 
                     {/* My Vehicles */}
-                    <Card className="p-6">
-                      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <Card className="p-3 sm:p-6">
+                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
+                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
                         {hostVehicles.length > 0 ? hostVehicles.map((car) => (
-                          <div key={car.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
-                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 object-cover rounded-lg" />
-                            <div className="flex-1">
-                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{car.model}</h4>
-                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} · {car.seats} seats · {car.images?.length || 0} photos</p>
-                              <p className="text-xs font-bold text-green-600 mt-1">${car.price}/day | {car.commission || 10}% commission | ${car.deductible || 1000} deductible</p>
+                          <div key={car.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
+                              <p className="text-[10px] sm:text-xs font-bold text-green-600 mt-0.5 sm:mt-1">${car.price}/d | {car.commission || 10}%</p>
                             </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => { setEditingHostVehicle(car); setHostVehicleImages(car.images || []); setEditingPricingStrings({taxes: String(car.pricing?.taxes || '8.5'), extraMileRate: String(car.pricing?.extraMileRate || '0.45'), childSeat: String(car.pricing?.prices?.childSeat || '8'), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || '35'), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || '25'), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || '50'), cleaningFee: String(car.pricing?.cleaningFee || '25'), includedMiles: String(car.pricing?.includedMiles || '200'), insurance500: String(car.pricing?.prices?.insurance500 || '25'), insurance1000: String(car.pricing?.prices?.insurance1000 || '15')}); }} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
-                                <Edit size={16} />
+                            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                              <button onClick={() => { setEditingHostVehicle(car); setHostVehicleImages(car.images || []); setEditingPricingStrings({taxes: String(car.pricing?.taxes || '8.5'), extraMileRate: String(car.pricing?.extraMileRate || '0.45'), childSeat: String(car.pricing?.prices?.childSeat || '8'), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || '35'), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || '25'), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || '50'), cleaningFee: String(car.pricing?.cleaningFee || '25'), includedMiles: String(car.pricing?.includedMiles || '200'), insurance500: String(car.pricing?.prices?.insurance500 || '25'), insurance1000: String(car.pricing?.prices?.insurance1000 || '15')}); }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
+                                <Edit size={14} className="sm:w-4 sm:h-4" />
                               </button>
-                              <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
-                                <Trash2 size={16} />
+                              <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                                <Trash2 size={14} className="sm:w-4 sm:h-4" />
                               </button>
                             </div>
                           </div>
                         )) : (
-                          <p className="text-sm text-zinc-500 text-center py-8">No vehicles added yet</p>
+                          <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
                         )}
                       </div>
                     </Card>
