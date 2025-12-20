@@ -1636,7 +1636,11 @@ export default function CarHopApp() {
 
           <div className="flex md:hidden items-center justify-end gap-1 sm:gap-2 flex-1">
             {clientUser && (
-              <button onClick={() => { setView('bookings'); }} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors text-xs font-bold" data-testid="button-mobile-bookings">My Bookings</button>
+              <button onClick={() => { setView('bookings'); }} className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors text-xs font-bold" data-testid="button-mobile-bookings">My Bookings
+                {getClientUnreadCount() > 0 && (
+                  <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
+                )}
+              </button>
             )}
             <div className="relative">
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">

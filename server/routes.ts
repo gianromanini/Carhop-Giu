@@ -452,10 +452,22 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     
     const messages = [...(booking.messages || []), newMessage];
     
-    const updated = await storage.updateBooking(id, { 
+    // If delivery is rejected, apply discount equal to delivery fee
+    let updateData: any = { 
       details: updatedDetails,
       messages 
-    });
+    };
+    
+    if (status === 'rejected') {
+      // Calculate delivery fee discount
+      const deliveryFee = (booking.details as any)?.deliveryFee || 0;
+      if (deliveryFee > 0) {
+        // Apply discount
+        updateData.discount = ((booking.discount || 0) + deliveryFee);
+      }
+    }
+    
+    const updated = await storage.updateBooking(id, updateData);
     res.json(updated);
   });
 
