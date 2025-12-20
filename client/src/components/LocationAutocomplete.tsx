@@ -138,18 +138,18 @@ export function LocationAutocomplete({
 
       {/* Suggestions dropdown */}
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl z-[100] max-h-48 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
               key={`${suggestion.lat}-${suggestion.lon}-${index}`}
               onClick={() => handleSelectLocation(suggestion)}
-              className="w-full text-left px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-b border-zinc-100 dark:border-zinc-700 last:border-b-0 transition-colors"
+              className="w-full text-left px-3 sm:px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-b border-zinc-100 dark:border-zinc-700 last:border-b-0 transition-colors"
               data-testid={`suggestion-location-${index}`}
             >
               <div className="flex items-start gap-2">
                 <MapPin size={14} className="text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                  <p className="text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">
                     {suggestion.display_name}
                   </p>
                 </div>

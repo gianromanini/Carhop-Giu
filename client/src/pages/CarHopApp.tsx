@@ -2584,6 +2584,34 @@ export default function CarHopApp() {
                             </label>
                           </div>
                         </div>
+
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider flex items-center gap-1.5">
+                            <MapPin size={12} className="text-green-500"/> Pickup Locations
+                          </label>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                            {settings.locations.map(loc => (
+                              <span key={loc} className="inline-flex items-center gap-0.5 sm:gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold group">
+                                <MapPin size={10} className="sm:w-3 sm:h-3"/> <span className="truncate max-w-[80px] sm:max-w-none">{formatAddressForDisplay(loc)}</span>
+                                <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                                  <X size={10} className="sm:w-3 sm:h-3 text-red-500"/>
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-1.5 sm:gap-2">
+                            <div className="flex-1">
+                              <LocationAutocomplete 
+                                value={hostNewLocation} 
+                                onChange={(value) => setHostNewLocation(value)}
+                                placeholder="Add location..."
+                              />
+                            </div>
+                            <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
+                              <Plus size={14}/> <span className="hidden sm:inline">Add</span>
+                            </Button>
+                          </div>
+                        </div>
                         
                         <div className="border-t pt-3 sm:pt-4">
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 sm:mb-2 uppercase tracking-wider">Photos ({formData.images.filter(img => img.trim()).length})</label>
@@ -2700,36 +2728,6 @@ export default function CarHopApp() {
                     </Card>
                   </div>
                   <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                    {/* Pickup Locations */}
-                    <Card className="p-3 sm:p-6">
-                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
-                        <MapPin size={14} className="sm:w-[18px] sm:h-[18px] text-green-500"/>
-                        Pickup Locations
-                      </h3>
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                        {settings.locations.map(loc => (
-                          <span key={loc} className="inline-flex items-center gap-0.5 sm:gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold group">
-                            <MapPin size={10} className="sm:w-3 sm:h-3"/> <span className="truncate max-w-[100px] sm:max-w-none">{formatAddressForDisplay(loc)}</span>
-                            <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
-                              <X size={10} className="sm:w-3 sm:h-3 text-red-500"/>
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex gap-1.5 sm:gap-2">
-                        <div className="flex-1">
-                          <LocationAutocomplete 
-                            value={hostNewLocation} 
-                            onChange={(value) => setHostNewLocation(value)}
-                            placeholder="Add location..."
-                          />
-                        </div>
-                        <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
-                          <Plus size={14}/> <span className="hidden sm:inline">Add</span>
-                        </Button>
-                      </div>
-                    </Card>
-
                     {/* Price Configuration Section */}
                     <Card className="p-3 sm:p-6">
                       <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
