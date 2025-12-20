@@ -6461,7 +6461,7 @@ export default function CarHopApp() {
                         <label className="block text-xs text-zinc-500 uppercase tracking-wider">SELECT YOUR PICKUP LOCATION *</label>
                         {cart.car?.availableLocations && cart.car.availableLocations.length > 0 ? (
                           <div className="space-y-2">
-                            {cart.car.availableLocations.map((location) => (
+                            {Array.from(new Set(cart.car.availableLocations)).map((location) => (
                               <label key={location} className="flex items-center gap-3 cursor-pointer p-3 border border-zinc-700 rounded-lg hover:border-green-500 hover:bg-zinc-800/50 transition-colors" style={{borderColor: pickupAddress === location ? '#22c55e' : undefined, backgroundColor: pickupAddress === location ? 'rgba(34, 197, 94, 0.1)' : undefined}}>
                                 <input 
                                   type="checkbox" 
