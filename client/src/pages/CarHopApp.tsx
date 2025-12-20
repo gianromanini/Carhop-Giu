@@ -1072,7 +1072,7 @@ export default function CarHopApp() {
       status: 'Active', 
       carName: cart.car!.model, 
       vehicleId: cart.car!.id,
-      location: pickupAddress || searchParams.location || 'Main Office', 
+      location: selectedDeliveryType === 'delivery' ? deliveryAddressBooking : pickupAddress, 
       startDate: searchParams.start, 
       startTime: searchParams.startTime, 
       returnDate: searchParams.end, 
@@ -4715,7 +4715,7 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
@@ -6013,9 +6013,9 @@ export default function CarHopApp() {
                   <Card key={b.id} className="p-3 md:p-6" data-testid={`card-my-booking-${b.id}`}>
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2">
-                        <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}><Check size={14} className="md:w-6 md:h-6"/></div>
+                        <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : b.status === 'Extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-400'}`}><Check size={14} className="md:w-6 md:h-6"/></div>
                         <div>
-                          <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Extended' || b.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{b.status}</div>
+                          <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Completed' ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : 'text-blue-400'}`}>{b.status}</div>
                           {b.status === 'Active' && b.checkInStatus !== 'completed' && (
                             <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                           )}
