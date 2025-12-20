@@ -6544,11 +6544,41 @@ export default function CarHopApp() {
                       </div>
                     </div>
 
-                    {/* Delivery Address Section - Only if Delivery Selected */}
+                    {/* Pickup Location Selection - REQUIRED FIRST for Delivery, optional for Pickup */}
                     {selectedDeliveryType === 'delivery' && (
                       <div className="pt-4 border-t border-zinc-700 space-y-3">
+                        <label className="block text-xs text-zinc-500 uppercase tracking-wider">STEP 1: SELECT PICKUP LOCATION *</label>
+                        <p className="text-xs text-zinc-400 mb-2">Choose where to pick up the car - this is the starting point for delivery distance calculation</p>
+                        {cart.car?.availableLocations && cart.car.availableLocations.length > 0 ? (
+                          <div className="space-y-2">
+                            {Array.from(new Set(cart.car.availableLocations)).map((location) => (
+                              <label key={location} className="flex items-center gap-3 cursor-pointer p-3 border border-zinc-700 rounded-lg hover:border-green-500 hover:bg-zinc-800/50 transition-colors" style={{borderColor: pickupAddress === location ? '#22c55e' : undefined, backgroundColor: pickupAddress === location ? 'rgba(34, 197, 94, 0.1)' : undefined}}>
+                                <input 
+                                  type="checkbox" 
+                                  name="pickupLocation" 
+                                  value={location} 
+                                  checked={pickupAddress === location}
+                                  onChange={() => setPickupAddress(location)}
+                                  className="w-5 h-5 cursor-pointer"
+                                  data-testid={`checkbox-pickup-${location}`}
+                                />
+                                <span className="text-sm text-white flex-1">{formatAddressForDisplay(location)}</span>
+                                {pickupAddress === location && <Check size={16} className="text-green-400 flex-shrink-0" />}
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-400">No pickup locations available</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Delivery Address Section - Show only if Delivery is selected AND pickup location is chosen */}
+                    {selectedDeliveryType === 'delivery' && pickupAddress && (
+                      <div className="pt-4 border-t border-zinc-700 space-y-3">
                         <div>
-                          <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">ENTER YOUR DELIVERY ADDRESS *</label>
+                          <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">STEP 2: ENTER YOUR DELIVERY ADDRESS *</label>
+                          <p className="text-xs text-zinc-400 mb-3">We'll calculate the distance from {formatAddressForDisplay(pickupAddress)}</p>
                           <LocationAutocomplete 
                             value={deliveryAddressBooking}
                             onChange={(val, coords) => {
@@ -6640,8 +6670,8 @@ export default function CarHopApp() {
                       </div>
                     )}
 
-                    {/* Pickup Location Selection - Show when delivery is valid OR when pickup is selected */}
-                    {(deliveryValidationStatus === 'valid' || selectedDeliveryType === 'pickup') && (
+                    {/* Pickup Location Selection - Show when Pickup is selected (not Delivery) */}
+                    {selectedDeliveryType === 'pickup' && (
                       <div className="pt-4 border-t border-zinc-700 space-y-3">
                         <label className="block text-xs text-zinc-500 uppercase tracking-wider">SELECT YOUR PICKUP LOCATION *</label>
                         {cart.car?.availableLocations && cart.car.availableLocations.length > 0 ? (
