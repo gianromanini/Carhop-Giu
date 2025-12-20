@@ -590,6 +590,7 @@ export default function CarHopApp() {
   const [chatBookingId, setChatBookingId] = useState<number | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
+  const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
 
@@ -1043,8 +1044,68 @@ export default function CarHopApp() {
     return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount, deliveryFee: deliveryValidationStatus === 'valid' ? deliveryFee : 0 }; 
   };
 
-  const handleProceedToPayment = () => { 
+  const handleProceedToPayment = async () => { 
     if (!isCheckoutValid()) { alert("Please complete all mandatory fields and upload driver license photos."); return; } 
+    
+    // If delivery type and address is set, create pending booking first
+    if (selectedDeliveryType === 'delivery' && deliveryValidationStatus === 'valid') {
+      setIsProcessingPayment(true);
+      const totalData = calculateTotal();
+      const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
+      
+      const pendingBooking = {
+        bookingCode: 'BK-' + Math.floor(Math.random() * 10000),
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'Pending Approval',
+        carName: cart.car!.model,
+        vehicleId: cart.car!.id,
+        location: deliveryAddressBooking,
+        startDate: searchParams.start,
+        startTime: searchParams.startTime,
+        returnDate: searchParams.end,
+        returnTime: searchParams.endTime,
+        days: days,
+        total: totalData.total,
+        image: cart.car!.images?.[0] || '',
+        driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages },
+        paymentRaw: null,
+        paymentMethod: null,
+        deliveryType: 'delivery',
+        details: { 
+          rate: cart.car!.price * days, 
+          extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), 
+          protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, 
+          protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
+          fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
+          deliveryFee: totalData.deliveryFee || 0, 
+          tax: totalData.taxAmount, 
+          deliveryType: 'delivery', 
+          deliveryApprovalStatus: 'pending', 
+          pickupAddress: pickupAddress 
+        },
+        messages: [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm shortly. You will be notified once approved or if only pickup is available.', createdAt: new Date().toISOString(), read: false }],
+        carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
+        checkInStatus: 'pending',
+        checkOutStatus: 'pending',
+        checkInData: null,
+        checkOutData: null
+      };
+      
+      try {
+        const response = await createBookingMutation.mutateAsync(pendingBooking);
+        const created = await response.json();
+        setPendingDeliveryBookingId(created.id);
+        setIsProcessingPayment(false);
+        setView('awaiting-approval');
+      } catch (error) {
+        console.error('Error creating pending booking:', error);
+        setIsProcessingPayment(false);
+        alert('Error creating booking. Please try again.');
+      }
+      return;
+    }
+    
+    // For pickup, go directly to payment
     setView('payment'); 
   };
 
@@ -1139,7 +1200,7 @@ export default function CarHopApp() {
       const reader = new FileReader();
       reader.onloadend = () => setCheckData(prev => {
         const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
-        if (currentList.length >= 1) return prev;
+        if (currentList.length >= 15) return prev;
         return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, reader.result as string] };
       });
       reader.readAsDataURL(file);
@@ -1147,12 +1208,21 @@ export default function CarHopApp() {
     if (checkInInputRef.current) checkInInputRef.current.value = '';
   };
 
+  const handleRemoveCheckPhoto = (section: 'outside' | 'inside', index: number) => {
+    setCheckData(prev => {
+      const key = section === 'outside' ? 'photosOutside' : 'photosInside';
+      const newList = [...prev[key]];
+      newList.splice(index, 1);
+      return { ...prev, [key]: newList };
+    });
+  };
+
   const triggerCheckInput = (section: string) => document.getElementById(`check-input-${section}`)?.click();
 
   const completeWorkflow = async () => {
      if (!checkData.miles) { alert("Please enter current mileage."); return; }
-     if (checkData.photosOutside.length !== 1) { alert("Please upload 1 outside photo."); return; }
-     if (checkData.photosInside.length !== 1) { alert("Please upload 1 inside photo."); return; }
+     if (checkData.photosOutside.length < 1) { alert("Please upload at least 1 outside photo."); return; }
+     if (checkData.photosInside.length < 1) { alert("Please upload at least 1 inside photo."); return; }
 
      if (!activeBooking) return;
 
@@ -6221,6 +6291,24 @@ export default function CarHopApp() {
                       <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
                       
+                      {/* Pending Approval - Show button to check status and complete payment */}
+                      {b.status === 'Pending Approval' && (
+                        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Clock size={18} className="text-yellow-600" />
+                            <span className="font-bold text-yellow-700 dark:text-yellow-400">Awaiting Delivery Approval</span>
+                          </div>
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-3">Your booking is waiting for delivery approval. Once approved or declined, you can complete payment.</p>
+                          <Button 
+                            className="w-full bg-yellow-600 hover:bg-yellow-700"
+                            onClick={() => { setPendingDeliveryBookingId(b.id); setView('awaiting-approval'); }}
+                            data-testid={`button-check-approval-${b.id}`}
+                          >
+                            Check Approval Status
+                          </Button>
+                        </div>
+                      )}
+                      
                       {(b.status === 'Active' || b.status === 'Extended') ? (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
                           <div className="flex justify-between items-center mb-4"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Workflow</h4></div>
@@ -7186,7 +7274,7 @@ export default function CarHopApp() {
                     className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() && carRentalAgreementAccepted ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
                     data-testid="button-proceed-payment"
                   >
-                    Proceed to Payment
+                    {selectedDeliveryType === 'delivery' && deliveryValidationStatus === 'valid' ? 'Proceed' : 'Proceed to Payment'}
                   </button>
                 </div>
               </div>
@@ -7357,6 +7445,324 @@ export default function CarHopApp() {
           </div>
         );})()}
 
+        {view === 'awaiting-approval' && pendingDeliveryBookingId && (() => {
+          const pendingBooking = bookings.find(b => b.id === pendingDeliveryBookingId);
+          if (!pendingBooking) return null;
+          
+          const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
+          const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
+          const originalPickupAddress = (pendingBooking.details as any)?.pickupAddress || '';
+          
+          // Calculate adjusted total for rejected delivery (subtract delivery fee)
+          const adjustedTotal = approvalStatus === 'rejected' 
+            ? pendingBooking.total - deliveryFeeAmount 
+            : pendingBooking.total;
+          
+          return (
+            <div className="max-w-lg mx-auto px-6 py-12">
+              <Card className="p-8">
+                {/* Status Header */}
+                <div className="text-center mb-8">
+                  {approvalStatus === 'pending' && (
+                    <>
+                      <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Clock size={40} className="text-yellow-500 animate-pulse" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Awaiting Delivery Approval</h2>
+                      <p className="text-zinc-500">Your delivery request is being reviewed by the host. You'll be notified once it's approved or if pickup is required.</p>
+                    </>
+                  )}
+                  
+                  {approvalStatus === 'approved' && (
+                    <>
+                      <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Check size={40} className="text-green-500" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-green-500 mb-2">Delivery Approved!</h2>
+                      <p className="text-zinc-500">Great news! Your delivery request has been approved. Complete your payment to confirm the booking.</p>
+                    </>
+                  )}
+                  
+                  {approvalStatus === 'rejected' && (
+                    <>
+                      <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MapPin size={40} className="text-orange-500" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-orange-500 mb-2">Pickup Only Available</h2>
+                      <p className="text-zinc-500 mb-4">Delivery was not available at this time. You can pick up the vehicle at the location below.</p>
+                      {originalPickupAddress && (
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(originalPickupAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        >
+                          <MapPin size={16} />
+                          View Pickup Location
+                        </a>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                {/* Booking Summary */}
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 mb-6">
+                  <h3 className="font-bold text-zinc-900 dark:text-white mb-3">Booking Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Vehicle</span>
+                      <span className="text-zinc-900 dark:text-white">{pendingBooking.carName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Dates</span>
+                      <span className="text-zinc-900 dark:text-white">{pendingBooking.startDate} - {pendingBooking.returnDate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Base Rate</span>
+                      <span className="text-zinc-900 dark:text-white">${(pendingBooking.details?.rate || 0).toFixed(2)}</span>
+                    </div>
+                    {approvalStatus === 'approved' && deliveryFeeAmount > 0 && (
+                      <div className="flex justify-between text-green-600 dark:text-green-400">
+                        <span>Delivery Fee</span>
+                        <span>+${deliveryFeeAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {approvalStatus === 'rejected' && deliveryFeeAmount > 0 && (
+                      <div className="flex justify-between text-green-600 dark:text-green-400">
+                        <span>Delivery Discount</span>
+                        <span>-${deliveryFeeAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-zinc-300 dark:border-zinc-600 font-bold">
+                      <span className="text-zinc-900 dark:text-white">Total</span>
+                      <span className="text-green-600 dark:text-green-400">${adjustedTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                {approvalStatus === 'pending' && (
+                  <div className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => { setPendingDeliveryBookingId(null); setView('bookings'); }}
+                    >
+                      <Briefcase size={18} className="mr-2" />
+                      Go to My Bookings
+                    </Button>
+                    <p className="text-xs text-center text-zinc-500">You can check your booking status in My Bookings anytime.</p>
+                  </div>
+                )}
+                
+                {(approvalStatus === 'approved' || approvalStatus === 'rejected') && (
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        // Set the booking data for payment
+                        setView('awaiting-payment');
+                      }}
+                      data-testid="button-proceed-to-payment-approved"
+                    >
+                      <CreditCard size={18} className="mr-2" />
+                      Proceed to Payment - ${adjustedTotal.toFixed(2)}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => { setPendingDeliveryBookingId(null); setView('home'); }}
+                    >
+                      Cancel Booking
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </div>
+          );
+        })()}
+
+        {view === 'awaiting-payment' && pendingDeliveryBookingId && (() => {
+          const pendingBooking = bookings.find(b => b.id === pendingDeliveryBookingId);
+          if (!pendingBooking) return null;
+          
+          const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
+          const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
+          const adjustedTotal = approvalStatus === 'rejected' 
+            ? pendingBooking.total - deliveryFeeAmount 
+            : pendingBooking.total;
+          
+          const isCreditCardValid = paymentDetails.cardName && paymentDetails.cardNumber && paymentDetails.expiry && paymentDetails.cvc;
+          const isPayButtonEnabled = paymentMethod === 'paypal' || (paymentMethod === 'credit' && isCreditCardValid);
+          
+          const handleFinalPayment = async () => {
+            if (paymentMethod === 'credit' && !isCreditCardValid) {
+              alert("Please enter valid payment details.");
+              return;
+            }
+            
+            setIsProcessingPayment(true);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const paymentMethodDisplay = paymentMethod === 'paypal' 
+              ? 'PayPal' 
+              : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
+            
+            // Update the booking with payment info and status
+            const updateData: any = {
+              status: 'Active',
+              total: adjustedTotal,
+              paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type },
+              paymentMethod: paymentMethodDisplay,
+            };
+            
+            // If rejected, apply discount
+            if (approvalStatus === 'rejected' && deliveryFeeAmount > 0) {
+              updateData.details = {
+                ...pendingBooking.details,
+                discount: deliveryFeeAmount,
+                deliveryType: 'pickup'
+              };
+              updateData.location = (pendingBooking.details as any)?.pickupAddress || pendingBooking.location;
+            }
+            
+            await updateBookingMutation.mutateAsync({ id: pendingDeliveryBookingId, data: updateData });
+            
+            setIsProcessingPayment(false);
+            setPendingDeliveryBookingId(null);
+            setPaymentDetails({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
+            setView('confirmation');
+          };
+          
+          return (
+            <div className="max-w-3xl mx-auto px-6 py-12">
+              <button 
+                onClick={() => setView('awaiting-approval')} 
+                className="flex items-center gap-2 mb-6 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors border border-zinc-700"
+              >
+                <ArrowLeft size={18} /> Back
+              </button>
+              
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+                <h2 className="text-2xl font-bold mb-6 text-white">Complete Payment</h2>
+                
+                {approvalStatus === 'rejected' && (
+                  <div className="bg-orange-900/20 border border-orange-700 rounded-lg p-4 mb-6">
+                    <p className="text-orange-400 text-sm">Delivery fee has been removed. You will pick up the vehicle at the designated location.</p>
+                  </div>
+                )}
+                
+                {/* Payment Method Tabs */}
+                <div className="flex mb-8 border-b border-zinc-700">
+                  <button 
+                    onClick={() => setPaymentMethod('credit')}
+                    className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'credit' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                    <CreditCard size={20} className="inline mr-2" />
+                    Credit Card
+                  </button>
+                  <button 
+                    onClick={() => setPaymentMethod('paypal')}
+                    className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'paypal' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  >
+                    <Wallet size={20} className="inline mr-2" />
+                    PayPal
+                  </button>
+                </div>
+                
+                {/* Credit Card Form */}
+                {paymentMethod === 'credit' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
+                      <input 
+                        type="text" 
+                        placeholder="1234 5678 9012 3456" 
+                        value={paymentDetails.cardNumber} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                          setPaymentDetails({ ...paymentDetails, cardNumber: val, type: detectCardType(val) || 'visa' });
+                        }}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white font-mono text-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARDHOLDER NAME</label>
+                      <input 
+                        type="text" 
+                        placeholder="John Doe" 
+                        value={paymentDetails.cardName} 
+                        onChange={(e) => setPaymentDetails({ ...paymentDetails, cardName: e.target.value })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY</label>
+                        <input 
+                          type="text" 
+                          placeholder="MM/YY" 
+                          value={paymentDetails.expiry} 
+                          onChange={handleExpiryChange}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CVC</label>
+                        <input 
+                          type="text" 
+                          placeholder="123" 
+                          value={paymentDetails.cvc} 
+                          onChange={(e) => setPaymentDetails({ ...paymentDetails, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {paymentMethod === 'paypal' && (
+                  <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-6 text-center">
+                    <Wallet size={48} className="mx-auto text-blue-400 mb-4" />
+                    <p className="text-blue-300">You will be redirected to PayPal to complete your payment.</p>
+                  </div>
+                )}
+                
+                {/* Total and Pay Button */}
+                <div className="mt-8 pt-6 border-t border-zinc-700">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-zinc-400 font-bold">TOTAL</span>
+                    <span className="text-3xl font-bold text-green-500">${adjustedTotal.toFixed(2)}</span>
+                  </div>
+                  <button 
+                    onClick={handleFinalPayment}
+                    disabled={isProcessingPayment || !isPayButtonEnabled}
+                    className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+                      isProcessingPayment 
+                        ? 'bg-zinc-700 text-zinc-400 cursor-wait' 
+                        : isPayButtonEnabled 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
+                          : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {isProcessingPayment ? (
+                      <>
+                        <Loader size={20} className="animate-spin" />
+                        Processing Payment...
+                      </>
+                    ) : (
+                      <>
+                        {paymentMethod === 'credit' ? <CreditCard size={20} /> : <Wallet size={20} />}
+                        Pay ${adjustedTotal.toFixed(2)}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {view === 'confirmation' && (
           <div className="max-w-md mx-auto text-center py-20 px-6">
             {/* Success Animation */}
@@ -7404,24 +7810,54 @@ export default function CarHopApp() {
               <div className="space-y-6">
                 {/* 1. Outside Photos - First */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 1 photo)</span></label>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 1, max 15)</span></label>
                   <div className="flex gap-2 flex-wrap">
-                    {checkData.photosOutside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
-                    {checkData.photosOutside.length < 1 && <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside"><Camera size={20}/></button>}
+                    {checkData.photosOutside.map((p, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500 group">
+                        <img src={p} className="w-full h-full object-cover"/>
+                        <button 
+                          onClick={() => handleRemoveCheckPhoto('outside', i)} 
+                          className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-bl-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          data-testid={`button-remove-outside-${i}`}
+                        >
+                          <X size={12}/>
+                        </button>
+                      </div>
+                    ))}
+                    {checkData.photosOutside.length < 15 && (
+                      <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside">
+                        <Camera size={20}/>
+                      </button>
+                    )}
                     <input id="check-input-outside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'outside')} />
                   </div>
-                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/1 photo uploaded</p>
+                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
                 </div>
                 
                 {/* 2. Inside Photos - Second */}
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 1 photo)</span></label>
+                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 1, max 15)</span></label>
                   <div className="flex gap-2 flex-wrap">
-                    {checkData.photosInside.map((p, i) => (<div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-green-500"><img src={p} className="w-full h-full object-cover"/></div>))}
-                    {checkData.photosInside.length < 1 && <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside"><Camera size={20}/></button>}
+                    {checkData.photosInside.map((p, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500 group">
+                        <img src={p} className="w-full h-full object-cover"/>
+                        <button 
+                          onClick={() => handleRemoveCheckPhoto('inside', i)} 
+                          className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-bl-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          data-testid={`button-remove-inside-${i}`}
+                        >
+                          <X size={12}/>
+                        </button>
+                      </div>
+                    ))}
+                    {checkData.photosInside.length < 15 && (
+                      <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside">
+                        <Camera size={20}/>
+                      </button>
+                    )}
                     <input id="check-input-inside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'inside')} />
                   </div>
-                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/1 photo uploaded</p>
+                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
                 </div>
                 
                 {/* 3. Current Mileage - Third */}
@@ -7434,7 +7870,7 @@ export default function CarHopApp() {
                 </div>
                 
                 {(() => {
-                  const canComplete = checkData.photosOutside.length === 1 && checkData.photosInside.length === 1 && checkData.miles && checkData.gas;
+                  const canComplete = checkData.photosOutside.length >= 1 && checkData.photosInside.length >= 1 && checkData.miles && checkData.gas;
                   
                   const calculateCheckoutCharges = () => {
                     if (!isCheckOutMode || !activeBooking?.checkInData) return { excessMileageFee: 0, refuelingFee: 0, totalDifference: 0, excessMiles: 0 };
