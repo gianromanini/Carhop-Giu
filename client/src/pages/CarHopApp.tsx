@@ -1101,6 +1101,7 @@ export default function CarHopApp() {
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
+      deliveryType: selectedDeliveryType,
       details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount }, 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
@@ -3371,6 +3372,7 @@ export default function CarHopApp() {
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
+                                <p className="text-zinc-500 font-bold">{(b as any).deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                                 <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
                               </div>
                             </div>
@@ -3642,7 +3644,7 @@ export default function CarHopApp() {
                                 const extras = b.details.extras || 0;
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                const deliveryFee = b.details.deliveryFee || 0;
+                                const deliveryFee = (b.details as any).deliveryFee || 0;
                                 const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee;
                                 const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
@@ -4879,6 +4881,7 @@ export default function CarHopApp() {
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
+                                <p className="text-zinc-500 font-bold">{(b as any).deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                                 <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
                               </div>
                             </div>
@@ -5139,7 +5142,7 @@ export default function CarHopApp() {
                                 const extras = b.details.extras || 0;
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                const deliveryFee = b.details.deliveryFee || 0;
+                                const deliveryFee = (b.details as any).deliveryFee || 0;
                                 const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee;
                                 const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
@@ -6057,7 +6060,12 @@ export default function CarHopApp() {
                     </div>
                     <div className="flex-1 w-full">
                       <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
-                      <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                      {(b as any).deliveryType === 'delivery' && (
+                        <div className="text-xs md:text-sm font-bold text-green-600 mt-1">Delivery: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                      )}
+                      {(b as any).deliveryType === 'pickup' && (
+                        <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                      )}
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
                       <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-1">{b.days} Days | {formatAddressForDisplay(b.location)}</p>
