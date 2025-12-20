@@ -1450,13 +1450,22 @@ export default function CarHopApp() {
   };
 
   const addLocation = () => { 
-    if (newLocation.trim() && editingHostVehicle) { 
-      const current = editingHostVehicle.availableLocations || [];
-      if (!current.includes(newLocation.trim())) {
-        setEditingHostVehicle({...editingHostVehicle, availableLocations: [...current, newLocation.trim()]});
-      }
-      setNewLocation(''); 
-    } 
+    if (!newLocation.trim()) {
+      toast({ title: "Erro", description: "Por favor, digite um endereço", variant: "destructive" });
+      return;
+    }
+    if (!editingHostVehicle) {
+      toast({ title: "Erro", description: "Nenhum veículo selecionado", variant: "destructive" });
+      return;
+    }
+    const current = editingHostVehicle.availableLocations || [];
+    if (current.includes(newLocation.trim())) {
+      toast({ title: "Aviso", description: "Este endereço já foi adicionado", variant: "default" });
+      return;
+    }
+    setEditingHostVehicle({...editingHostVehicle, availableLocations: [...current, newLocation.trim()]});
+    toast({ title: "Sucesso", description: "Endereço adicionado! Clique em 'Salvar Locações' para confirmar", });
+    setNewLocation(''); 
   };
 
   const removeLocation = (locToRemove: string) => { 
