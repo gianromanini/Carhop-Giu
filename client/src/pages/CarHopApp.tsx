@@ -6423,40 +6423,51 @@ export default function CarHopApp() {
                             value={deliveryAddressBooking}
                             onChange={(val, coords) => {
                               setDeliveryAddressBooking(val);
-                              if (val && coords && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
-                                // Use hard-coded pickup location coordinates (JFK area as default)
-                                const pickupLat = 40.6413;
-                                const pickupLon = -73.7781;
+                              if (val && coords && pickupAddress && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
                                 const deliveryLat = parseFloat(coords.lat);
                                 const deliveryLon = parseFloat(coords.lon);
                                 
-                                // Calculate Haversine distance
-                                const R = 3959; // Earth radius in miles
-                                const dLat = (deliveryLat - pickupLat) * Math.PI / 180;
-                                const dLon = (deliveryLon - pickupLon) * Math.PI / 180;
-                                const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(pickupLat * Math.PI / 180) * Math.cos(deliveryLat * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-                                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                                const distanceInMiles = R * c;
-                                
-                                const minFee = cart.car.minDeliveryFee;
-                                const minMiles = cart.car.minDeliveryFeeMiles;
-                                const pricePerMile = cart.car.deliveryPricePerMile || 0;
-                                let calculatedFee = 0;
-                                
-                                if (distanceInMiles <= minMiles) {
-                                  calculatedFee = minFee;
-                                } else {
-                                  const excessMiles = distanceInMiles - minMiles;
-                                  calculatedFee = minFee + (excessMiles * pricePerMile);
-                                }
-                                
-                                if (distanceInMiles <= (cart.car.maxDeliveryDistance || 50)) {
-                                  setDeliveryFee(calculatedFee);
-                                  setDeliveryValidationStatus('valid');
-                                } else {
-                                  setDeliveryFee(0);
-                                  setDeliveryValidationStatus('invalid');
-                                }
+                                // Geocodify pickup address to get its coordinates
+                                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickupAddress)}&countrycodes=us&limit=1`)
+                                  .then(res => res.json())
+                                  .then(data => {
+                                    if (data && data.length > 0) {
+                                      const pickupLat = parseFloat(data[0].lat);
+                                      const pickupLon = parseFloat(data[0].lon);
+                                      
+                                      // Calculate Haversine distance
+                                      const R = 3959; // Earth radius in miles
+                                      const dLat = (deliveryLat - pickupLat) * Math.PI / 180;
+                                      const dLon = (deliveryLon - pickupLon) * Math.PI / 180;
+                                      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(pickupLat * Math.PI / 180) * Math.cos(deliveryLat * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                                      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                                      const distanceInMiles = R * c;
+                                      
+                                      const minFee = cart.car.minDeliveryFee;
+                                      const minMiles = cart.car.minDeliveryFeeMiles;
+                                      const pricePerMile = cart.car.deliveryPricePerMile || 0;
+                                      let calculatedFee = 0;
+                                      
+                                      if (distanceInMiles <= minMiles) {
+                                        calculatedFee = minFee;
+                                      } else {
+                                        const excessMiles = distanceInMiles - minMiles;
+                                        calculatedFee = minFee + (excessMiles * pricePerMile);
+                                      }
+                                      
+                                      if (distanceInMiles <= (cart.car.maxDeliveryDistance || 50)) {
+                                        setDeliveryFee(calculatedFee);
+                                        setDeliveryValidationStatus('valid');
+                                      } else {
+                                        setDeliveryFee(0);
+                                        setDeliveryValidationStatus('invalid');
+                                      }
+                                    }
+                                  })
+                                  .catch(err => {
+                                    console.error('Error geocoding pickup address:', err);
+                                    setDeliveryValidationStatus('invalid');
+                                  });
                               }
                             }}
                             placeholder="Enter the address where you want the car delivered"
