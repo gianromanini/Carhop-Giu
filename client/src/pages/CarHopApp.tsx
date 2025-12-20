@@ -1103,7 +1103,7 @@ export default function CarHopApp() {
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
       deliveryType: selectedDeliveryType,
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType, deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined },
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType, deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, pickupAddress: pickupAddress },
       messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
@@ -6200,7 +6200,7 @@ export default function CarHopApp() {
                             <X size={12}/> Delivery Declined - Pick up at location
                           </div>
                           <div className="text-xs text-red-500 mt-0.5">
-                            <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors underline" data-testid={`link-pickup-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a>
+                            <a href={`https://maps.google.com/?q=${encodeURIComponent((b.details as any)?.pickupAddress || b.location)}`} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors underline" data-testid={`link-pickup-map-${b.id}`}>{formatAddressForDisplay((b.details as any)?.pickupAddress || b.location)}</a>
                           </div>
                         </div>
                       )}
