@@ -1102,7 +1102,7 @@ export default function CarHopApp() {
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
       deliveryType: selectedDeliveryType,
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType }, 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -6059,7 +6059,7 @@ export default function CarHopApp() {
                       <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
                     </div>
                     <div className="flex-1 w-full">
-                      {(b as any).deliveryType === 'delivery' ? (
+                      {(b.details as any).deliveryType === 'delivery' ? (
                         <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
                         <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
@@ -6067,7 +6067,7 @@ export default function CarHopApp() {
                       <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
-                      <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 text-xs mt-1 underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{b.days} Days | {formatAddressForDisplay(b.location)}</a>
+                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
                       
                       {(b.status === 'Active' || b.status === 'Extended') ? (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
