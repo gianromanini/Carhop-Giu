@@ -58,6 +58,53 @@ const convertTo24Hour = (timeStr: string) => {
   }
 };
 
+const formatAddressForDisplay = (fullAddress: string): string => {
+  if (!fullAddress) return fullAddress;
+  
+  // Parse address components from Nominatim format
+  // Example: "456, Oak Street, Springfield, Illinois 62701, United States"
+  // Want: "456 Oak Street, Springfield, IL 62701"
+  
+  const parts = fullAddress.split(',').map(p => p.trim());
+  if (parts.length < 3) return fullAddress; // Return as-is if can't parse
+  
+  const street = parts[0]; // "456"
+  const streetName = parts[1]; // "Oak Street"  
+  const city = parts[2]; // "Springfield"
+  
+  let state = '';
+  let zip = '';
+  
+  // Extract state and zip from remaining parts
+  for (let i = 3; i < parts.length; i++) {
+    const part = parts[i];
+    // Try to extract state (usually 2 letters at start of part)
+    const stateMatch = part.match(/([A-Z]{2})\s+(\d{5})/);
+    if (stateMatch) {
+      state = stateMatch[1];
+      zip = stateMatch[2];
+      break;
+    }
+    // Alternative: state might be followed by zip on next iteration
+    const justState = part.match(/^([A-Z]{2})$/);
+    if (justState) {
+      state = justState[1];
+    }
+    // Look for zip code (5 digits)
+    const zipMatch = part.match(/(\d{5})/);
+    if (zipMatch && !zip) {
+      zip = zipMatch[1];
+    }
+  }
+  
+  // Build formatted address: Street Number Street Name, City, State Zip
+  let formatted = `${street} ${streetName}, ${city}`;
+  if (state) formatted += `, ${state}`;
+  if (zip) formatted += ` ${zip}`;
+  
+  return formatted;
+};
+
 const addDaysToDate = (dateStr: string, days: number) => {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
@@ -3921,8 +3968,8 @@ export default function CarHopApp() {
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
                       {settings.locations.map(loc => (
-                        <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm">
-                          {loc}
+                        <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
+                          {formatAddressForDisplay(loc)}
                           <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
                         </span>
                       ))}
@@ -6305,7 +6352,7 @@ export default function CarHopApp() {
                   <div className="mt-6 pt-6 border-t border-zinc-700">
                     <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">OUR PICKUP LOCATION</label>
                     <div className="bg-zinc-800 rounded-lg p-3 border border-zinc-700">
-                      <p className="text-sm text-white">{cart.car?.availableLocations?.[0] || 'Main Location'}</p>
+                      <p className="text-sm text-white">{formatAddressForDisplay(cart.car?.availableLocations?.[0] || 'Main Location')}</p>
                     </div>
                   </div>
                 </div>
