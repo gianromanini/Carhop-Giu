@@ -1449,7 +1449,7 @@ export default function CarHopApp() {
     setEditingId(car.id);
   };
 
-  const addLocation = () => { 
+  const addLocationToVehicle = () => { 
     if (!newLocation.trim()) {
       toast({ title: "Erro", description: "Por favor, digite um endereço", variant: "destructive" });
       return;
@@ -1465,6 +1465,21 @@ export default function CarHopApp() {
     }
     setEditingHostVehicle({...editingHostVehicle, availableLocations: [...current, newLocation.trim()]});
     toast({ title: "Sucesso", description: "Endereço adicionado! Clique em 'Salvar Locações' para confirmar", });
+    setNewLocation(''); 
+  };
+
+  const addLocation = () => { 
+    if (!newLocation.trim()) {
+      toast({ title: "Erro", description: "Por favor, digite um endereço", variant: "destructive" });
+      return;
+    }
+    const current = settings.locations || [];
+    if (current.includes(newLocation.trim())) {
+      toast({ title: "Aviso", description: "Este endereço já foi adicionado", variant: "default" });
+      return;
+    }
+    updateSettingMutation.mutate({ key: 'locations', value: [...current, newLocation.trim()] });
+    toast({ title: "Sucesso", description: "Endereço adicionado com sucesso!", });
     setNewLocation(''); 
   };
 
@@ -2878,7 +2893,7 @@ export default function CarHopApp() {
                         <div className="mb-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-700">
                           <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a location for this specific car:</p>
                           <LocationAutocomplete value={newLocation} onChange={(val) => setNewLocation(val)} placeholder="Enter pickup address" />
-                          <Button onClick={addLocation} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
+                          <Button onClick={addLocationToVehicle} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
                         </div>
                         <div className="mb-4">
                           <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2 font-semibold">Locations assigned to this car:</p>
