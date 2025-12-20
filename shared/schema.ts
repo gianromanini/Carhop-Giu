@@ -137,7 +137,9 @@ export const bookings = pgTable("bookings", {
     discount?: number;
     extendedRate?: number;
     manualCharges?: { type: string; amount: number }[];
+    deliveryFee?: number;
   }>().notNull(),
+  deliveryType: text("delivery_type").default('pickup'),
   carRentalAgreement: jsonb("car_rental_agreement").$type<{
     accepted: boolean;
     clientName: string;
@@ -238,7 +240,9 @@ export const ratings = pgTable("ratings", {
 });
 
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({ id: true, createdAt: true });
-export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
+export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true }).extend({
+  deliveryType: z.enum(['delivery', 'pickup']).optional().default('pickup'),
+});
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true });
 
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true, hostResponseAt: true });
