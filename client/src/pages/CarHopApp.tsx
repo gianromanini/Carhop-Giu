@@ -6977,26 +6977,26 @@ export default function CarHopApp() {
                 <div className="space-y-4">
                   {/* Card Number with Auto-detected Brand */}
                   <div>
-                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
-                    <div className="flex gap-3 items-center">
-                      <input 
-                        type="text"
-                        value={paymentDetails.cardNumber} 
-                        onChange={(e: any) => {
-                          const num = e.target.value;
-                          const detectedType = detectCardType(num);
-                          setPaymentDetails({...paymentDetails, cardNumber: num, type: detectedType || paymentDetails.type})} 
-                        } 
-                        placeholder="4242 4242 4242 4242"
-                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                        data-testid="input-card-number" 
-                      />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider">CARD NUMBER</label>
                       {detectCardType(paymentDetails.cardNumber) && (
-                        <div className="text-xs font-bold uppercase text-green-400 bg-green-900/20 px-3 py-2 rounded-lg border border-green-700 whitespace-nowrap">
+                        <div className="text-xs font-bold uppercase text-green-400 bg-green-900/20 px-3 py-1 rounded-lg border border-green-700">
                           {detectCardType(paymentDetails.cardNumber)}
                         </div>
                       )}
                     </div>
+                    <input 
+                      type="text"
+                      value={paymentDetails.cardNumber} 
+                      onChange={(e: any) => {
+                        const num = e.target.value;
+                        const detectedType = detectCardType(num);
+                        setPaymentDetails({...paymentDetails, cardNumber: num, type: detectedType || paymentDetails.type})} 
+                      } 
+                      placeholder="4242 4242 4242 4242"
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                      data-testid="input-card-number" 
+                    />
                   </div>
 
                   {/* Name + Expiry/CVC in responsive grid */}
