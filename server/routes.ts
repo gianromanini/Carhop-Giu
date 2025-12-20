@@ -412,7 +412,6 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
       
       // Total will be recalculated correctly
-      updateData.details = newDetails;
       updateData.details = {
         ...booking.details,
         extendedRate: newExtendedRate,

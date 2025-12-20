@@ -3245,7 +3245,7 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'host');
@@ -3262,7 +3262,7 @@ export default function CarHopApp() {
                         const returnIsTomorrow = returnDate === tomorrow;
                         
                         return (
-                          <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
+                          <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
                             <div className="flex justify-between items-start mb-1">
                               <div className="flex items-center gap-2">
                                 {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
@@ -3353,7 +3353,7 @@ export default function CarHopApp() {
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500">{b.location}</p>
+                                <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
                               </div>
                             </div>
                           </div>
@@ -4715,7 +4715,7 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-green-500 text-white' : 'bg-zinc-500 text-white';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
@@ -4736,7 +4736,7 @@ export default function CarHopApp() {
                         const hasRated = bookingRating?.hostStarsToClient;
                         
                         return (
-                          <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
+                          <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
                             <div className="flex justify-between items-start mb-1">
                               <div className="flex items-center gap-2">
                                 {b.status === 'Completed' && !hasRated && (
@@ -4854,7 +4854,7 @@ export default function CarHopApp() {
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500">{b.location}</p>
+                                <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
                               </div>
                             </div>
                           </div>
@@ -6028,7 +6028,7 @@ export default function CarHopApp() {
                       <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Drop-off: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
-                      <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-1">{b.days} Days | {b.location}</p>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-xs mt-1">{b.days} Days | {formatAddressForDisplay(b.location)}</p>
                       
                       {(b.status === 'Active' || b.status === 'Extended') ? (
                         <div className="mt-6 p-4 bg-zinc-50 dark:bg-black/30 rounded-lg border border-zinc-200 dark:border-zinc-800">
