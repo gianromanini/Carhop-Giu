@@ -6191,8 +6191,13 @@ export default function CarHopApp() {
                         </div>
                       )}
                       {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
-                        <div className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1">
-                          <X size={12}/> Delivery Declined - Pick up at location
+                        <div className="mt-1">
+                          <div className="text-xs font-bold text-red-500 flex items-center gap-1">
+                            <X size={12}/> Delivery Declined - Pick up at location
+                          </div>
+                          <div className="text-xs text-red-500 mt-0.5">
+                            <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors underline" data-testid={`link-pickup-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a>
+                          </div>
                         </div>
                       )}
                       <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>

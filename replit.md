@@ -156,6 +156,13 @@ Preferred communication style: Simple, everyday language.
       - Navigate between photos with arrow buttons
       - Close button to exit lightbox
       - Photo counter showing current/total
+16. **Delivery Approval System (Dec 20):**
+    - Host/Admin can approve or decline delivery requests
+    - Added `minDeliveryHours` field to vehicles for configurable advance notice (default 6 hours)
+    - Customer receives automatic notifications: approval message or decline + pick-up location link
+    - Delivery status indicators in client's "My Bookings": Pending Approval (yellow), Approved (green), Declined (red with pickup location link)
+    - Pickup location displays as clickable Google Maps link when delivery is declined
+    - API endpoint: `PUT /api/bookings/:id/delivery-approval`
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
