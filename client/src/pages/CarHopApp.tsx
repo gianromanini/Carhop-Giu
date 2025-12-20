@@ -826,6 +826,16 @@ export default function CarHopApp() {
     }
   }, [searchParams.end, searchParams.endTime, searchParams.start, searchParams.startTime, view, cart.car?.id]);
 
+  // Sync cart.car with latest vehicle data to ensure availableLocations are current
+  useEffect(() => {
+    if (view === 'checkout' && cart.car && vehicles.length > 0) {
+      const latestCarData = vehicles.find(v => v.id === cart.car!.id);
+      if (latestCarData && JSON.stringify(latestCarData.availableLocations) !== JSON.stringify(cart.car.availableLocations)) {
+        setCart(prev => ({ ...prev, car: latestCarData }));
+      }
+    }
+  }, [view, vehicles, cart.car?.id]);
+
   useEffect(() => {
     if (isAuthenticated && authUser) {
       const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
