@@ -1101,7 +1101,7 @@ export default function CarHopApp() {
       driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), tax: totalData.taxAmount }, 
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount }, 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
       checkOutStatus: 'pending', 
@@ -3642,7 +3642,8 @@ export default function CarHopApp() {
                                 const extras = b.details.extras || 0;
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                const subtotalBeforeTax = rate + extras + protection + cleaningFee;
+                                const deliveryFee = b.details.deliveryFee || 0;
+                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee;
                                 const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
@@ -3676,6 +3677,12 @@ export default function CarHopApp() {
                                           <span>Cleaning Fee</span>
                                           <span>+${cleaningFee.toFixed(2)}</span>
                                         </div>
+                                        {deliveryFee > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Delivery Fee Service</span>
+                                            <span>+${deliveryFee.toFixed(2)}</span>
+                                          </div>
+                                        )}
                                       </div>
                                       <div className="flex justify-between text-zinc-400 text-xs border-t border-zinc-600 pt-2 mb-2">
                                         <span>Subtotal</span>
@@ -5132,7 +5139,8 @@ export default function CarHopApp() {
                                 const extras = b.details.extras || 0;
                                 const protection = b.details.protection || 0;
                                 const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                const subtotalBeforeTax = rate + extras + protection + cleaningFee;
+                                const deliveryFee = b.details.deliveryFee || 0;
+                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee;
                                 const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
@@ -5170,6 +5178,12 @@ export default function CarHopApp() {
                                           <span>Cleaning Fee</span>
                                           <span>+${cleaningFee.toFixed(2)}</span>
                                         </div>
+                                        {deliveryFee > 0 && (
+                                          <div className="flex justify-between text-zinc-300 text-xs">
+                                            <span>Delivery Fee Service</span>
+                                            <span>+${deliveryFee.toFixed(2)}</span>
+                                          </div>
+                                        )}
                                       </div>
                                       <div className="flex justify-between text-zinc-400 text-xs border-t border-zinc-600 pt-2 mb-2">
                                         <span>Subtotal</span>
