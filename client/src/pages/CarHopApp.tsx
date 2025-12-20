@@ -7652,6 +7652,73 @@ export default function CarHopApp() {
                   </div>
                 )}
                 
+                {/* Booking Summary with Details */}
+                <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 mb-6">
+                  <h3 className="font-bold text-white mb-4">Booking Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Vehicle</span>
+                      <span className="text-white font-semibold">{pendingBooking.carName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Dates</span>
+                      <span className="text-white font-semibold">{pendingBooking.startDate} - {pendingBooking.returnDate}</span>
+                    </div>
+                    <div className="border-t border-zinc-700 pt-2 mt-2">
+                      <div className="flex justify-between">
+                        <span className="text-zinc-400">Base Rate</span>
+                        <span className="text-white">${(pendingBooking.details?.rate || 0).toFixed(2)}</span>
+                      </div>
+                      {(pendingBooking.details as any)?.cleaningFee > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Cleaning Fee</span>
+                          <span className="text-white">${((pendingBooking.details as any)?.cleaningFee || 0).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(pendingBooking.details as any)?.protection > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Protection Package</span>
+                          <span className="text-white">${((pendingBooking.details as any)?.protection || 0).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(pendingBooking.details as any)?.extras > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Extras</span>
+                          <span className="text-white">${((pendingBooking.details as any)?.extras || 0).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(pendingBooking.details as any)?.fees > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Fees</span>
+                          <span className="text-white">${((pendingBooking.details as any)?.fees || 0).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(pendingBooking.details as any)?.tax > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-zinc-400">Tax</span>
+                          <span className="text-white">${((pendingBooking.details as any)?.tax || 0).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {approvalStatus === 'approved' && deliveryFeeAmount > 0 && (
+                        <div className="flex justify-between text-green-400">
+                          <span>Delivery Fee</span>
+                          <span>+${deliveryFeeAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {approvalStatus === 'rejected' && deliveryFeeAmount > 0 && (
+                        <div className="flex justify-between text-green-400">
+                          <span>Delivery Discount</span>
+                          <span>-${deliveryFeeAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-between pt-3 border-t border-zinc-600 font-bold text-base">
+                      <span className="text-white">Total</span>
+                      <span className="text-green-500">${adjustedTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Payment Method Tabs */}
                 <div className="flex mb-8 border-b border-zinc-700">
                   <button 
