@@ -6815,18 +6815,23 @@ export default function CarHopApp() {
                   </div>
 
                   {driverDetails.licenseImages.length === 2 && (
-                    <div className="mt-6 pt-6 border-t border-zinc-700">
+                    <div className="mt-6 pt-6 border-t border-zinc-700 space-y-4">
+                      <button 
+                        onClick={() => {
+                          setViewingCarRentalOnly(false);
+                          setShowCarRentalModal(true);
+                        }}
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors"
+                        data-testid="button-read-agreement"
+                      >
+                        <FileText size={18} className="inline mr-2" />
+                        Read Car Rental Agreement
+                      </button>
                       <div className="flex items-start gap-3 p-4 bg-zinc-800/50 rounded-lg">
                         <input 
                           type="checkbox" 
                           checked={carRentalAgreementAccepted} 
-                          onChange={(e) => {
-                            setCarRentalAgreementAccepted(e.target.checked);
-                            if (e.target.checked) {
-                              setViewingCarRentalOnly(false);
-                              setShowCarRentalModal(true);
-                            }
-                          }}
+                          onChange={(e) => setCarRentalAgreementAccepted(e.target.checked)}
                           className="mt-1 w-5 h-5 cursor-pointer" 
                           data-testid="checkbox-car-rental-agreement"
                         />
