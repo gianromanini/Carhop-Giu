@@ -2717,7 +2717,13 @@ export default function CarHopApp() {
                         ))}
                       </div>
                       <div className="flex gap-1.5 sm:gap-2">
-                        <input type="text" value={hostNewLocation} onChange={(e) => setHostNewLocation(e.target.value)} placeholder="Add location..." className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-new-location" />
+                        <div className="flex-1">
+                          <LocationAutocomplete 
+                            value={hostNewLocation} 
+                            onChange={(value) => setHostNewLocation(value)}
+                            placeholder="Add location..."
+                          />
+                        </div>
                         <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
                           <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                         </Button>
