@@ -3,7 +3,7 @@ import { MapPin } from 'lucide-react';
 
 interface LocationAutocompleteProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, coords?: { lat: string; lon: string }) => void;
   placeholder?: string;
   availableLocations?: string[];
 }
@@ -89,7 +89,7 @@ export function LocationAutocomplete({
 
   const handleSelectLocation = (location: LocationSuggestion) => {
     setInputValue(location.display_name);
-    onChange(location.display_name);
+    onChange(location.display_name, { lat: location.lat, lon: location.lon });
     setSuggestions([]);
     setIsOpen(false);
   };
