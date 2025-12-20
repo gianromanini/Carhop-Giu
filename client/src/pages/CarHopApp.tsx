@@ -58,27 +58,78 @@ const convertTo24Hour = (timeStr: string) => {
   }
 };
 
+const STATE_ABBREVIATIONS: { [key: string]: string } = {
+  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+  'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+  'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+  'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+  'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+  'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+  'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+  'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+  'District of Columbia': 'DC'
+};
+
 const formatAddressForDisplay = (fullAddress: string): string => {
   if (!fullAddress) return fullAddress;
   
-  // Parse address components from Nominatim format
-  // Example: "40 Lindeman Drive, Trumbull CT 06611, USA"
+  // Parse address from Nominatim format
+  // Example: "40, Lindeman Drive, Trumbull, Greater Bridgeport Planning Region, Connecticut, 06611, United States"
   // Want: "40 Lindeman Drive, Trumbull, CT 06611"
   
-  // Use a comprehensive regex to extract all 5 components at once
-  const match = fullAddress.match(/^(\d+)\s+(.+?),\s+(.+?)\s+([A-Z]{2})\s+(\d{5})/);
+  const parts = fullAddress.split(',').map(p => p.trim());
+  if (parts.length < 4) return fullAddress;
   
-  if (match) {
-    const number = match[1];
-    const streetName = match[2];
-    const city = match[3];
-    const state = match[4];
-    const zip = match[5];
+  // Find components
+  let number = '';
+  let streetName = '';
+  let city = '';
+  let state = '';
+  let zip = '';
+  
+  // First part is usually the number
+  if (/^\d+$/.test(parts[0])) {
+    number = parts[0];
+    streetName = parts[1] || '';
+    city = parts[2] || '';
+  } else {
+    // Number might be combined with street
+    const streetMatch = parts[0].match(/^(\d+)\s+(.+)$/);
+    if (streetMatch) {
+      number = streetMatch[1];
+      streetName = streetMatch[2];
+      city = parts[1] || '';
+    } else {
+      return fullAddress;
+    }
+  }
+  
+  // Find state and zip from remaining parts
+  for (let i = 3; i < parts.length; i++) {
+    const part = parts[i];
     
+    // Check if it's a state name
+    if (STATE_ABBREVIATIONS[part]) {
+      state = STATE_ABBREVIATIONS[part];
+    }
+    // Check if already abbreviated state
+    if (/^[A-Z]{2}$/.test(part)) {
+      state = part;
+    }
+    // Check for zip code
+    const zipMatch = part.match(/(\d{5})/);
+    if (zipMatch) {
+      zip = zipMatch[1];
+    }
+  }
+  
+  // Build formatted address
+  if (number && streetName && city && state && zip) {
     return `${number} ${streetName}, ${city}, ${state} ${zip}`;
   }
   
-  // Fallback to original if regex doesn't match
   return fullAddress;
 };
 
