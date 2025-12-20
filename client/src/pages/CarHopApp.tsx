@@ -1053,7 +1053,16 @@ export default function CarHopApp() {
     if (paymentMethod === 'credit' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName)) { 
       alert("Please enter valid payment details."); 
       return; 
-    } 
+    }
+    
+    // Validate pickup location selection - must be from available locations
+    if (selectedDeliveryType === 'pickup') {
+      if (!pickupAddress || (cart.car?.availableLocations && !cart.car.availableLocations.includes(pickupAddress))) {
+        alert("Please select a valid pickup location from the vehicle's available locations.");
+        return;
+      }
+    }
+    
     setIsProcessingPayment(true); 
     
     // Simulate payment processing animation
@@ -1066,13 +1075,22 @@ export default function CarHopApp() {
       ? 'PayPal' 
       : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
     
+    // Ensure booking location is always valid
+    let bookingLocation = '';
+    if (selectedDeliveryType === 'delivery') {
+      bookingLocation = deliveryAddressBooking;
+    } else {
+      // For pickup, must use a selected location from available locations
+      bookingLocation = pickupAddress || (cart.car?.availableLocations?.[0] || '');
+    }
+    
     const newBooking = { 
       bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
       status: 'Active', 
       carName: cart.car!.model, 
       vehicleId: cart.car!.id,
-      location: selectedDeliveryType === 'delivery' ? deliveryAddressBooking : pickupAddress, 
+      location: bookingLocation, 
       startDate: searchParams.start, 
       startTime: searchParams.startTime, 
       returnDate: searchParams.end, 
