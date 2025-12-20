@@ -6975,6 +6975,7 @@ export default function CarHopApp() {
               {/* Credit Card Form */}
               {paymentMethod === 'credit' && (
                 <div className="space-y-4">
+                  {/* Card Number with Auto-detected Brand */}
                   <div>
                     <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
                     <div className="flex gap-3 items-center">
@@ -6997,18 +6998,20 @@ export default function CarHopApp() {
                       )}
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">NAME ON CARD</label>
-                    <input 
-                      type="text"
-                      value={paymentDetails.cardName} 
-                      onChange={(e: any) => setPaymentDetails({...paymentDetails, cardName: e.target.value})} 
-                      placeholder="JOHN DOE"
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                      data-testid="input-card-name" 
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                  {/* Name + Expiry/CVC in responsive grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-1">
+                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">NAME ON CARD</label>
+                      <input 
+                        type="text"
+                        value={paymentDetails.cardName} 
+                        onChange={(e: any) => setPaymentDetails({...paymentDetails, cardName: e.target.value})} 
+                        placeholder="JOHN DOE"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
+                        data-testid="input-card-name" 
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY (MM/YY)</label>
                       <input 
