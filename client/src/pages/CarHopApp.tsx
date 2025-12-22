@@ -2988,19 +2988,10 @@ export default function CarHopApp() {
                         )}
                       </div>
                     </Card>
-                  </div>
-                </div>
 
-                {/* Vehicle Edit Modal */}
-                {editingHostVehicle && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-2xl">
-                      <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Edit Vehicle: {editingHostVehicle.model}</h3>
-                        <button onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" data-testid="button-close-edit-vehicle">
-                          <X size={20} className="text-zinc-500"/>
-                        </button>
-                      </div>
+                    {editingHostVehicle && (
+                    <Card className="p-3 sm:p-6">
+                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Edit Vehicle: {editingHostVehicle.model}</h3>
 
                       {/* Photo Management */}
                       <div className="mb-6">
@@ -3305,7 +3296,7 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-2 sm:gap-3 flex-wrap">
                         <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); setEditingPricingStrings({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'}); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
                         <Button variant="primary" className="flex-1" onClick={() => {
                           const updatedData = {
@@ -3319,9 +3310,9 @@ export default function CarHopApp() {
                           <Check size={16}/> Update Configuration
                         </Button>
                       </div>
-                    </div>
+                    </Card>
+                    )}
                   </div>
-                )}
               </div>
             );
           })()}
