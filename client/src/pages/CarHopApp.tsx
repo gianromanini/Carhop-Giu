@@ -692,6 +692,7 @@ export default function CarHopApp() {
       setFormData(initialFormState); 
       setPricingStrings(defaultPricingStrings);
       toast({ title: 'Vehicle created successfully' });
+      window.scrollTo(0, 0);
     }
   });
 
@@ -707,6 +708,7 @@ export default function CarHopApp() {
       setPricingStrings(defaultPricingStrings);
       setEditingId(null); 
       toast({ title: 'Vehicle updated successfully' });
+      window.scrollTo(0, 0);
     }
   });
 
@@ -1625,6 +1627,7 @@ export default function CarHopApp() {
       insurance1000: String(pricing.prices?.insurance1000 || ''),
     });
     setEditingId(car.id);
+    window.scrollTo(0, 0);
   };
 
   const addLocationToVehicle = () => { 
@@ -3031,7 +3034,8 @@ export default function CarHopApp() {
                                   maxDeliveryDistance: car.maxDeliveryDistance || 50,
                                   minDeliveryHours: car.minDeliveryHours || 6
                                 });
-                                setHostVehicleImages(car.images || []); 
+                                setHostVehicleImages(car.images || []);
+                                window.scrollTo(0, 0);
                               }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
                                 <Edit size={14} className="sm:w-4 sm:h-4" />
                               </button>
