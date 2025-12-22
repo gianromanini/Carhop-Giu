@@ -3313,6 +3313,7 @@ export default function CarHopApp() {
                       </Card>
                     )}
                   </div>
+                </div>
               </div>
             );
           })()}
