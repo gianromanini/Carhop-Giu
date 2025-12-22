@@ -2560,7 +2560,24 @@ export default function CarHopApp() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                   <div className="lg:col-span-1">
                     <Card className="p-3 sm:p-6">
-                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Add New Vehicle</h3>
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white">
+                          {editingHostVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
+                        </h3>
+                        {editingHostVehicle && (
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setEditingHostVehicle(null);
+                              setFormData({model: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', category: '', consumption: '', driveType: 'AWD', isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasSunroof: false, images: [], commission: 10, deductible: 1000, allowDelivery: false, deliveryMinFee: 15, deliveryMinDistance: 5, deliveryPricePerMile: 2.5, maxDeliveryDistance: 50, minDeliveryHours: 6});
+                            }}
+                            className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
+                            data-testid="button-cancel-edit"
+                          >
+                            <X size={14}/> Cancel
+                          </button>
+                        )}
+                      </div>
                       <form onSubmit={(e) => {
                         e.preventDefault();
                         const vehicleData = {
@@ -2570,7 +2587,13 @@ export default function CarHopApp() {
                           commission: formData.commission || 10,
                           deductible: formData.deductible || 1000
                         };
-                        createVehicleMutation.mutate(vehicleData);
+                        if (editingHostVehicle) {
+                          updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
+                          setEditingHostVehicle(null);
+                          setFormData({model: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', category: '', consumption: '', driveType: 'AWD', isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasSunroof: false, images: [], commission: 10, deductible: 1000, allowDelivery: false, deliveryMinFee: 15, deliveryMinDistance: 5, deliveryPricePerMile: 2.5, maxDeliveryDistance: 50, minDeliveryHours: 6});
+                        } else {
+                          createVehicleMutation.mutate(vehicleData);
+                        }
                       }} className="space-y-3 sm:space-y-4">
                         <div>
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Car Model *</label>
@@ -2837,7 +2860,9 @@ export default function CarHopApp() {
                           </div>
                         </div>
 
-                        <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">Add Vehicle</Button>
+                        <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">
+                          {editingHostVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+                        </Button>
                       </form>
                     </Card>
                   </div>
@@ -2975,7 +3000,39 @@ export default function CarHopApp() {
                               <p className="text-[10px] sm:text-xs font-bold text-green-600 mt-0.5 sm:mt-1">${car.price}/d | {car.commission || 10}%</p>
                             </div>
                             <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                              <button onClick={() => { setEditingHostVehicle(car); setHostVehicleImages(car.images || []); setEditingPricingStrings({taxes: String(car.pricing?.taxes || '8.5'), extraMileRate: String(car.pricing?.extraMileRate || '0.45'), childSeat: String(car.pricing?.prices?.childSeat || '8'), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || '35'), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || '25'), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || '50'), cleaningFee: String(car.pricing?.cleaningFee || '25'), includedMiles: String(car.pricing?.includedMiles || '200'), insurance500: String(car.pricing?.prices?.insurance500 || '25'), insurance1000: String(car.pricing?.prices?.insurance1000 || '15')}); }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
+                              <button onClick={() => { 
+                                setEditingHostVehicle(car); 
+                                setFormData({
+                                  model: car.model || '',
+                                  price: String(car.price || ''),
+                                  fuel: car.fuel || 'Gasoline',
+                                  seats: car.seats || 5,
+                                  transmission: car.transmission || 'Automatic',
+                                  category: car.category || '',
+                                  consumption: car.consumption || '',
+                                  driveType: car.driveType || 'AWD',
+                                  isAWD: car.isAWD || false,
+                                  hasCarPlay: car.hasCarPlay || false,
+                                  hasBluetooth: car.hasBluetooth || false,
+                                  hasReverseCamera: car.hasReverseCamera || false,
+                                  hasHeatedSeats: car.hasHeatedSeats || false,
+                                  hasHeatedSteering: car.hasHeatedSteering || false,
+                                  hasElectricSeats: car.hasElectricSeats || false,
+                                  hasPaddleShifters: car.hasPaddleShifters || false,
+                                  hasKeylessEntry: car.hasKeylessEntry || false,
+                                  hasSunroof: car.hasSunroof || false,
+                                  images: car.images || [],
+                                  commission: car.commission || 10,
+                                  deductible: car.deductible || 1000,
+                                  allowDelivery: car.allowDelivery || false,
+                                  deliveryMinFee: car.deliveryMinFee || 15,
+                                  deliveryMinDistance: car.deliveryMinDistance || 5,
+                                  deliveryPricePerMile: car.deliveryPricePerMile || 2.5,
+                                  maxDeliveryDistance: car.maxDeliveryDistance || 50,
+                                  minDeliveryHours: car.minDeliveryHours || 6
+                                });
+                                setHostVehicleImages(car.images || []); 
+                              }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
                                 <Edit size={14} className="sm:w-4 sm:h-4" />
                               </button>
                               <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
@@ -2989,329 +3046,6 @@ export default function CarHopApp() {
                       </div>
                     </Card>
 
-                    {editingHostVehicle && (
-                      <Card className="p-3 sm:p-6">
-                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Edit Vehicle: {editingHostVehicle.model}</h3>
-
-                      {/* Photo Management */}
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                          <Image size={14}/> Vehicle Photos ({hostVehicleImages.length})
-                        </label>
-                        <div className="grid grid-cols-4 gap-3 mb-3">
-                          {hostVehicleImages.map((img, idx) => (
-                            <div key={idx} className="relative group">
-                              <img src={img} alt={`Photo ${idx+1}`} className="w-full h-20 object-cover rounded-lg border border-zinc-300 dark:border-zinc-700" />
-                              <button onClick={() => setHostVehicleImages(hostVehicleImages.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`button-remove-photo-${idx}`}>
-                                <X size={12}/>
-                              </button>
-                            </div>
-                          ))}
-                          <button onClick={() => setHostVehicleImages([...hostVehicleImages, ''])} className="w-full h-20 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-400 hover:border-green-500 hover:text-green-500 transition-colors" data-testid="button-add-photo-slot">
-                            <Plus size={24}/>
-                          </button>
-                        </div>
-                        <div className="flex gap-2 mb-2">
-                          <input type="file" ref={editVehicleImageInputRef} accept="image/*" onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target?.result as string;
-                                const newImages = hostVehicleImages[0] === '' ? [base64] : [...hostVehicleImages, base64];
-                                setHostVehicleImages(newImages);
-                                if (editVehicleImageInputRef.current) editVehicleImageInputRef.current.value = '';
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }} className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-edit-vehicle-photo-upload" />
-                        </div>
-                        {hostVehicleImages.map((img, idx) => (
-                          <input key={idx} type="text" value={img} onChange={(e) => { const newImages = [...hostVehicleImages]; newImages[idx] = e.target.value; setHostVehicleImages(newImages); }} placeholder={`Photo URL ${idx+1}`} className="w-full px-3 py-2 mb-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid={`input-photo-url-${idx}`} />
-                        ))}
-                      </div>
-
-                      {/* Vehicle Details */}
-                      <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price/Day ($)</label>
-                          <input type="number" value={editingHostVehicle.price} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, price: parseFloat(e.target.value) || 0})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-edit-vehicle-price" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category</label>
-                          <select value={editingHostVehicle.category || ''} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, category: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-edit-vehicle-category">
-                            <option value="">Select Category</option>
-                            <option value="SEDAN">SEDAN</option>
-                            <option value="SUV">SUV</option>
-                            <option value="HATCHBACK">HATCHBACK</option>
-                            <option value="MINIVAN">MINIVAN</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
-                          <select value={editingHostVehicle.fuel || 'Gasoline'} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, fuel: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="Gasoline">Gasoline</option>
-                            <option value="Diesel">Diesel</option>
-                            <option value="Electric">Electric</option>
-                            <option value="Hybrid">Hybrid</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
-                          <select value={editingHostVehicle.transmission || 'Automatic'} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, transmission: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="Automatic">Automatic</option>
-                            <option value="Manual">Manual</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Seats</label>
-                          <select value={editingHostVehicle.seats || 5} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, seats: parseInt(e.target.value)})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="4">4 Seats</option>
-                            <option value="5">5 Seats</option>
-                            <option value="7">7 Seats</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
-                          <select value={editingHostVehicle.driveType || 'AWD'} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, driveType: e.target.value})} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm">
-                            <option value="AWD">AWD</option>
-                            <option value="FWD">FWD</option>
-                            <option value="RWD">RWD</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Commission Plan */}
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Commission Plan</label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 15, deductible: 750})}>
-                            <input type="radio" checked={editingHostVehicle.commission === 15} onChange={() => {}} className="w-4 h-4" />
-                            <div className="ml-3">
-                              <p className="text-sm font-bold text-zinc-900 dark:text-white">15% Commission</p>
-                              <p className="text-xs text-zinc-500">$750 Deductible</p>
-                            </div>
-                          </div>
-                          <div className={`flex items-center p-3 border rounded cursor-pointer transition-colors ${editingHostVehicle.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setEditingHostVehicle({...editingHostVehicle, commission: 25, deductible: 500})}>
-                            <input type="radio" checked={editingHostVehicle.commission === 25} onChange={() => {}} className="w-4 h-4" />
-                            <div className="ml-3">
-                              <p className="text-sm font-bold text-zinc-900 dark:text-white">25% Commission</p>
-                              <p className="text-xs text-zinc-500">$500 Deductible</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Pickup Locations */}
-                      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 rounded-lg">
-                        <label className="block text-xs font-bold text-zinc-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
-                          <MapPin size={14}/> Pickup Locations for This Car
-                        </label>
-                        <div className="mb-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-300 dark:border-zinc-700">
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Add a location for this specific car:</p>
-                          <LocationAutocomplete value={newLocation} onChange={(val) => setNewLocation(val)} placeholder="Enter pickup address" />
-                          <Button onClick={addLocationToVehicle} variant="secondary" className="w-full mt-2" size="sm" data-testid="button-add-host-location">Add Location</Button>
-                        </div>
-                        <div className="mb-4">
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2 font-semibold">Locations assigned to this car:</p>
-                          {(editingHostVehicle.availableLocations || []).length > 0 ? (
-                            <div className="space-y-2">
-                              {(editingHostVehicle.availableLocations || []).map((loc) => (
-                                <div key={loc} className="flex items-center justify-between p-2 bg-white dark:bg-zinc-800 rounded border border-zinc-300 dark:border-zinc-700">
-                                  <span className="text-sm text-zinc-700 dark:text-zinc-300">{loc}</span>
-                                  <button
-                                    onClick={() => {
-                                      const current = editingHostVehicle.availableLocations || [];
-                                      setEditingHostVehicle({...editingHostVehicle, availableLocations: current.filter(l => l !== loc)});
-                                    }}
-                                    className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                                    data-testid={`button-remove-location-${loc}`}
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-zinc-400 italic">No locations added yet</p>
-                          )}
-                        </div>
-                        <Button 
-                          variant="primary" 
-                          size="sm"
-                          className="w-full" 
-                          onClick={() => {
-                            updateVehicleMutation.mutate({ 
-                              id: editingHostVehicle.id, 
-                              data: {...editingHostVehicle, availableLocations: editingHostVehicle.availableLocations || []} 
-                            });
-                          }}
-                          data-testid="button-save-vehicle-locations"
-                        >
-                          <Check size={14}/> Save Locations
-                        </Button>
-                      </div>
-
-                      {/* Features */}
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Features</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasCarPlay || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasCarPlay: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            CarPlay / Auto
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasBluetooth || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasBluetooth: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Bluetooth
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasReverseCamera || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasReverseCamera: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Reverse Camera
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasHeatedSeats || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasHeatedSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Heated Seats
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasHeatedSteering || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasHeatedSteering: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Heated Steering
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasElectricSeats || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasElectricSeats: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Electric Seats
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasPaddleShifters || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasPaddleShifters: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Paddle Shifters
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasKeylessEntry || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasKeylessEntry: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Keyless Entry
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasBlindSpotWarning || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasBlindSpotWarning: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Blind Spot Warning
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasDriveAssist || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasDriveAssist: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            Drive Assist
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                            <input type="checkbox" checked={editingHostVehicle.hasUSBCharger || false} onChange={(e) => setEditingHostVehicle({...editingHostVehicle, hasUSBCharger: e.target.checked})} className="w-4 h-4 accent-green-600" />
-                            USB Charger
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Individual Vehicle Pricing Configuration */}
-                      <div className="mb-6 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-lg">
-                        <label className="block text-xs font-bold text-zinc-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
-                          <DollarSign size={14}/> Individual Price Configuration
-                        </label>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Sales Tax (%)</label>
-                            <input 
-                              type="text" 
-                              inputMode="decimal"
-                              placeholder="e.g., 8.5"
-                              value={editingPricingStrings.taxes}
-                              onChange={(e) => setEditingPricingStrings({...editingPricingStrings, taxes: e.target.value})}
-                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}), taxes: val}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing}); setEditingPricingStrings({...editingPricingStrings, taxes: String(val)})}}
-                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                              data-testid="input-vehicle-pricing-taxes"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Cleaning Fee ($)</label>
-                            <input 
-                              type="number" 
-                              step="0.01"
-                              value={editingHostVehicle.pricing?.cleaningFee ?? 25} 
-                              onChange={(e) => setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}), cleaningFee: parseFloat(e.target.value) || 0}} as Vehicle)}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                              data-testid="input-vehicle-pricing-cleaning"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Included Miles/Day (Editable)</label>
-                            <input 
-                              type="text" 
-                              inputMode="decimal"
-                              placeholder="e.g., 200"
-                              value={editingHostVehicle.pricing?.includedMiles ?? 200} 
-                              onChange={(e) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setEditingHostVehicle({...editingHostVehicle, pricing: {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}), includedMiles: val}} as Vehicle)}}
-                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                              data-testid="input-vehicle-pricing-miles"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Extra Mile Rate ($) (Editable)</label>
-                            <input 
-                              type="text" 
-                              inputMode="decimal"
-                              placeholder="e.g., 0.45"
-                              value={editingPricingStrings.extraMileRate}
-                              onChange={(e) => setEditingPricingStrings({...editingPricingStrings, extraMileRate: e.target.value})}
-                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}), extraMileRate: val}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing}); setEditingPricingStrings({...editingPricingStrings, extraMileRate: String(val)})}}
-                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                              data-testid="input-vehicle-pricing-extra-mile"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $500 (Fixed)</label>
-                            <input 
-                              type="text" 
-                              placeholder="e.g., 25 or 25.50"
-                              value={editingHostVehicle.pricing?.prices?.insurance500 ?? 25} 
-                              disabled
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" 
-                              data-testid="input-vehicle-pricing-ins500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Insurance $1000 (Fixed)</label>
-                            <input 
-                              type="text" 
-                              placeholder="e.g., 15 or 15.50"
-                              value={editingHostVehicle.pricing?.prices?.insurance1000 ?? 15} 
-                              disabled
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-sm cursor-not-allowed opacity-60" 
-                              data-testid="input-vehicle-pricing-ins1000"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Child Seat Price (Editable)</label>
-                            <input 
-                              type="text" 
-                              inputMode="decimal"
-                              placeholder="e.g., 8 or 8.50"
-                              value={editingPricingStrings.childSeat}
-                              onChange={(e) => setEditingPricingStrings({...editingPricingStrings, childSeat: e.target.value})}
-                              onBlur={(e) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0; const newPricing = {...(editingHostVehicle.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}), prices: {...(editingHostVehicle.pricing?.prices || {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}), childSeat: val}}; setEditingHostVehicle({...editingHostVehicle, pricing: newPricing}); setEditingPricingStrings({...editingPricingStrings, childSeat: String(val)})}}
-                              className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
-                              data-testid="input-vehicle-pricing-child-seat"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 sm:gap-3 flex-wrap">
-                        <Button variant="secondary" className="flex-1" onClick={() => { setEditingHostVehicle(null); setHostVehicleImages([]); setEditingPricingStrings({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'}); }} data-testid="button-cancel-edit-vehicle">Cancel</Button>
-                        <Button variant="primary" className="flex-1" onClick={() => {
-                          const updatedData = {
-                            ...editingHostVehicle,
-                            images: hostVehicleImages.filter(img => img.trim() !== '')
-                          };
-                          updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: updatedData });
-                          setEditingHostVehicle(null);
-                          setHostVehicleImages([]);
-                        }} data-testid="button-update-configuration">
-                          <Check size={16}/> Update Configuration
-                        </Button>
-                      </div>
-                      </Card>
-                    )}
                   </div>
                 </div>
               </div>
