@@ -2779,38 +2779,38 @@ export default function CarHopApp() {
 
                         <div className="border-t pt-3 sm:pt-4">
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider flex items-center gap-1.5">
-                            <Route size={12} className="text-blue-500"/> Delivery Settings
+                            <Route size={12} className="text-blue-500"/> Delivery to Guest
                           </label>
                           <label className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer mb-3">
                             <input type="checkbox" checked={formData.isDeliveryEnabled || false} onChange={(e) => setFormData({...formData, isDeliveryEnabled: e.target.checked})} className="w-3 h-3 sm:w-4 sm:h-4 accent-green-600" />
-                            Enable Delivery
+                            Allow Delivery to Customers?
                           </label>
                           {formData.isDeliveryEnabled && (
                             <div className="space-y-2 sm:space-y-3 bg-blue-50 dark:bg-blue-950/20 p-2 sm:p-3 rounded-lg">
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Base Fee ($)</label>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Min Fee Amount ($)</label>
                                   <input type="number" step="0.01" value={formData.minDeliveryFee || 15} onChange={(e) => setFormData({...formData, minDeliveryFee: parseFloat(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-min-delivery-fee" />
                                 </div>
                                 <div>
-                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Up to (mi)</label>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Min Fee Distance (Miles)</label>
                                   <input type="number" value={formData.minDeliveryFeeMiles || 5} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: parseInt(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-min-delivery-miles" />
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">$/mile extra</label>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Price Per Mile ($)</label>
                                   <input type="number" step="0.01" value={formData.deliveryPricePerMile || 2.50} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-delivery-per-mile" />
                                 </div>
                                 <div>
-                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Max (mi)</label>
+                                  <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Max Distance (Miles)</label>
                                   <input type="number" value={formData.maxDeliveryDistance || 50} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-max-delivery-distance" />
                                 </div>
                               </div>
                               <div className="mt-2">
-                                <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Min Hours Advance</label>
+                                <label className="block text-[9px] sm:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 uppercase">Min Hours Advance for Delivery</label>
                                 <input type="number" value={formData.minDeliveryHours || 6} onChange={(e) => setFormData({...formData, minDeliveryHours: parseInt(e.target.value) || 6})} className="w-full px-2 py-1 sm:py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs" data-testid="input-host-min-delivery-hours" />
-                                <p className="text-[8px] text-zinc-500 mt-0.5">Hours needed for delivery approval</p>
+                                <p className="text-[8px] text-zinc-500 mt-0.5">Minimum hours in advance required for delivery approval</p>
                               </div>
                               <p className="text-[9px] sm:text-[10px] text-zinc-500 italic mt-2">Ex: $15 up to 5mi, then $2.50/mi extra</p>
                             </div>
