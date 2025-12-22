@@ -3848,7 +3848,7 @@ export default function CarHopApp() {
                                       </div>
                                     </div>
 
-                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0 || discount > 0) && (
+                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
                                         <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
                                         <div className="space-y-1 mb-2">
@@ -3873,12 +3873,6 @@ export default function CarHopApp() {
                                               <span>+${c.amount.toFixed(2)}</span>
                                             </div>
                                           ))}
-                                          {discount > 0 && (
-                                            <div className="flex justify-between text-green-300 text-xs">
-                                              <span>Discount</span>
-                                              <span>-${discount.toFixed(2)}</span>
-                                            </div>
-                                          )}
                                         </div>
                                       </div>
                                     )}
@@ -5407,7 +5401,7 @@ export default function CarHopApp() {
                                     </div>
 
                                     {/* Additional Charges */}
-                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0 || discount > 0) && (
+                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
                                         <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
                                         <div className="space-y-1 mb-2">
@@ -5440,21 +5434,6 @@ export default function CarHopApp() {
                                               <span>+${p.amount.toFixed(2)}</span>
                                             </div>
                                           ))}
-                                          {discount > 0 && (
-                                            <div className="flex justify-between text-green-400 text-xs">
-                                              <span className="flex items-center gap-1">
-                                                Discount Applied
-                                                <button 
-                                                  onClick={() => handleRemoveDiscount(b)} 
-                                                  className="text-red-400 hover:text-red-300"
-                                                  data-testid="button-remove-discount"
-                                                >
-                                                  <X size={10}/>
-                                                </button>
-                                              </span>
-                                              <span>-${discount.toFixed(2)}</span>
-                                            </div>
-                                          )}
                                           {additionalTax > 0 && (
                                             <div className="flex justify-between text-purple-300 text-xs">
                                               <span>Tax on Additional Charges</span>
