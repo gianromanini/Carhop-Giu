@@ -2990,7 +2990,7 @@ export default function CarHopApp() {
                     </Card>
 
                     {editingHostVehicle && (
-                    <Card className="p-3 sm:p-6">
+                      <Card className="p-3 sm:p-6">
                       <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Edit Vehicle: {editingHostVehicle.model}</h3>
 
                       {/* Photo Management */}
@@ -3310,7 +3310,7 @@ export default function CarHopApp() {
                           <Check size={16}/> Update Configuration
                         </Button>
                       </div>
-                    </Card>
+                      </Card>
                     )}
                   </div>
               </div>
