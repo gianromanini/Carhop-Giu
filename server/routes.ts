@@ -17,6 +17,303 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Email notification helper functions
+async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+
+  const deliveryType = booking.details?.deliveryType || 'pickup';
+  const deliveryAddress = booking.details?.deliveryAddress || '';
+  const pickupAddress = booking.details?.pickupAddress || booking.location || '';
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Booking Confirmation #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Booking Confirmed!</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+              Your booking has been confirmed! Here are your rental details:
+            </p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || vehicle?.model || 'N/A'}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Pick-up Date:</strong> ${booking.startDate} at ${booking.startTime}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Return Date:</strong> ${booking.returnDate} at ${booking.returnTime}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Duration:</strong> ${booking.days} day(s)
+              </p>
+              ${deliveryType === 'delivery' ? `
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Delivery Address:</strong> ${deliveryAddress}
+                </p>
+                <p style="margin: 0; color: #f59e0b;">
+                  <strong>Note:</strong> Delivery is pending approval. You will receive a notification once approved.
+                </p>
+              ` : `
+                <p style="margin: 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Pickup Location:</strong> ${pickupAddress}
+                </p>
+              `}
+            </div>
+            
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #0369a1; font-size: 14px;">
+                <strong>Total Amount:</strong> $${(booking.total || 0).toFixed(2)}
+              </p>
+            </div>
+            
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+              CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`Booking confirmation email sent to ${clientEmail}`);
+  } catch (error) {
+    console.error("Error sending booking confirmation email:", error);
+  }
+}
+
+async function sendDeliveryApprovalEmail(booking: any, status: 'approved' | 'rejected', pickupLocation: string) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+
+  const isApproved = status === 'approved';
+  const deliveryAddress = booking.details?.deliveryAddress || '';
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Delivery Request ${isApproved ? 'Approved' : 'Declined'} #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, ${isApproved ? '#22c55e' : '#f59e0b'} 0%, ${isApproved ? '#16a34a' : '#d97706'} 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Delivery ${isApproved ? 'Approved!' : 'Declined'}</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            
+            ${isApproved ? `
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                Great news! Your delivery request has been <strong style="color: #22c55e;">approved</strong>. The vehicle will be delivered to your specified address at the scheduled time.
+              </p>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+                </p>
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Delivery Address:</strong> ${deliveryAddress}
+                </p>
+                <p style="margin: 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Delivery Date:</strong> ${booking.startDate} at ${booking.startTime}
+                </p>
+              </div>
+            ` : `
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                We're sorry, but your delivery request has been <strong style="color: #f59e0b;">declined</strong>. However, you can still pick up the vehicle at our location.
+              </p>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+                </p>
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Pickup Location:</strong> ${pickupLocation}
+                </p>
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Pickup Date:</strong> ${booking.startDate} at ${booking.startTime}
+                </p>
+                <p style="margin: 0; color: #22c55e;">
+                  <strong>Good News:</strong> The delivery fee has been removed from your total.
+                </p>
+              </div>
+              
+              <div style="text-align: center; margin: 20px 0;">
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickupLocation)}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  View Pickup Location on Map
+                </a>
+              </div>
+            `}
+            
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+              CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`Delivery ${status} email sent to ${clientEmail}`);
+  } catch (error) {
+    console.error("Error sending delivery approval email:", error);
+  }
+}
+
+async function sendExtensionResponseEmail(booking: any, status: 'approved' | 'rejected', requestDetails: any) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+
+  const isApproved = status === 'approved';
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Extension Request ${isApproved ? 'Approved' : 'Declined'} #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, ${isApproved ? '#22c55e' : '#ef4444'} 0%, ${isApproved ? '#16a34a' : '#dc2626'} 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Extension ${isApproved ? 'Approved!' : 'Declined'}</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            
+            ${isApproved ? `
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                Your extension request has been <strong style="color: #22c55e;">approved</strong>! Your new return date has been updated.
+              </p>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+                </p>
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">New Return Date:</strong> ${requestDetails?.requestedReturnDate} at ${requestDetails?.requestedReturnTime}
+                </p>
+              </div>
+              
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">
+                Please note that additional charges may apply for the extended period.
+              </p>
+            ` : `
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                We're sorry, but your extension request has been <strong style="color: #ef4444;">declined</strong>. Please return the vehicle by the original date and time.
+              </p>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <p style="margin: 0 0 10px 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+                </p>
+                <p style="margin: 0; color: #6b7280;">
+                  <strong style="color: #1f2937;">Original Return Date:</strong> ${booking.returnDate} at ${booking.returnTime}
+                </p>
+              </div>
+              
+              <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">
+                If you need to extend your rental, please contact us to discuss available options.
+              </p>
+            `}
+            
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+              CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`Extension ${status} email sent to ${clientEmail}`);
+  } catch (error) {
+    console.error("Error sending extension response email:", error);
+  }
+}
+
+async function sendNewBookingNotificationToHost(booking: any, vehicle: any) {
+  const hostEmail = process.env.EMAIL_USER; // Admin email
+  if (!hostEmail) return;
+
+  const deliveryType = booking.details?.deliveryType || 'pickup';
+  const deliveryAddress = booking.details?.deliveryAddress || '';
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: hostEmail,
+      subject: `New Booking Received #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">New Booking!</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">A new booking has been received!</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || vehicle?.model || 'N/A'}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Customer:</strong> ${booking.driver?.name || 'N/A'}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Email:</strong> ${booking.driver?.email || 'N/A'}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Phone:</strong> ${booking.driver?.phone || 'N/A'}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Pick-up:</strong> ${booking.startDate} at ${booking.startTime}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Return:</strong> ${booking.returnDate} at ${booking.returnTime}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Duration:</strong> ${booking.days} day(s)
+              </p>
+              <p style="margin: 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Total:</strong> $${(booking.total || 0).toFixed(2)}
+              </p>
+            </div>
+            
+            ${deliveryType === 'delivery' ? `
+              <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e; font-weight: bold;">Delivery Requested</p>
+                <p style="margin: 5px 0 0 0; color: #92400e;">Address: ${deliveryAddress}</p>
+                <p style="margin: 5px 0 0 0; color: #92400e;">Please approve or decline this delivery request in the admin dashboard.</p>
+              </div>
+            ` : ''}
+            
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Log in to the admin dashboard to manage this booking.
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`New booking notification sent to host`);
+  } catch (error) {
+    console.error("Error sending new booking notification:", error);
+  }
+}
+
 const signupSchema = z.object({
   firstName: z.string().min(2, "First name required"),
   lastName: z.string().min(2, "Last name required"),
@@ -312,6 +609,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       return res.status(400).json({ error: result.error.flatten() });
     }
     const booking = await storage.createBooking(result.data);
+    
+    // Send email notifications
+    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
+    sendBookingConfirmationEmail(booking, vehicle);
+    sendNewBookingNotificationToHost(booking, vehicle);
+    
     res.status(201).json(booking);
   });
 
@@ -420,6 +723,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
     
     const updated = await storage.updateBooking(id, updateData);
+    
+    // Send email notification for extension response
+    const respondedRequest = extensionRequests.find(r => r.id === requestId);
+    if (respondedRequest && (status === 'approved' || status === 'rejected')) {
+      sendExtensionResponseEmail(updated, status, respondedRequest);
+    }
+    
     res.json(updated);
   });
 
@@ -471,6 +781,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
     
     const updated = await storage.updateBooking(id, updateData);
+    
+    // Send email notification for delivery approval/rejection
+    const pickupLocation = booking.details?.pickupAddress || booking.location || '';
+    sendDeliveryApprovalEmail(updated, status, pickupLocation);
+    
     res.json(updated);
   });
 
