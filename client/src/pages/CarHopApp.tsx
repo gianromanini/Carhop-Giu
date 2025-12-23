@@ -1385,6 +1385,9 @@ export default function CarHopApp() {
   };
 
   const getUnreadMessagesCount = (booking: Booking, reader: 'client' | 'admin' | 'host') => {
+    // Don't count messages for cancelled bookings
+    if (booking.status === 'Cancelled') return 0;
+    
     const messages = booking.messages || [];
     // For host, filter out host messages; for client, filter out messages from admin/host
     if (reader === 'host') {
@@ -1400,6 +1403,9 @@ export default function CarHopApp() {
 
   const getTotalPendingNotifications = () => {
     return bookings.reduce((acc, b) => {
+      // Don't count notifications for cancelled bookings
+      if (b.status === 'Cancelled') return acc;
+      
       const pendingRequests = (b.extensionRequests || []).filter(r => r.status === 'pending').length;
       const unreadMessages = (b.messages || []).filter(m => m.sender === 'client' && !m.read).length;
       return acc + pendingRequests + unreadMessages;
@@ -1407,7 +1413,7 @@ export default function CarHopApp() {
   };
 
   const getClientUnreadCount = () => {
-    return bookings.filter(b => clientUser && b.driver.email === clientUser.email).reduce((acc, b) => {
+    return bookings.filter(b => clientUser && b.driver.email === clientUser.email && b.status !== 'Cancelled').reduce((acc, b) => {
       const unread = (b.messages || []).filter(m => m.sender === 'admin' && !m.read).length;
       return acc + unread;
     }, 0);
