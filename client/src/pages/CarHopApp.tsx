@@ -7267,10 +7267,9 @@ export default function CarHopApp() {
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
           const originalPickupAddress = (pendingBooking.details as any)?.pickupAddress || '';
           
-          // Calculate tax rate from current tax and subtotal
-          const subtotal = (pendingBooking.details?.rate || 0) + (pendingBooking.details?.protection || 0) + (pendingBooking.details?.extras || 0) + (pendingBooking.details?.fees || 0);
+          // Use actual tax rate from settings (e.g., 8.5% = 0.085)
+          const taxRate = (settings.taxes || 0) / 100;
           const currentTax = pendingBooking.details?.tax || 0;
-          const taxRate = subtotal > 0 ? currentTax / subtotal : 0;
           
           // Calculate adjusted total and tax for rejected delivery (subtract delivery fee + its tax)
           const deliveryFeeTax = deliveryFeeAmount * taxRate;
@@ -7431,10 +7430,8 @@ export default function CarHopApp() {
           const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
           
-          // Calculate tax rate from current tax and subtotal
-          const subtotal = (pendingBooking.details?.rate || 0) + (pendingBooking.details?.protection || 0) + (pendingBooking.details?.extras || 0) + (pendingBooking.details?.fees || 0);
-          const currentTax = pendingBooking.details?.tax || 0;
-          const taxRate = subtotal > 0 ? currentTax / subtotal : 0;
+          // Use actual tax rate from settings (e.g., 8.5% = 0.085)
+          const taxRate = (settings.taxes || 0) / 100;
           const deliveryFeeTax = deliveryFeeAmount * taxRate;
           
           const adjustedTotal = approvalStatus === 'rejected' 
