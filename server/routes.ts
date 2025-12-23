@@ -1300,7 +1300,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.put('/api/bookings/:id/cancel', async (req, res) => {
     try {
       const bookingId = parseInt(req.params.id);
-      const booking = await storage.getBookingById(bookingId);
+      const booking = await storage.getBooking(bookingId);
       
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
