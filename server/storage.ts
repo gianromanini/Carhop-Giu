@@ -70,11 +70,33 @@ export class MemStorage implements IStorage {
   private settings: Map<string, Settings> = new Map();
   private users: Map<string, User> = new Map();
   private hosts: Map<number, Host> = new Map();
+  private passwordResetTokens: Map<string, { email: string; expiresAt: number }> = new Map();
   private vehicleId = 1;
   private bookingId = 1;
   private settingsId = 1;
   private hostId = 1;
   private bookingCodeCounter = 1;
+
+  // Password reset tokens
+  generatePasswordResetToken(email: string): string {
+    const token = crypto.randomUUID();
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+    this.passwordResetTokens.set(token, { email, expiresAt });
+    return token;
+  }
+
+  validatePasswordResetToken(token: string): { email: string } | null {
+    const reset = this.passwordResetTokens.get(token);
+    if (!reset || reset.expiresAt < Date.now()) {
+      this.passwordResetTokens.delete(token);
+      return null;
+    }
+    return { email: reset.email };
+  }
+
+  invalidatePasswordResetToken(token: string): void {
+    this.passwordResetTokens.delete(token);
+  }
 
   // Users (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
@@ -1328,6 +1350,31 @@ export class DatabaseStorage implements IStorage {
       console.error("Error deleting rating:", error);
       return false;
     }
+  }
+
+  // Password reset tokens
+  generatePasswordResetToken(email: string): string {
+    const token = crypto.randomUUID();
+    // Store in memory with expiration time
+    (this as any).passwordResetTokens = (this as any).passwordResetTokens || new Map();
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    (this as any).passwordResetTokens.set(token, { email, expiresAt });
+    return token;
+  }
+
+  validatePasswordResetToken(token: string): { email: string } | null {
+    (this as any).passwordResetTokens = (this as any).passwordResetTokens || new Map();
+    const reset = (this as any).passwordResetTokens.get(token);
+    if (!reset || reset.expiresAt < Date.now()) {
+      (this as any).passwordResetTokens.delete(token);
+      return null;
+    }
+    return { email: reset.email };
+  }
+
+  invalidatePasswordResetToken(token: string): void {
+    (this as any).passwordResetTokens = (this as any).passwordResetTokens || new Map();
+    (this as any).passwordResetTokens.delete(token);
   }
 }
 

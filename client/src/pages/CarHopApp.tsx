@@ -501,6 +501,14 @@ export default function CarHopApp() {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState('');
+  const [resetPasswordMessage, setResetPasswordMessage] = useState('');
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
   const [signupForm, setSignupForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '', city: '', state: '' });
   const [adminLoginForm, setAdminLoginForm] = useState({ unit: '', password: '' });
@@ -537,6 +545,16 @@ export default function CarHopApp() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset-token');
+    if (token) {
+      setResetToken(token);
+      setShowResetPasswordModal(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
   const [lightboxZoom, setLightboxZoom] = useState(1);
   
   const openLightbox = (images: string[], index: number) => {
@@ -1970,6 +1988,110 @@ export default function CarHopApp() {
             <div className="mt-6 text-center">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Don't have a host account? <button onClick={() => { setShowHostLoginModal(false); setShowHostRegisterModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-become-host-link">Become a Host</button></p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showResetPasswordModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => { setShowResetPasswordModal(false); setResetPassword(''); setResetPasswordConfirm(''); setResetPasswordMessage(''); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-reset-modal"><X size={20}/></button>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Create New Password</h2>
+            
+            {resetPasswordMessage ? (
+              <div className="text-center space-y-4">
+                <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 p-4 rounded-lg">
+                  <p className="text-sm text-green-800 dark:text-green-300">{resetPasswordMessage}</p>
+                </div>
+                <Button onClick={() => { setShowResetPasswordModal(false); setResetPassword(''); setResetPasswordConfirm(''); setResetPasswordMessage(''); setShowLoginModal(true); }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-back-to-login-after-reset">Back to Login</Button>
+              </div>
+            ) : (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (resetPassword !== resetPasswordConfirm) {
+                  setResetPasswordMessage('Passwords do not match');
+                  return;
+                }
+                if (resetPassword.length < 6) {
+                  setResetPasswordMessage('Password must be at least 6 characters');
+                  return;
+                }
+                setResetPasswordLoading(true);
+                try {
+                  const response = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: resetToken, newPassword: resetPassword }),
+                  });
+                  if (response.ok) {
+                    setResetPasswordMessage('Password reset successfully! Redirecting to login...');
+                    setTimeout(() => {
+                      setShowResetPasswordModal(false);
+                      setResetPassword('');
+                      setResetPasswordConfirm('');
+                      setResetPasswordMessage('');
+                      setShowLoginModal(true);
+                    }, 2000);
+                  } else {
+                    const error = await response.json();
+                    setResetPasswordMessage(error.message || 'Error resetting password');
+                  }
+                } catch (err) {
+                  setResetPasswordMessage('Error resetting password');
+                } finally {
+                  setResetPasswordLoading(false);
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">New Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showResetPassword ? "text" : "password"} 
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      placeholder="Enter new password" 
+                      required 
+                      className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                      data-testid="input-reset-password" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                      data-testid="button-toggle-reset-password"
+                    >
+                      {showResetPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Confirm Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showResetPasswordConfirm ? "text" : "password"} 
+                      value={resetPasswordConfirm}
+                      onChange={(e) => setResetPasswordConfirm(e.target.value)}
+                      placeholder="Confirm password" 
+                      required 
+                      className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                      data-testid="input-reset-password-confirm" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPasswordConfirm(!showResetPasswordConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                      data-testid="button-toggle-reset-password-confirm"
+                    >
+                      {showResetPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" disabled={resetPasswordLoading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 disabled:opacity-50" data-testid="button-submit-reset-password">
+                  {resetPasswordLoading ? 'Resetting...' : 'Reset Password'}
+                </Button>
+              </form>
+            )}
           </div>
         </div>
       )}

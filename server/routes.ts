@@ -1704,34 +1704,88 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         return res.status(400).json({ message: "Email is required" });
       }
 
-      // In a real app, you'd look up the user by email and generate a reset token
-      // For now, we'll just send an email confirmation that the email is registered
-      // This is a simplified implementation
+      const user = await storage.getUserByEmail(email);
       
-      try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER || "noreply@carhop.com",
-          to: email,
-          subject: "CarHop - Password Reset Request",
-          html: `
-            <h2>Password Reset Request</h2>
-            <p>We received a request to reset the password for this email address.</p>
-            <p>If you made this request, please note that your account email is <strong>${email}</strong>.</p>
-            <p>You can now set a new password by contacting CarHop support with this email address.</p>
-            <p>If you did not request a password reset, please ignore this email.</p>
-            <p><strong>CarHop Support Team</strong></p>
-          `
-        });
+      if (user) {
+        const resetToken = (storage as any).generatePasswordResetToken(email);
+        const baseUrl = process.env.BASE_URL || `http://${req.get('host')}`;
+        const resetLink = `${baseUrl}/?reset-token=${resetToken}`;
         
-        res.json({ message: "If this email is registered, you will receive a password reset confirmation." });
-      } catch (emailError) {
-        console.error("Error sending email:", emailError);
-        // Still return success to not reveal if email exists
-        res.json({ message: "If this email is registered, you will receive a password reset confirmation." });
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            to: email,
+            subject: "CarHop - Reset Your Password",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="margin: 0; font-size: 28px;">Password Reset</h1>
+                </div>
+                
+                <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${user.firstName || 'there'}</strong>,</p>
+                  
+                  <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                    We received a request to reset the password for your CarHop account. Click the button below to create a new password.
+                  </p>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetLink}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                      Reset Password
+                    </a>
+                  </div>
+                  
+                  <p style="font-size: 12px; color: #6b7280; margin: 20px 0 0 0;">
+                    This link will expire in 24 hours. If you did not request this reset, please ignore this email.
+                  </p>
+                  
+                  <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                    Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+                    CarHop LLC - Connecticut, USA
+                  </p>
+                </div>
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Error sending password reset email:", emailError);
+        }
       }
+      
+      res.json({ message: "If this email is registered, you will receive a password reset link." });
     } catch (error) {
       console.error("Error in forgot password:", error);
       res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password endpoint
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      const tokenData = (storage as any).validatePasswordResetToken(token);
+      if (!tokenData) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      const user = await storage.getUserByEmail(tokenData.email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const passwordHash = bcrypt.hashSync(newPassword, 10);
+      await storage.updateUser(user.id, { passwordHash });
+      (storage as any).invalidatePasswordResetToken(token);
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Error in reset password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
 

@@ -169,6 +169,14 @@ Preferred communication style: Simple, everyday language.
     - Environment variables: EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_FROM
     - Security: Passwords never included in emails - all emails are password-safe
     - Email helper functions centralized in server/routes.ts with try/catch error handling
+18. **Secure Password Reset System (Dec 23):**
+    - Two-step process: Email verification → Secure password reset
+    - POST /api/auth/forgot-password: Generates 24-hour expiring token, sends email with reset link
+    - POST /api/auth/reset-password: Validates token and updates password securely
+    - Frontend: Auto-detects reset-token in URL and shows password reset modal
+    - No passwords exposed via email - uses secure token-based approach
+    - Tokens stored in-memory with automatic expiration
+    - Passwords hashed with bcryptjs before storage
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
