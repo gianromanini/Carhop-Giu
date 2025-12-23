@@ -7337,52 +7337,69 @@ export default function CarHopApp() {
                 <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 mb-6">
                   <h3 className="font-bold text-zinc-900 dark:text-white mb-3">Price Breakdown</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">Vehicle</span>
-                      <span className="text-zinc-900 dark:text-white">{pendingBooking.carName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">Dates</span>
-                      <span className="text-zinc-900 dark:text-white">{pendingBooking.startDate} - {pendingBooking.returnDate}</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                      <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({pendingBooking.days} days)</span>
-                      <span className="text-zinc-900 dark:text-white">${(pendingBooking.details?.rate || 0).toFixed(2)}</span>
-                    </div>
-                    {(pendingBooking.details?.protection || 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-zinc-600 dark:text-zinc-400">Protection - {pendingBooking.details?.protectionType || 'Standard'}</span>
-                        <span className="text-zinc-900 dark:text-white">+${(pendingBooking.details?.protection || 0).toFixed(2)}</span>
-                      </div>
-                    )}
-                    {(pendingBooking.details?.extras || 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
-                        <span className="text-green-600 dark:text-green-400">+${(pendingBooking.details?.extras || 0).toFixed(2)}</span>
-                      </div>
-                    )}
-                    {(pendingBooking.details?.fees || 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
-                        <span className="text-zinc-900 dark:text-white">+${(pendingBooking.details?.fees || 0).toFixed(2)}</span>
-                      </div>
-                    )}
-                    {adjustedTax > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                        <span className="text-purple-600 dark:text-purple-400">+${adjustedTax.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {(approvalStatus === 'pending' || approvalStatus === 'approved') && deliveryFeeAmount > 0 && (
-                      <div className="flex justify-between text-blue-600 dark:text-blue-400">
-                        <span>Delivery Fee</span>
-                        <span>+${deliveryFeeAmount.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-2 border-t border-zinc-300 dark:border-zinc-600 font-bold">
-                      <span className="text-zinc-900 dark:text-white">Total to Pay</span>
-                      <span className="text-green-600 dark:text-green-400">${adjustedTotal.toFixed(2)}</span>
-                    </div>
+                    {(() => {
+                      const rate = pendingBooking.details?.rate || 0;
+                      const protection = pendingBooking.details?.protection || 0;
+                      const extras = pendingBooking.details?.extras || 0;
+                      const cleaningFee = pendingBooking.details?.fees || 0;
+                      const deliveryFee = approvalStatus === 'pending' || approvalStatus === 'approved' ? deliveryFeeAmount : 0;
+                      const subtotal = rate + protection + extras + cleaningFee + deliveryFee;
+                      
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-zinc-600 dark:text-zinc-400">Vehicle</span>
+                            <span className="text-zinc-900 dark:text-white">{pendingBooking.carName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-zinc-600 dark:text-zinc-400">Dates</span>
+                            <span className="text-zinc-900 dark:text-white">{pendingBooking.startDate} - {pendingBooking.returnDate}</span>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                            <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({pendingBooking.days} days)</span>
+                            <span className="text-zinc-900 dark:text-white">${rate.toFixed(2)}</span>
+                          </div>
+                          {protection > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-zinc-600 dark:text-zinc-400">Protection - {pendingBooking.details?.protectionType || 'Standard'}</span>
+                              <span className="text-zinc-900 dark:text-white">+${protection.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {extras > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
+                              <span className="text-green-600 dark:text-green-400">+${extras.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {cleaningFee > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
+                              <span className="text-zinc-900 dark:text-white">+${cleaningFee.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {deliveryFee > 0 && (
+                            <div className="flex justify-between text-blue-600 dark:text-blue-400">
+                              <span>Delivery Fee Service</span>
+                              <span>+${deliveryFee.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-zinc-600 dark:text-zinc-400 border-t border-zinc-300 dark:border-zinc-600 pt-2">
+                            <span>Subtotal</span>
+                            <span>${subtotal.toFixed(2)}</span>
+                          </div>
+                          {adjustedTax > 0 && (
+                            <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                              <span>Tax</span>
+                              <span>+${adjustedTax.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between pt-2 border-t border-zinc-300 dark:border-zinc-600 font-bold">
+                            <span className="text-zinc-900 dark:text-white">Initial Payment</span>
+                            <span className="text-green-600 dark:text-green-400">${adjustedTotal.toFixed(2)}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
                 
