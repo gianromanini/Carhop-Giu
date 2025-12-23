@@ -533,16 +533,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <p style="margin: 0 0 10px 0; color: #6b7280;">
                     <strong style="color: #1f2937;">Email:</strong> ${email}
                   </p>
-                  <p style="margin: 0 0 10px 0; color: #6b7280;">
-                    <strong style="color: #1f2937;">Phone:</strong> ${phone}
-                  </p>
                   <p style="margin: 0; color: #6b7280;">
-                    <strong style="color: #1f2937;">Password:</strong> ${password}
+                    <strong style="color: #1f2937;">Phone:</strong> ${phone}
                   </p>
                 </div>
                 
                 <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-                  You're all set! Click the button below to log in to your account and start booking your perfect ride.
+                  You're all set! Click the button below to log in to your account and start booking your perfect ride. Use the password you created during signup.
                 </p>
                 
                 <div style="text-align: center; margin: 30px 0;">
@@ -1180,7 +1177,6 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Email:</strong> ${email}</p>
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Phone:</strong> ${phone}</p>
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Username:</strong> ${username}</p>
-                  <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Password:</strong> ${password}</p>
                   <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Address:</strong> ${address || 'N/A'}, ${city || ''} ${state || ''} ${zipCode || ''}</p>
                   <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">License #:</strong> ${licenseNumber}</p>
                 </div>
