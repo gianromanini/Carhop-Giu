@@ -3312,7 +3312,7 @@ export default function CarHopApp() {
                           <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
                             <div className="flex justify-between items-start mb-1">
                               <div className="flex items-center gap-2">
-                                {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
+                                {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
                                   <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
                                     <AlertTriangle size={14}/>
                                   </span>
@@ -3331,12 +3331,12 @@ export default function CarHopApp() {
                             <div className="text-[10px] text-zinc-400 mt-2">
                               <div>Pickup: {b.startDate} at {b.startTime}</div>
                               <div>Return: {b.returnDate} at {b.returnTime}</div>
-                              {(pickupIsToday || pickupIsTomorrow) && (
+                              {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
                                   Pickup {pickupIsToday ? 'TODAY' : 'TOMORROW'}
                                 </div>
                               )}
-                              {(returnIsToday || returnIsTomorrow) && (
+                              {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
                                   Return {returnIsToday ? 'TODAY' : 'TOMORROW'}
                                 </div>
@@ -3355,6 +3355,22 @@ export default function CarHopApp() {
                                 <Route size={10}/> Delivery Pending Approval
                               </div>
                             )}
+                            {b.status === 'Completed' && (() => {
+                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                              return (
+                                bookingRating?.stars && (
+                                  <div className="text-[9px] text-zinc-300 mt-2 cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }} title={bookingRating.comment || 'No comment'}>
+                                    <span className="font-bold">Guest:</span>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      {[1,2,3,4,5].map(star => (
+                                        <span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                      ))}
+                                      <span className="text-zinc-400 ml-1">{bookingRating.stars}/5</span>
+                                    </div>
+                                  </div>
+                                )
+                              );
+                            })()}
                           </div>
                         );
                       })}
@@ -3408,7 +3424,7 @@ export default function CarHopApp() {
                                 <p className="text-zinc-500 font-bold">{(b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                                 <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                                  <p className="text-yellow-500 font-bold text-xs">Approval Pending</p>
+                                  <p className="text-orange-500 font-bold text-xs">Pending Approval</p>
                                 )}
                                 {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
                                   <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
@@ -3422,8 +3438,8 @@ export default function CarHopApp() {
 
                           {/* Delivery Approval Section */}
                           {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
                               <p className="text-sm text-zinc-300 mb-3">
@@ -4849,7 +4865,7 @@ export default function CarHopApp() {
                                 {b.status === 'Completed' && !hasRated && (
                                   <span className="text-red-500 text-lg" title="Completed trip - Rate your guest!">!</span>
                                 )}
-                                {(pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
+                                {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
                                   <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
                                     <AlertTriangle size={14}/>
                                   </span>
@@ -4868,12 +4884,12 @@ export default function CarHopApp() {
                             <div className="text-[10px] text-zinc-400 mt-2">
                               <div>Pickup: {b.startDate} at {b.startTime}</div>
                               <div>Return: {b.returnDate} at {b.returnTime}</div>
-                              {(pickupIsToday || pickupIsTomorrow) && (
+                              {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
                                   Pickup {pickupIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
                                 </div>
                               )}
-                              {(returnIsToday || returnIsTomorrow) && (
+                              {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
                                   Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
                                 </div>
@@ -4893,8 +4909,20 @@ export default function CarHopApp() {
                               </div>
                             )}
                             {b.status === 'Completed' && (() => {
+                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                               return (
-                                <>
+                                <div className="space-y-2">
+                                  {bookingRating?.stars && (
+                                    <div className="text-[9px] text-zinc-300">
+                                      <span className="font-bold">Guest Rating:</span>
+                                      <div className="flex items-center gap-1 mt-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }} title={bookingRating.comment || 'No comment'}>
+                                        {[1,2,3,4,5].map(star => (
+                                          <span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
+                                        ))}
+                                        <span className="text-zinc-400 ml-1">{bookingRating.stars}/5</span>
+                                      </div>
+                                    </div>
+                                  )}
                                   {!hasRated ? (
                                     <button 
                                       onClick={(e) => {
@@ -4902,18 +4930,18 @@ export default function CarHopApp() {
                                         setManageBookingId(b.id);
                                         setShowRateGuestModal(true);
                                       }}
-                                      className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
+                                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
                                       data-testid={`button-rate-guest-${b.id}`}
                                     >
                                       Rate your Guest
                                     </button>
                                   ) : (
-                                    <div className="mt-1 flex items-center gap-1 text-xs text-green-400">
+                                    <div className="flex items-center gap-1 text-xs text-green-400">
                                       <Check size={14}/>
                                       <span>Rated</span>
                                     </div>
                                   )}
-                                </>
+                                </div>
                               );
                             })()}
                           </div>
@@ -4969,7 +4997,7 @@ export default function CarHopApp() {
                                 <p className="text-zinc-500 font-bold">{(b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                                 <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                                  <p className="text-yellow-500 font-bold text-xs">Approval Pending</p>
+                                  <p className="text-orange-500 font-bold text-xs">Pending Approval</p>
                                 )}
                                 {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
                                   <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
@@ -4983,8 +5011,8 @@ export default function CarHopApp() {
 
                           {/* Delivery Approval Section */}
                           {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
                               <p className="text-sm text-zinc-300 mb-3">
