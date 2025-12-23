@@ -496,6 +496,10 @@ export default function CarHopApp() {
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
   const [showHostRegisterModal, setShowHostRegisterModal] = useState(false);
   const [showHostLoginModal, setShowHostLoginModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [signupForm, setSignupForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' });
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '', city: '', state: '' });
   const [adminLoginForm, setAdminLoginForm] = useState({ unit: '', password: '' });
@@ -1836,12 +1840,13 @@ export default function CarHopApp() {
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-login-submit">Sign In</Button>
             </form>
 
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Don't have an account? <button onClick={() => { setShowLoginModal(false); setShowSignupModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-create-account-link">Create Account</button></p>
+              <p className="text-sm"><button onClick={() => { setShowLoginModal(false); setShowForgotPasswordModal(true); }} className="text-orange-500 hover:text-orange-400 font-bold" data-testid="button-forgot-password-link">Forgot My Password?</button></p>
             </div>
 
             <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center space-y-2">
-              <button onClick={() => { setShowLoginModal(false); setShowAdminLoginModal(true); }} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Owner Login</button>
+              <button onClick={() => { setShowLoginModal(false); setShowAdminLoginModal(true); }} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Host Login</button>
               <button onClick={() => { setShowLoginModal(false); setShowHostRegisterModal(true); }} className="text-[10px] sm:text-xs text-green-500 hover:text-green-400 flex items-center justify-center gap-1 mx-auto font-bold" data-testid="button-become-host"><Building2 size={10}/> Become a Host</button>
             </div>
           </div>
@@ -1853,7 +1858,7 @@ export default function CarHopApp() {
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
             <button onClick={() => setShowAdminLoginModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-admin-modal"><X size={20}/></button>
             
-            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Admin / Owner Login</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Admin / Host Login</h2>
             
             <div className="space-y-4">
               <div>
@@ -1950,6 +1955,68 @@ export default function CarHopApp() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Don't have a host account? <button onClick={() => { setShowHostLoginModal(false); setShowHostRegisterModal(true); }} className="text-green-600 hover:text-green-700 font-bold" data-testid="button-become-host-link">Become a Host</button></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => { setShowForgotPasswordModal(false); setForgotPasswordEmail(''); setForgotPasswordMessage(''); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-forgot-modal"><X size={20}/></button>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Reset Your Password</h2>
+            
+            {forgotPasswordMessage ? (
+              <div className="text-center space-y-4">
+                <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 p-4 rounded-lg">
+                  <p className="text-sm text-green-800 dark:text-green-300">{forgotPasswordMessage}</p>
+                </div>
+                <Button onClick={() => { setShowForgotPasswordModal(false); setForgotPasswordEmail(''); setForgotPasswordMessage(''); setShowLoginModal(true); }} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-back-to-login">Back to Login</Button>
+              </div>
+            ) : (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setForgotPasswordLoading(true);
+                try {
+                  const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: forgotPasswordEmail }),
+                  });
+                  if (response.ok) {
+                    const data = await response.json();
+                    setForgotPasswordMessage(data.message);
+                  } else {
+                    const error = await response.json();
+                    setForgotPasswordMessage(error.message || 'Error processing request');
+                  }
+                } catch (err) {
+                  setForgotPasswordMessage('Error sending password reset request');
+                } finally {
+                  setForgotPasswordLoading(false);
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    placeholder="Enter your email" 
+                    required 
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-forgot-email" 
+                  />
+                </div>
+                <Button type="submit" disabled={forgotPasswordLoading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 disabled:opacity-50" data-testid="button-send-reset-email">
+                  {forgotPasswordLoading ? 'Sending...' : 'Send Reset Email'}
+                </Button>
+              </form>
+            )}
+            
+            <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
+              <button onClick={() => { setShowForgotPasswordModal(false); setForgotPasswordEmail(''); setForgotPasswordMessage(''); setShowLoginModal(true); }} className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-testid="button-back-to-login-link">Back to Login</button>
             </div>
           </div>
         </div>

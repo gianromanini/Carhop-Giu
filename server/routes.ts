@@ -1255,4 +1255,44 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       res.status(500).json({ message: "Failed to delete rating" });
     }
   });
+
+  // Forgot password endpoint
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || !email.trim()) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // In a real app, you'd look up the user by email and generate a reset token
+      // For now, we'll just send an email confirmation that the email is registered
+      // This is a simplified implementation
+      
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER || "noreply@carhop.com",
+          to: email,
+          subject: "CarHop - Password Reset Request",
+          html: `
+            <h2>Password Reset Request</h2>
+            <p>We received a request to reset the password for this email address.</p>
+            <p>If you made this request, please note that your account email is <strong>${email}</strong>.</p>
+            <p>You can now set a new password by contacting CarHop support with this email address.</p>
+            <p>If you did not request a password reset, please ignore this email.</p>
+            <p><strong>CarHop Support Team</strong></p>
+          `
+        });
+        
+        res.json({ message: "If this email is registered, you will receive a password reset confirmation." });
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        // Still return success to not reveal if email exists
+        res.json({ message: "If this email is registered, you will receive a password reset confirmation." });
+      }
+    } catch (error) {
+      console.error("Error in forgot password:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
 }
