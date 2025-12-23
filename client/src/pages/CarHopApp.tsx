@@ -1333,7 +1333,9 @@ export default function CarHopApp() {
     
     const dailyRate = (baseRate + currentExtended) / currentDays;
     const extraCost = dailyRate * extraDays;
-    const extraTax = extraCost * (settings.taxes / 100);
+    const carForTaxCalc = vehicles.find(v => v.id === booking.vehicleId);
+    const extensionTaxRate = carForTaxCalc?.pricing?.taxes || settings.taxes || 0;
+    const extraTax = extraCost * (extensionTaxRate / 100);
     const totalExtra = extraCost + extraTax;
     
     await updateBookingMutation.mutateAsync({
@@ -3596,7 +3598,9 @@ export default function CarHopApp() {
                                 const deliveryFee = (b.details as any).deliveryFee || 0;
                                 const discount = b.details.discount || 0;
                                 const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
-                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const carForTax = vehicles.find(v => v.id === b.vehicleId);
+                                const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * (taxRate / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
@@ -5144,14 +5148,16 @@ export default function CarHopApp() {
                                 const deliveryFee = (b.details as any).deliveryFee || 0;
                                 const discount = b.details.discount || 0;
                                 const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
-                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const carForTax = vehicles.find(v => v.id === b.vehicleId);
+                                const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * (taxRate / 100) : 0;
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
                                 const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal;
-                                const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * (taxRate / 100) : 0;
                                 const additionalCharges = additionalChargesBeforeTax + additionalTax;
                                 
                                 return (
