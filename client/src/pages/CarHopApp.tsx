@@ -6327,9 +6327,10 @@ export default function CarHopApp() {
                       setCancelingBookingId(null);
                       setPendingDeliveryBookingId(null);
                       setView('home');
-                      toast({ title: 'Booking cancelled successfully. Host has been notified.' });
+                      toast({ description: 'Booking cancelled successfully. Host has been notified.' });
+                      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
                     } else {
-                      alert('Error cancelling booking');
+                      toast({ description: 'Failed to cancel booking', variant: 'destructive' });
                     }
                   } catch (err) {
                     alert('Error cancelling booking');
@@ -7266,10 +7267,19 @@ export default function CarHopApp() {
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
           const originalPickupAddress = (pendingBooking.details as any)?.pickupAddress || '';
           
-          // Calculate adjusted total for rejected delivery (subtract delivery fee)
+          // Calculate tax rate from current tax and subtotal
+          const subtotal = (pendingBooking.details?.rate || 0) + (pendingBooking.details?.protection || 0) + (pendingBooking.details?.extras || 0) + (pendingBooking.details?.fees || 0);
+          const currentTax = pendingBooking.details?.tax || 0;
+          const taxRate = subtotal > 0 ? currentTax / subtotal : 0;
+          
+          // Calculate adjusted total and tax for rejected delivery (subtract delivery fee + its tax)
+          const deliveryFeeTax = deliveryFeeAmount * taxRate;
           const adjustedTotal = approvalStatus === 'rejected' 
-            ? pendingBooking.total - deliveryFeeAmount 
+            ? pendingBooking.total - deliveryFeeAmount - deliveryFeeTax
             : pendingBooking.total;
+          const adjustedTax = approvalStatus === 'rejected'
+            ? currentTax - deliveryFeeTax
+            : currentTax;
           
           return (
             <div className="max-w-lg mx-auto px-6 py-12">
@@ -7352,22 +7362,16 @@ export default function CarHopApp() {
                         <span className="text-zinc-900 dark:text-white">${(pendingBooking.details?.fees || 0).toFixed(2)}</span>
                       </div>
                     )}
-                    {(pendingBooking.details?.tax || 0) > 0 && (
+                    {adjustedTax > 0 && (
                       <div className="flex justify-between">
                         <span className="text-zinc-500">Tax</span>
-                        <span className="text-zinc-900 dark:text-white">${(pendingBooking.details?.tax || 0).toFixed(2)}</span>
+                        <span className="text-zinc-900 dark:text-white">${adjustedTax.toFixed(2)}</span>
                       </div>
                     )}
                     {approvalStatus === 'approved' && deliveryFeeAmount > 0 && (
                       <div className="flex justify-between text-green-600 dark:text-green-400">
                         <span>Delivery Fee</span>
-                        <span>+${deliveryFeeAmount.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {approvalStatus === 'rejected' && deliveryFeeAmount > 0 && (
-                      <div className="flex justify-between text-green-600 dark:text-green-400">
-                        <span>Delivery Discount</span>
-                        <span>-${deliveryFeeAmount.toFixed(2)}</span>
+                        <span>+${(deliveryFeeAmount + deliveryFeeTax).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between pt-2 border-t border-zinc-300 dark:border-zinc-600 font-bold">
@@ -7397,7 +7401,7 @@ export default function CarHopApp() {
                     <Button 
                       className="w-full bg-green-600 hover:bg-green-700"
                       onClick={() => {
-                        // Set the booking data for payment
+                        toast({ description: "Proceeding to payment..." });
                         setView('awaiting-payment');
                       }}
                       data-testid="button-proceed-to-payment-approved"
@@ -7426,8 +7430,15 @@ export default function CarHopApp() {
           
           const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
+          
+          // Calculate tax rate from current tax and subtotal
+          const subtotal = (pendingBooking.details?.rate || 0) + (pendingBooking.details?.protection || 0) + (pendingBooking.details?.extras || 0) + (pendingBooking.details?.fees || 0);
+          const currentTax = pendingBooking.details?.tax || 0;
+          const taxRate = subtotal > 0 ? currentTax / subtotal : 0;
+          const deliveryFeeTax = deliveryFeeAmount * taxRate;
+          
           const adjustedTotal = approvalStatus === 'rejected' 
-            ? pendingBooking.total - deliveryFeeAmount 
+            ? pendingBooking.total - deliveryFeeAmount - deliveryFeeTax
             : pendingBooking.total;
           
           const isCreditCardValid = paymentDetails.cardName && paymentDetails.cardNumber && paymentDetails.expiry && paymentDetails.cvc;
@@ -7469,6 +7480,7 @@ export default function CarHopApp() {
             setIsProcessingPayment(false);
             setPendingDeliveryBookingId(null);
             setPaymentDetails({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
+            toast({ description: "Payment confirmed! Booking is now active." });
             setView('confirmation');
           };
           
