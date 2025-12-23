@@ -3166,7 +3166,7 @@ export default function CarHopApp() {
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'host');
-                        const hasNotifications = pendingRequests > 0 || unreadMessages > 0;
+                        const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
                         
                         const today = getTodayString();
                         const tomorrow = addDaysToDate(today, 1);
@@ -4694,7 +4694,7 @@ export default function CarHopApp() {
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
-                        const hasNotifications = pendingRequests > 0 || unreadMessages > 0;
+                        const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
                         
                         const today = getTodayString();
                         const tomorrow = addDaysToDate(today, 1);
