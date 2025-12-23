@@ -845,13 +845,18 @@ export default function CarHopApp() {
 
   // Sync cart.car with latest vehicle data to ensure availableLocations are current
   useEffect(() => {
-    if (view === 'checkout' && cart.car && vehicles.length > 0) {
-      const latestCarData = vehicles.find(v => v.id === cart.car!.id);
-      if (latestCarData && JSON.stringify(latestCarData.availableLocations) !== JSON.stringify(cart.car.availableLocations)) {
-        setCart(prev => ({ ...prev, car: latestCarData }));
-      }
+    if (view === 'checkout' && cart.car && cart.car.id) {
+      // Always fetch the latest vehicle data from server when in checkout
+      fetch(`/api/vehicles/${cart.car.id}`)
+        .then(res => res.json())
+        .then(latestCarData => {
+          if (latestCarData) {
+            setCart(prev => ({ ...prev, car: latestCarData }));
+          }
+        })
+        .catch(err => console.error('Error fetching latest vehicle data:', err));
     }
-  }, [view, vehicles, cart.car?.id]);
+  }, [view, cart.car?.id]);
 
   useEffect(() => {
     if (isAuthenticated && authUser) {
