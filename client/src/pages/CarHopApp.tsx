@@ -7373,7 +7373,7 @@ export default function CarHopApp() {
                         <span className="text-purple-600 dark:text-purple-400">+${adjustedTax.toFixed(2)}</span>
                       </div>
                     )}
-                    {approvalStatus === 'approved' && deliveryFeeAmount > 0 && (
+                    {(approvalStatus === 'pending' || approvalStatus === 'approved') && deliveryFeeAmount > 0 && (
                       <div className="flex justify-between text-blue-600 dark:text-blue-400">
                         <span>Delivery Fee</span>
                         <span>+${(deliveryFeeAmount + deliveryFeeTax).toFixed(2)}</span>
