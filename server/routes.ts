@@ -242,6 +242,117 @@ async function sendExtensionResponseEmail(booking: any, status: 'approved' | 're
   }
 }
 
+async function sendCheckInCompletedEmail(booking: any) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Check-In Completed #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Check-In Complete!</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+              Your vehicle check-in has been successfully completed! You're all set to enjoy your rental.
+            </p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || 'N/A'}
+              </p>
+              <p style="margin: 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Return Date:</strong> ${booking.returnDate} at ${booking.returnTime}
+              </p>
+            </div>
+            
+            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #92400e; font-size: 14px;">
+                <strong>Reminder:</strong> Please return the vehicle by your scheduled date and time to avoid late fees.
+              </p>
+            </div>
+            
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+              CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`Check-in completed email sent to ${clientEmail}`);
+  } catch (error) {
+    console.error("Error sending check-in completed email:", error);
+  }
+}
+
+async function sendCheckOutCompletedEmail(booking: any) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Rental Complete - Thank You! #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Rental Complete!</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+              Thank you for choosing CarHop! Your rental has been successfully completed and the vehicle has been checked out.
+            </p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || 'N/A'}
+              </p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Rental Period:</strong> ${booking.startDate} - ${booking.returnDate}
+              </p>
+              <p style="margin: 0; color: #6b7280;">
+                <strong style="color: #1f2937;">Total:</strong> $${(booking.total || 0).toFixed(2)}
+              </p>
+            </div>
+            
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #0369a1; font-size: 14px;">
+                We hope you had a great experience! We'd love to see you again for your next rental.
+              </p>
+            </div>
+            
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
+              CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`Check-out completed email sent to ${clientEmail}`);
+  } catch (error) {
+    console.error("Error sending check-out completed email:", error);
+  }
+}
+
 async function sendNewBookingNotificationToHost(booking: any, vehicle: any) {
   const hostEmail = process.env.EMAIL_USER; // Admin email
   if (!hostEmail) return;
@@ -624,8 +735,25 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (!result.success) {
       return res.status(400).json({ error: result.error.flatten() });
     }
+    
+    // Get the current booking state before update
+    const previousBooking = await storage.getBooking(id);
+    
     const booking = await storage.updateBooking(id, result.data);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    // Send email notifications for check-in/check-out status changes
+    if (previousBooking) {
+      // Check-in completed
+      if (previousBooking.checkInStatus !== 'completed' && booking.checkInStatus === 'completed') {
+        sendCheckInCompletedEmail(booking);
+      }
+      // Check-out completed
+      if (previousBooking.checkOutStatus !== 'completed' && booking.checkOutStatus === 'completed') {
+        sendCheckOutCompletedEmail(booking);
+      }
+    }
+    
     res.json(booking);
   });
 
