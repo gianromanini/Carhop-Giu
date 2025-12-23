@@ -163,6 +163,12 @@ Preferred communication style: Simple, everyday language.
     - Delivery status indicators in client's "My Bookings": Pending Approval (yellow), Approved (green), Declined (red with pickup location link)
     - Pickup location displays as clickable Google Maps link when delivery is declined
     - API endpoint: `PUT /api/bookings/:id/delivery-approval`
+17. **Email Notification System (Dec 23):**
+    - Complete email system using nodemailer with professional HTML templates
+    - Notifications sent for: booking creation (client + host), delivery approval/rejection (client), extension approval/rejection (client), booking cancellation (host), check-in completion (client), check-out completion (client)
+    - Environment variables: EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_FROM
+    - Security: Passwords never included in emails - all emails are password-safe
+    - Email helper functions centralized in server/routes.ts with try/catch error handling
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
