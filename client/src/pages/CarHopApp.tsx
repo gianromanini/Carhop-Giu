@@ -3292,8 +3292,8 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'pending' ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'pending' ? 'PENDING APPROVAL' : b.status;
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'host');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
@@ -4838,8 +4838,8 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'pending' ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'pending' ? 'PENDING APPROVAL' : b.status;
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
