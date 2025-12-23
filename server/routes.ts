@@ -1295,4 +1295,54 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       res.status(500).json({ message: "Failed to process password reset request" });
     }
   });
+
+  // Cancel booking - notifies host
+  app.put('/api/bookings/:id/cancel', async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const booking = await storage.getBookingById(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Update booking status to Cancelled
+      const updatedBooking = await storage.updateBooking(bookingId, {
+        status: 'Cancelled'
+      });
+
+      // Send email to host/admin notifying about cancellation
+      if (booking.details?.hostEmail || process.env.EMAIL_USER) {
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER || "noreply@carhop.com",
+            to: booking.details?.hostEmail || process.env.EMAIL_USER || "admin@carhop.com",
+            subject: "CarHop - Booking Cancelled",
+            html: `
+              <h2>Booking Cancelled</h2>
+              <p>A booking has been cancelled by the client.</p>
+              <p><strong>Booking Details:</strong></p>
+              <ul>
+                <li>Vehicle: ${booking.carName}</li>
+                <li>Client: ${booking.driver.name}</li>
+                <li>Email: ${booking.driver.email}</li>
+                <li>Phone: ${booking.driver.phone}</li>
+                <li>Start Date: ${booking.startDate} at ${booking.startTime}</li>
+                <li>Return Date: ${booking.returnDate} at ${booking.returnTime}</li>
+              </ul>
+              <p>The client has cancelled this booking and can now create a new one anytime.</p>
+              <p><strong>CarHop Admin Team</strong></p>
+            `
+          });
+        } catch (emailError) {
+          console.error("Error sending cancellation email:", emailError);
+        }
+      }
+
+      res.json({ message: "Booking cancelled successfully", booking: updatedBooking });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ message: "Failed to cancel booking" });
+    }
+  });
 }

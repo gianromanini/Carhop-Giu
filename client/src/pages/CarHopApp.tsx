@@ -488,6 +488,7 @@ export default function CarHopApp() {
   const [selectedHostCarCommission, setSelectedHostCarCommission] = useState<any>(null);
   const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
   const [expandedHostImage, setExpandedHostImage] = useState<string | null>(null);
+  const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
   
   const [clientUser, setClientUser] = useState<{ name: string; email: string; phone?: string } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -6308,6 +6309,37 @@ export default function CarHopApp() {
           </div>
         )}
 
+        {cancelingBookingId && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999]">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 max-w-sm mx-4 border border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Cancel Booking?</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Are you sure you want to cancel this booking? The host will be notified, and you can start a new booking anytime.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setCancelingBookingId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-confirmation">No, Keep It</button>
+                <button onClick={async () => {
+                  if (!cancelingBookingId) return;
+                  try {
+                    const response = await fetch(`/api/bookings/${cancelingBookingId}/cancel`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                    });
+                    if (response.ok) {
+                      setCancelingBookingId(null);
+                      setPendingDeliveryBookingId(null);
+                      setView('home');
+                      toast({ title: 'Booking cancelled successfully. Host has been notified.' });
+                    } else {
+                      alert('Error cancelling booking');
+                    }
+                  } catch (err) {
+                    alert('Error cancelling booking');
+                  }
+                }} className="flex-1 px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors" data-testid="button-confirm-cancel">Yes, Cancel It</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Rating Modal */}
         {ratingModal && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-4">
@@ -7352,7 +7384,8 @@ export default function CarHopApp() {
                     <Button 
                       variant="outline" 
                       className="w-full"
-                      onClick={() => { setPendingDeliveryBookingId(null); setView('home'); }}
+                      onClick={() => { setCancelingBookingId(pendingDeliveryBookingId); }}
+                      data-testid="button-cancel-booking"
                     >
                       Cancel Booking
                     </Button>
