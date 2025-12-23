@@ -7279,18 +7279,29 @@ export default function CarHopApp() {
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
           const originalPickupAddress = (pendingBooking.details as any)?.pickupAddress || '';
           
-          // Use actual tax rate from settings (e.g., 8.5% = 0.085)
-          const taxRate = (settings.taxes || 0) / 100;
-          const currentTax = pendingBooking.details?.tax || 0;
+          // Use vehicle pricing tax rate (e.g., 8.5% = 0.085)
+          const vehicleForTax = vehicles.find(v => v.id === pendingBooking.vehicleId);
+          const taxRate = (vehicleForTax?.pricing?.taxes || settings.taxes || 0) / 100;
           
-          // Calculate adjusted total and tax for rejected delivery (subtract delivery fee + its tax)
-          const deliveryFeeTax = deliveryFeeAmount * taxRate;
+          // Calculate subtotal and tax based on approval status
+          const rate = pendingBooking.details?.rate || 0;
+          const protection = pendingBooking.details?.protection || 0;
+          const extras = pendingBooking.details?.extras || 0;
+          const cleaningFee = pendingBooking.details?.fees || 0;
+          const deliveryFee = approvalStatus === 'pending' || approvalStatus === 'approved' ? deliveryFeeAmount : 0;
+          const subtotal = rate + protection + extras + cleaningFee + deliveryFee;
+          const calculatedTax = subtotal * taxRate;
+          
+          // For rejected delivery, recalculate without delivery fee
+          const subtotalWithoutDelivery = rate + protection + extras + cleaningFee;
+          const taxWithoutDelivery = subtotalWithoutDelivery * taxRate;
+          
           const adjustedTotal = approvalStatus === 'rejected' 
-            ? pendingBooking.total - deliveryFeeAmount - deliveryFeeTax
-            : pendingBooking.total;
+            ? subtotalWithoutDelivery + taxWithoutDelivery
+            : subtotal + calculatedTax;
           const adjustedTax = approvalStatus === 'rejected'
-            ? currentTax - deliveryFeeTax
-            : currentTax;
+            ? taxWithoutDelivery
+            : calculatedTax;
           
           return (
             <div className="max-w-lg mx-auto px-6 py-12">
@@ -7459,13 +7470,25 @@ export default function CarHopApp() {
           const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
           
-          // Use actual tax rate from settings (e.g., 8.5% = 0.085)
-          const taxRate = (settings.taxes || 0) / 100;
-          const deliveryFeeTax = deliveryFeeAmount * taxRate;
+          // Use vehicle pricing tax rate (e.g., 8.5% = 0.085)
+          const vehicleForTax = vehicles.find(v => v.id === pendingBooking.vehicleId);
+          const taxRate = (vehicleForTax?.pricing?.taxes || settings.taxes || 0) / 100;
+          
+          // Recalculate subtotal and tax
+          const rate = pendingBooking.details?.rate || 0;
+          const protection = pendingBooking.details?.protection || 0;
+          const extras = pendingBooking.details?.extras || 0;
+          const cleaningFee = pendingBooking.details?.fees || 0;
+          const deliveryFee = approvalStatus === 'pending' || approvalStatus === 'approved' ? deliveryFeeAmount : 0;
+          const subtotal = rate + protection + extras + cleaningFee + deliveryFee;
+          const calculatedTax = subtotal * taxRate;
+          
+          const subtotalWithoutDelivery = rate + protection + extras + cleaningFee;
+          const taxWithoutDelivery = subtotalWithoutDelivery * taxRate;
           
           const adjustedTotal = approvalStatus === 'rejected' 
-            ? pendingBooking.total - deliveryFeeAmount - deliveryFeeTax
-            : pendingBooking.total;
+            ? subtotalWithoutDelivery + taxWithoutDelivery
+            : subtotal + calculatedTax;
           
           const isCreditCardValid = paymentDetails.cardName && paymentDetails.cardNumber && paymentDetails.expiry && paymentDetails.cvc;
           const isPayButtonEnabled = paymentMethod === 'paypal' || (paymentMethod === 'credit' && isCreditCardValid);
