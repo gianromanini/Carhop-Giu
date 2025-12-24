@@ -6296,7 +6296,7 @@ export default function CarHopApp() {
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
                       
                       {/* Pending Approval - Show button to check status and complete payment */}
-                      {b.status === 'Pending Approval' && (
+                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (
                         <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
                           <div className="flex items-center gap-2 mb-3">
                             <Clock size={18} className="text-yellow-600" />
@@ -6309,6 +6309,24 @@ export default function CarHopApp() {
                             data-testid={`button-check-approval-${b.id}`}
                           >
                             Check Approval Status
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Delivery Approved - Show proceed to payment button */}
+                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' && (
+                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Check size={18} className="text-green-600" />
+                            <span className="font-bold text-green-700 dark:text-green-400">Delivery Approved</span>
+                          </div>
+                          <p className="text-xs text-green-600 dark:text-green-400 mb-3">Your delivery has been approved! Complete your payment to finalize the booking.</p>
+                          <Button 
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            onClick={() => { setPendingDeliveryBookingId(b.id); setView('awaiting-approval'); }}
+                            data-testid={`button-proceed-payment-${b.id}`}
+                          >
+                            Proceed to Payment
                           </Button>
                         </div>
                       )}
