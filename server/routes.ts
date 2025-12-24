@@ -1838,4 +1838,81 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       res.status(500).json({ message: "Failed to cancel booking" });
     }
   });
+
+  // Host Pickup Locations - Get locations for a specific host
+  app.get('/api/hosts/:hostId/pickup-locations', async (req, res) => {
+    try {
+      const { hostId } = req.params;
+      const user = await storage.getUser(hostId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+      
+      res.json({ locations: user.pickupLocations || [] });
+    } catch (error) {
+      console.error("Error getting host pickup locations:", error);
+      res.status(500).json({ message: "Failed to get pickup locations" });
+    }
+  });
+
+  // Host Pickup Locations - Add a new location
+  app.post('/api/hosts/:hostId/pickup-locations', async (req, res) => {
+    try {
+      const { hostId } = req.params;
+      const { location } = req.body;
+      
+      if (!location || typeof location !== 'string') {
+        return res.status(400).json({ message: "Location is required" });
+      }
+      
+      const user = await storage.getUser(hostId);
+      if (!user) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+      
+      const currentLocations = user.pickupLocations || [];
+      if (currentLocations.includes(location)) {
+        return res.status(400).json({ message: "Location already exists" });
+      }
+      
+      const updatedUser = await storage.updateUser(hostId, {
+        pickupLocations: [...currentLocations, location]
+      });
+      
+      res.json({ locations: updatedUser?.pickupLocations || [] });
+    } catch (error) {
+      console.error("Error adding host pickup location:", error);
+      res.status(500).json({ message: "Failed to add pickup location" });
+    }
+  });
+
+  // Host Pickup Locations - Remove a location
+  app.delete('/api/hosts/:hostId/pickup-locations', async (req, res) => {
+    try {
+      const { hostId } = req.params;
+      const { location } = req.body;
+      
+      if (!location || typeof location !== 'string') {
+        return res.status(400).json({ message: "Location is required" });
+      }
+      
+      const user = await storage.getUser(hostId);
+      if (!user) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+      
+      const currentLocations = user.pickupLocations || [];
+      const updatedLocations = currentLocations.filter(l => l !== location);
+      
+      const updatedUser = await storage.updateUser(hostId, {
+        pickupLocations: updatedLocations
+      });
+      
+      res.json({ locations: updatedUser?.pickupLocations || [] });
+    } catch (error) {
+      console.error("Error removing host pickup location:", error);
+      res.status(500).json({ message: "Failed to remove pickup location" });
+    }
+  });
 }
