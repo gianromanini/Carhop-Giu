@@ -848,18 +848,18 @@ export default function CarHopApp() {
 
   // Host pickup locations - per host, not global
   const { data: hostPickupLocationsData } = useQuery<{ locations: string[] }>({
-    queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'],
+    queryKey: ['/api/hosts', currentHost?.id, 'pickup-locations'],
     queryFn: async () => {
-      if (!authUser?.id) return { locations: [] };
+      if (!currentHost?.id) return { locations: [] };
       try {
-        const response = await fetch(`/api/hosts/${authUser.id}/pickup-locations`, { credentials: 'include' });
+        const response = await fetch(`/api/hosts/${currentHost.id}/pickup-locations`, { credentials: 'include' });
         if (!response.ok) return { locations: [] };
         return response.json();
       } catch (error) {
         return { locations: [] };
       }
     },
-    enabled: !!authUser?.id
+    enabled: !!currentHost?.id
   });
   const hostPickupLocations = hostPickupLocationsData?.locations || [];
 
@@ -869,7 +869,7 @@ export default function CarHopApp() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts', currentHost?.id, 'pickup-locations'] });
       toast({ title: 'Pickup location added' });
     },
     onError: (error: any) => {
@@ -883,7 +883,7 @@ export default function CarHopApp() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts', currentHost?.id, 'pickup-locations'] });
       toast({ title: 'Pickup location removed' });
     },
     onError: (error: any) => {
@@ -2996,7 +2996,7 @@ export default function CarHopApp() {
                             {hostPickupLocations.map(loc => (
                               <span key={loc} className="inline-flex items-center gap-0.5 sm:gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold group">
                                 <MapPin size={10} className="sm:w-3 sm:h-3"/> <span className="truncate max-w-[80px] sm:max-w-none">{formatAddressForDisplay(loc)}</span>
-                                <button onClick={() => authUser?.id && removeHostPickupLocationMutation.mutate({ location: loc, userId: authUser.id })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                                <button onClick={() => currentHost?.id && removeHostPickupLocationMutation.mutate({ location: loc, userId: String(currentHost.id) })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
                                   <X size={10} className="sm:w-3 sm:h-3 text-red-500"/>
                                 </button>
                               </span>
@@ -3010,7 +3010,7 @@ export default function CarHopApp() {
                                 placeholder="Add location..."
                               />
                             </div>
-                            <Button variant="primary" size="sm" onClick={() => { if(!hostNewLocation.trim()) { toast({ title: 'Error', description: 'Please enter a location' }); return; } if(!authUser?.id) { toast({ title: 'Error', description: 'Please log in first' }); return; } addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: authUser.id }); setHostNewLocation(''); }} data-testid="button-add-location">
+                            <Button variant="primary" size="sm" onClick={() => { if(!hostNewLocation.trim()) { toast({ title: 'Error', description: 'Please enter a location' }); return; } if(!currentHost?.id) { toast({ title: 'Error', description: 'Please log in as host first' }); return; } addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: String(currentHost.id) }); setHostNewLocation(''); }} data-testid="button-add-location">
                               <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                             </Button>
                           </div>
