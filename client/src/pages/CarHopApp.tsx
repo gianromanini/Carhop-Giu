@@ -852,9 +852,10 @@ export default function CarHopApp() {
     queryFn: async () => {
       if (!authUser?.id) return { locations: [] };
       const response = await fetch(`/api/hosts/${authUser.id}/pickup-locations`);
+      if (!response.ok) return { locations: [] };
       return response.json();
     },
-    enabled: !!authUser?.id && authUser.isHost
+    enabled: !!authUser?.id
   });
   const hostPickupLocations = hostPickupLocationsData?.locations || [];
 
@@ -866,6 +867,9 @@ export default function CarHopApp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
       toast({ title: 'Pickup location added' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to add location' });
     }
   });
 
@@ -877,6 +881,9 @@ export default function CarHopApp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
       toast({ title: 'Pickup location removed' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to remove location' });
     }
   });
 
