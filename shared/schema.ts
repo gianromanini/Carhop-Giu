@@ -212,6 +212,7 @@ export const hosts = pgTable("hosts", {
   agreementAccepted: boolean("agreement_accepted").notNull().default(false),
   agreementAcceptedAt: timestamp("agreement_accepted_at"),
   status: varchar("status").notNull().default('active'),
+  pickupLocations: text("pickup_locations").array().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
