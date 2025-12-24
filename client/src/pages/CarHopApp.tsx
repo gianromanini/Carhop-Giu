@@ -6034,7 +6034,7 @@ export default function CarHopApp() {
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3>
-                    <p className="text-sm text-zinc-500 mt-2">{receiptBooking.location}</p>
+                    <p className="text-sm text-zinc-500 mt-2">{formatAddressForDisplay(receiptBooking.location)}</p>
                   </div>
 
                   {/* Rental Dates */}
@@ -6269,6 +6269,11 @@ export default function CarHopApp() {
                         <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
                         <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                      )}
+                      {(b.details as any)?.deliveryType === 'delivery' && (
+                        <div className="text-xs text-green-600 mt-0.5">
+                          <a href={`https://maps.google.com/?q=${encodeURIComponent((b.details as any)?.pickupAddress || b.location)}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 dark:hover:text-green-400 transition-colors underline" data-testid={`link-delivery-map-${b.id}`}>{formatAddressForDisplay((b.details as any)?.pickupAddress || b.location)}</a>
+                        </div>
                       )}
                       {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                         <div className="text-xs font-bold text-yellow-500 mt-1 flex items-center gap-1">
@@ -7564,15 +7569,18 @@ export default function CarHopApp() {
                       <h2 className="text-2xl font-bold text-orange-500 mb-2">Pickup Only Available</h2>
                       <p className="text-zinc-500 mb-4">Delivery was not available at this time. You can pick up the vehicle at the location below.</p>
                       {originalPickupAddress && (
-                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(originalPickupAddress)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                        >
-                          <MapPin size={16} />
-                          View Pickup Location
-                        </a>
+                        <div className="space-y-3">
+                          <p className="text-sm text-zinc-600 dark:text-zinc-400">{formatAddressForDisplay(originalPickupAddress)}</p>
+                          <a 
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(originalPickupAddress)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                          >
+                            <MapPin size={16} />
+                            View Pickup Location
+                          </a>
+                        </div>
                       )}
                     </>
                   )}
