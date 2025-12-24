@@ -85,38 +85,52 @@ const formatAddressForDisplay = (fullAddress: string): string => {
   if (!fullAddress) return fullAddress;
   
   // Parse address from Nominatim format
-  // Example: "40, Lindeman Drive, Trumbull, Greater Bridgeport Planning Region, Connecticut, 06611, United States"
-  // Want: "40 Lindeman Drive, Trumbull, CT 06611"
+  // Example: "Walmart, 150, Barnum Avenue Cutoff, Stratford, Greater Bridgeport Planning Region, Connecticut, 06614, United States"
+  // Want: "Walmart, 150 Barnum Avenue Cutoff, Stratford - CT, 06614"
   
   const parts = fullAddress.split(',').map(p => p.trim());
   if (parts.length < 4) return fullAddress;
   
   // Find components
+  let placeName = '';
   let number = '';
   let streetName = '';
   let city = '';
   let state = '';
   let zip = '';
+  let startIdx = 0;
   
-  // First part is usually the number
-  if (/^\d+$/.test(parts[0])) {
-    number = parts[0];
-    streetName = parts[1] || '';
-    city = parts[2] || '';
-  } else {
-    // Number might be combined with street
-    const streetMatch = parts[0].match(/^(\d+)\s+(.+)$/);
-    if (streetMatch) {
-      number = streetMatch[1];
-      streetName = streetMatch[2];
-      city = parts[1] || '';
+  // Check if first part is a place name (non-numeric) - like Walmart, Target, etc.
+  if (!/^\d+$/.test(parts[0]) && !parts[0].match(/^(\d+)\s+/)) {
+    placeName = parts[0];
+    startIdx = 1;
+  }
+  
+  // Parse from startIdx
+  const remainingParts = parts.slice(startIdx);
+  
+  // First remaining part is usually the number
+  if (remainingParts.length > 0) {
+    if (/^\d+$/.test(remainingParts[0])) {
+      number = remainingParts[0];
+      streetName = remainingParts[1] || '';
+      city = remainingParts[2] || '';
     } else {
-      return fullAddress;
+      // Number might be combined with street
+      const streetMatch = remainingParts[0].match(/^(\d+)\s+(.+)$/);
+      if (streetMatch) {
+        number = streetMatch[1];
+        streetName = streetMatch[2];
+        city = remainingParts[1] || '';
+      } else if (placeName === '') {
+        // No place name and couldn't parse, return original
+        return fullAddress;
+      }
     }
   }
   
   // Find state and zip from remaining parts
-  for (let i = 3; i < parts.length; i++) {
+  for (let i = remainingParts.length; i < parts.length; i++) {
     const part = parts[i];
     
     // Check if it's a state name
@@ -134,9 +148,13 @@ const formatAddressForDisplay = (fullAddress: string): string => {
     }
   }
   
-  // Build formatted address
+  // Build formatted address: PlaceName, Street Number Street, City - State, Zip
+  if (placeName && number && streetName && city && state && zip) {
+    return `${placeName}, ${number} ${streetName}, ${city} - ${state}, ${zip}`;
+  }
+  
   if (number && streetName && city && state && zip) {
-    return `${number} ${streetName}, ${city}, ${state} ${zip}`;
+    return `${number} ${streetName}, ${city} - ${state}, ${zip}`;
   }
   
   return fullAddress;
