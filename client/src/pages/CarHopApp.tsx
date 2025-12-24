@@ -2840,7 +2840,7 @@ export default function CarHopApp() {
                             type="button"
                             onClick={() => {
                               setEditingHostVehicle(null);
-                              setFormData({model: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', category: '', consumption: '', driveType: 'AWD', isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasSunroof: false, images: [], commission: 10, deductible: 1000, allowDelivery: false, deliveryMinFee: 15, deliveryMinDistance: 5, deliveryPricePerMile: 2.5, maxDeliveryDistance: 50, minDeliveryHours: 6});
+                              setFormData(initialFormState);
                             }}
                             className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
                             data-testid="button-cancel-edit"
@@ -2861,7 +2861,7 @@ export default function CarHopApp() {
                         if (editingHostVehicle) {
                           updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
                           setEditingHostVehicle(null);
-                          setFormData({model: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', category: '', consumption: '', driveType: 'AWD', isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasSunroof: false, images: [], commission: 10, deductible: 1000, allowDelivery: false, deliveryMinFee: 15, deliveryMinDistance: 5, deliveryPricePerMile: 2.5, maxDeliveryDistance: 50, minDeliveryHours: 6});
+                          setFormData(initialFormState);
                         } else {
                           createVehicleMutation.mutate(vehicleData);
                         }
@@ -3295,12 +3295,14 @@ export default function CarHopApp() {
                                   images: car.images || [],
                                   commission: car.commission || 10,
                                   deductible: car.deductible || 1000,
-                                  allowDelivery: car.allowDelivery || false,
-                                  deliveryMinFee: car.deliveryMinFee || 15,
-                                  deliveryMinDistance: car.deliveryMinDistance || 5,
-                                  deliveryPricePerMile: car.deliveryPricePerMile || 2.5,
+                                  availableLocations: car.availableLocations || [],
+                                  isDeliveryEnabled: car.isDeliveryEnabled || false,
                                   maxDeliveryDistance: car.maxDeliveryDistance || 50,
-                                  minDeliveryHours: car.minDeliveryHours || 6
+                                  minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
+                                  minDeliveryFee: car.minDeliveryFee || 15,
+                                  deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
+                                  minDeliveryHours: car.minDeliveryHours || 6,
+                                  pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
                                 });
                                 setHostVehicleImages(car.images || []);
                                 window.scrollTo(0, 0);
