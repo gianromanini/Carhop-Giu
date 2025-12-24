@@ -864,8 +864,8 @@ export default function CarHopApp() {
   const hostPickupLocations = hostPickupLocationsData?.locations || [];
 
   const addHostPickupLocationMutation = useMutation({
-    mutationFn: async (location: string) => {
-      const response = await apiRequest('POST', `/api/hosts/${authUser?.id}/pickup-locations`, { location });
+    mutationFn: async ({ location, userId }: { location: string; userId: string }) => {
+      const response = await apiRequest('POST', `/api/hosts/${userId}/pickup-locations`, { location });
       return response.json();
     },
     onSuccess: () => {
@@ -878,8 +878,8 @@ export default function CarHopApp() {
   });
 
   const removeHostPickupLocationMutation = useMutation({
-    mutationFn: async (location: string) => {
-      const response = await apiRequest('DELETE', `/api/hosts/${authUser?.id}/pickup-locations`, { location });
+    mutationFn: async ({ location, userId }: { location: string; userId: string }) => {
+      const response = await apiRequest('DELETE', `/api/hosts/${userId}/pickup-locations`, { location });
       return response.json();
     },
     onSuccess: () => {
@@ -2996,7 +2996,7 @@ export default function CarHopApp() {
                             {hostPickupLocations.map(loc => (
                               <span key={loc} className="inline-flex items-center gap-0.5 sm:gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold group">
                                 <MapPin size={10} className="sm:w-3 sm:h-3"/> <span className="truncate max-w-[80px] sm:max-w-none">{formatAddressForDisplay(loc)}</span>
-                                <button onClick={() => removeHostPickupLocationMutation.mutate(loc)} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                                <button onClick={() => authUser?.id && removeHostPickupLocationMutation.mutate({ location: loc, userId: authUser.id })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
                                   <X size={10} className="sm:w-3 sm:h-3 text-red-500"/>
                                 </button>
                               </span>
@@ -3010,7 +3010,7 @@ export default function CarHopApp() {
                                 placeholder="Add location..."
                               />
                             </div>
-                            <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { addHostPickupLocationMutation.mutate(hostNewLocation.trim()); setHostNewLocation(''); } }} data-testid="button-add-location">
+                            <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim() && authUser?.id) { addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: authUser.id }); setHostNewLocation(''); } }} data-testid="button-add-location">
                               <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                             </Button>
                           </div>
