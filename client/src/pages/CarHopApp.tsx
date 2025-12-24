@@ -6585,8 +6585,7 @@ export default function CarHopApp() {
                       )}
                     </div>
                   </Card>
-                ))
-                  )}
+                ))}
                 </>
               )}
             </div>
