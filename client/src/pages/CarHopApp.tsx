@@ -3010,7 +3010,7 @@ export default function CarHopApp() {
                                 placeholder="Add location..."
                               />
                             </div>
-                            <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim() && authUser?.id) { addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: authUser.id }); setHostNewLocation(''); } }} data-testid="button-add-location">
+                            <Button variant="primary" size="sm" onClick={() => { if(!hostNewLocation.trim()) { toast({ title: 'Error', description: 'Please enter a location' }); return; } if(!authUser?.id) { toast({ title: 'Error', description: 'Please log in first' }); return; } addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: authUser.id }); setHostNewLocation(''); }} data-testid="button-add-location">
                               <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                             </Button>
                           </div>
