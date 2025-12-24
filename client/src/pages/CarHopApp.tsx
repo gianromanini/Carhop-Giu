@@ -4968,7 +4968,7 @@ export default function CarHopApp() {
                         
                         return (
                           <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
-                            {/* Header: Code + Status Badge + Ratings */}
+                            {/* Header: Code + Status Badge */}
                             <div className="flex justify-between items-center gap-2 mb-2">
                               <div className="flex items-center gap-1 flex-1">
                                 {b.status === 'Completed' && !hasRated && (<span className="text-red-500 text-lg">!</span>)}
@@ -4978,37 +4978,59 @@ export default function CarHopApp() {
                                 {hasNotifications && (<span className="text-yellow-500 animate-pulse"><AlertCircle size={12}/></span>)}
                                 <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
-                                {b.status === 'Completed' && (() => {
-                                  const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                                  return (
-                                    <div className="flex gap-2 items-center">
-                                      {bookingRating?.stars && (
-                                        <div className="text-right">
-                                          <div className="text-xs font-bold text-zinc-300 leading-tight">Guest</div>
-                                          <div className="flex gap-0 justify-end">{[1,2,3,4,5].map(star => (<span key={star} className={`text-sm ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
-                                        </div>
-                                      )}
-                                      {bookingRating?.hostStarsToClient && (
-                                        <div className="text-right">
-                                          <div className="text-xs font-bold text-zinc-300 leading-tight">Host</div>
-                                          <div className="flex gap-0 justify-end">{[1,2,3,4,5].map(star => (<span key={star} className={`text-sm ${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
+                              <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                             </div>
-                            {/* Car Name */}
-                            <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName}</div>
-                            {/* Driver Name */}
-                            <div className="text-xs text-zinc-500 leading-tight">{b.driver.name}</div>
-                            {/* Pickup & Return on 2 lines */}
+                            
+                            {/* Car Name + Guest Label */}
+                            <div className="flex justify-between items-start gap-2 mb-0.5">
+                              <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName}</div>
+                              {b.status === 'Completed' && (() => {
+                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                return bookingRating?.stars ? (
+                                  <div className="text-right">
+                                    <div className="text-xs font-bold text-zinc-300 leading-tight">Guest</div>
+                                  </div>
+                                ) : null;
+                              })()}
+                            </div>
+                            
+                            {/* Driver Name + Guest Stars */}
+                            <div className="flex justify-between items-start gap-2 mb-1">
+                              <div className="text-xs text-zinc-500 leading-tight">{b.driver.name}</div>
+                              {b.status === 'Completed' && (() => {
+                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                return bookingRating?.stars ? (
+                                  <div className="flex gap-0">{[1,2,3,4,5].map(star => (<span key={star} className={`text-xs ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
+                                ) : null;
+                              })()}
+                            </div>
+                            
+                            {/* Pickup + Host Label */}
+                            <div className="flex justify-between items-start gap-2 mb-0.5">
+                              <div className="text-[10px] text-zinc-400 leading-tight">Pickup: {b.startDate} at {b.startTime}</div>
+                              {b.status === 'Completed' && (() => {
+                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                return bookingRating?.hostStarsToClient ? (
+                                  <div className="text-right">
+                                    <div className="text-xs font-bold text-zinc-300 leading-tight">Host</div>
+                                  </div>
+                                ) : null;
+                              })()}
+                            </div>
+                            
+                            {/* Return + Host Stars */}
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="text-[10px] text-zinc-400 leading-tight">Return: {b.returnDate} at {b.returnTime}</div>
+                              {b.status === 'Completed' && (() => {
+                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                return bookingRating?.hostStarsToClient ? (
+                                  <div className="flex gap-0">{[1,2,3,4,5].map(star => (<span key={star} className={`text-xs ${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
+                                ) : null;
+                              })()}
+                            </div>
+                            
+                            {/* Return Status Alerts */}
                             <div className="text-[10px] text-zinc-400 mt-1 leading-tight space-y-0.5">
-                              <div>Pickup: {b.startDate} at {b.startTime}</div>
-                              <div>Return: {b.returnDate} at {b.returnTime}</div>
                               {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}</div>
                               )}
