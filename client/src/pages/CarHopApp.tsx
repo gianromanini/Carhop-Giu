@@ -6282,8 +6282,8 @@ export default function CarHopApp() {
                   </div>
                   {[...bookings].sort((a, b) => {
                     // Always sort by date newest first within each filter
-                    const aDate = new Date(`${a.startDate}T${a.startTime}`).getTime();
-                    const bDate = new Date(`${b.startDate}T${b.startTime}`).getTime();
+                    const aDate = new Date(`${a.startDate}T${convertTo24Hour(a.startTime)}:00`).getTime();
+                    const bDate = new Date(`${b.startDate}T${convertTo24Hour(b.startTime)}:00`).getTime();
                     
                     if (clientBookingFilter === 'newest') {
                       return bDate - aDate;
