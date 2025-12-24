@@ -1839,18 +1839,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
-  // Host Pickup Locations - Get locations for a specific host
-  app.get('/api/hosts/:hostId/pickup-locations', isAuthenticated, async (req: any, res) => {
+  // Host Pickup Locations - Get locations for a specific host (public read)
+  app.get('/api/hosts/:hostId/pickup-locations', async (req, res) => {
     try {
       const { hostId } = req.params;
-      const authUser = req.user;
-      
-      // Only allow host to access their own locations or admin to access any
-      if (authUser.id !== hostId && !authUser.isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
       const user = await storage.getUser(hostId);
+      
       if (!user) {
         return res.status(404).json({ message: "Host not found" });
       }
