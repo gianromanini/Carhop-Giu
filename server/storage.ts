@@ -127,6 +127,7 @@ export class MemStorage implements IStorage {
       profileImageUrl: userData.profileImageUrl ?? null,
       isAdmin: userData.isAdmin ?? false,
       isHost: userData.isHost ?? false,
+      pickupLocations: userData.pickupLocations ?? [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -157,6 +158,7 @@ export class MemStorage implements IStorage {
       profileImageUrl: userData.profileImageUrl ?? null,
       isAdmin: userData.isAdmin ?? false,
       isHost: userData.isHost ?? false,
+      pickupLocations: userData.pickupLocations ?? [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -178,6 +180,7 @@ export class MemStorage implements IStorage {
       profileImageUrl: updates.profileImageUrl ?? existing.profileImageUrl,
       passwordHash: updates.passwordHash ?? existing.passwordHash,
       isAdmin: updates.isAdmin ?? existing.isAdmin,
+      pickupLocations: updates.pickupLocations ?? existing.pickupLocations,
       updatedAt: new Date(),
     };
     this.users.set(id, updated);
