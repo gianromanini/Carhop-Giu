@@ -2972,47 +2972,7 @@ export default function CarHopApp() {
                         </div>
                         
                         <div className="border-t pt-3 sm:pt-4">
-                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 sm:mb-2 uppercase tracking-wider">Photos ({formData.images.filter(img => img.trim()).length})</label>
-                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                            {formData.images.filter(img => img.trim()).map((img, idx) => (
-                              <div key={idx} className="relative group">
-                                <img src={img} alt={`Photo ${idx+1}`} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded border border-zinc-300 dark:border-zinc-700" />
-                                <button type="button" onClick={() => setFormData({...formData, images: formData.images.filter((_, i) => i !== idx)})} className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <X size={10}/>
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                            <input type="file" accept="image/*" onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const base64 = event.target?.result as string;
-                                  const newImages = formData.images[0] === '' ? [base64] : [...formData.images, base64];
-                                  setFormData({...formData, images: newImages});
-                                  e.target.value = '';
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }} className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] sm:text-sm" data-testid="input-host-vehicle-photo-upload" />
-                          </div>
-                          <input type="text" placeholder="Paste URL + Enter" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] sm:text-sm" onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const input = e.target as HTMLInputElement;
-                              if (input.value.trim()) {
-                                const newImages = formData.images[0] === '' ? [input.value.trim()] : [...formData.images, input.value.trim()];
-                                setFormData({...formData, images: newImages});
-                                input.value = '';
-                              }
-                            }
-                          }} data-testid="input-host-vehicle-image-url" />
-                        </div>
-                        
-                        <div className="border-t pt-3 sm:pt-4">
-                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Locations</label>
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Locations (Choose availables for this car)</label>
                           <div className="space-y-1.5 sm:space-y-2 max-h-24 overflow-y-auto">
                             {settings.locations.map(loc => (
                               <label key={loc} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" title={loc}>
@@ -3084,6 +3044,46 @@ export default function CarHopApp() {
                               </div>
                             </div>
                           </div>
+                        </div>
+
+                        <div className="border-t pt-3 sm:pt-4">
+                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 sm:mb-2 uppercase tracking-wider">Photos ({formData.images.filter(img => img.trim()).length})</label>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                            {formData.images.filter(img => img.trim()).map((img, idx) => (
+                              <div key={idx} className="relative group">
+                                <img src={img} alt={`Photo ${idx+1}`} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded border border-zinc-300 dark:border-zinc-700" />
+                                <button type="button" onClick={() => setFormData({...formData, images: formData.images.filter((_, i) => i !== idx)})} className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <X size={10}/>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                            <input type="file" accept="image/*" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const base64 = event.target?.result as string;
+                                  const newImages = formData.images[0] === '' ? [base64] : [...formData.images, base64];
+                                  setFormData({...formData, images: newImages});
+                                  e.target.value = '';
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }} className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] sm:text-sm" data-testid="input-host-vehicle-photo-upload" />
+                          </div>
+                          <input type="text" placeholder="Paste URL + Enter" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] sm:text-sm" onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const input = e.target as HTMLInputElement;
+                              if (input.value.trim()) {
+                                const newImages = formData.images[0] === '' ? [input.value.trim()] : [...formData.images, input.value.trim()];
+                                setFormData({...formData, images: newImages});
+                                input.value = '';
+                              }
+                            }
+                          }} data-testid="input-host-vehicle-image-url" />
                         </div>
 
                         <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">
