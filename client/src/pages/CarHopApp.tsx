@@ -4949,43 +4949,32 @@ export default function CarHopApp() {
                         
                         return (
                           <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
-                            <div className="flex justify-between items-start gap-3 mb-2">
-                              <div className="flex items-center gap-2 flex-1">
-                                {b.status === 'Completed' && !hasRated && (
-                                  <span className="text-red-500 text-lg" title="Completed trip - Rate your guest!">!</span>
-                                )}
+                            {/* Header: Code + Status Badge + Ratings */}
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                              <div className="flex items-center gap-1 flex-1">
+                                {b.status === 'Completed' && !hasRated && (<span className="text-red-500 text-lg">!</span>)}
                                 {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
-                                  <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
-                                    <AlertTriangle size={14}/>
-                                  </span>
+                                  <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`}><AlertTriangle size={12}/></span>
                                 )}
-                                {hasNotifications && (
-                                  <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
-                                    <AlertCircle size={14}/>
-                                  </span>
-                                )}
+                                {hasNotifications && (<span className="text-yellow-500 animate-pulse"><AlertCircle size={12}/></span>)}
                                 <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                               </div>
-                              <div className="text-right">
-                                <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
+                              <div className="flex flex-col items-end">
+                                <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} mb-0.5`}>{statusText}</span>
                                 {b.status === 'Completed' && (() => {
                                   const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                   return (
-                                    <div className="text-[8px] text-zinc-400 space-y-1">
+                                    <div className="text-[7px] text-zinc-400 space-y-0.5 text-right">
                                       {bookingRating?.stars && (
-                                        <div className="cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }}>
+                                        <div>
                                           <div className="font-bold text-zinc-300">Guest</div>
-                                          <div className="flex items-center gap-0.5 justify-end">
-                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
-                                          </div>
+                                          <div className="flex gap-0.5 justify-end">{[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
                                         </div>
                                       )}
                                       {bookingRating?.hostStarsToClient && (
                                         <div>
                                           <div className="font-bold text-zinc-300">Host</div>
-                                          <div className="flex items-center gap-0.5 justify-end">
-                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
-                                          </div>
+                                          <div className="flex gap-0.5 justify-end">{[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
                                         </div>
                                       )}
                                     </div>
@@ -4993,34 +4982,23 @@ export default function CarHopApp() {
                                 })()}
                               </div>
                             </div>
-                            <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
-                            <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
-                            <div className="text-[10px] text-zinc-400 mt-2">
+                            {/* Car Name */}
+                            <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName}</div>
+                            {/* Driver Name */}
+                            <div className="text-xs text-zinc-500 leading-tight">{b.driver.name}</div>
+                            {/* Pickup & Return on 2 lines */}
+                            <div className="text-[10px] text-zinc-400 mt-1 leading-tight space-y-0.5">
                               <div>Pickup: {b.startDate} at {b.startTime}</div>
                               <div>Return: {b.returnDate} at {b.returnTime}</div>
-                              {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow) && (
-                                <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
-                                  Pickup {pickupIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
-                                </div>
-                              )}
                               {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
-                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
-                                  Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}
-                                </div>
+                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}</div>
                               )}
                             </div>
                             {hasNotifications && (
-                              <div className="mt-2 text-[10px] text-yellow-400 flex items-center gap-1">
-                                <Bell size={10}/>
-                                {pendingRequests > 0 && <span>{pendingRequests} request{pendingRequests > 1 ? 's' : ''}</span>}
-                                {pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}
-                                {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
-                              </div>
+                              <div className="mt-1 text-[9px] text-yellow-400 flex items-center gap-1"><Bell size={9}/>{pendingRequests > 0 && <span>{pendingRequests} req</span>}{pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}{unreadMessages > 0 && <span>{unreadMessages} msg</span>}</div>
                             )}
                             {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                              <div className="mt-2 text-[10px] text-orange-400 flex items-center gap-1 font-bold">
-                                <Route size={10}/> Delivery Pending Approval
-                              </div>
+                              <div className="mt-1 text-[9px] text-orange-400 flex items-center gap-1 font-bold"><Route size={9}/> Delivery Pending</div>
                             )}
                           </div>
                         );
