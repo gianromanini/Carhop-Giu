@@ -3019,7 +3019,7 @@ export default function CarHopApp() {
                         <div className="border-t pt-3 sm:pt-4">
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Locations (Choose availables for this car)</label>
                           <div className="space-y-1.5 sm:space-y-2 max-h-24 overflow-y-auto">
-                            {hostPickupLocations.map(loc => (
+                            {Array.from(new Set([...hostPickupLocations, ...(formData.availableLocations || [])])).map(loc => (
                               <label key={loc} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" title={loc}>
                                 <input type="checkbox" checked={formData.availableLocations?.includes(loc) || false} onChange={(e) => {
                                   const current = formData.availableLocations || [];
@@ -4277,7 +4277,7 @@ export default function CarHopApp() {
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
                       <div className="space-y-1">
                         {settings.locations.map(loc => (
-                          <Checkbox key={loc} label={formatAddressForDisplay(loc)} checked={formData.availableLocations?.includes(loc)} onChange={(e: any) => {
+                          <Checkbox key={loc} label={formatAddressForDisplay(loc)} checked={formData.availableLocations?.includes(loc) || false} onChange={(e: any) => {
                             const current = formData.availableLocations || [];
                             setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
                           }} />
