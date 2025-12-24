@@ -851,9 +851,12 @@ export default function CarHopApp() {
     queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'],
     queryFn: async () => {
       if (!authUser?.id) return { locations: [] };
-      const response = await fetch(`/api/hosts/${authUser.id}/pickup-locations`);
-      if (!response.ok) return { locations: [] };
-      return response.json();
+      try {
+        const response = await apiRequest('GET', `/api/hosts/${authUser.id}/pickup-locations`);
+        return response.json();
+      } catch (error) {
+        return { locations: [] };
+      }
     },
     enabled: !!authUser?.id
   });
@@ -862,7 +865,8 @@ export default function CarHopApp() {
   const addHostPickupLocationMutation = useMutation({
     mutationFn: async (location: string) => {
       if (!authUser?.id) throw new Error('Not authenticated');
-      return apiRequest('POST', `/api/hosts/${authUser.id}/pickup-locations`, { location });
+      const response = await apiRequest('POST', `/api/hosts/${authUser.id}/pickup-locations`, { location });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
@@ -876,7 +880,8 @@ export default function CarHopApp() {
   const removeHostPickupLocationMutation = useMutation({
     mutationFn: async (location: string) => {
       if (!authUser?.id) throw new Error('Not authenticated');
-      return apiRequest('DELETE', `/api/hosts/${authUser.id}/pickup-locations`, { location });
+      const response = await apiRequest('DELETE', `/api/hosts/${authUser.id}/pickup-locations`, { location });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
