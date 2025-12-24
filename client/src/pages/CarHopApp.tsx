@@ -634,6 +634,7 @@ export default function CarHopApp() {
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
+  const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
@@ -6264,11 +6265,48 @@ export default function CarHopApp() {
               {bookings.length === 0 ? (
                 <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
               ) : (
-                [...bookings].sort((a, b) => {
-                  const aDate = new Date(`${a.startDate}T${a.startTime}`).getTime();
-                  const bDate = new Date(`${b.startDate}T${b.startTime}`).getTime();
-                  return bDate - aDate;
-                }).map((b) => (
+                <>
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Sort Bookings</label>
+                    <select 
+                      value={clientBookingFilter} 
+                      onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'completed' | 'cancelled' | 'pending')} 
+                      className="w-full max-w-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+                      data-testid="select-client-booking-filter"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="pending">Pending / Active</option>
+                    </select>
+                  </div>
+                  {[...bookings].sort((a, b) => {
+                    // Always sort by date newest first within each filter
+                    const aDate = new Date(`${a.startDate}T${a.startTime}`).getTime();
+                    const bDate = new Date(`${b.startDate}T${b.startTime}`).getTime();
+                    
+                    if (clientBookingFilter === 'newest') {
+                      return bDate - aDate;
+                    } else if (clientBookingFilter === 'completed') {
+                      if (a.status === 'Completed' && b.status === 'Completed') return bDate - aDate;
+                      if (a.status === 'Completed') return -1;
+                      if (b.status === 'Completed') return 1;
+                      return bDate - aDate;
+                    } else if (clientBookingFilter === 'cancelled') {
+                      if (a.status === 'Cancelled' && b.status === 'Cancelled') return bDate - aDate;
+                      if (a.status === 'Cancelled') return -1;
+                      if (b.status === 'Cancelled') return 1;
+                      return bDate - aDate;
+                    } else if (clientBookingFilter === 'pending') {
+                      const aIsPending = a.status !== 'Completed' && a.status !== 'Cancelled';
+                      const bIsPending = b.status !== 'Completed' && b.status !== 'Cancelled';
+                      if (aIsPending && bIsPending) return bDate - aDate;
+                      if (aIsPending) return -1;
+                      if (bIsPending) return 1;
+                      return bDate - aDate;
+                    }
+                    return bDate - aDate;
+                  }).map((b) => (
                   <Card key={b.id} className="p-3 md:p-6" data-testid={`card-my-booking-${b.id}`}>
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2">
@@ -6548,6 +6586,8 @@ export default function CarHopApp() {
                     </div>
                   </Card>
                 ))
+                  )}
+                </>
               )}
             </div>
             <Button variant="ghost" onClick={() => setView('home')} className="mt-8" data-testid="button-back-to-home"><ArrowLeft size={16}/> Back to Home</Button>
