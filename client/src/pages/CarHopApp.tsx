@@ -484,6 +484,7 @@ export default function CarHopApp() {
   const [adminTab, setAdminTab] = useState('fleet');
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
   const [selectedHost, setSelectedHost] = useState<any>(null);
   const [selectedHostCarCommission, setSelectedHostCarCommission] = useState<any>(null);
   const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
@@ -4545,16 +4546,41 @@ export default function CarHopApp() {
                           <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Trip History ({clientTrips.length})</h4>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {clientTrips.length > 0 ? (
-                              clientTrips.map((trip, idx) => (
-                                <div key={idx} onClick={() => setActiveBooking(trip)} className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs cursor-pointer hover:border-green-500 hover:bg-zinc-800 transition-colors" data-testid={`card-trip-${trip.id}`}>
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-zinc-900 dark:text-white">{trip.carName}</span>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${trip.status === 'Completed' ? 'bg-green-600 text-white' : 'bg-green-500 text-white'}`}>{trip.status}</span>
+                              clientTrips.map((trip, idx) => {
+                                const tripRating = ratingsData?.find(r => r.bookingId === trip.id);
+                                return (
+                                  <div key={idx} onClick={() => setSelectedTripForView(trip)} className="p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs cursor-pointer hover:border-blue-500 hover:bg-zinc-800 transition-colors" data-testid={`card-trip-${trip.id}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="font-bold text-zinc-900 dark:text-white">{trip.carName}</span>
+                                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${trip.status === 'Completed' ? 'bg-green-600 text-white' : trip.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-zinc-500 text-white'}`}>{trip.status}</span>
+                                    </div>
+                                    <div className="text-zinc-500">{trip.startDate} to {trip.returnDate}</div>
+                                    <div className="flex justify-between items-end">
+                                      <div className="text-zinc-400">${trip.total.toFixed(2)}</div>
+                                      {trip.status === 'Completed' && (
+                                        <div className="text-[7px] text-zinc-500 space-y-0.5 text-right">
+                                          {tripRating?.stars && (
+                                            <div>
+                                              <div className="font-bold text-zinc-400">Guest</div>
+                                              <div className="flex gap-0.5 justify-end">
+                                                {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (tripRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          {tripRating?.hostStarsToClient && (
+                                            <div>
+                                              <div className="font-bold text-zinc-400">Host</div>
+                                              <div className="flex gap-0.5 justify-end">
+                                                {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (tripRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="text-zinc-500">{trip.startDate} to {trip.returnDate}</div>
-                                  <div className="text-zinc-400">${trip.total.toFixed(2)}</div>
-                                </div>
-                              ))
+                                );
+                              })
                             ) : (
                               <div className="text-xs text-zinc-500">No trips found</div>
                             )}
@@ -4593,6 +4619,58 @@ export default function CarHopApp() {
                       <div className="flex gap-3">
                         <button onClick={() => setDeletingUserId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-client">Cancel</button>
                         <button onClick={() => deleteUserMutation.mutate(deletingUserId)} disabled={deleteUserMutation.isPending} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors disabled:opacity-50" data-testid="button-confirm-delete-client">Yes, Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedTripForView && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
+                      <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-start">
+                        <div>
+                          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Trip Details</h2>
+                          <p className="text-sm text-zinc-500 mt-1">{selectedTripForView.bookingCode}</p>
+                        </div>
+                        <button onClick={() => setSelectedTripForView(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" data-testid="button-close-trip-modal"><X size={24}/></button>
+                      </div>
+                      <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Car</span><p className="text-sm font-medium text-zinc-900 dark:text-white">{selectedTripForView.carName}</p></div>
+                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Status</span><p className={`text-sm font-bold px-2 py-1 rounded w-fit ${selectedTripForView.status === 'Completed' ? 'bg-green-600 text-white' : selectedTripForView.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-zinc-500 text-white'}`}>{selectedTripForView.status}</p></div>
+                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Pickup</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.startDate} at {selectedTripForView.startTime}</p></div>
+                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Return</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.returnDate} at {selectedTripForView.returnTime}</p></div>
+                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Driver</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.name}</p></div>
+                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Total</span><p className="text-sm font-bold text-green-600">${selectedTripForView.total.toFixed(2)}</p></div>
+                        </div>
+                        {selectedTripForView.status === 'Completed' && (() => {
+                          const tripRating = ratingsData?.find(r => r.bookingId === selectedTripForView.id);
+                          return (
+                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
+                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Ratings</h4>
+                              <div className="grid grid-cols-2 gap-4">
+                                {tripRating?.stars && (
+                                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                    <span className="text-xs font-bold text-zinc-500 uppercase">Guest Rating</span>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      {[1,2,3,4,5].map(star => (<span key={star} className={`text-lg ${star <= (tripRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-400'}`}>★</span>))}
+                                      <span className="text-sm font-bold ml-2 text-zinc-700 dark:text-zinc-300">{tripRating.stars}/5</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {tripRating?.hostStarsToClient && (
+                                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                    <span className="text-xs font-bold text-zinc-500 uppercase">Host Rating</span>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      {[1,2,3,4,5].map(star => (<span key={star} className={`text-lg ${star <= (tripRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-400'}`}>★</span>))}
+                                      <span className="text-sm font-bold ml-2 text-zinc-700 dark:text-zinc-300">{tripRating.hostStarsToClient}/5</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
