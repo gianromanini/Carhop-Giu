@@ -1857,16 +1857,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // Host Pickup Locations - Add a new location
-  app.post('/api/hosts/:hostId/pickup-locations', isAuthenticated, async (req: any, res) => {
+  app.post('/api/hosts/:hostId/pickup-locations', async (req: any, res) => {
     try {
       const { hostId } = req.params;
       const { location } = req.body;
-      const authUser = req.user;
-      
-      // Only allow host to modify their own locations or admin to modify any
-      if (authUser.id !== hostId && !authUser.isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
-      }
       
       if (!location || typeof location !== 'string') {
         return res.status(400).json({ message: "Location is required" });
@@ -1895,16 +1889,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // Host Pickup Locations - Remove a location
-  app.delete('/api/hosts/:hostId/pickup-locations', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/hosts/:hostId/pickup-locations', async (req: any, res) => {
     try {
       const { hostId } = req.params;
       const { location } = req.body;
-      const authUser = req.user;
-      
-      // Only allow host to modify their own locations or admin to modify any
-      if (authUser.id !== hostId && !authUser.isAdmin) {
-        return res.status(403).json({ message: "Access denied" });
-      }
       
       if (!location || typeof location !== 'string') {
         return res.status(400).json({ message: "Location is required" });
