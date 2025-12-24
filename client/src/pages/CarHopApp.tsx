@@ -846,6 +846,40 @@ export default function CarHopApp() {
     }
   });
 
+  // Host pickup locations - per host, not global
+  const { data: hostPickupLocationsData } = useQuery<{ locations: string[] }>({
+    queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'],
+    queryFn: async () => {
+      if (!authUser?.id) return { locations: [] };
+      const response = await fetch(`/api/hosts/${authUser.id}/pickup-locations`);
+      return response.json();
+    },
+    enabled: !!authUser?.id && authUser.isHost
+  });
+  const hostPickupLocations = hostPickupLocationsData?.locations || [];
+
+  const addHostPickupLocationMutation = useMutation({
+    mutationFn: async (location: string) => {
+      if (!authUser?.id) throw new Error('Not authenticated');
+      return apiRequest('POST', `/api/hosts/${authUser.id}/pickup-locations`, { location });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
+      toast({ title: 'Pickup location added' });
+    }
+  });
+
+  const removeHostPickupLocationMutation = useMutation({
+    mutationFn: async (location: string) => {
+      if (!authUser?.id) throw new Error('Not authenticated');
+      return apiRequest('DELETE', `/api/hosts/${authUser.id}/pickup-locations`, { location });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts', authUser?.id, 'pickup-locations'] });
+      toast({ title: 'Pickup location removed' });
+    }
+  });
+
   const clientTrips = useMemo(() => {
     if (!selectedClient) return [];
     return bookings.filter(b => b.driver.email === selectedClient.email);
@@ -2948,10 +2982,10 @@ export default function CarHopApp() {
                             <MapPin size={12} className="text-green-500"/> Pickup Locations
                           </label>
                           <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                            {settings.locations.map(loc => (
+                            {hostPickupLocations.map(loc => (
                               <span key={loc} className="inline-flex items-center gap-0.5 sm:gap-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold group">
                                 <MapPin size={10} className="sm:w-3 sm:h-3"/> <span className="truncate max-w-[80px] sm:max-w-none">{formatAddressForDisplay(loc)}</span>
-                                <button onClick={() => updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== loc) })} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
+                                <button onClick={() => removeHostPickupLocationMutation.mutate(loc)} className="ml-0.5 sm:ml-1 p-0.5 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full" data-testid={`button-remove-location-${loc.replace(/\s+/g, '-')}`}>
                                   <X size={10} className="sm:w-3 sm:h-3 text-red-500"/>
                                 </button>
                               </span>
@@ -2965,7 +2999,7 @@ export default function CarHopApp() {
                                 placeholder="Add location..."
                               />
                             </div>
-                            <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { updateSettingMutation.mutate({ key: 'locations', value: [...settings.locations, hostNewLocation.trim()] }); setHostNewLocation(''); } }} data-testid="button-add-location">
+                            <Button variant="primary" size="sm" onClick={() => { if(hostNewLocation.trim()) { addHostPickupLocationMutation.mutate(hostNewLocation.trim()); setHostNewLocation(''); } }} data-testid="button-add-location">
                               <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                             </Button>
                           </div>
@@ -2974,7 +3008,7 @@ export default function CarHopApp() {
                         <div className="border-t pt-3 sm:pt-4">
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Locations (Choose availables for this car)</label>
                           <div className="space-y-1.5 sm:space-y-2 max-h-24 overflow-y-auto">
-                            {settings.locations.map(loc => (
+                            {hostPickupLocations.map(loc => (
                               <label key={loc} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer" title={loc}>
                                 <input type="checkbox" checked={formData.availableLocations?.includes(loc) || false} onChange={(e) => {
                                   const current = formData.availableLocations || [];
