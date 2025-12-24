@@ -4927,8 +4927,8 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
@@ -6246,7 +6246,11 @@ export default function CarHopApp() {
               {bookings.length === 0 ? (
                 <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
               ) : (
-                bookings.map((b) => (
+                [...bookings].sort((a, b) => {
+                  const aDate = new Date(`${a.startDate}T${a.startTime}`).getTime();
+                  const bDate = new Date(`${b.startDate}T${b.startTime}`).getTime();
+                  return bDate - aDate;
+                }).map((b) => (
                   <Card key={b.id} className="p-3 md:p-6" data-testid={`card-my-booking-${b.id}`}>
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2">
