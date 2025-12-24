@@ -6256,7 +6256,7 @@ export default function CarHopApp() {
                       <div className="flex items-center gap-2">
                         <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : b.status === 'Extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : b.status === 'Cancelled' ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-400'}`}>{b.status === 'Cancelled' ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                         <div>
-                          <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Completed' ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : b.status === 'Cancelled' ? 'text-red-600' : 'text-blue-400'}`}>{b.status}</div>
+                          <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Completed' ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : b.status === 'Cancelled' ? 'text-red-600' : 'text-blue-400'}`}>{b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
                           {b.status === 'Active' && b.checkInStatus !== 'completed' && (
                             <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                           )}
