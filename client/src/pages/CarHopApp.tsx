@@ -129,8 +129,8 @@ const formatAddressForDisplay = (fullAddress: string): string => {
     }
   }
   
-  // Find state and zip from remaining parts
-  for (let i = remainingParts.length; i < parts.length; i++) {
+  // Find state and zip from remaining parts (start after city)
+  for (let i = startIdx + 3; i < parts.length; i++) {
     const part = parts[i];
     
     // Check if it's a state name
