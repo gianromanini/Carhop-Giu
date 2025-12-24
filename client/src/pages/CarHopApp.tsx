@@ -3310,55 +3310,52 @@ export default function CarHopApp() {
                         
                         return (
                           <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
-                            <div className="flex justify-between items-start mb-1">
-                              <div className="flex items-center gap-2">
-                                {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
-                                  <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
-                                    <AlertTriangle size={14}/>
-                                  </span>
-                                )}
-                                {hasNotifications && (
-                                  <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
-                                    <AlertCircle size={14}/>
-                                  </span>
-                                )}
-                                <span className="font-bold text-sm text-white">{b.bookingCode}</span>
-                              </div>
-                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
-                            </div>
-                            {b.status === 'Completed' && (() => {
-                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                              return (
-                                bookingRating?.stars && (
-                                  <div className="text-[9px] text-zinc-300 mt-2 cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }} title={bookingRating.comment || 'No comment'}>
-                                    <span className="font-bold">Guest Rating:</span>
-                                    <div className="flex items-center gap-1 mt-1">
-                                      {[1,2,3,4,5].map(star => (
-                                        <span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                      ))}
-                                      <span className="text-zinc-400 ml-1">{bookingRating.stars}/5</span>
-                                    </div>
-                                  </div>
-                                )
-                              );
-                            })()}
-                            {b.status === 'Completed' && (() => {
-                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                              return bookingRating?.hostStarsToClient && (
-                                <div className="text-[9px] text-zinc-300 mt-1">
-                                  <span className="font-bold">Host Rating:</span>
-                                  <div className="flex items-center gap-1 mt-1">
-                                    {[1,2,3,4,5].map(star => (
-                                      <span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                    ))}
-                                    <span className="text-zinc-400 ml-1">{bookingRating.hostStarsToClient}/5</span>
-                                  </div>
+                            <div className="flex justify-between items-start gap-3 mb-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
+                                    <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`} title={pickupIsToday || returnIsToday ? 'Today!' : 'Tomorrow!'}>
+                                      <AlertTriangle size={14}/>
+                                    </span>
+                                  )}
+                                  {hasNotifications && (
+                                    <span className="text-yellow-500 animate-pulse" title={`${pendingRequests} pending requests, ${unreadMessages} unread messages`}>
+                                      <AlertCircle size={14}/>
+                                    </span>
+                                  )}
+                                  <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                                 </div>
-                              );
-                            })()}
-                            <div className="text-xs text-zinc-400 font-medium mt-2">{b.carName}</div>
-                            <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
-                            <div className="text-[10px] text-zinc-400 mt-2">
+                                <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
+                                <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
+                                {b.status === 'Completed' && (() => {
+                                  const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                  return (
+                                    <div className="text-[8px] text-zinc-400 space-y-1">
+                                      {bookingRating?.stars && (
+                                        <div className="cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }}>
+                                          <div className="font-bold text-zinc-300">Guest</div>
+                                          <div className="flex items-center gap-0.5 justify-end">
+                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {bookingRating?.hostStarsToClient && (
+                                        <div>
+                                          <div className="font-bold text-zinc-300">Host</div>
+                                          <div className="flex items-center gap-0.5 justify-end">
+                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-zinc-400">
                               <div>Pickup: {b.startDate} at {b.startTime}</div>
                               <div>Return: {b.returnDate} at {b.returnTime}</div>
                               {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow) && (
@@ -4874,8 +4871,8 @@ export default function CarHopApp() {
                         
                         return (
                           <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
-                            <div className="flex justify-between items-start mb-1">
-                              <div className="flex items-center gap-2">
+                            <div className="flex justify-between items-start gap-3 mb-2">
+                              <div className="flex items-center gap-2 flex-1">
                                 {b.status === 'Completed' && !hasRated && (
                                   <span className="text-red-500 text-lg" title="Completed trip - Rate your guest!">!</span>
                                 )}
@@ -4891,56 +4888,34 @@ export default function CarHopApp() {
                                 )}
                                 <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                               </div>
-                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
+                              <div className="text-right">
+                                <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
+                                {b.status === 'Completed' && (() => {
+                                  const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                  return (
+                                    <div className="text-[8px] text-zinc-400 space-y-1">
+                                      {bookingRating?.stars && (
+                                        <div className="cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }}>
+                                          <div className="font-bold text-zinc-300">Guest</div>
+                                          <div className="flex items-center gap-0.5 justify-end">
+                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {bookingRating?.hostStarsToClient && (
+                                        <div>
+                                          <div className="font-bold text-zinc-300">Host</div>
+                                          <div className="flex items-center gap-0.5 justify-end">
+                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
                             </div>
-                            {b.status === 'Completed' && (() => {
-                              const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                              return (
-                                <div className="space-y-2 mt-2">
-                                  {bookingRating?.stars && (
-                                    <div className="text-[9px] text-zinc-300">
-                                      <span className="font-bold">Guest Rating:</span>
-                                      <div className="flex items-center gap-1 mt-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }} title={bookingRating.comment || 'No comment'}>
-                                        {[1,2,3,4,5].map(star => (
-                                          <span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                        ))}
-                                        <span className="text-zinc-400 ml-1">{bookingRating.stars}/5</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {bookingRating?.hostStarsToClient && (
-                                    <div className="text-[9px] text-zinc-300">
-                                      <span className="font-bold">Host Rating:</span>
-                                      <div className="flex items-center gap-1 mt-1">
-                                        {[1,2,3,4,5].map(star => (
-                                          <span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                        ))}
-                                        <span className="text-zinc-400 ml-1">{bookingRating.hostStarsToClient}/5</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {!hasRated ? (
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setManageBookingId(b.id);
-                                        setShowRateGuestModal(true);
-                                      }}
-                                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
-                                      data-testid={`button-rate-guest-${b.id}`}
-                                    >
-                                      Rate your Guest
-                                    </button>
-                                  ) : (
-                                    <div className="flex items-center gap-1 text-xs text-green-400">
-                                      <Check size={14}/>
-                                      <span>Rated</span>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                            <div className="text-xs text-zinc-400 font-medium mt-2">{b.carName}</div>
+                            <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
                             <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
                             <div className="text-[10px] text-zinc-400 mt-2">
                               <div>Pickup: {b.startDate} at {b.startTime}</div>
