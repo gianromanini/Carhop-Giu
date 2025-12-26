@@ -1909,7 +1909,7 @@ export default function CarHopApp() {
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @page { size: letter; margin: 0.5in 0.75in; } @media print { body { margin: 0 !important; padding: 0 !important; } body * { visibility: hidden; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-agreement { display: block !important; width: 100% !important; max-width: 100% !important; color: black !important; font-size: 10pt; line-height: 1.25; background: white !important; box-sizing: border-box !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
+      <style>{` @page { size: letter; margin: 3cm 0.75in 0.5in 0.75in; } @media print { body { margin: 0 !important; padding: 0 !important; } body * { visibility: hidden; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-agreement { display: block !important; width: 100% !important; max-width: 100% !important; color: black !important; font-size: 10pt; line-height: 1.25; background: white !important; box-sizing: border-box !important; padding: 0 !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
@@ -6648,7 +6648,7 @@ export default function CarHopApp() {
                   <button onClick={() => setViewingReceiptBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
                 </div>
 
-                <div className="printable-receipt space-y-1.5">
+                <div className="printable-receipt space-y-1.5 px-8">
                   {/* Header */}
                   <div className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
                     <div className="flex justify-between items-start mb-2">
