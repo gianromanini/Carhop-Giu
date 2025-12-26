@@ -1786,6 +1786,36 @@ export default function CarHopApp() {
   };
 
   const handleSaveVehicle = () => {
+    // Validate required fields
+    const missingFields = [];
+    
+    if (!formData.model || formData.model.trim() === '') {
+      missingFields.push('Car Model');
+    }
+    if (!formData.category || formData.category.trim() === '') {
+      missingFields.push('Category');
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      missingFields.push('Daily Rate');
+    }
+    if (!formData.fuel || formData.fuel.trim() === '') {
+      missingFields.push('Fuel Type');
+    }
+    if (!formData.seats || formData.seats.trim() === '') {
+      missingFields.push('Seats');
+    }
+    if (!formData.transmission || formData.transmission.trim() === '') {
+      missingFields.push('Transmission');
+    }
+    
+    if (missingFields.length > 0) {
+      toast({ 
+        description: `Por favor, preencha os campos obrigatórios: ${missingFields.join(', ')}`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     const vehicleData = {
       model: formData.model,
       category: formData.category,
