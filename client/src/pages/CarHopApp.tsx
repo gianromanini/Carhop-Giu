@@ -2144,19 +2144,41 @@ export default function CarHopApp() {
 
             {activeTab === 'history' && clientMessages.length > 0 && (
               <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                {clientMessages.map((msg: any) => (
+                {clientMessages.map((msg: any, idx: number) => {
+                  const isFirstMessage = idx === 0;
+                  const messageText = msg.text || '';
+                  const subjectMatch = messageText.match(/\[(.*?)\]/);
+                  const subject = subjectMatch ? subjectMatch[1] : '';
+                  const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
+                  const phone = phoneMatch ? phoneMatch[1] : '';
+                  const cleanText = messageText
+                    .replace(/\[.*?\]/, '')
+                    .replace(/Telefone:.*?(?:\n|$)/, '')
+                    .replace(/Não informado/, '')
+                    .trim();
+                  
+                  return (
                   <div key={msg.id} className="space-y-2">
                     <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3">
-                      <div className="flex justify-between mb-1">
+                      <div className="flex justify-between mb-2">
                         <span className="text-xs text-zinc-500">
                           {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">{msg.text}</p>
+                      
+                      {isFirstMessage && (
+                        <div className="mb-2 pb-2 border-b border-zinc-300 dark:border-zinc-700">
+                          {subject && <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Assunto: {subject}</p>}
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {msg.senderIdentifier}</p>
+                          {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
+                        </div>
+                      )}
+                      
+                      <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">{cleanText}</p>
                       {msg.images && msg.images.length > 0 && (
                         <div className="grid grid-cols-3 gap-2 mt-2">
-                          {msg.images.map((img: string, idx: number) => (
-                            <img key={idx} src={img} alt="" className="rounded cursor-pointer h-12 w-full object-cover" onClick={() => setSelectedImage(img)} />
+                          {msg.images.map((img: string, i: number) => (
+                            <img key={i} src={img} alt="" className="rounded cursor-pointer h-12 w-full object-cover" onClick={() => setSelectedImage(img)} />
                           ))}
                         </div>
                       )}
@@ -2167,11 +2189,12 @@ export default function CarHopApp() {
                           <Reply size={12} className="text-green-600" />
                           <span className="text-xs font-bold text-green-600">Admin</span>
                         </div>
-                        <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{msg.adminReply}</p>
+                        <p className="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap">{msg.adminReply}</p>
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
                 <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
                   <textarea
                     value={clientChatReply}
