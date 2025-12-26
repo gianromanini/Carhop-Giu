@@ -541,6 +541,8 @@ export default function CarHopApp() {
   const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
   const [clientChatSending, setClientChatSending] = useState(false);
+  const [clientChatTab, setClientChatTab] = useState<'history' | 'new'>('new');
+  const [clientChatReply, setClientChatReply] = useState('');
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
@@ -2102,15 +2104,103 @@ export default function CarHopApp() {
         </div>
       )}
       
-      {showClientChatModal && (
+      {showClientChatModal && (() => {
+        const userEmail = clientUser?.email || clientChatForm.email;
+        const clientMessages = supportMessagesData.filter((m: any) => 
+          m.senderType === 'client' && (m.senderIdentifier === userEmail || m.senderId === userEmail)
+        ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
+        const hasMessages = clientMessages.length > 0;
+        const defaultTab = hasMessages ? 'history' : 'new';
+        const activeTab = clientChatTab || defaultTab;
+        
+        return (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
-            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto flex flex-col">
+            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); setClientChatTab('new'); setClientChatReply(''); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
             
             <h2 className="text-xl font-bold mb-4 text-center text-zinc-900 dark:text-white flex items-center justify-center gap-2">
               <MessageCircle className="text-green-500" size={24}/> Fale Conosco
             </h2>
             
+            {hasMessages && (
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setClientChatTab('history')}
+                  className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
+                  data-testid="button-chat-history"
+                >
+                  Conversas
+                </button>
+                <button
+                  onClick={() => setClientChatTab('new')}
+                  className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'new' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
+                  data-testid="button-chat-new"
+                >
+                  Novo Chat
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'history' && clientMessages.length > 0 && (
+              <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+                {clientMessages.map((msg: any) => (
+                  <div key={msg.id} className="space-y-2">
+                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-xs text-zinc-500">
+                          {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">{msg.text}</p>
+                      {msg.images && msg.images.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          {msg.images.map((img: string, idx: number) => (
+                            <img key={idx} src={img} alt="" className="rounded cursor-pointer h-12 w-full object-cover" onClick={() => setSelectedImage(img)} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {msg.adminReply && (
+                      <div className="ml-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Reply size={12} className="text-green-600" />
+                          <span className="text-xs font-bold text-green-600">Admin</span>
+                        </div>
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{msg.adminReply}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                  <textarea
+                    value={clientChatReply}
+                    onChange={(e) => setClientChatReply(e.target.value)}
+                    placeholder="Responder..."
+                    className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm resize-none"
+                    rows={2}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!clientChatReply.trim()) return;
+                      const lastMsg = clientMessages[clientMessages.length - 1];
+                      const newReply = lastMsg.adminReply 
+                        ? `${lastMsg.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${clientChatReply}`
+                        : clientChatReply;
+                      await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: true });
+                      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                      setClientChatReply('');
+                      toast({ description: 'Mensagem adicionada!' });
+                    }}
+                    className="w-full mt-2 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
+                  >
+                    <Send size={14} /> Enviar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'new' && (
             <form onSubmit={async (e) => {
               e.preventDefault();
               if (!clientChatForm.name.trim() || !clientChatForm.email.trim() || !clientChatForm.message.trim()) {
@@ -2268,9 +2358,11 @@ export default function CarHopApp() {
                 {clientChatSending ? <><Loader size={18} className="animate-spin"/> Enviando...</> : <><Send size={18}/> Enviar Mensagem</>}
               </Button>
             </form>
+            )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {showLoginModal && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
