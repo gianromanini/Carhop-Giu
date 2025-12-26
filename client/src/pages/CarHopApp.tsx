@@ -6657,7 +6657,10 @@ export default function CarHopApp() {
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3>
-                    <p className="text-sm text-zinc-500 mt-2">{receiptBooking.location}</p>
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm text-zinc-500"><strong>Location:</strong> {formatAddressForDisplay(receiptBooking.location)}</p>
+                      <p className="text-sm text-zinc-500"><strong>Type:</strong> {receiptBooking.details?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
+                    </div>
                   </div>
 
                   {/* Rental Dates */}
