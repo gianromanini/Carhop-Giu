@@ -537,6 +537,10 @@ export default function CarHopApp() {
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
+  const [showClientChatModal, setShowClientChatModal] = useState(false);
+  const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
+  const [clientChatImages, setClientChatImages] = useState<string[]>([]);
+  const [clientChatSending, setClientChatSending] = useState(false);
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
@@ -1987,7 +1991,12 @@ export default function CarHopApp() {
               </div>
             )}
             <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-            <button onClick={handleManageBookingClick} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
+            <button onClick={() => {
+              if (clientUser) {
+                setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
+              }
+              setShowClientChatModal(true);
+            }} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
               <MessageCircle size={18}/>
             </button>
             <button onClick={() => setView('admin')} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
@@ -2058,7 +2067,13 @@ export default function CarHopApp() {
                     <>
                       <div className="w-full px-4 py-2 text-center text-sm text-green-600 font-bold flex items-center justify-center gap-2">Hi, {clientUser.name.split(' ')[0]}</div>
                       <button onClick={() => { setView('bookings'); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-bookings"><Briefcase className="h-4 w-4" />My Bookings</button>
-                      <button onClick={() => { handleManageBookingClick(); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat-logged"><MessageCircle className="h-4 w-4" />Chat</button>
+                      <button onClick={() => { 
+                        if (clientUser) {
+                          setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
+                        }
+                        setShowClientChatModal(true);
+                        setMobileActionsMenuOpen(false); 
+                      }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat-logged"><MessageCircle className="h-4 w-4" />Chat</button>
                       <button onClick={() => { setShowProfileModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-profile"><User className="h-4 w-4" />Edit Profile</button>
                       <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
                       <button onClick={() => { handleSignOut(); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 text-red-600 dark:text-red-400" data-testid="button-menu-logout"><LogOut className="h-4 w-4" />Logout</button>
@@ -2066,7 +2081,7 @@ export default function CarHopApp() {
                   ) : (
                     <>
                       <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-center text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center gap-2" data-testid="button-menu-signin">Sign In</button>
-                      <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
+                      <button onClick={() => { setShowClientChatModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
                       <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
                     </>
                   )}
@@ -2087,6 +2102,176 @@ export default function CarHopApp() {
         </div>
       )}
       
+      {showClientChatModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
+            
+            <h2 className="text-xl font-bold mb-4 text-center text-zinc-900 dark:text-white flex items-center justify-center gap-2">
+              <MessageCircle className="text-green-500" size={24}/> Fale Conosco
+            </h2>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!clientChatForm.name.trim() || !clientChatForm.email.trim() || !clientChatForm.message.trim()) {
+                toast({ description: 'Por favor, preencha todos os campos obrigatórios', variant: 'destructive' });
+                return;
+              }
+              setClientChatSending(true);
+              try {
+                await apiRequest('POST', '/api/support-messages', {
+                  senderType: 'client',
+                  senderId: clientUser?.email || clientChatForm.email,
+                  senderName: clientChatForm.name,
+                  senderIdentifier: clientChatForm.email,
+                  text: `[${clientChatForm.subject}] ${clientChatForm.message}\n\nTelefone: ${clientChatForm.phone || 'Não informado'}`,
+                  images: clientChatImages
+                });
+                queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                toast({ description: 'Mensagem enviada com sucesso! Entraremos em contato em breve.' });
+                setShowClientChatModal(false);
+                setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
+                setClientChatImages([]);
+              } catch (error) {
+                toast({ description: 'Erro ao enviar mensagem. Tente novamente.', variant: 'destructive' });
+              } finally {
+                setClientChatSending(false);
+              }
+            }} className="space-y-4">
+              {!clientUser && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Nome *</label>
+                    <input
+                      type="text"
+                      value={clientChatForm.name}
+                      onChange={(e) => setClientChatForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Seu nome completo"
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                      required
+                      data-testid="input-chat-name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Email *</label>
+                    <input
+                      type="email"
+                      value={clientChatForm.email}
+                      onChange={(e) => setClientChatForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="seu@email.com"
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                      required
+                      data-testid="input-chat-email"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Telefone</label>
+                    <input
+                      type="tel"
+                      value={clientChatForm.phone}
+                      onChange={(e) => setClientChatForm(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="(00) 00000-0000"
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                      data-testid="input-chat-phone"
+                    />
+                  </div>
+                </>
+              )}
+              
+              {clientUser && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 flex items-center gap-3">
+                  <User className="text-green-600" size={20}/>
+                  <div>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white">{clientChatForm.name || clientUser.name}</p>
+                    <p className="text-xs text-zinc-500">{clientChatForm.email || clientUser.email}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Assunto *</label>
+                <select
+                  value={clientChatForm.subject}
+                  onChange={(e) => setClientChatForm(prev => ({ ...prev, subject: e.target.value }))}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                  data-testid="select-chat-subject"
+                >
+                  <option value="Duvidas">Dúvidas</option>
+                  <option value="Open a Claim">Open a Claim</option>
+                  <option value="Report an Issue">Report an Issue</option>
+                  <option value="Talk with Support">Talk with Support</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Mensagem *</label>
+                <textarea
+                  value={clientChatForm.message}
+                  onChange={(e) => setClientChatForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="Digite sua mensagem aqui..."
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm resize-none"
+                  rows={4}
+                  required
+                  data-testid="textarea-chat-message"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Anexos (opcional)</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {clientChatImages.map((img, idx) => (
+                    <div key={idx} className="relative w-16 h-16">
+                      <img src={img} alt={`Anexo ${idx + 1}`} className="w-full h-full object-cover rounded-lg border border-zinc-300 dark:border-zinc-700"/>
+                      <button type="button" onClick={() => setClientChatImages(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"><X size={12}/></button>
+                    </div>
+                  ))}
+                </div>
+                <label className="flex items-center justify-center gap-2 w-full px-3 py-2 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg cursor-pointer hover:border-green-500 transition-colors">
+                  <Upload size={18} className="text-zinc-500"/>
+                  <span className="text-sm text-zinc-500">Adicionar imagem</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files) {
+                        Array.from(files).forEach(file => {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast({ description: 'Arquivo muito grande. Máximo 5MB por imagem.', variant: 'destructive' });
+                            return;
+                          }
+                          if (!file.type.startsWith('image/')) {
+                            toast({ description: 'Apenas imagens são permitidas.', variant: 'destructive' });
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            if (ev.target?.result) {
+                              setClientChatImages(prev => [...prev, ev.target!.result as string]);
+                            }
+                          };
+                          reader.onerror = () => {
+                            toast({ description: 'Erro ao carregar imagem.', variant: 'destructive' });
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                      }
+                    }}
+                    data-testid="input-chat-attachments"
+                  />
+                </label>
+              </div>
+              
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3" disabled={clientChatSending} data-testid="button-send-chat">
+                {clientChatSending ? <><Loader size={18} className="animate-spin"/> Enviando...</> : <><Send size={18}/> Enviar Mensagem</>}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showLoginModal && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
