@@ -549,6 +549,7 @@ export default function CarHopApp() {
   const [expandedClientChatGroups, setExpandedClientChatGroups] = useState<Set<string>>(new Set());
   const [finishedClientChatGroups, setFinishedClientChatGroups] = useState<Set<string>>(new Set());
   const [deletingChatGroup, setDeletingChatGroup] = useState<string | null>(null);
+  const [showChatLoginScreen, setShowChatLoginScreen] = useState(false);
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
@@ -2169,11 +2170,48 @@ export default function CarHopApp() {
         const hasMessages = clientMessages.length > 0;
         const defaultTab = hasMessages ? 'history' : 'new';
         const activeTab = clientChatTab || defaultTab;
+        const isLoggedIn = !!clientUser;
+        
+        // Show login screen if not logged in and not already showing form
+        if (!isLoggedIn && !showChatLoginScreen) {
+          return (
+            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 flex flex-col">
+                <button onClick={() => { setShowClientChatModal(false); setShowChatLoginScreen(false); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
+                
+                <h2 className="text-xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Sign In to Contact Us</h2>
+                
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 text-center">Please log in to your account or create a new one to send us a message.</p>
+                
+                <button onClick={() => { setShowLoginModal(true); }} className="w-full mb-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all" data-testid="button-signin-chat">
+                  Sign In
+                </button>
+                
+                <button onClick={() => { setShowSignupModal(true); }} className="w-full mb-3 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all" data-testid="button-signup-chat">
+                  Create Account
+                </button>
+                
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-zinc-300 dark:border-zinc-600"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400">or</span>
+                  </div>
+                </div>
+                
+                <button onClick={() => { setShowChatLoginScreen(true); }} className="w-full py-2.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-bold rounded-lg transition-all" data-testid="button-guest-chat">
+                  Continue as Guest
+                </button>
+              </div>
+            </div>
+          );
+        }
         
         return (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto flex flex-col">
-            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); setClientChatTab('new'); setClientChatReply(''); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
+            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); setClientChatTab('new'); setClientChatReply(''); setShowChatLoginScreen(false); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
             
             <h2 className="text-xl font-bold mb-4 text-center text-zinc-900 dark:text-white flex items-center justify-center gap-2">
               <MessageCircle className="text-green-500" size={24}/> Contact Us
@@ -2453,7 +2491,7 @@ export default function CarHopApp() {
                       type="tel"
                       value={clientChatForm.phone}
                       onChange={(e) => setClientChatForm(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="(00) 00000-0000"
+                      placeholder="(000) 000-0000"
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                       data-testid="input-chat-phone"
                     />
