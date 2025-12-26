@@ -546,6 +546,7 @@ export default function CarHopApp() {
   const [clientChatSending, setClientChatSending] = useState(false);
   const [clientChatTab, setClientChatTab] = useState<'history' | 'new'>('new');
   const [clientChatReply, setClientChatReply] = useState('');
+  const [expandedClientChatGroups, setExpandedClientChatGroups] = useState<Set<string>>(new Set());
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
@@ -2180,67 +2181,86 @@ export default function CarHopApp() {
             )}
 
             {activeTab === 'history' && clientMessages.length > 0 && (() => {
-              // Mark all adminReply messages as read when opening Conversas
               const unreadReplies = clientMessages.filter((m: any) => m.adminReply && !m.read);
               if (unreadReplies.length > 0) {
                 unreadReplies.forEach((msg: any) => {
                   apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
                 });
               }
+              
+              // Group by subject + date
+              const groupedMessages: Record<string, any[]> = {};
+              clientMessages.forEach((msg: any) => {
+                const messageText = msg.text || '';
+                const subjectMatch = messageText.match(/\[(.*?)\]/);
+                const subject = subjectMatch ? subjectMatch[1] : 'Sem assunto';
+                const date = new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const groupKey = `${subject}_${date}`;
+                if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
+                groupedMessages[groupKey].push(msg);
+              });
+              
+              const sortedGroups = Object.entries(groupedMessages).sort((a, b) => new Date(b[1][0].createdAt).getTime() - new Date(a[1][0].createdAt).getTime());
+              
               return (
-              <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                {clientMessages.map((msg: any, idx: number) => {
-                  const isFirstMessage = idx === 0;
-                  const messageText = msg.text || '';
-                  const subjectMatch = messageText.match(/\[(.*?)\]/);
-                  const subject = subjectMatch ? subjectMatch[1] : '';
-                  const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
-                  const phone = phoneMatch ? phoneMatch[1] : '';
-                  const cleanText = messageText
-                    .replace(/\[.*?\]/, '')
-                    .replace(/Telefone:.*?(?:\n|$)/, '')
-                    .replace(/Não informado/, '')
-                    .trim();
+              <div className="flex-1 overflow-y-auto space-y-2 mb-4">
+                {sortedGroups.map(([groupKey, groupMsgs]) => {
+                  const isExpanded = expandedClientChatGroups.has(groupKey);
+                  const [subject, date] = groupKey.split('_');
+                  const firstMsg = groupMsgs[0];
                   
                   return (
-                  <div key={msg.id} className="space-y-2">
-                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3">
-                      <div className="flex justify-between mb-2">
-                        <span className="text-xs text-zinc-500">
-                          {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      
-                      {isFirstMessage && (
-                        <div className="mb-2 pb-2 border-b border-zinc-300 dark:border-zinc-700">
-                          {subject && <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Assunto: {subject}</p>}
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {msg.senderIdentifier}</p>
-                          {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
+                    <div key={groupKey} className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
+                      <button 
+                        onClick={() => {
+                          const newSet = new Set(expandedClientChatGroups);
+                          if (newSet.has(groupKey)) newSet.delete(groupKey);
+                          else newSet.add(groupKey);
+                          setExpandedClientChatGroups(newSet);
+                        }}
+                        className="w-full px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          <span className="text-sm font-bold text-zinc-900 dark:text-white">{subject}</span>
+                          <span className="text-xs text-zinc-500">• {date}</span>
                         </div>
-                      )}
+                        <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">{groupMsgs.length} msg</span>
+                      </button>
                       
-                      <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">{cleanText}</p>
-                      {msg.images && msg.images.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {msg.images.map((img: string, i: number) => (
-                            <img key={i} src={img} alt="" className="rounded cursor-pointer h-12 w-full object-cover" onClick={() => setSelectedImage(img)} />
-                          ))}
+                      {isExpanded && (
+                        <div className="p-3 space-y-2 bg-white dark:bg-zinc-900">
+                          {groupMsgs.map((msg: any, idx: number) => {
+                            const messageText = msg.text || '';
+                            const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
+                            const phone = phoneMatch ? phoneMatch[1] : '';
+                            const cleanText = messageText.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim();
+                            
+                            return (
+                              <div key={msg.id} className="space-y-1 pb-2 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
+                                <div className="flex justify-between items-start">
+                                  <span className="text-xs text-zinc-500">
+                                    {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  {idx === 0 && phone && phone !== 'Não informado' && (
+                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">{phone}</span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap line-clamp-2">{cleanText}</p>
+                                {msg.adminReply && (
+                                  <div className="mt-1 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-xs text-green-700 dark:text-green-300">
+                                    <span className="font-bold">Admin: </span>{msg.adminReply.substring(0, 60)}...
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
-                    {msg.adminReply && (
-                      <div className="ml-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-                        <div className="flex items-center gap-1 mb-1">
-                          <Reply size={12} className="text-green-600" />
-                          <span className="text-xs font-bold text-green-600">Admin</span>
-                        </div>
-                        <p className="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap">{msg.adminReply}</p>
-                      </div>
-                    )}
-                  </div>
                   );
                 })}
-                <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
                   <textarea
                     value={clientChatReply}
                     onChange={(e) => setClientChatReply(e.target.value)}
