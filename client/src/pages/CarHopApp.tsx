@@ -738,6 +738,13 @@ export default function CarHopApp() {
   const [deliveryValidationStatus, setDeliveryValidationStatus] = useState<'valid' | 'invalid' | 'not-checked'>('not-checked');
   const [selectedDeliveryType, setSelectedDeliveryType] = useState<'delivery' | 'pickup'>('pickup');
   
+  // Notification system states
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('carhop_read_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
@@ -1538,6 +1545,97 @@ export default function CarHopApp() {
     }, 0);
   };
 
+  // Generate notifications for client based on Host/Admin actions
+  const getClientNotifications = () => {
+    if (!clientUser) return [];
+    
+    const notifications: { id: string; type: string; message: string; timestamp: string; bookingCode: string }[] = [];
+    
+    bookings.filter(b => b.driver.email === clientUser.email && b.status !== 'Cancelled').forEach(booking => {
+      const vehicle = vehicles.find(v => v.id === booking.vehicleId);
+      const carName = vehicle?.model || 'Your vehicle';
+      
+      // Delivery approval/rejection notifications
+      const deliveryStatus = (booking.details as any)?.deliveryApprovalStatus;
+      if (deliveryStatus === 'approved') {
+        notifications.push({
+          id: `delivery-approved-${booking.id}`,
+          type: 'delivery-approved',
+          message: `Delivery approved for ${carName}`,
+          timestamp: booking.startDate,
+          bookingCode: booking.bookingCode
+        });
+      } else if (deliveryStatus === 'rejected') {
+        notifications.push({
+          id: `delivery-rejected-${booking.id}`,
+          type: 'delivery-rejected',
+          message: `Delivery declined for ${carName}. Please pick up at location.`,
+          timestamp: booking.startDate,
+          bookingCode: booking.bookingCode
+        });
+      }
+      
+      // Extension request responses
+      const extensionRequests = booking.extensionRequests || [];
+      extensionRequests.forEach((req: any, idx: number) => {
+        if (req.status === 'approved') {
+          notifications.push({
+            id: `extension-approved-${booking.id}-${idx}`,
+            type: 'extension-approved',
+            message: `Extension approved for ${carName} until ${req.newReturnDate}`,
+            timestamp: req.requestedAt || booking.startDate,
+            bookingCode: booking.bookingCode
+          });
+        } else if (req.status === 'rejected') {
+          notifications.push({
+            id: `extension-rejected-${booking.id}-${idx}`,
+            type: 'extension-rejected',
+            message: `Extension request declined for ${carName}`,
+            timestamp: req.requestedAt || booking.startDate,
+            bookingCode: booking.bookingCode
+          });
+        }
+      });
+      
+      // Check-in completed
+      if (booking.checkInStatus === 'completed') {
+        notifications.push({
+          id: `checkin-${booking.id}`,
+          type: 'checkin',
+          message: `Check-in completed for ${carName}. Enjoy your trip!`,
+          timestamp: booking.startDate,
+          bookingCode: booking.bookingCode
+        });
+      }
+      
+      // Check-out completed
+      if (booking.checkOutStatus === 'completed') {
+        notifications.push({
+          id: `checkout-${booking.id}`,
+          type: 'checkout',
+          message: `Check-out completed for ${carName}. Thank you!`,
+          timestamp: booking.returnDate,
+          bookingCode: booking.bookingCode
+        });
+      }
+    });
+    
+    return notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
+  const getUnreadNotificationsCount = () => {
+    const notifications = getClientNotifications();
+    return notifications.filter(n => !readNotificationIds.includes(n.id)).length;
+  };
+
+  const markNotificationsAsRead = () => {
+    const notifications = getClientNotifications();
+    const allIds = notifications.map(n => n.id);
+    const newReadIds = [...new Set([...readNotificationIds, ...allIds])];
+    setReadNotificationIds(newReadIds);
+    localStorage.setItem('carhop_read_notifications', JSON.stringify(newReadIds));
+  };
+
   const handleApplyDiscount = async (booking: Booking) => {
     if (!adjustment.value || parseFloat(adjustment.value) <= 0) {
       alert("Please enter a valid discount value.");
@@ -1827,6 +1925,58 @@ export default function CarHopApp() {
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
                   )}
                 </button>
+                {/* Notifications Bell */}
+                <div className="relative">
+                  <button 
+                    onClick={() => { setNotificationsOpen(!notificationsOpen); if (!notificationsOpen) markNotificationsAsRead(); }} 
+                    className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" 
+                    data-testid="button-notifications" 
+                    title="Notifications"
+                  >
+                    <Bell size={18}/>
+                    {getUnreadNotificationsCount() > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getUnreadNotificationsCount()}</span>
+                    )}
+                  </button>
+                  {notificationsOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800">
+                        <h3 className="font-bold text-sm text-zinc-900 dark:text-white">Notifications</h3>
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        {getClientNotifications().length === 0 ? (
+                          <div className="px-4 py-8 text-center text-zinc-500 text-sm">No notifications yet</div>
+                        ) : (
+                          getClientNotifications().slice(0, 10).map(notification => (
+                            <div key={notification.id} className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                              <div className="flex items-start gap-3">
+                                <div className={`mt-0.5 p-1.5 rounded-full ${
+                                  notification.type.includes('approved') ? 'bg-green-100 dark:bg-green-900/30 text-green-600' :
+                                  notification.type.includes('rejected') ? 'bg-red-100 dark:bg-red-900/30 text-red-600' :
+                                  'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+                                }`}>
+                                  {notification.type.includes('delivery') ? <Navigation size={12}/> :
+                                   notification.type.includes('extension') ? <CalendarClock size={12}/> :
+                                   notification.type.includes('checkin') ? <Check size={12}/> :
+                                   <Check size={12}/>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-zinc-900 dark:text-white">{notification.message}</p>
+                                  <p className="text-xs text-zinc-500 mt-1">Booking: {notification.bookingCode}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      {getClientNotifications().length > 0 && (
+                        <div className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800">
+                          <button onClick={() => { setNotificationsOpen(false); setView('bookings'); }} className="text-xs text-green-600 hover:text-green-500 font-medium">View All Bookings</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <span className="text-green-600 font-bold" data-testid="text-username">Hi, {clientUser.name}</span>
                 <button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800" data-testid="button-signout"><LogOut size={12}/></button>
               </div>
@@ -1844,11 +1994,58 @@ export default function CarHopApp() {
 
           <div className="flex md:hidden items-center justify-end gap-1 sm:gap-2 flex-1">
             {clientUser && (
-              <button onClick={() => { setView('bookings'); }} className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors text-xs font-bold" data-testid="button-mobile-bookings">My Bookings
-                {getClientUnreadCount() > 0 && (
-                  <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
-                )}
-              </button>
+              <>
+                <button onClick={() => { setView('bookings'); }} className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors text-xs font-bold" data-testid="button-mobile-bookings">My Bookings
+                  {getClientUnreadCount() > 0 && (
+                    <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
+                  )}
+                </button>
+                {/* Mobile Notifications Bell */}
+                <div className="relative">
+                  <button 
+                    onClick={() => { setNotificationsOpen(!notificationsOpen); if (!notificationsOpen) markNotificationsAsRead(); }} 
+                    className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" 
+                    data-testid="button-mobile-notifications"
+                  >
+                    <Bell size={18}/>
+                    {getUnreadNotificationsCount() > 0 && (
+                      <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getUnreadNotificationsCount()}</span>
+                    )}
+                  </button>
+                  {notificationsOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800">
+                        <h3 className="font-bold text-sm text-zinc-900 dark:text-white">Notifications</h3>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {getClientNotifications().length === 0 ? (
+                          <div className="px-4 py-6 text-center text-zinc-500 text-sm">No notifications yet</div>
+                        ) : (
+                          getClientNotifications().slice(0, 8).map(notification => (
+                            <div key={notification.id} className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+                              <div className="flex items-start gap-2">
+                                <div className={`mt-0.5 p-1 rounded-full ${
+                                  notification.type.includes('approved') ? 'bg-green-100 dark:bg-green-900/30 text-green-600' :
+                                  notification.type.includes('rejected') ? 'bg-red-100 dark:bg-red-900/30 text-red-600' :
+                                  'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+                                }`}>
+                                  {notification.type.includes('delivery') ? <Navigation size={10}/> :
+                                   notification.type.includes('extension') ? <CalendarClock size={10}/> :
+                                   <Check size={10}/>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs text-zinc-900 dark:text-white">{notification.message}</p>
+                                  <p className="text-[10px] text-zinc-500 mt-0.5">{notification.bookingCode}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
             <div className="relative">
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
