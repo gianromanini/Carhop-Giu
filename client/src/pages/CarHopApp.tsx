@@ -3074,10 +3074,17 @@ export default function CarHopApp() {
                         <div className="border-t pt-3 sm:pt-4">
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Commission</label>
                           <div className="space-y-1.5 sm:space-y-2">
-                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 750})}>
-                              <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: 750})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 1250})}>
+                              <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: 1250})} className="w-3 h-3 sm:w-4 sm:h-4" />
                               <div className="ml-2 sm:ml-3">
                                 <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">15%</p>
+                                <p className="text-[10px] sm:text-xs text-zinc-500">$1250 Ded.</p>
+                              </div>
+                            </div>
+                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 20, deductible: 750})}>
+                              <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 750})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <div className="ml-2 sm:ml-3">
+                                <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">20%</p>
                                 <p className="text-[10px] sm:text-xs text-zinc-500">$750 Ded.</p>
                               </div>
                             </div>
