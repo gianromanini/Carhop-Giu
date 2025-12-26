@@ -200,6 +200,17 @@ Preferred communication style: Simple, everyday language.
     - File validation: max 5MB per image, images only
     - Success/error toast notifications
     - Integrates with existing /api/support-messages endpoint
+22. **Admin Chat Support - Collapsible Client Cards (Dec 26):**
+    - Messages grouped by client in collapsible cards
+    - Click to expand and see full conversation history
+    - Edit message: Edit2 icon to modify client message text
+    - Delete message: Trash2 icon to remove message with confirmation
+    - Mark as read: Check icon for unread messages
+    - Reply textarea at bottom of expanded conversation
+    - Unread count badge with pulsing animation
+    - Orange blinking animation for clients with unread messages
+    - Filter buttons: Todas (All), Não Lidas (Unread), Lidas (Read)
+    - Chronological message sorting (oldest first)
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**

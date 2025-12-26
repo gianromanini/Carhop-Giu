@@ -538,6 +538,9 @@ export default function CarHopApp() {
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
   const [supportFilter, setSupportFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [expandedChatClient, setExpandedChatClient] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editMessageText, setEditMessageText] = useState('');
   const [showClientChatModal, setShowClientChatModal] = useState(false);
   const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
@@ -6732,190 +6735,207 @@ export default function CarHopApp() {
                   </button>
                 </div>
 
-                {/* Messages List */}
-                <Card className="p-4">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                {/* Messages List - Grouped by Client */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                     <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-blue-500' : 'text-orange-500'} />
-                    {supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}
+                    {supportSubTab === 'client' ? 'Conversas com Clientes' : 'Conversas com Hosts'}
                   </h3>
                   
-                  {supportMessagesData.filter((m: any) => m.senderType === supportSubTab && (
-                    supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
-                  )).length === 0 ? (
-                    <div className="text-center py-8 text-zinc-500">
-                      <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma mensagem de {supportSubTab === 'client' ? 'clientes' : 'hosts'} ainda</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {supportMessagesData
-                        .filter((m: any) => m.senderType === supportSubTab && (
-                          supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
-                        ))
-                        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                        .map((message: any) => (
-                          <div
-                            key={message.id}
-                            onClick={() => setSelectedSupportMessage(message)}
-                            className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-                              !message.read 
-                                ? 'blink-button border-orange-500' 
-                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
-                            } ${selectedSupportMessage?.id === message.id ? 'ring-2 ring-green-500' : ''}`}
-                            data-testid={`card-support-message-${message.id}`}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2">
-                                {!message.read && (
-                                  <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                                )}
-                                <span className={`font-bold ${!message.read ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>{message.senderName}</span>
-                                <span className={`text-xs ${!message.read ? 'text-orange-200' : 'text-zinc-500'}`}>{message.senderIdentifier}</span>
-                              </div>
-                              <span className={`text-xs ${!message.read ? 'text-orange-200' : 'text-zinc-500'}`}>
-                                {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <p className={`text-sm line-clamp-2 ${!message.read ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>{message.text}</p>
-                            {message.adminReply && (
-                              <div className={`mt-2 pt-2 border-t ${!message.read ? 'border-orange-400' : 'border-zinc-200 dark:border-zinc-700'}`}>
-                                <div className={`flex items-center gap-1 text-xs ${!message.read ? 'text-green-300' : 'text-green-600'}`}>
-                                  <Reply size={12} />
-                                  <span>Respondido</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </Card>
-
-                {/* Selected Message Detail */}
-                {selectedSupportMessage && (
-                  <Card className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{selectedSupportMessage.senderName}</h3>
-                        <p className="text-sm text-zinc-500">{selectedSupportMessage.senderIdentifier}</p>
-                        <p className="text-xs text-zinc-400 mt-1">
-                          {new Date(selectedSupportMessage.createdAt).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setSelectedSupportMessage(null)}
-                        className="text-zinc-400 hover:text-zinc-600"
-                        data-testid="button-close-support-detail"
-                      >
-                        <X size={24} />
-                      </button>
-                    </div>
-
-                    {/* Message Content */}
-                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 mb-4">
-                      <p className="text-zinc-900 dark:text-white whitespace-pre-wrap">{selectedSupportMessage.text}</p>
-                      {selectedSupportMessage.images && selectedSupportMessage.images.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 mt-4">
-                          {selectedSupportMessage.images.map((img: string, idx: number) => (
-                            <img key={idx} src={img} alt={`Attachment ${idx + 1}`} className="rounded-lg cursor-pointer hover:opacity-80" onClick={() => setSelectedImage(img)} />
-                          ))}
+                  {(() => {
+                    const filteredMessages = supportMessagesData.filter((m: any) => m.senderType === supportSubTab && (
+                      supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
+                    ));
+                    const groupedByClient = filteredMessages.reduce((acc: any, msg: any) => {
+                      const key = msg.senderIdentifier || msg.senderName;
+                      if (!acc[key]) acc[key] = { name: msg.senderName, identifier: msg.senderIdentifier, messages: [] };
+                      acc[key].messages.push(msg);
+                      return acc;
+                    }, {});
+                    const clients = Object.keys(groupedByClient);
+                    
+                    if (clients.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-zinc-500">
+                          <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+                          <p>Nenhuma mensagem de {supportSubTab === 'client' ? 'clientes' : 'hosts'} ainda</p>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Admin Reply Section - Show existing replies and allow adding more */}
-                    <div className="space-y-4">
-                      {selectedSupportMessage.adminReply && (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Reply size={16} className="text-green-600" />
-                            <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
-                            {selectedSupportMessage.adminRepliedAt && (
-                              <span className="text-xs text-zinc-500">
-                                {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
-                        </div>
-                      )}
+                      );
+                    }
+                    
+                    return clients.map((clientKey) => {
+                      const clientData = groupedByClient[clientKey];
+                      const unreadCount = clientData.messages.filter((m: any) => !m.read).length;
+                      const isExpanded = expandedChatClient === clientKey;
+                      const sortedMessages = clientData.messages.sort((a: any, b: any) => 
+                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                      );
                       
-                      {/* Always show textarea for additional messages */}
-                      <div className="space-y-3">
-                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
-                        <textarea
-                          value={supportReplyText}
-                          onChange={(e) => setSupportReplyText(e.target.value)}
-                          placeholder={selectedSupportMessage.adminReply ? 'Adicione uma mensagem de acompanhamento...' : 'Digite sua resposta...'}
-                          className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none"
-                          rows={4}
-                          data-testid="textarea-support-reply"
-                        />
-                        <div className="flex gap-3">
-                          <button
-                            onClick={async () => {
-                              if (!supportReplyText.trim()) return;
-                              try {
-                                const newReply = selectedSupportMessage.adminReply 
-                                  ? `${selectedSupportMessage.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${supportReplyText}`
-                                  : supportReplyText;
-                                
-                                await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, {
-                                  adminReply: newReply,
-                                  read: true
-                                });
-                                queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                setSupportReplyText('');
-                                toast({ description: 'Mensagem enviada com sucesso!' });
-                              } catch (error) {
-                                toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
-                              }
-                            }}
-                            className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-                            data-testid="button-send-support-reply"
+                      return (
+                        <Card key={clientKey} className={`overflow-hidden ${unreadCount > 0 ? 'border-orange-500' : ''}`}>
+                          <div
+                            onClick={() => setExpandedChatClient(isExpanded ? null : clientKey)}
+                            className={`p-4 cursor-pointer transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/50 flex justify-between items-center ${unreadCount > 0 ? 'blink-button' : ''}`}
+                            data-testid={`card-client-${clientKey}`}
                           >
-                            <Send size={18} /> {selectedSupportMessage.adminReply ? 'Enviar Mensagem' : 'Enviar Resposta'}
-                          </button>
-                          {!selectedSupportMessage.read && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, { read: true });
-                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                  toast({ description: 'Marcado como lido' });
-                                } catch (error) {
-                                  toast({ description: 'Erro ao marcar como lido', variant: 'destructive' });
-                                }
-                              }}
-                              className="px-4 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
-                              data-testid="button-mark-read"
-                            >
-                              <Check size={18} />
-                            </button>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${supportSubTab === 'client' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-orange-100 dark:bg-orange-900/30'}`}>
+                                <Users size={20} className={supportSubTab === 'client' ? 'text-blue-600' : 'text-orange-600'} />
+                              </div>
+                              <div>
+                                <p className={`font-bold ${unreadCount > 0 ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>{clientData.name}</p>
+                                <p className={`text-xs ${unreadCount > 0 ? 'text-orange-200' : 'text-zinc-500'}`}>{clientData.identifier}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {unreadCount > 0 && (
+                                <span className="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full animate-pulse">
+                                  {unreadCount} nova{unreadCount > 1 ? 's' : ''}
+                                </span>
+                              )}
+                              <span className={`text-xs ${unreadCount > 0 ? 'text-orange-200' : 'text-zinc-500'}`}>
+                                {clientData.messages.length} msg
+                              </span>
+                              <ChevronDown size={20} className={`transition-transform ${isExpanded ? 'rotate-180' : ''} ${unreadCount > 0 ? 'text-white' : 'text-zinc-400'}`} />
+                            </div>
+                          </div>
+                          
+                          {isExpanded && (
+                            <div className="border-t border-zinc-200 dark:border-zinc-700 p-4 space-y-4 bg-zinc-50 dark:bg-zinc-900/50">
+                              {sortedMessages.map((message: any) => (
+                                <div key={message.id} className="space-y-2">
+                                  <div className={`p-3 rounded-lg ${!message.read ? 'bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700' : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'}`}>
+                                    <div className="flex justify-between items-start mb-2">
+                                      <span className="text-xs text-zinc-500">
+                                        {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        {!message.read && (
+                                          <button
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              await apiRequest('PUT', `/api/support-messages/${message.id}`, { read: true });
+                                              queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                            }}
+                                            className="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded"
+                                            title="Marcar como lido"
+                                          >
+                                            <Check size={14} />
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingMessageId(message.id);
+                                            setEditMessageText(message.text);
+                                          }}
+                                          className="p-1 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
+                                          title="Editar"
+                                        >
+                                          <Edit2 size={14} />
+                                        </button>
+                                        <button
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Excluir esta mensagem?')) {
+                                              await apiRequest('DELETE', `/api/support-messages/${message.id}`);
+                                              queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                              toast({ description: 'Mensagem excluída' });
+                                            }
+                                          }}
+                                          className="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                                          title="Excluir"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    
+                                    {editingMessageId === message.id ? (
+                                      <div className="space-y-2">
+                                        <textarea
+                                          value={editMessageText}
+                                          onChange={(e) => setEditMessageText(e.target.value)}
+                                          className="w-full p-2 text-sm bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded"
+                                          rows={3}
+                                        />
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={async () => {
+                                              await apiRequest('PUT', `/api/support-messages/${message.id}`, { text: editMessageText });
+                                              queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                              setEditingMessageId(null);
+                                              toast({ description: 'Mensagem atualizada' });
+                                            }}
+                                            className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded"
+                                          >
+                                            Salvar
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingMessageId(null)}
+                                            className="px-3 py-1 bg-zinc-500 text-white text-xs font-bold rounded"
+                                          >
+                                            Cancelar
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">{message.text}</p>
+                                    )}
+                                    
+                                    {message.images && message.images.length > 0 && (
+                                      <div className="grid grid-cols-3 gap-2 mt-2">
+                                        {message.images.map((img: string, idx: number) => (
+                                          <img key={idx} src={img} alt="" className="rounded cursor-pointer hover:opacity-80 h-16 w-full object-cover" onClick={() => setSelectedImage(img)} />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {message.adminReply && (
+                                    <div className="ml-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Reply size={12} className="text-green-600" />
+                                        <span className="text-xs font-bold text-green-600">Admin</span>
+                                      </div>
+                                      <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{message.adminReply}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              
+                              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                                <textarea
+                                  value={supportReplyText}
+                                  onChange={(e) => setSupportReplyText(e.target.value)}
+                                  placeholder="Digite sua resposta..."
+                                  className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none text-sm"
+                                  rows={2}
+                                />
+                                <button
+                                  onClick={async () => {
+                                    if (!supportReplyText.trim()) return;
+                                    const lastMsg = sortedMessages[sortedMessages.length - 1];
+                                    const newReply = lastMsg.adminReply 
+                                      ? `${lastMsg.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${supportReplyText}`
+                                      : supportReplyText;
+                                    await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: true });
+                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                    setSupportReplyText('');
+                                    toast({ description: 'Resposta enviada!' });
+                                  }}
+                                  className="mt-2 w-full py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
+                                >
+                                  <Send size={16} /> Enviar Resposta
+                                </button>
+                              </div>
+                            </div>
                           )}
-                          <button
-                            onClick={async () => {
-                              if (confirm('Tem certeza que deseja excluir esta mensagem?')) {
-                                try {
-                                  await apiRequest('DELETE', `/api/support-messages/${selectedSupportMessage.id}`);
-                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                  setSelectedSupportMessage(null);
-                                  toast({ description: 'Mensagem excluída' });
-                                } catch (error) {
-                                  toast({ description: 'Erro ao excluir mensagem', variant: 'destructive' });
-                                }
-                              }
-                            }}
-                            className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
-                            data-testid="button-delete-support-message"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                )}
+                        </Card>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
             )}
 
