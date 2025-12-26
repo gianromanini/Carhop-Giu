@@ -177,6 +177,10 @@ Preferred communication style: Simple, everyday language.
     - No passwords exposed via email - uses secure token-based approach
     - Tokens stored in-memory with automatic expiration
     - Passwords hashed with bcryptjs before storage
+19. **Repositioned Guest Ratings in Admin Bookings (Dec 26):**
+    - Moved Guest/Host Ratings section to appear BEFORE "Manage Charges & Adjustments"
+    - Consistent ordering in both Host and Admin tabs: Ratings → Charges → Financial Details
+    - Maintains logical flow: Customer Messages → Ratings → Adjustments → Payment
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
