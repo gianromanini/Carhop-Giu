@@ -2349,43 +2349,44 @@ export default function CarHopApp() {
                           >
                             <CheckCircle size={14} /> Finish Chat
                           </button>
+                          
+                          <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                            <textarea
+                              value={clientChatReply}
+                              onChange={(e) => setClientChatReply(e.target.value)}
+                              placeholder="Responder a este assunto..."
+                              className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm resize-none"
+                              rows={2}
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!clientChatReply.trim()) return;
+                                try {
+                                  await apiRequest('POST', '/api/support-messages', {
+                                    senderType: 'client',
+                                    senderId: clientUser?.email || userEmail,
+                                    senderName: clientUser?.name || 'Cliente',
+                                    senderIdentifier: userEmail,
+                                    text: `[${subject}] ${clientChatReply}`,
+                                    images: []
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                  setClientChatReply('');
+                                  toast({ description: 'Resposta enviada!' });
+                                } catch (error) {
+                                  toast({ description: 'Erro ao enviar resposta', variant: 'destructive' });
+                                }
+                              }}
+                              className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
+                            >
+                              <Send size={14} /> Enviar
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
                   );
                 })}
-                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                  <textarea
-                    value={clientChatReply}
-                    onChange={(e) => setClientChatReply(e.target.value)}
-                    placeholder="Responder..."
-                    className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm resize-none"
-                    rows={2}
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!clientChatReply.trim()) return;
-                      try {
-                        await apiRequest('POST', '/api/support-messages', {
-                          senderType: 'client',
-                          senderId: clientUser?.email || userEmail,
-                          senderName: clientUser?.name || 'Cliente',
-                          senderIdentifier: userEmail,
-                          text: clientChatReply,
-                          images: []
-                        });
-                        queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                        setClientChatReply('');
-                        toast({ description: 'Mensagem enviada!' });
-                      } catch (error) {
-                        toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
-                      }
-                    }}
-                    className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
-                  >
-                    <Send size={14} /> Enviar
-                  </button>
-                </div>
               </div>
             );
             })()}
