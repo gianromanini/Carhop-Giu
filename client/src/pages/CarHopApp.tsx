@@ -1909,7 +1909,7 @@ export default function CarHopApp() {
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @media print { body, body * { visibility: hidden; margin: 0 !important; padding: 0 !important; border: none !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; border: none !important; color: black !important; } .printable-receipt, .printable-agreement { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 40pt 20pt 20pt 20pt !important; background: white !important; color: black !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
+      <style>{` @media print { body, body * { visibility: hidden; margin: 0 !important; padding: 0 !important; border: none !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; border: none !important; color: black !important; } .printable-receipt, .printable-agreement { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 20pt 15pt 15pt 15pt !important; background: white !important; color: black !important; font-size: 12pt; line-height: 1.3; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
@@ -6648,7 +6648,7 @@ export default function CarHopApp() {
                   <button onClick={() => setViewingReceiptBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
                 </div>
 
-                <div className="printable-receipt p-8 space-y-8">
+                <div className="printable-receipt p-8 space-y-3">
                   {/* Header */}
                   <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
                     <div className="flex justify-between items-start mb-4">
@@ -6669,7 +6669,7 @@ export default function CarHopApp() {
                   </div>
 
                   {/* Rental Dates */}
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Pick-up</p>
                       <p className="text-lg font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.startDate, receiptBooking.startTime)}</p>
@@ -6688,33 +6688,6 @@ export default function CarHopApp() {
                     </div>
                   )}
 
-                  {/* Check-in Photos */}
-                  {((receiptBooking.checkInData?.photosOutside?.length || 0) + (receiptBooking.checkInData?.photosInside?.length || 0)) > 0 && (
-                    <div>
-                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({(receiptBooking.checkInData?.photosOutside?.length || 0) + (receiptBooking.checkInData?.photosInside?.length || 0)})</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[...(receiptBooking.checkInData?.photosOutside || []), ...(receiptBooking.checkInData?.photosInside || [])].map((photo, idx) => (
-                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(receiptBooking.checkInData?.photosOutside || []), ...(receiptBooking.checkInData?.photosInside || [])], idx)}>
-                            <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Check-out Photos */}
-                  {((receiptBooking.checkOutData?.photosOutside?.length || 0) + (receiptBooking.checkOutData?.photosInside?.length || 0)) > 0 && (
-                    <div>
-                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({(receiptBooking.checkOutData?.photosOutside?.length || 0) + (receiptBooking.checkOutData?.photosInside?.length || 0)})</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[...(receiptBooking.checkOutData?.photosOutside || []), ...(receiptBooking.checkOutData?.photosInside || [])].map((photo, idx) => (
-                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(receiptBooking.checkOutData?.photosOutside || []), ...(receiptBooking.checkOutData?.photosInside || [])], idx)}>
-                            <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Mileage Info */}
                   {receiptBooking.checkInData?.miles && receiptBooking.checkOutData?.miles && (
@@ -6745,7 +6718,7 @@ export default function CarHopApp() {
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-6">
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3 space-y-3">
                     {(() => {
                       const carForReceipt = vehicles.find(v => v.id === receiptBooking.vehicleId);
                       const cleaningFeeForReceipt = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
@@ -6771,8 +6744,8 @@ export default function CarHopApp() {
                         <>
                           {/* Initial Payment Section */}
                           <div>
-                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Initial Payment Breakdown</h4>
-                            <div className="space-y-2">
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Initial Payment Breakdown</h4>
+                            <div className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({receiptBooking.days} days)</span>
                                 <span className="text-zinc-900 dark:text-white">${rentalRate.toFixed(2)}</span>
@@ -6809,8 +6782,8 @@ export default function CarHopApp() {
                           {/* Additional Charges Section */}
                           {additionalChargesBeforeTax > 0 && (
                             <div>
-                              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Additional Charges</h4>
-                              <div className="space-y-2">
+                              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Additional Charges</h4>
+                              <div className="space-y-1">
                                 {extendedRate > 0 && (
                                   <div className="flex justify-between text-sm">
                                     <span className="text-zinc-600 dark:text-zinc-400">Extended Days - {Math.round(extendedRate / (vehicles.find(v => v.id === receiptBooking.vehicleId)?.price || 1))} Days</span>
@@ -6852,10 +6825,10 @@ export default function CarHopApp() {
                           )}
 
                           {/* Final Total */}
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
                             <div className="flex justify-between items-center">
-                              <span className="text-lg font-bold text-green-900 dark:text-green-200">Total Amount</span>
-                              <span className="text-2xl font-bold text-green-600 dark:text-green-400">${(initialPayment + additionalCharges).toFixed(2)}</span>
+                              <span className="font-bold text-green-900 dark:text-green-200">Total Amount</span>
+                              <span className="text-xl font-bold text-green-600 dark:text-green-400">${(initialPayment + additionalCharges).toFixed(2)}</span>
                             </div>
                           </div>
                         </>
