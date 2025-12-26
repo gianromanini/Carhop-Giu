@@ -1575,6 +1575,19 @@ export default function CarHopApp() {
     
     const notifications: { id: string; type: string; message: string; timestamp: string; bookingCode: string }[] = [];
     
+    // Add admin reply notifications from support messages
+    supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).forEach(msg => {
+      const subjectMatch = msg.text?.match(/\[(.*?)\]/);
+      const subject = subjectMatch ? subjectMatch[1] : 'Support';
+      notifications.push({
+        id: `admin-reply-${msg.id}`,
+        type: 'admin-reply',
+        message: `Admin responded: "${msg.adminReply.substring(0, 50)}..."`,
+        timestamp: msg.createdAt,
+        bookingCode: subject
+      });
+    });
+    
     bookings.filter(b => b.driver.email === clientUser.email && b.status !== 'Cancelled').forEach(booking => {
       const vehicle = vehicles.find(v => v.id === booking.vehicleId);
       const carName = vehicle?.model || 'Your vehicle';
@@ -2038,8 +2051,11 @@ export default function CarHopApp() {
                 setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
               }
               setShowClientChatModal(true);
-            }} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
+            }} className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
               <MessageCircle size={18}/>
+              {getClientUnreadAdminRepliesCount() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadAdminRepliesCount() > 9 ? '9+' : getClientUnreadAdminRepliesCount()}</span>
+              )}
             </button>
             <button onClick={() => setView('admin')} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
           </div>
