@@ -1908,7 +1908,7 @@ export default function CarHopApp() {
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @media print { body * { visibility: hidden; } .printable-receipt, .printable-receipt * { visibility: visible; } .printable-receipt { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; } .no-print { display: none !important; } } `}</style>
+      <style>{` @media print { body, body * { visibility: hidden; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-receipt * { visibility: visible !important; } .printable-receipt { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 20pt !important; background: white !important; color: black !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
@@ -6534,7 +6534,7 @@ export default function CarHopApp() {
                 <button onClick={() => { setShowCarRentalModal(false); setCarRentalAgreementAccepted(false); setViewingCarRentalOnly(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
               </div>
 
-              <div className="p-8 space-y-6">
+              <div className="printable-receipt p-8 space-y-6">
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <p className="text-sm text-blue-900 dark:text-blue-300">
                     <span className="font-bold">Client Name: </span>{driverDetails.name}
@@ -6599,7 +6599,7 @@ export default function CarHopApp() {
                   </div>
                 </div>
 
-                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3">
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3 no-print">
                   {viewingCarRentalOnly ? (
                     <button 
                       onClick={() => window.print()} 
@@ -6642,7 +6642,7 @@ export default function CarHopApp() {
                   <button onClick={() => setViewingReceiptBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
                 </div>
 
-                <div className="p-8 space-y-8">
+                <div className="printable-receipt p-8 space-y-8">
                   {/* Header */}
                   <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
                     <div className="flex justify-between items-start mb-4">
@@ -6854,7 +6854,12 @@ export default function CarHopApp() {
                     })()}
                   </div>
 
-                  <button onClick={() => setViewingReceiptBookingId(null)} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors mt-6" data-testid="button-close-receipt">Close Receipt</button>
+                  <div className="no-print flex gap-3 mt-6">
+                    <button onClick={() => window.print()} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-receipt">
+                      <FileText size={18}/> Print Receipt
+                    </button>
+                    <button onClick={() => setViewingReceiptBookingId(null)} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors" data-testid="button-close-receipt">Close Receipt</button>
+                  </div>
                 </div>
               </div>
             </div>
