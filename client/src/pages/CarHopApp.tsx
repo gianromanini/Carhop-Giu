@@ -304,7 +304,7 @@ const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => 
        <div className="flex-1 w-full flex items-center justify-center overflow-hidden cursor-move active:cursor-grabbing" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onDoubleClick={toggleZoom}>
          <img src={src} style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transition: isDragging ? 'none' : 'transform 0.2s ease-out' }} className="max-w-full max-h-[85vh] object-contain" draggable={false} alt="" />
        </div>
-       <div className="absolute bottom-8 flex items-center gap-4 bg-zinc-900/80 backdrop-blur p-3 rounded-full border border-zinc-700 text-white">
+       <div className="absolute bottom-8 flex items-center gap-4 bg-white dark:bg-zinc-900/80 backdrop-blur p-3 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white">
           <button onClick={() => {setScale(Math.max(1, scale - 0.5)); if(scale<=1.5) setPosition({x:0,y:0});}} className="p-2 hover:bg-zinc-700 rounded-full"><ZoomOut size={20}/></button>
           <span className="text-xs font-mono w-12 text-center">{(scale * 100).toFixed(0)}%</span>
           <button onClick={() => setScale(Math.min(4, scale + 0.5))} className="p-2 hover:bg-zinc-700 rounded-full"><ZoomIn size={20}/></button>
@@ -368,7 +368,7 @@ const Input = ({ label, required, className="", ...props }: any) => (
 const Checkbox = ({ label, checked, onChange, name, ...props }: any) => (
   <div className="flex items-center gap-3 mb-3 cursor-pointer group" onClick={() => onChange({ target: { name: name, type: 'checkbox', checked: !checked } })}>
     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${checked ? 'bg-green-600 border-green-600' : 'bg-white dark:bg-zinc-950 border-zinc-300 dark:border-zinc-700 group-hover:border-zinc-500'}`}>
-      {checked && <Check size={14} className="text-white" />}
+      {checked && <Check size={14} className="text-white dark:text-white" />}
     </div>
     <label className="text-sm font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white cursor-pointer select-none">{label}</label>
     <input type="checkbox" className="hidden" name={name} checked={checked} onChange={(e) => onChange(e)} {...props} />
@@ -408,12 +408,12 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
             return (
               <div key={label} className="flex flex-col items-center group flex-1 max-w-20">
                 {/* Tooltip on hover */}
-                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-zinc-900/95 text-white text-[10px] p-3 rounded-lg shadow-xl z-20 w-36 backdrop-blur-sm border border-zinc-700">
+                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-white dark:bg-zinc-900/95 text-zinc-900 dark:text-white text-[10px] p-3 rounded-lg shadow-xl z-20 w-36 backdrop-blur-sm border border-zinc-200 dark:border-zinc-700">
                   <div className="font-bold text-sm border-b border-zinc-700 pb-1 mb-1 text-center">{label}</div>
-                  <div className="flex justify-between"><span className="text-orange-400">Expenses:</span> <span>${expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                  <div className="flex justify-between"><span className="text-green-400">Revenue:</span> <span>${gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                  <div className="flex justify-between"><span className="text-purple-400">Pending:</span> <span>${pending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                  <div className="flex justify-between font-bold border-t border-zinc-700 pt-1 mt-1"><span className={net >= 0 ? 'text-green-400' : 'text-red-400'}>Net:</span> <span>${net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-orange-600 dark:text-orange-400">Expenses:</span> <span className="text-zinc-900 dark:text-white">${expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-green-600 dark:text-green-400">Revenue:</span> <span className="text-zinc-900 dark:text-white">${gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between"><span className="text-purple-600 dark:text-purple-400">Pending:</span> <span className="text-zinc-900 dark:text-white">${pending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                  <div className="flex justify-between font-bold border-t border-zinc-200 dark:border-zinc-700 pt-1 mt-1"><span className={net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>Net:</span> <span className="text-zinc-900 dark:text-white">${net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
                 </div>
                 
                 {/* Vertical stacked bar */}
@@ -427,7 +427,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
                       className="w-full bg-orange-500 flex items-center justify-center"
                       style={{ height: `${expPercent}%` }}
                     >
-                      {expPercent > 15 && <span className="text-[9px] font-bold text-white">${expenses > 999 ? `${(expenses/1000).toFixed(1)}k` : expenses.toFixed(0)}</span>}
+                      {expPercent > 15 && <span className="text-[9px] font-bold text-white drop-shadow-sm">${expenses > 999 ? `${(expenses/1000).toFixed(1)}k` : expenses.toFixed(0)}</span>}
                     </div>
                   )}
                   {/* Gross Revenue - Green (middle) */}
@@ -436,7 +436,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
                       className="w-full bg-green-500 flex items-center justify-center"
                       style={{ height: `${grossPercent}%` }}
                     >
-                      {grossPercent > 15 && <span className="text-[9px] font-bold text-white">${gross > 999 ? `${(gross/1000).toFixed(1)}k` : gross.toFixed(0)}</span>}
+                      {grossPercent > 15 && <span className="text-[9px] font-bold text-white drop-shadow-sm">${gross > 999 ? `${(gross/1000).toFixed(1)}k` : gross.toFixed(0)}</span>}
                     </div>
                   )}
                   {/* Pending - Purple (top) */}
@@ -445,13 +445,13 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
                       className="w-full bg-purple-500 flex items-center justify-center"
                       style={{ height: `${pendingPercent}%` }}
                     >
-                      {pendingPercent > 15 && <span className="text-[9px] font-bold text-white">${pending > 999 ? `${(pending/1000).toFixed(1)}k` : pending.toFixed(0)}</span>}
+                      {pendingPercent > 15 && <span className="text-[9px] font-bold text-white drop-shadow-sm">${pending > 999 ? `${(pending/1000).toFixed(1)}k` : pending.toFixed(0)}</span>}
                     </div>
                   )}
                 </div>
                 
                 {/* Month label */}
-                <span className="text-xs font-bold text-zinc-400 mt-2">{label}</span>
+                <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mt-2">{label}</span>
                 {/* Net value */}
                 <span className={`text-[10px] font-bold ${net >= 0 ? 'text-green-400' : 'text-red-500'}`}>
                   ${net >= 0 ? '' : '-'}{Math.abs(net).toFixed(0)}
