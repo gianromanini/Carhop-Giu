@@ -1562,6 +1562,10 @@ export default function CarHopApp() {
     }, 0);
   };
 
+  const getClientUnreadAdminRepliesCount = () => {
+    return supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).length;
+  };
+
   // Generate notifications for client based on Host/Admin actions
   const getClientNotifications = () => {
     if (!clientUser) return [];
@@ -1974,8 +1978,8 @@ export default function CarHopApp() {
                     title="Notifications"
                   >
                     <Bell size={18}/>
-                    {getUnreadNotificationsCount() > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getUnreadNotificationsCount()}</span>
+                    {(getUnreadNotificationsCount() + getClientUnreadAdminRepliesCount()) > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{(getUnreadNotificationsCount() + getClientUnreadAdminRepliesCount()) > 9 ? '9+' : (getUnreadNotificationsCount() + getClientUnreadAdminRepliesCount())}</span>
                     )}
                   </button>
                   {notificationsOpen && (
@@ -2041,8 +2045,8 @@ export default function CarHopApp() {
             {clientUser && (
               <>
                 <button onClick={() => { setView('bookings'); }} className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors text-xs font-bold" data-testid="button-mobile-bookings">My Bookings
-                  {getClientUnreadCount() > 0 && (
-                    <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
+                  {(getClientUnreadCount() + getClientUnreadAdminRepliesCount()) > 0 && (
+                    <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{(getClientUnreadCount() + getClientUnreadAdminRepliesCount()) > 9 ? '9+' : (getClientUnreadCount() + getClientUnreadAdminRepliesCount())}</span>
                   )}
                 </button>
                 {/* Mobile Notifications Bell */}
@@ -2053,8 +2057,8 @@ export default function CarHopApp() {
                     data-testid="button-mobile-notifications"
                   >
                     <Bell size={18}/>
-                    {getUnreadNotificationsCount() > 0 && (
-                      <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getUnreadNotificationsCount()}</span>
+                    {(getUnreadNotificationsCount() + getClientUnreadAdminRepliesCount()) > 0 && (
+                      <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{(getUnreadNotificationsCount() + getClientUnreadAdminRepliesCount()) > 9 ? '9+' : (getUnreadNotificationsCount() + getClientUnreadAdminRepliesCount())}</span>
                     )}
                   </button>
                   {notificationsOpen && (
@@ -2175,7 +2179,15 @@ export default function CarHopApp() {
               </div>
             )}
 
-            {activeTab === 'history' && clientMessages.length > 0 && (
+            {activeTab === 'history' && clientMessages.length > 0 && (() => {
+              // Mark all adminReply messages as read when opening Conversas
+              const unreadReplies = clientMessages.filter((m: any) => m.adminReply && !m.read);
+              if (unreadReplies.length > 0) {
+                unreadReplies.forEach((msg: any) => {
+                  apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+                });
+              }
+              return (
               <div className="flex-1 overflow-y-auto space-y-3 mb-4">
                 {clientMessages.map((msg: any, idx: number) => {
                   const isFirstMessage = idx === 0;
@@ -2261,7 +2273,8 @@ export default function CarHopApp() {
                   </button>
                 </div>
               </div>
-            )}
+            );
+            })()}
 
             {activeTab === 'new' && (
             <form onSubmit={async (e) => {
