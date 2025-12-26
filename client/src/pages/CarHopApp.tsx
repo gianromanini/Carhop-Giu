@@ -668,6 +668,9 @@ export default function CarHopApp() {
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
+  const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
+  const [bookingFilterCarModel, setBookingFilterCarModel] = useState<''>('');
+  const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
 
@@ -3568,11 +3571,24 @@ export default function CarHopApp() {
                   
                   <div className="space-y-2 mb-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Filter Bookings</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-filter">
                         <option value="end-soon">End Soon (Next 3 Days)</option>
                         <option value="start-first">Start First</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
+                      <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-status">
+                        <option value="">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="pending-approval">Pending Approval</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number</label>
+                      <input type="text" placeholder="Search code..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-host-booking-number" />
                     </div>
                   </div>
                   
@@ -3588,6 +3604,16 @@ export default function CarHopApp() {
                           const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
                           return aDateTime - bDateTime;
                         }
+                      })
+                      .filter(b => {
+                        let matches = true;
+                        if (bookingFilterStatus) {
+                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
+                          else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
+                          else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                        }
+                        if (bookingFilterNumber && !b.bookingCode.toLowerCase().includes(bookingFilterNumber.toLowerCase())) matches = false;
+                        return matches;
                       })
                       .map(b => {
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
@@ -5202,11 +5228,33 @@ export default function CarHopApp() {
                   {/* Filters */}
                   <div className="space-y-2 mb-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Filter Bookings</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
                         <option value="end-soon">End Soon (Next 3 Days)</option>
                         <option value="start-first">Start First (Oldest First)</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
+                      <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-status">
+                        <option value="">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="pending-approval">Pending Approval</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Car Model</label>
+                      <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-carmodel">
+                        <option value="">All Models</option>
+                        {[...new Set(vehicles.map(v => v.model))].sort().map(model => (
+                          <option key={model} value={model}>{model}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number</label>
+                      <input type="text" placeholder="Search code..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
                     </div>
                   </div>
                   
@@ -5222,6 +5270,18 @@ export default function CarHopApp() {
                           const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
                           return bDateTime - aDateTime;
                         }
+                      })
+                      .filter(b => {
+                        let matches = true;
+                        if (bookingFilterStatus) {
+                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
+                          else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
+                          else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                        }
+                        const vehicle = vehicles.find(v => v.id === b.vehicleId);
+                        if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
+                        if (bookingFilterNumber && !b.bookingCode.toLowerCase().includes(bookingFilterNumber.toLowerCase())) matches = false;
+                        return matches;
                       })
                       .map(b => {
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
