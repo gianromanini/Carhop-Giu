@@ -8008,12 +8008,6 @@ export default function CarHopApp() {
                         <span className="text-zinc-400">Base Rate</span>
                         <span className="text-white">${(pendingBooking.details?.rate || 0).toFixed(2)}</span>
                       </div>
-                      {(pendingBooking.details as any)?.cleaningFee > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-zinc-400">Cleaning Fee</span>
-                          <span className="text-white">${((pendingBooking.details as any)?.cleaningFee || 0).toFixed(2)}</span>
-                        </div>
-                      )}
                       {(pendingBooking.details as any)?.protection > 0 && (
                         <div className="flex justify-between">
                           <span className="text-zinc-400">Protection Package</span>
@@ -8028,7 +8022,7 @@ export default function CarHopApp() {
                       )}
                       {(pendingBooking.details as any)?.fees > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-zinc-400">Fees</span>
+                          <span className="text-zinc-400">Cleaning Fee</span>
                           <span className="text-white">${((pendingBooking.details as any)?.fees || 0).toFixed(2)}</span>
                         </div>
                       )}
@@ -8042,12 +8036,6 @@ export default function CarHopApp() {
                         <div className="flex justify-between text-green-400">
                           <span>Delivery Fee</span>
                           <span>+${deliveryFeeAmount.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {approvalStatus === 'rejected' && deliveryFeeAmount > 0 && (
-                        <div className="flex justify-between text-green-400">
-                          <span>Delivery Discount</span>
-                          <span>-${deliveryFeeAmount.toFixed(2)}</span>
                         </div>
                       )}
                     </div>
