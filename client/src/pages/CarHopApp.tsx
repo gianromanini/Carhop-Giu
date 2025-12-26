@@ -1909,7 +1909,7 @@ export default function CarHopApp() {
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @page { size: letter; margin: 0 0.15in 0.5in 0.15in; } @media print { body { margin: 0 !important; padding: 0 !important; } body * { visibility: hidden; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-agreement { display: block !important; width: 100% !important; max-width: 100% !important; color: black !important; font-size: 8pt; line-height: 1.15; background: white !important; box-sizing: border-box !important; padding: 0 0.05in !important; margin: 0 !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
+      <style>{` @page { size: letter; margin: 0.25in 0.15in 0.3in 0.15in; } @media print { body { margin: 0 !important; padding: 0 !important; } body * { visibility: hidden; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-agreement { display: block !important; width: 100% !important; max-width: 100% !important; color: black !important; font-size: 8pt; line-height: 1.15; background: white !important; box-sizing: border-box !important; padding: 0 0.05in !important; margin: 0 !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
@@ -6863,11 +6863,11 @@ export default function CarHopApp() {
                     })()}
                   </div>
 
-                  <div className="no-print flex gap-3 mt-6">
-                    <button onClick={() => window.print()} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-receipt">
-                      <FileText size={18}/> Print Receipt
+                  <div className="no-print flex gap-2 mt-4 px-2">
+                    <button onClick={() => window.print()} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1" data-testid="button-print-receipt">
+                      <FileText size={14}/> Print Receipt
                     </button>
-                    <button onClick={() => setViewingReceiptBookingId(null)} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors" data-testid="button-close-receipt">Close Receipt</button>
+                    <button onClick={() => setViewingReceiptBookingId(null)} className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors" data-testid="button-close-receipt">Close Receipt</button>
                   </div>
                 </div>
               </div>
