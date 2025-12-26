@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 type User = typeof import('@shared/schema').users.$inferSelect;
@@ -1046,9 +1046,9 @@ export default function CarHopApp() {
                   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                   const distanceInMiles = R * c;
                   
-                  const minFee = cart.car.minDeliveryFee;
-                  const minMiles = cart.car.minDeliveryFeeMiles;
-                  const pricePerMile = cart.car.deliveryPricePerMile || 0;
+                  const minFee = cart.car?.minDeliveryFee || 15;
+                  const minMiles = cart.car?.minDeliveryFeeMiles || 5;
+                  const pricePerMile = cart.car?.deliveryPricePerMile || 0;
                   let calculatedFee = 0;
                   
                   if (distanceInMiles <= minMiles) {
@@ -1058,7 +1058,7 @@ export default function CarHopApp() {
                     calculatedFee = minFee + (excessMiles * pricePerMile);
                   }
                   
-                  if (distanceInMiles <= (cart.car.maxDeliveryDistance || 50)) {
+                  if (distanceInMiles <= (cart.car?.maxDeliveryDistance || 50)) {
                     setDeliveryFee(calculatedFee);
                     setDeliveryValidationStatus('valid');
                   } else {
@@ -1801,7 +1801,7 @@ export default function CarHopApp() {
     if (!formData.fuel || formData.fuel.trim() === '') {
       missingFields.push('Fuel Type');
     }
-    if (!formData.seats || formData.seats.trim() === '') {
+    if (!formData.seats || String(formData.seats).trim() === '') {
       missingFields.push('Seats');
     }
     if (!formData.transmission || formData.transmission.trim() === '') {
@@ -3861,7 +3861,6 @@ export default function CarHopApp() {
                                   hasElectricSeats: car.hasElectricSeats || false,
                                   hasPaddleShifters: car.hasPaddleShifters || false,
                                   hasKeylessEntry: car.hasKeylessEntry || false,
-                                  hasSunroof: car.hasSunroof || false,
                                   images: car.images || [],
                                   commission: car.commission || 10,
                                   deductible: car.deductible || 1000,
@@ -8154,9 +8153,9 @@ export default function CarHopApp() {
                                       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                                       const distanceInMiles = R * c;
                                       
-                                      const minFee = cart.car.minDeliveryFee;
-                                      const minMiles = cart.car.minDeliveryFeeMiles;
-                                      const pricePerMile = cart.car.deliveryPricePerMile || 0;
+                                      const minFee = cart.car?.minDeliveryFee || 15;
+                                      const minMiles = cart.car?.minDeliveryFeeMiles || 5;
+                                      const pricePerMile = cart.car?.deliveryPricePerMile || 0;
                                       let calculatedFee = 0;
                                       
                                       if (distanceInMiles <= minMiles) {
@@ -8166,7 +8165,7 @@ export default function CarHopApp() {
                                         calculatedFee = minFee + (excessMiles * pricePerMile);
                                       }
                                       
-                                      if (distanceInMiles <= (cart.car.maxDeliveryDistance || 50)) {
+                                      if (distanceInMiles <= (cart.car?.maxDeliveryDistance || 50)) {
                                         setDeliveryFee(calculatedFee);
                                         setDeliveryValidationStatus('valid');
                                       } else {
