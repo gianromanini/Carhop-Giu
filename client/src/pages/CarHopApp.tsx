@@ -4625,7 +4625,7 @@ export default function CarHopApp() {
                 return (
                 <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   {tab === 'support' && unreadSupportCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                       {unreadSupportCount > 9 ? '9+' : unreadSupportCount}
                     </span>
                   )}
@@ -6793,27 +6793,30 @@ export default function CarHopApp() {
                       )}
                     </div>
 
-                    {/* Admin Reply Section */}
-                    {selectedSupportMessage.adminReply ? (
-                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Reply size={16} className="text-green-600" />
-                          <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
-                          {selectedSupportMessage.adminRepliedAt && (
-                            <span className="text-xs text-zinc-500">
-                              {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          )}
+                    {/* Admin Reply Section - Show existing replies and allow adding more */}
+                    <div className="space-y-4">
+                      {selectedSupportMessage.adminReply && (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Reply size={16} className="text-green-600" />
+                            <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
+                            {selectedSupportMessage.adminRepliedAt && (
+                              <span className="text-xs text-zinc-500">
+                                {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
                         </div>
-                        <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
-                      </div>
-                    ) : (
+                      )}
+                      
+                      {/* Always show textarea for additional messages */}
                       <div className="space-y-3">
-                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">Responder</label>
+                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
                         <textarea
                           value={supportReplyText}
                           onChange={(e) => setSupportReplyText(e.target.value)}
-                          placeholder="Digite sua resposta..."
+                          placeholder={selectedSupportMessage.adminReply ? 'Adicione uma mensagem de acompanhamento...' : 'Digite sua resposta...'}
                           className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none"
                           rows={4}
                           data-testid="textarea-support-reply"
@@ -6823,22 +6826,25 @@ export default function CarHopApp() {
                             onClick={async () => {
                               if (!supportReplyText.trim()) return;
                               try {
+                                const newReply = selectedSupportMessage.adminReply 
+                                  ? `${selectedSupportMessage.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${supportReplyText}`
+                                  : supportReplyText;
+                                
                                 await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, {
-                                  adminReply: supportReplyText,
+                                  adminReply: newReply,
                                   read: true
                                 });
                                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                 setSupportReplyText('');
-                                toast({ description: 'Resposta enviada com sucesso!' });
-                                setSelectedSupportMessage(null);
+                                toast({ description: 'Mensagem enviada com sucesso!' });
                               } catch (error) {
-                                toast({ description: 'Erro ao enviar resposta', variant: 'destructive' });
+                                toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
                               }
                             }}
                             className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                             data-testid="button-send-support-reply"
                           >
-                            <Send size={18} /> Enviar Resposta
+                            <Send size={18} /> {selectedSupportMessage.adminReply ? 'Enviar Mensagem' : 'Enviar Resposta'}
                           </button>
                           {!selectedSupportMessage.read && (
                             <button
@@ -6877,7 +6883,7 @@ export default function CarHopApp() {
                           </button>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </Card>
                 )}
               </div>
