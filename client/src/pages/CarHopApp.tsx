@@ -2239,16 +2239,23 @@ export default function CarHopApp() {
                   <button
                     onClick={async () => {
                       if (!clientChatReply.trim()) return;
-                      const lastMsg = clientMessages[clientMessages.length - 1];
-                      const newReply = lastMsg.adminReply 
-                        ? `${lastMsg.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${clientChatReply}`
-                        : clientChatReply;
-                      await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: true });
-                      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                      setClientChatReply('');
-                      toast({ description: 'Mensagem adicionada!' });
+                      try {
+                        await apiRequest('POST', '/api/support-messages', {
+                          senderType: 'client',
+                          senderId: clientUser?.email || userEmail,
+                          senderName: clientUser?.name || 'Cliente',
+                          senderIdentifier: userEmail,
+                          text: clientChatReply,
+                          images: []
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                        setClientChatReply('');
+                        toast({ description: 'Mensagem enviada!' });
+                      } catch (error) {
+                        toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
+                      }
                     }}
-                    className="w-full mt-2 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
+                    className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
                   >
                     <Send size={14} /> Enviar
                   </button>
