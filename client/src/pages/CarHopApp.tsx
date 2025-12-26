@@ -4782,13 +4782,8 @@ export default function CarHopApp() {
                 <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
                   {darkMode ? <Sun size={14} /> : <Moon size={14} />}
                 </Button>
-                <Button variant="ghost" className="relative h-10 w-10 p-0 flex items-center justify-center" data-testid="button-admin-chat">
-                  <MessageCircle size={18}/>
-                  {supportMessagesData.filter((m: any) => !m.read).length > 0 && (
-                    <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                      {supportMessagesData.filter((m: any) => !m.read).length > 9 ? '9+' : supportMessagesData.filter((m: any) => !m.read).length}
-                    </span>
-                  )}
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
+                  <MessageCircle size={14}/>
                 </Button>
               </div>
             </div>
