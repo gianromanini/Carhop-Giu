@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown, CheckCircle
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 type User = typeof import('@shared/schema').users.$inferSelect;
@@ -547,6 +547,8 @@ export default function CarHopApp() {
   const [clientChatTab, setClientChatTab] = useState<'history' | 'new'>('new');
   const [clientChatReply, setClientChatReply] = useState('');
   const [expandedClientChatGroups, setExpandedClientChatGroups] = useState<Set<string>>(new Set());
+  const [finishedClientChatGroups, setFinishedClientChatGroups] = useState<Set<string>>(new Set());
+  const [deletingChatGroup, setDeletingChatGroup] = useState<string | null>(null);
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
@@ -2206,8 +2208,68 @@ export default function CarHopApp() {
               <div className="flex-1 overflow-y-auto space-y-2 mb-4">
                 {sortedGroups.map(([groupKey, groupMsgs]) => {
                   const isExpanded = expandedClientChatGroups.has(groupKey);
+                  const isFinished = finishedClientChatGroups.has(groupKey);
                   const [subject, date] = groupKey.split('_');
-                  const firstMsg = groupMsgs[0];
+                  const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
+                  
+                  if (isFinished && deletingChatGroup !== groupKey) {
+                    return (
+                      <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800">
+                        <div className="px-3 py-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
+                            <span className="text-xs text-zinc-500">• {date}</span>
+                          </div>
+                          <button
+                            onClick={() => setDeletingChatGroup(groupKey)}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            data-testid={`button-delete-chat-${groupKey}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  if (deletingChatGroup === groupKey) {
+                    return (
+                      <div key={groupKey} className="border border-red-300 dark:border-red-700 rounded-lg overflow-hidden bg-red-50 dark:bg-red-900/20 p-3">
+                        <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Deseja deletar esta conversa?</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const newFinished = new Set(finishedClientChatGroups);
+                              newFinished.delete(groupKey);
+                              setFinishedClientChatGroups(newFinished);
+                              setDeletingChatGroup(null);
+                            }}
+                            className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                            data-testid={`button-cancel-delete-${groupKey}`}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => {
+                              const newFinished = new Set(finishedClientChatGroups);
+                              newFinished.delete(groupKey);
+                              setFinishedClientChatGroups(newFinished);
+                              setDeletingChatGroup(null);
+                              groupMsgs.forEach((msg: any) => {
+                                apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting message:', err));
+                              });
+                              queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                              toast({ description: 'Conversa deletada!' });
+                            }}
+                            className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
+                            data-testid={`button-confirm-delete-${groupKey}`}
+                          >
+                            Deletar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
                   
                   return (
                     <div key={groupKey} className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
@@ -2218,43 +2280,59 @@ export default function CarHopApp() {
                           else newSet.add(groupKey);
                           setExpandedClientChatGroups(newSet);
                         }}
-                        className="w-full px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-between"
+                        className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnread ? 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                       >
                         <div className="flex items-center gap-2">
                           <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          <span className="text-sm font-bold text-zinc-900 dark:text-white">{subject}</span>
+                          <span className={`text-xs font-bold ${hasUnread ? 'text-green-700 dark:text-green-300' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
                           <span className="text-xs text-zinc-500">• {date}</span>
+                          {hasUnread && <div className="w-2 h-2 bg-green-600 rounded-full"></div>}
                         </div>
-                        <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">{groupMsgs.length} msg</span>
                       </button>
                       
                       {isExpanded && (
-                        <div className="p-3 space-y-2 bg-white dark:bg-zinc-900">
-                          {groupMsgs.map((msg: any, idx: number) => {
-                            const messageText = msg.text || '';
-                            const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
-                            const phone = phoneMatch ? phoneMatch[1] : '';
-                            const cleanText = messageText.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim();
-                            
-                            return (
-                              <div key={msg.id} className="space-y-1 pb-2 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
-                                <div className="flex justify-between items-start">
-                                  <span className="text-xs text-zinc-500">
-                                    {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                  {idx === 0 && phone && phone !== 'Não informado' && (
-                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">{phone}</span>
+                        <div className="p-3 space-y-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700">
+                          <div className="space-y-2">
+                            {groupMsgs.map((msg: any, idx: number) => {
+                              const messageText = msg.text || '';
+                              const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
+                              const phone = phoneMatch ? phoneMatch[1] : '';
+                              const cleanText = messageText.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim();
+                              
+                              return (
+                                <div key={msg.id} className="space-y-1 pb-2 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
+                                  <div className="flex justify-between items-start">
+                                    <span className="text-xs text-zinc-500">
+                                      {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    {idx === 0 && phone && phone !== 'Não informado' && (
+                                      <span className="text-xs text-zinc-600 dark:text-zinc-400">{phone}</span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap line-clamp-2">{cleanText}</p>
+                                  {msg.adminReply && (
+                                    <div className="mt-1 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-xs text-green-700 dark:text-green-300">
+                                      <span className="font-bold">Admin: </span>{msg.adminReply.substring(0, 60)}...
+                                    </div>
                                   )}
                                 </div>
-                                <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap line-clamp-2">{cleanText}</p>
-                                {msg.adminReply && (
-                                  <div className="mt-1 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-xs text-green-700 dark:text-green-300">
-                                    <span className="font-bold">Admin: </span>{msg.adminReply.substring(0, 60)}...
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newFinished = new Set(finishedClientChatGroups);
+                              newFinished.add(groupKey);
+                              setFinishedClientChatGroups(newFinished);
+                              const newExpanded = new Set(expandedClientChatGroups);
+                              newExpanded.delete(groupKey);
+                              setExpandedClientChatGroups(newExpanded);
+                            }}
+                            className="w-full px-2 py-1.5 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-900 dark:text-white font-bold rounded text-xs flex items-center justify-center gap-1"
+                            data-testid={`button-finish-chat-${groupKey}`}
+                          >
+                            <CheckCircle size={14} /> Finish Chat
+                          </button>
                         </div>
                       )}
                     </div>
