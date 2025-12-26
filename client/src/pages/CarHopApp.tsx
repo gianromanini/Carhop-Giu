@@ -6995,7 +6995,7 @@ export default function CarHopApp() {
                                               <button
                                                 onClick={async () => {
                                                   try {
-                                                    await apiRequest('PUT', `/api/support-messages/${message.id}`, { adminReply: editingSupportMessageText });
+                                                    await apiRequest('PUT', `/api/support-messages/${message.id}`, { adminReply: editingSupportMessageText, read: false });
                                                     queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                                     setEditingSupportMessageId(null);
                                                     setEditingSupportMessageText('');
@@ -7065,7 +7065,7 @@ export default function CarHopApp() {
                                             ? `${lastMsg.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${supportReplyText}`
                                             : supportReplyText;
                                           
-                                          await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: true });
+                                          await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: false });
                                           queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                           setSupportReplyText('');
                                           toast({ description: 'Mensagem enviada!' });
