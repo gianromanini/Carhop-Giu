@@ -7926,6 +7926,10 @@ export default function CarHopApp() {
           const subtotalWithoutDelivery = rate + protection + extras + cleaningFee;
           const taxWithoutDelivery = subtotalWithoutDelivery * taxRate;
           
+          const adjustedTax = approvalStatus === 'rejected'
+            ? taxWithoutDelivery
+            : calculatedTax;
+          
           const adjustedTotal = approvalStatus === 'rejected' 
             ? subtotalWithoutDelivery + taxWithoutDelivery
             : subtotal + calculatedTax;
@@ -8026,10 +8030,10 @@ export default function CarHopApp() {
                           <span className="text-white">${((pendingBooking.details as any)?.fees || 0).toFixed(2)}</span>
                         </div>
                       )}
-                      {(pendingBooking.details as any)?.tax > 0 && (
+                      {adjustedTax > 0 && (
                         <div className="flex justify-between">
                           <span className="text-zinc-400">Tax</span>
-                          <span className="text-white">${((pendingBooking.details as any)?.tax || 0).toFixed(2)}</span>
+                          <span className="text-white">${adjustedTax.toFixed(2)}</span>
                         </div>
                       )}
                       {approvalStatus === 'approved' && deliveryFeeAmount > 0 && (
