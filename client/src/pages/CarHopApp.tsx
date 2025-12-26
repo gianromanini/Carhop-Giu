@@ -5877,7 +5877,7 @@ export default function CarHopApp() {
                                 {/* Your Rating of Guest */}
                                 {bookingRating?.hostStarsToClient && (
                                   <div className="bg-green-900/20 rounded-lg p-4 border border-green-700/30">
-                                    <div className="text-xs font-bold uppercase text-green-400 mb-2">Your Rating of Guest</div>
+                                    <div className="text-xs font-bold uppercase text-green-400 mb-2">✓ Rated</div>
                                     <div className="flex items-center gap-2 mb-2">
                                       <div className="flex gap-1">
                                         {[1,2,3,4,5].map(star => (
