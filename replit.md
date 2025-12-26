@@ -181,6 +181,15 @@ Preferred communication style: Simple, everyday language.
     - Moved Guest/Host Ratings section to appear BEFORE "Manage Charges & Adjustments"
     - Consistent ordering in both Host and Admin tabs: Ratings → Charges → Financial Details
     - Maintains logical flow: Customer Messages → Ratings → Adjustments → Payment
+20. **Chat Support System for Admin (Dec 26):**
+    - New `supportMessages` table in database schema with: senderType (client/host), senderId, senderName, senderIdentifier, text, images array, read status, adminReply, timestamps
+    - Storage layer methods for CRUD operations on support messages
+    - API endpoints: GET /api/support-messages, GET /api/support-messages/type/:senderType, GET /api/support-messages/unread/:senderType, GET /api/support-messages/:id, POST /api/support-messages, PUT /api/support-messages/:id, DELETE /api/support-messages/:id
+    - Admin UI: New "Chat" tab with sub-tabs for "Clientes" and "Hosts"
+    - Message list with unread indicators (blue dot for unread)
+    - Message detail view with reply functionality
+    - Mark as read and delete options
+    - Unread count badge (red, up to 9+) on the Chat tab icon
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
