@@ -538,6 +538,8 @@ export default function CarHopApp() {
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [expandedSupportGroup, setExpandedSupportGroup] = useState<string | null>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
+  const [editingSupportMessageId, setEditingSupportMessageId] = useState<number | null>(null);
+  const [editingSupportMessageText, setEditingSupportMessageText] = useState('');
   const [showClientChatModal, setShowClientChatModal] = useState(false);
   const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
@@ -6919,13 +6921,14 @@ export default function CarHopApp() {
                               </button>
                               
                               {isExpanded && (
-                                <div className="ml-4 space-y-2 border-l-2 border-zinc-300 dark:border-zinc-700 pl-4">
+                                <div className="ml-4 space-y-1 border-l-2 border-zinc-300 dark:border-zinc-700 pl-4">
                                   {messages.map((message: any, idx: number) => {
                                     const isFirstMsg = idx === 0;
+                                    const isLastMsg = idx === messages.length - 1;
                                     return (
-                                      <div key={message.id} className="space-y-2">
-                                        <div className={`p-3 rounded-lg ${supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}`}>
-                                          <div className="flex justify-between mb-2">
+                                      <div key={message.id} className="space-y-1">
+                                        <div className={`p-2 rounded-lg ${supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}`}>
+                                          <div className="flex justify-between mb-1">
                                             <span className={`text-xs font-bold ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                               {supportSubTab === 'client' ? 'Cliente' : 'Host'}
                                             </span>
@@ -6935,14 +6938,14 @@ export default function CarHopApp() {
                                           </div>
                                           
                                           {isFirstMsg && subject && (
-                                            <div className="mb-2 pb-2 border-b border-zinc-300 dark:border-zinc-600">
+                                            <div className="mb-1 pb-1 border-b border-zinc-300 dark:border-zinc-600">
                                               <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Assunto: {subject}</p>
                                               <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderIdentifier}</p>
                                               {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
                                             </div>
                                           )}
                                           
-                                          <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">
+                                          <p className="text-xs text-zinc-900 dark:text-white whitespace-pre-wrap">
                                             {message.text.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim()}
                                           </p>
                                           
@@ -6955,15 +6958,66 @@ export default function CarHopApp() {
                                           )}
                                         </div>
                                         
-                                        {message.adminReply && (
-                                          <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-700">
-                                            <div className="flex items-center gap-1 mb-1">
-                                              <Reply size={12} className="text-blue-600" />
-                                              <span className="text-xs font-bold text-blue-600">Admin</span>
+                                        {editingSupportMessageId === message.id ? (
+                                          <div className="p-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-700">
+                                            <textarea
+                                              value={editingSupportMessageText}
+                                              onChange={(e) => setEditingSupportMessageText(e.target.value)}
+                                              className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded text-xs resize-none"
+                                              rows={2}
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                              <button
+                                                onClick={async () => {
+                                                  try {
+                                                    await apiRequest('PUT', `/api/support-messages/${message.id}`, { adminReply: editingSupportMessageText });
+                                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                                    setEditingSupportMessageId(null);
+                                                    setEditingSupportMessageText('');
+                                                    toast({ description: 'Mensagem atualizada!' });
+                                                  } catch (error) {
+                                                    toast({ description: 'Erro ao atualizar', variant: 'destructive' });
+                                                  }
+                                                }}
+                                                className="flex-1 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-xs"
+                                              >
+                                                Salvar
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  setEditingSupportMessageId(null);
+                                                  setEditingSupportMessageText('');
+                                                }}
+                                                className="flex-1 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                                              >
+                                                Cancelar
+                                              </button>
                                             </div>
-                                            <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">{message.adminReply}</p>
                                           </div>
-                                        )}
+                                        ) : message.adminReply ? (
+                                          <div className="p-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-700 group hover:shadow-md transition-shadow">
+                                            <div className="flex items-center gap-1 mb-1 justify-between">
+                                              <div className="flex items-center gap-1">
+                                                <Reply size={12} className="text-blue-600" />
+                                                <span className="text-xs font-bold text-blue-600">Admin</span>
+                                              </div>
+                                              {isLastMsg && (
+                                                <button
+                                                  onClick={() => {
+                                                    setEditingSupportMessageId(message.id);
+                                                    setEditingSupportMessageText(message.adminReply);
+                                                  }}
+                                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:text-blue-700"
+                                                  title="Editar mensagem"
+                                                  data-testid={`button-edit-admin-reply-${message.id}`}
+                                                >
+                                                  <Edit size={14} />
+                                                </button>
+                                              )}
+                                            </div>
+                                            <p className="text-xs text-blue-700 dark:text-blue-300 whitespace-pre-wrap">{message.adminReply}</p>
+                                          </div>
+                                        ) : null}
                                       </div>
                                     );
                                   })}
