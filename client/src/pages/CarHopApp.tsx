@@ -3840,6 +3840,49 @@ export default function CarHopApp() {
                             </div>
                           )}
 
+                          {/* Client Requests */}
+                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
+                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
+                                <AlertCircle size={14}/> Client Requests
+                              </h4>
+                              <div className="space-y-3">
+                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
+                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                          {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
+                                        </span>
+                                        <div className="text-sm text-zinc-300 mt-1">
+                                          New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                        </div>
+                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                      </div>
+                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                    <div className="flex gap-2 mt-3">
+                                      <button 
+                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
+                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                        data-testid={`button-host-approve-${req.id}`}
+                                      >
+                                        Approve
+                                      </button>
+                                      <button 
+                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
+                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                        data-testid={`button-host-reject-${req.id}`}
+                                      >
+                                        Reject
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {/* GUEST & HOST RATINGS SECTION */}
                           {b.status === 'Completed' && (() => {
                             const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
@@ -3894,49 +3937,6 @@ export default function CarHopApp() {
                               </div>
                             );
                           })()}
-
-                          {/* Client Requests */}
-                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
-                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
-                                <AlertCircle size={14}/> Client Requests
-                              </h4>
-                              <div className="space-y-3">
-                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
-                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
-                                          {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
-                                        </span>
-                                        <div className="text-sm text-zinc-300 mt-1">
-                                          New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
-                                        </div>
-                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
-                                      </div>
-                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
-                                    </div>
-                                    <div className="flex gap-2 mt-3">
-                                      <button 
-                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
-                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                        data-testid={`button-host-approve-${req.id}`}
-                                      >
-                                        Approve
-                                      </button>
-                                      <button 
-                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
-                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                        data-testid={`button-host-reject-${req.id}`}
-                                      >
-                                        Reject
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
 
                           {/* Manage Charges & Adjustments */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
