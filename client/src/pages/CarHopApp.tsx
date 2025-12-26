@@ -1915,16 +1915,9 @@ export default function CarHopApp() {
             <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            <div className="hidden lg:flex items-center gap-2 hover:text-green-600 dark:hover:text-white transition-colors cursor-pointer"><Phone size={16} /> <span>(475) 449-8622</span></div>
             <button onClick={handleManageBookingClick} className="hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
             {clientUser ? (
               <div className="flex items-center gap-3">
-                <button onClick={() => setView('bookings')} className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Support Messages">
-                  <MessageCircle size={18}/>
-                  {getClientUnreadCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadCount()}</span>
-                  )}
-                </button>
                 {/* Notifications Bell */}
                 <div className="relative">
                   <button 
@@ -1982,13 +1975,13 @@ export default function CarHopApp() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <button onClick={() => setShowLoginModal(true)} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support-guest" title="Support">
-                  <MessageCircle size={18}/>
-                </button>
                 <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider" data-testid="button-signin">Sign In</button>
               </div>
             )}
             <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+            <button onClick={handleManageBookingClick} className="p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
+              <MessageCircle size={18}/>
+            </button>
             <button onClick={() => setView('admin')} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
           </div>
 
