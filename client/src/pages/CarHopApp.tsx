@@ -537,6 +537,8 @@ export default function CarHopApp() {
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
+  const [supportFilter, setSupportFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [expandedChatId, setExpandedChatId] = useState<string | null>(null);
   const [showClientChatModal, setShowClientChatModal] = useState(false);
   const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
@@ -6698,11 +6700,11 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'support' && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Sub-tabs for Clients and Hosts */}
                 <div className="flex gap-2 mb-4">
                   <button
-                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); }}
+                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedChatId(null); }}
                     className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'client' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-clients"
                   >
@@ -6710,7 +6712,7 @@ export default function CarHopApp() {
                     Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})
                   </button>
                   <button
-                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); }}
+                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedChatId(null); }}
                     className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-hosts"
                   >
@@ -6719,64 +6721,94 @@ export default function CarHopApp() {
                   </button>
                 </div>
 
-                {/* Messages List */}
-                <Card className="p-4">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-                    <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-blue-500' : 'text-orange-500'} />
-                    {supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}
-                  </h3>
-                  
-                  {supportMessagesData.filter((m: any) => m.senderType === supportSubTab).length === 0 ? (
-                    <div className="text-center py-8 text-zinc-500">
-                      <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma mensagem de {supportSubTab === 'client' ? 'clientes' : 'hosts'} ainda</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {supportMessagesData
-                        .filter((m: any) => m.senderType === supportSubTab)
-                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                        .map((message: any) => (
-                          <div
-                            key={message.id}
-                            onClick={() => setSelectedSupportMessage(message)}
-                            className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-                              !message.read 
-                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' 
-                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
-                            } ${selectedSupportMessage?.id === message.id ? 'ring-2 ring-green-500' : ''}`}
-                            data-testid={`card-support-message-${message.id}`}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2">
-                                {!message.read && (
-                                  <span className="w-2 h-2 bg-blue-500 rounded-full" />
-                                )}
-                                <span className="font-bold text-zinc-900 dark:text-white">{message.senderName}</span>
-                                <span className="text-xs text-zinc-500">{message.senderIdentifier}</span>
-                              </div>
-                              <span className="text-xs text-zinc-500">
-                                {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <p className="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2">{message.text}</p>
-                            {message.adminReply && (
-                              <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                                <div className="flex items-center gap-1 text-xs text-green-600">
-                                  <Reply size={12} />
-                                  <span>Respondido</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </Card>
+                {/* Filters */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSupportFilter('all')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${supportFilter === 'all' ? 'bg-zinc-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                    data-testid="button-filter-all"
+                  >
+                    Todas
+                  </button>
+                  <button
+                    onClick={() => setSupportFilter('unread')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${supportFilter === 'unread' ? 'bg-orange-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                    data-testid="button-filter-unread"
+                  >
+                    Não Lidas
+                  </button>
+                  <button
+                    onClick={() => setSupportFilter('read')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${supportFilter === 'read' ? 'bg-green-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                    data-testid="button-filter-read"
+                  >
+                    Lidas
+                  </button>
+                </div>
 
-                {/* Selected Message Detail */}
-                {selectedSupportMessage && (
-                  <Card className="p-6">
+                {/* Sidebar + Chat Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Left Sidebar - Client/Host List */}
+                  <Card className="p-3 lg:col-span-1">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">
+                      {supportSubTab === 'client' ? 'Clientes' : 'Hosts'}
+                    </h3>
+                    {supportMessagesData.filter((m: any) => m.senderType === supportSubTab && (
+                      supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
+                    )).length === 0 ? (
+                      <div className="text-center py-6 text-zinc-500 text-xs">
+                        <MessageSquare size={32} className="mx-auto mb-2 opacity-30" />
+                        <p>Sem mensagens</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {supportMessagesData
+                          .filter((m: any) => m.senderType === supportSubTab && (
+                            supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
+                          ))
+                          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                          .map((message: any) => {
+                            const hasUnread = !message.read;
+                            const isExpanded = expandedChatId === message.senderIdentifier;
+                            return (
+                              <div key={message.id}>
+                                <button
+                                  onClick={() => setExpandedChatId(isExpanded ? null : message.senderIdentifier)}
+                                  className={`w-full text-left px-3 py-2 rounded-lg transition-all text-xs font-bold flex justify-between items-center ${
+                                    hasUnread
+                                      ? 'blink-button text-white'
+                                      : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700'
+                                  }`}
+                                  data-testid={`button-client-${message.senderIdentifier}`}
+                                >
+                                  <span className="truncate">{message.senderName}</span>
+                                  <span>{isExpanded ? '−' : '+'}</span>
+                                </button>
+                                {isExpanded && (
+                                  <div className="mt-2 border-l-2 border-blue-500 pl-2">
+                                    <div className="space-y-1 bg-zinc-100 dark:bg-zinc-900/50 p-2 rounded text-xs max-h-60 overflow-y-auto">
+                                      {supportMessagesData
+                                        .filter((m: any) => m.senderIdentifier === message.senderIdentifier)
+                                        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                                        .map((msg: any, idx: number) => (
+                                          <div key={msg.id} onClick={() => { setSelectedSupportMessage(msg); }} className="p-2 bg-white dark:bg-zinc-800 rounded cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30">
+                                            <p className="text-xs text-zinc-900 dark:text-white font-bold">{msg.text.substring(0, 50)}...</p>
+                                            <p className="text-[10px] text-zinc-500 mt-1">{new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Right Side - Chat Detail */}
+                  {selectedSupportMessage && (
+                    <Card className="p-4 lg:col-span-2">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{selectedSupportMessage.senderName}</h3>
@@ -6909,8 +6941,6 @@ export default function CarHopApp() {
                 )}
               </div>
             )}
-
-                      </div>
         )}
 
         {selectedHostCarCommission && (

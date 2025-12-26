@@ -57,8 +57,19 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+}
+
+@keyframes blink-orange {
+  0%, 49%, 100% { background-color: rgb(234, 88, 12); }
+  50%, 99% { background-color: rgb(194, 65, 12); }
+}
+
+.blink-button {
+  animation: blink-orange 1.5s infinite;
+}
 
 /* Fallback for older browsers */
+:root {
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
