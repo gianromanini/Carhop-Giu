@@ -330,3 +330,12 @@
     inset: -1px;
   }
 }
+
+@keyframes blink-orange {
+  0%, 49%, 100% { background-color: rgb(234, 88, 12); }
+  50%, 99% { background-color: rgb(194, 65, 12); }
+}
+
+.blink-button {
+  animation: blink-orange 1.5s infinite;
+}

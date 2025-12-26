@@ -538,7 +538,6 @@ export default function CarHopApp() {
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
   const [supportFilter, setSupportFilter] = useState<'all' | 'unread' | 'read'>('all');
-  const [expandedChatId, setExpandedChatId] = useState<string | null>(null);
   const [showClientChatModal, setShowClientChatModal] = useState(false);
   const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
@@ -1630,19 +1629,6 @@ export default function CarHopApp() {
           message: `Check-out completed for ${carName}. Thank you!`,
           timestamp: booking.returnDate,
           bookingCode: booking.bookingCode
-        });
-      }
-    });
-    
-    // Support messages admin replies
-    supportMessagesData.forEach((msg: any) => {
-      if (msg.senderType === 'client' && msg.senderIdentifier === clientUser?.email && msg.adminReply) {
-        notifications.push({
-          id: `support-reply-${msg.id}`,
-          type: 'support-reply',
-          message: `Support team responded to your message`,
-          timestamp: msg.adminRepliedAt || new Date().toISOString(),
-          bookingCode: ''
         });
       }
     });
@@ -4634,13 +4620,13 @@ export default function CarHopApp() {
               </div>
             </div>
             
-            <div className="flex justify-center gap-0.5 md:gap-2 mb-6 overflow-x-auto pb-2">
+            <div className="flex justify-center gap-1 md:gap-2 mb-6 overflow-x-auto pb-2">
               {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'support'].map(tab => {
                 const unreadSupportCount = tab === 'support' ? supportMessagesData.filter((m: any) => !m.read).length : 0;
                 return (
-                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-1.5 md:py-2 rounded-lg font-bold text-[9px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   {tab === 'support' && unreadSupportCount > 0 && (
-                    <span className="absolute top-0 right-0.5 transform -translate-y-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                       {unreadSupportCount > 9 ? '9+' : unreadSupportCount}
                     </span>
                   )}
@@ -6700,11 +6686,11 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'support' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Sub-tabs for Clients and Hosts */}
                 <div className="flex gap-2 mb-4">
                   <button
-                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedChatId(null); }}
+                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); }}
                     className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'client' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-clients"
                   >
@@ -6712,7 +6698,7 @@ export default function CarHopApp() {
                     Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})
                   </button>
                   <button
-                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedChatId(null); }}
+                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); }}
                     className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-hosts"
                   >
@@ -6722,7 +6708,7 @@ export default function CarHopApp() {
                 </div>
 
                 {/* Filters */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-4">
                   <button
                     onClick={() => setSupportFilter('all')}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${supportFilter === 'all' ? 'bg-zinc-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
@@ -6746,69 +6732,68 @@ export default function CarHopApp() {
                   </button>
                 </div>
 
-                {/* Sidebar + Chat Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {/* Left Sidebar - Client/Host List */}
-                  <Card className="p-3 lg:col-span-1">
-                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">
-                      {supportSubTab === 'client' ? 'Clientes' : 'Hosts'}
-                    </h3>
-                    {supportMessagesData.filter((m: any) => m.senderType === supportSubTab && (
-                      supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
-                    )).length === 0 ? (
-                      <div className="text-center py-6 text-zinc-500 text-xs">
-                        <MessageSquare size={32} className="mx-auto mb-2 opacity-30" />
-                        <p>Sem mensagens</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {supportMessagesData
-                          .filter((m: any) => m.senderType === supportSubTab && (
-                            supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
-                          ))
-                          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                          .map((message: any) => {
-                            const hasUnread = !message.read;
-                            const isExpanded = expandedChatId === message.senderIdentifier;
-                            return (
-                              <div key={message.id}>
-                                <button
-                                  onClick={() => setExpandedChatId(isExpanded ? null : message.senderIdentifier)}
-                                  className={`w-full text-left px-3 py-2 rounded-lg transition-all text-xs font-bold flex justify-between items-center ${
-                                    hasUnread
-                                      ? 'blink-button text-white'
-                                      : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700'
-                                  }`}
-                                  data-testid={`button-client-${message.senderIdentifier}`}
-                                >
-                                  <span className="truncate">{message.senderName}</span>
-                                  <span>{isExpanded ? '−' : '+'}</span>
-                                </button>
-                                {isExpanded && (
-                                  <div className="mt-2 border-l-2 border-blue-500 pl-2">
-                                    <div className="space-y-1 bg-zinc-100 dark:bg-zinc-900/50 p-2 rounded text-xs max-h-60 overflow-y-auto">
-                                      {supportMessagesData
-                                        .filter((m: any) => m.senderIdentifier === message.senderIdentifier)
-                                        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                                        .map((msg: any, idx: number) => (
-                                          <div key={msg.id} onClick={() => { setSelectedSupportMessage(msg); }} className="p-2 bg-white dark:bg-zinc-800 rounded cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30">
-                                            <p className="text-xs text-zinc-900 dark:text-white font-bold">{msg.text.substring(0, 50)}...</p>
-                                            <p className="text-[10px] text-zinc-500 mt-1">{new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-                                          </div>
-                                        ))}
-                                    </div>
-                                  </div>
+                {/* Messages List */}
+                <Card className="p-4">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                    <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-blue-500' : 'text-orange-500'} />
+                    {supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}
+                  </h3>
+                  
+                  {supportMessagesData.filter((m: any) => m.senderType === supportSubTab && (
+                    supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
+                  )).length === 0 ? (
+                    <div className="text-center py-8 text-zinc-500">
+                      <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>Nenhuma mensagem de {supportSubTab === 'client' ? 'clientes' : 'hosts'} ainda</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {supportMessagesData
+                        .filter((m: any) => m.senderType === supportSubTab && (
+                          supportFilter === 'all' || (supportFilter === 'unread' && !m.read) || (supportFilter === 'read' && m.read)
+                        ))
+                        .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                        .map((message: any) => (
+                          <div
+                            key={message.id}
+                            onClick={() => setSelectedSupportMessage(message)}
+                            className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                              !message.read 
+                                ? 'blink-button border-orange-500' 
+                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
+                            } ${selectedSupportMessage?.id === message.id ? 'ring-2 ring-green-500' : ''}`}
+                            data-testid={`card-support-message-${message.id}`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center gap-2">
+                                {!message.read && (
+                                  <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
                                 )}
+                                <span className={`font-bold ${!message.read ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>{message.senderName}</span>
+                                <span className={`text-xs ${!message.read ? 'text-orange-200' : 'text-zinc-500'}`}>{message.senderIdentifier}</span>
                               </div>
-                            );
-                          })}
-                      </div>
-                    )}
-                  </Card>
+                              <span className={`text-xs ${!message.read ? 'text-orange-200' : 'text-zinc-500'}`}>
+                                {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className={`text-sm line-clamp-2 ${!message.read ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>{message.text}</p>
+                            {message.adminReply && (
+                              <div className={`mt-2 pt-2 border-t ${!message.read ? 'border-orange-400' : 'border-zinc-200 dark:border-zinc-700'}`}>
+                                <div className={`flex items-center gap-1 text-xs ${!message.read ? 'text-green-300' : 'text-green-600'}`}>
+                                  <Reply size={12} />
+                                  <span>Respondido</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </Card>
 
-                  {/* Right Side - Chat Detail */}
-                  {selectedSupportMessage && (
-                    <Card className="p-4 lg:col-span-2">
+                {/* Selected Message Detail */}
+                {selectedSupportMessage && (
+                  <Card className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{selectedSupportMessage.senderName}</h3>
@@ -6838,43 +6823,35 @@ export default function CarHopApp() {
                       )}
                     </div>
 
-                    {/* Client Message Preview - Mobile */}
-                    <div className="md:hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-blue-600">Mensagem Cliente</span>
-                      </div>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap line-clamp-3">{selectedSupportMessage.text}</p>
-                    </div>
-
                     {/* Admin Reply Section - Show existing replies and allow adding more */}
                     <div className="space-y-4">
                       {selectedSupportMessage.adminReply && (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 md:p-4">
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <Reply size={16} className="text-green-600" />
-                            <span className="text-xs md:text-sm font-bold text-green-600">Resposta do Admin</span>
+                            <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
                             {selectedSupportMessage.adminRepliedAt && (
                               <span className="text-xs text-zinc-500">
                                 {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs md:text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
+                          <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
                         </div>
                       )}
                       
                       {/* Always show textarea for additional messages */}
                       <div className="space-y-3">
-                        <label className="block text-xs md:text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
+                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
                         <textarea
                           value={supportReplyText}
                           onChange={(e) => setSupportReplyText(e.target.value)}
                           placeholder={selectedSupportMessage.adminReply ? 'Adicione uma mensagem de acompanhamento...' : 'Digite sua resposta...'}
-                          className="w-full p-2 md:p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs md:text-sm text-zinc-900 dark:text-white resize-none"
-                          rows={3}
+                          className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none"
+                          rows={4}
                           data-testid="textarea-support-reply"
                         />
-                        <div className="flex flex-col md:flex-row gap-2 md:gap-3">
+                        <div className="flex gap-3">
                           <button
                             onClick={async () => {
                               if (!supportReplyText.trim()) return;
@@ -6894,10 +6871,10 @@ export default function CarHopApp() {
                                 toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
                               }
                             }}
-                            className="flex-1 py-2 md:py-3 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                             data-testid="button-send-support-reply"
                           >
-                            <Send size={16} /> {selectedSupportMessage.adminReply ? 'Enviar' : 'Responder'}
+                            <Send size={18} /> {selectedSupportMessage.adminReply ? 'Enviar Mensagem' : 'Enviar Resposta'}
                           </button>
                           {!selectedSupportMessage.read && (
                             <button
@@ -6910,10 +6887,10 @@ export default function CarHopApp() {
                                   toast({ description: 'Erro ao marcar como lido', variant: 'destructive' });
                                 }
                               }}
-                              className="px-3 md:px-4 py-2 md:py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
+                              className="px-4 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
                               data-testid="button-mark-read"
                             >
-                              <Check size={16} />
+                              <Check size={18} />
                             </button>
                           )}
                           <button
@@ -6929,19 +6906,21 @@ export default function CarHopApp() {
                                 }
                               }
                             }}
-                            className="px-3 md:px-4 py-2 md:py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+                            className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
                             data-testid="button-delete-support-message"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </div>
                     </div>
                   </Card>
                 )}
-                </div>
               </div>
             )}
+
+                      </div>
+        )}
 
         {selectedHostCarCommission && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
