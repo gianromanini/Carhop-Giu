@@ -1909,7 +1909,7 @@ export default function CarHopApp() {
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @media print { body, body * { visibility: hidden; margin: 0 !important; padding: 0 !important; border: none !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; border: none !important; color: black !important; } .printable-receipt, .printable-agreement { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 20pt 15pt 15pt 15pt !important; background: white !important; color: black !important; font-size: 12pt; line-height: 1.3; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
+      <style>{` @page { size: letter; margin: 0.5in; } @media print { * { margin: 0 !important; padding: 0 !important; } body, body * { visibility: hidden; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; } .printable-receipt, .printable-agreement { display: block !important; position: absolute !important; left: 0.5in !important; top: 0.5in !important; width: calc(8.5in - 1in) !important; height: 10in !important; margin: 0 !important; padding: 0 !important; background: white !important; color: black !important; font-size: 11pt; line-height: 1.2; border: none !important; box-sizing: border-box; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
@@ -6648,35 +6648,35 @@ export default function CarHopApp() {
                   <button onClick={() => setViewingReceiptBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
                 </div>
 
-                <div className="printable-receipt p-8 space-y-3">
+                <div className="printable-receipt p-4 space-y-2">
                   {/* Header */}
-                  <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
-                    <div className="flex justify-between items-start mb-4">
+                  <div className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                    <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="text-sm text-zinc-500 uppercase tracking-wider">Booking Code</p>
-                        <p className="text-2xl font-bold text-zinc-900 dark:text-white">{receiptBooking.bookingCode}</p>
+                        <p className="text-xs text-zinc-500 uppercase tracking-wider">Booking Code</p>
+                        <p className="text-lg font-bold text-zinc-900 dark:text-white">{receiptBooking.bookingCode}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-zinc-500 uppercase">Status</p>
-                        <p className="text-lg font-bold text-green-600">Completed</p>
+                        <p className="text-sm font-bold text-green-600">Completed</p>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3>
-                    <div className="mt-3 space-y-1">
-                      <p className="text-sm text-zinc-500"><strong>Location:</strong> {formatAddressForDisplay(receiptBooking.location)}</p>
-                      <p className="text-sm text-zinc-500"><strong>Type:</strong> {receiptBooking.details?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3>
+                    <div className="mt-1 space-y-0.5">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Loc:</strong> {formatAddressForDisplay(receiptBooking.location)}</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Type:</strong> {receiptBooking.details?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
                     </div>
                   </div>
 
                   {/* Rental Dates */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Pick-up</p>
-                      <p className="text-lg font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.startDate, receiptBooking.startTime)}</p>
+                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Pick-up</p>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.startDate, receiptBooking.startTime)}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Return</p>
-                      <p className="text-lg font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.returnDate, receiptBooking.returnTime)}</p>
+                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Return</p>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{formatDisplayDate(receiptBooking.returnDate, receiptBooking.returnTime)}</p>
                     </div>
                   </div>
 
@@ -6745,7 +6745,7 @@ export default function CarHopApp() {
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3 space-y-3">
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 space-y-2">
                     {(() => {
                       const carForReceipt = vehicles.find(v => v.id === receiptBooking.vehicleId);
                       const cleaningFeeForReceipt = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
