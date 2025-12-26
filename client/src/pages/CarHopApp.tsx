@@ -496,6 +496,7 @@ interface FormDataType {
 export default function CarHopApp() {
   const queryClient = useQueryClient();
   const { user: authUser, isAuthenticated } = useAuth();
+  const proceedButtonRef = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
@@ -6428,7 +6429,7 @@ export default function CarHopApp() {
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
                       
                       {/* Pending Approval - Show button to check status and complete payment */}
-                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (
+                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
                         <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
                           <div className="flex items-center gap-2 mb-3">
                             <Clock size={18} className="text-yellow-600" />
@@ -6442,6 +6443,41 @@ export default function CarHopApp() {
                           >
                             Check Approval Status
                           </Button>
+                        </div>
+                      )}
+
+                      {/* Delivery Declined - Show Choose Pickup and Cancel buttons */}
+                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-700">
+                          <div className="flex items-center gap-2 mb-3">
+                            <AlertCircle size={18} className="text-red-600" />
+                            <span className="font-bold text-red-700 dark:text-red-400">DELIVERY DECLINED</span>
+                          </div>
+                          <p className="text-xs text-red-600 dark:text-red-400 mb-4">Unfortunately, delivery is not available for this location. You can choose to pick up the vehicle at our location or cancel this booking.</p>
+                          <div className="flex gap-3">
+                            <Button 
+                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                              onClick={() => { 
+                                setPendingDeliveryBookingId(b.id); 
+                                setView('awaiting-approval');
+                                toast({ description: 'Navigate to pickup location to proceed with payment.' });
+                              }}
+                              data-testid={`button-choose-pickup-${b.id}`}
+                            >
+                              Choose Pickup
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => { 
+                                setCancelingBookingId(b.id);
+                                toast({ description: 'Confirm cancellation to proceed.' });
+                              }}
+                              data-testid={`button-cancel-delivery-declined-${b.id}`}
+                            >
+                              Cancel Booking
+                            </Button>
+                          </div>
                         </div>
                       )}
                       
@@ -7375,7 +7411,12 @@ export default function CarHopApp() {
                         <input 
                           type="checkbox" 
                           checked={carRentalAgreementAccepted} 
-                          onChange={(e) => setCarRentalAgreementAccepted(e.target.checked)}
+                          onChange={(e) => {
+                            setCarRentalAgreementAccepted(e.target.checked);
+                            if (e.target.checked) {
+                              setTimeout(() => proceedButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                            }
+                          }}
                           className="mt-1 w-5 h-5 cursor-pointer" 
                           data-testid="checkbox-car-rental-agreement"
                         />
@@ -7456,6 +7497,7 @@ export default function CarHopApp() {
 
                   {/* Proceed Button */}
                   <button 
+                    ref={proceedButtonRef}
                     onClick={handleProceedToPayment} 
                     disabled={!isCheckoutValid() || !carRentalAgreementAccepted} 
                     className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() && carRentalAgreementAccepted ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
