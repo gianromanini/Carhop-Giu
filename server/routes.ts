@@ -1695,6 +1695,133 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // ==================== SUPPORT MESSAGES ====================
+  
+  // Get all support messages
+  app.get("/api/support-messages", async (req, res) => {
+    try {
+      const messages = await storage.getSupportMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error("Error getting support messages:", error);
+      res.status(500).json({ message: "Failed to get support messages" });
+    }
+  });
+
+  // Get support messages by type (client or host)
+  app.get("/api/support-messages/type/:senderType", async (req, res) => {
+    try {
+      const { senderType } = req.params;
+      if (senderType !== 'client' && senderType !== 'host') {
+        return res.status(400).json({ message: "Invalid sender type. Must be 'client' or 'host'" });
+      }
+      const messages = await storage.getSupportMessagesByType(senderType);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error getting support messages by type:", error);
+      res.status(500).json({ message: "Failed to get support messages" });
+    }
+  });
+
+  // Get unread count by type
+  app.get("/api/support-messages/unread/:senderType", async (req, res) => {
+    try {
+      const { senderType } = req.params;
+      if (senderType !== 'client' && senderType !== 'host') {
+        return res.status(400).json({ message: "Invalid sender type. Must be 'client' or 'host'" });
+      }
+      const count = await storage.getUnreadSupportMessagesCount(senderType);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
+
+  // Get single support message
+  app.get("/api/support-messages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const message = await storage.getSupportMessage(id);
+      if (!message) {
+        return res.status(404).json({ message: "Support message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      console.error("Error getting support message:", error);
+      res.status(500).json({ message: "Failed to get support message" });
+    }
+  });
+
+  // Create support message
+  app.post("/api/support-messages", async (req, res) => {
+    try {
+      const { senderType, senderId, senderName, senderIdentifier, text, images } = req.body;
+      
+      if (!senderType || !senderId || !senderName || !senderIdentifier || !text) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      if (senderType !== 'client' && senderType !== 'host') {
+        return res.status(400).json({ message: "Invalid sender type. Must be 'client' or 'host'" });
+      }
+      
+      const newMessage = await storage.createSupportMessage({
+        senderType,
+        senderId,
+        senderName,
+        senderIdentifier,
+        text,
+        images: images || [],
+        read: false,
+      });
+      
+      res.status(201).json(newMessage);
+    } catch (error) {
+      console.error("Error creating support message:", error);
+      res.status(500).json({ message: "Failed to create support message" });
+    }
+  });
+
+  // Update support message (admin reply, mark as read)
+  app.put("/api/support-messages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminReply, read } = req.body;
+      
+      const updateData: any = {};
+      if (adminReply !== undefined) updateData.adminReply = adminReply;
+      if (read !== undefined) updateData.read = read;
+      
+      const updatedMessage = await storage.updateSupportMessage(id, updateData);
+      if (!updatedMessage) {
+        return res.status(404).json({ message: "Support message not found" });
+      }
+      
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error("Error updating support message:", error);
+      res.status(500).json({ message: "Failed to update support message" });
+    }
+  });
+
+  // Delete support message
+  app.delete("/api/support-messages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSupportMessage(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Support message not found" });
+      }
+      
+      res.json({ message: "Support message deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting support message:", error);
+      res.status(500).json({ message: "Failed to delete support message" });
+    }
+  });
+
   // Forgot password endpoint
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {
