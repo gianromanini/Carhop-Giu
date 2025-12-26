@@ -4812,7 +4812,7 @@ export default function CarHopApp() {
                   <div className="relative">
                     <span>{tab === 'support' ? 'Chat' : tab}</span>
                     {tab === 'support' && supportMessagesData.filter((m: any) => !m.read).length > 0 && (
-                      <span className="absolute -top-3 -left-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-4 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         {supportMessagesData.filter((m: any) => !m.read).length > 9 ? '9+' : supportMessagesData.filter((m: any) => !m.read).length}
                       </span>
                     )}
