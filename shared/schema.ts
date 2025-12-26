@@ -250,6 +250,25 @@ export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true
 
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true, hostResponseAt: true });
 
+// Support Messages table for Chat Support
+export const supportMessages = pgTable("support_messages", {
+  id: serial("id").primaryKey(),
+  senderType: varchar("sender_type").notNull(), // 'client' | 'host'
+  senderId: varchar("sender_id").notNull(), // userId (UUID) for clients, hostId (numeric string) for hosts
+  senderName: varchar("sender_name").notNull(),
+  senderIdentifier: varchar("sender_identifier").notNull(), // email for clients, @username for hosts
+  text: text("text").notNull(),
+  images: text("images").array().default([]),
+  read: boolean("read").default(false),
+  adminReply: text("admin_reply"),
+  adminRepliedAt: timestamp("admin_replied_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true, adminRepliedAt: true });
+export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
+export type SupportMessage = typeof supportMessages.$inferSelect;
+
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;

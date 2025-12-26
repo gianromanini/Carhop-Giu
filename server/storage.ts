@@ -1,11 +1,12 @@
 import { 
-  vehicles, bookings, settings, hosts, users, ratings,
+  vehicles, bookings, settings, hosts, users, ratings, supportMessages,
   type Vehicle, type InsertVehicle,
   type Booking, type InsertBooking,
   type Settings, type InsertSettings,
   type User, type UpsertUser,
   type Host, type InsertHost,
-  type Rating, type InsertRating
+  type Rating, type InsertRating,
+  type SupportMessage, type InsertSupportMessage
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, ilike } from "drizzle-orm";
@@ -62,6 +63,15 @@ export interface IStorage {
   createRating(rating: InsertRating): Promise<Rating>;
   updateRating(id: number, rating: Partial<InsertRating>): Promise<Rating | undefined>;
   deleteRating(id: number): Promise<boolean>;
+
+  // Support Messages
+  getSupportMessages(): Promise<SupportMessage[]>;
+  getSupportMessagesByType(senderType: string): Promise<SupportMessage[]>;
+  getSupportMessage(id: number): Promise<SupportMessage | undefined>;
+  createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage>;
+  updateSupportMessage(id: number, message: Partial<InsertSupportMessage>): Promise<SupportMessage | undefined>;
+  deleteSupportMessage(id: number): Promise<boolean>;
+  getUnreadSupportMessagesCount(senderType: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -70,11 +80,13 @@ export class MemStorage implements IStorage {
   private settings: Map<string, Settings> = new Map();
   private users: Map<string, User> = new Map();
   private hosts: Map<number, Host> = new Map();
+  private supportMessagesMap: Map<number, SupportMessage> = new Map();
   private passwordResetTokens: Map<string, { email: string; expiresAt: number }> = new Map();
   private vehicleId = 1;
   private bookingId = 1;
   private settingsId = 1;
   private hostId = 1;
+  private supportMessageId = 1;
   private bookingCodeCounter = 1;
 
   // Password reset tokens
@@ -922,6 +934,58 @@ export class MemStorage implements IStorage {
   async deleteRating(id: number): Promise<boolean> {
     return this.ratingsMap.delete(id);
   }
+
+  // Support Messages (MemStorage)
+  async getSupportMessages(): Promise<SupportMessage[]> {
+    return Array.from(this.supportMessagesMap.values());
+  }
+
+  async getSupportMessagesByType(senderType: string): Promise<SupportMessage[]> {
+    return Array.from(this.supportMessagesMap.values()).filter(m => m.senderType === senderType);
+  }
+
+  async getSupportMessage(id: number): Promise<SupportMessage | undefined> {
+    return this.supportMessagesMap.get(id);
+  }
+
+  async createSupportMessage(messageData: InsertSupportMessage): Promise<SupportMessage> {
+    const id = this.supportMessageId++;
+    const newMessage: SupportMessage = {
+      id,
+      senderType: messageData.senderType,
+      senderId: messageData.senderId,
+      senderName: messageData.senderName,
+      senderIdentifier: messageData.senderIdentifier,
+      text: messageData.text,
+      images: messageData.images ?? [],
+      read: messageData.read ?? false,
+      adminReply: messageData.adminReply ?? null,
+      adminRepliedAt: null,
+      createdAt: new Date(),
+    };
+    this.supportMessagesMap.set(id, newMessage);
+    return newMessage;
+  }
+
+  async updateSupportMessage(id: number, messageData: Partial<InsertSupportMessage>): Promise<SupportMessage | undefined> {
+    const existing = this.supportMessagesMap.get(id);
+    if (!existing) return undefined;
+    const updated: SupportMessage = {
+      ...existing,
+      ...messageData,
+      adminRepliedAt: messageData.adminReply ? new Date() : existing.adminRepliedAt,
+    };
+    this.supportMessagesMap.set(id, updated);
+    return updated;
+  }
+
+  async deleteSupportMessage(id: number): Promise<boolean> {
+    return this.supportMessagesMap.delete(id);
+  }
+
+  async getUnreadSupportMessagesCount(senderType: string): Promise<number> {
+    return Array.from(this.supportMessagesMap.values()).filter(m => m.senderType === senderType && !m.read).length;
+  }
 }
 
 // Database Storage Implementation
@@ -1352,6 +1416,86 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting rating:", error);
       return false;
+    }
+  }
+
+  // Support Messages
+  async getSupportMessages(): Promise<SupportMessage[]> {
+    if (!this.initialized) return [];
+    try {
+      return await this.db.select().from(supportMessages);
+    } catch (error) {
+      console.error("Error getting support messages:", error);
+      return [];
+    }
+  }
+
+  async getSupportMessagesByType(senderType: string): Promise<SupportMessage[]> {
+    if (!this.initialized) return [];
+    try {
+      return await this.db.select().from(supportMessages).where(eq(supportMessages.senderType, senderType));
+    } catch (error) {
+      console.error("Error getting support messages by type:", error);
+      return [];
+    }
+  }
+
+  async getSupportMessage(id: number): Promise<SupportMessage | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const result = await this.db.select().from(supportMessages).where(eq(supportMessages.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting support message:", error);
+      return undefined;
+    }
+  }
+
+  async createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    try {
+      const result = await this.db.insert(supportMessages).values(message).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating support message:", error);
+      throw error;
+    }
+  }
+
+  async updateSupportMessage(id: number, messageData: Partial<InsertSupportMessage>): Promise<SupportMessage | undefined> {
+    if (!this.initialized) return undefined;
+    try {
+      const updateData: any = { ...messageData };
+      if (messageData.adminReply) {
+        updateData.adminRepliedAt = new Date();
+      }
+      const result = await this.db.update(supportMessages).set(updateData).where(eq(supportMessages.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating support message:", error);
+      return undefined;
+    }
+  }
+
+  async deleteSupportMessage(id: number): Promise<boolean> {
+    if (!this.initialized) return false;
+    try {
+      const result = await this.db.delete(supportMessages).where(eq(supportMessages.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting support message:", error);
+      return false;
+    }
+  }
+
+  async getUnreadSupportMessagesCount(senderType: string): Promise<number> {
+    if (!this.initialized) return 0;
+    try {
+      const messages = await this.db.select().from(supportMessages).where(eq(supportMessages.senderType, senderType));
+      return messages.filter((m: SupportMessage) => !m.read).length;
+    } catch (error) {
+      console.error("Error getting unread support messages count:", error);
+      return 0;
     }
   }
 
