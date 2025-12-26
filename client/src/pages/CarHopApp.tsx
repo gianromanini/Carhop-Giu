@@ -4947,57 +4947,138 @@ export default function CarHopApp() {
                   </div>
                 )}
 
-                {selectedTripForView && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
-                      <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-start">
-                        <div>
-                          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Trip Details</h2>
-                          <p className="text-sm text-zinc-500 mt-1">{selectedTripForView.bookingCode}</p>
+                {selectedTripForView && (() => {
+                  const vehicleForTrip = vehicles.find(v => v.id === selectedTripForView.vehicleId);
+                  return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                      <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-start">
+                          <div>
+                            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Trip Details</h2>
+                            <p className="text-sm text-zinc-500 mt-1">{selectedTripForView.bookingCode}</p>
+                          </div>
+                          <button onClick={() => setSelectedTripForView(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" data-testid="button-close-trip-modal"><X size={24}/></button>
                         </div>
-                        <button onClick={() => setSelectedTripForView(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" data-testid="button-close-trip-modal"><X size={24}/></button>
-                      </div>
-                      <div className="p-6 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Car</span><p className="text-sm font-medium text-zinc-900 dark:text-white">{selectedTripForView.carName}</p></div>
-                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Status</span><p className={`text-sm font-bold px-2 py-1 rounded w-fit ${selectedTripForView.status === 'Completed' ? 'bg-green-600 text-white' : selectedTripForView.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-zinc-500 text-white'}`}>{selectedTripForView.status}</p></div>
-                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Pickup</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.startDate} at {selectedTripForView.startTime}</p></div>
-                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Return</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.returnDate} at {selectedTripForView.returnTime}</p></div>
-                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Driver</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.name}</p></div>
-                          <div><span className="text-xs font-bold text-zinc-500 uppercase">Total</span><p className="text-sm font-bold text-green-600">${selectedTripForView.total.toFixed(2)}</p></div>
-                        </div>
-                        {selectedTripForView.status === 'Completed' && (() => {
-                          const tripRating = ratingsData?.find(r => r.bookingId === selectedTripForView.id);
-                          return (
-                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
-                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Ratings</h4>
-                              <div className="grid grid-cols-2 gap-4">
-                                {tripRating?.stars && (
-                                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                                    <span className="text-xs font-bold text-zinc-500 uppercase">Guest Rating</span>
-                                    <div className="flex items-center gap-1 mt-1">
-                                      {[1,2,3,4,5].map(star => (<span key={star} className={`text-lg ${star <= (tripRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-400'}`}>★</span>))}
-                                      <span className="text-sm font-bold ml-2 text-zinc-700 dark:text-zinc-300">{tripRating.stars}/5</span>
-                                    </div>
-                                  </div>
-                                )}
-                                {tripRating?.hostStarsToClient && (
-                                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                                    <span className="text-xs font-bold text-zinc-500 uppercase">Host Rating</span>
-                                    <div className="flex items-center gap-1 mt-1">
-                                      {[1,2,3,4,5].map(star => (<span key={star} className={`text-lg ${star <= (tripRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-400'}`}>★</span>))}
-                                      <span className="text-sm font-bold ml-2 text-zinc-700 dark:text-zinc-300">{tripRating.hostStarsToClient}/5</span>
-                                    </div>
-                                  </div>
+                        <div className="p-6 space-y-6">
+                          {/* Client & Car Info */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <div>
+                              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Client Info</h3>
+                              <div className="space-y-2">
+                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Name</span><p className="text-sm font-medium text-zinc-900 dark:text-white">{selectedTripForView.driver.name}</p></div>
+                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Email</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.email}</p></div>
+                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Phone</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.phone || 'N/A'}</p></div>
+                              </div>
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Vehicle Info</h3>
+                              <div className="space-y-2">
+                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Model</span><p className="text-sm font-medium text-zinc-900 dark:text-white">{selectedTripForView.carName}</p></div>
+                                {vehicleForTrip && (
+                                  <>
+                                    <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Category</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{vehicleForTrip.category}</p></div>
+                                    <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Price/Day</span><p className="text-sm font-bold text-green-600">${vehicleForTrip.price}/day</p></div>
+                                  </>
                                 )}
                               </div>
                             </div>
-                          );
-                        })()}
+                          </div>
+
+                          {/* Rental Dates & Status */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                              <span className="text-xs font-bold text-zinc-500 uppercase">Pickup</span>
+                              <p className="text-sm font-medium text-zinc-900 dark:text-white mt-1">{selectedTripForView.startDate}</p>
+                              <p className="text-xs text-zinc-600 dark:text-zinc-400">{selectedTripForView.startTime}</p>
+                            </div>
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                              <span className="text-xs font-bold text-zinc-500 uppercase">Return</span>
+                              <p className="text-sm font-medium text-zinc-900 dark:text-white mt-1">{selectedTripForView.returnDate}</p>
+                              <p className="text-xs text-zinc-600 dark:text-zinc-400">{selectedTripForView.returnTime}</p>
+                            </div>
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                              <span className="text-xs font-bold text-zinc-500 uppercase">Status</span>
+                              <p className={`text-sm font-bold mt-1 px-2 py-1 rounded w-fit ${selectedTripForView.status === 'Completed' ? 'bg-green-600 text-white' : selectedTripForView.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{selectedTripForView.status}</p>
+                            </div>
+                            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase">Total</span>
+                              <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">${selectedTripForView.total.toFixed(2)}</p>
+                            </div>
+                          </div>
+
+                          {/* Location */}
+                          <div>
+                            <span className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Location</span>
+                            <p className="text-sm text-zinc-700 dark:text-zinc-300 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">{formatAddressForDisplay(selectedTripForView.location)}</p>
+                          </div>
+
+                          {/* Rental Details */}
+                          {selectedTripForView.details && (
+                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Rental Details</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Daily Rate</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.rate || 0).toFixed(2)}</p></div>
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Protection</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.protection || 0).toFixed(2)}</p></div>
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Extras</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.extras || 0).toFixed(2)}</p></div>
+                                {selectedTripForView.details.fees > 0 && <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Fees</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.fees || 0).toFixed(2)}</p></div>}
+                                {selectedTripForView.details.tax > 0 && <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Tax</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.tax || 0).toFixed(2)}</p></div>}
+                                {selectedTripForView.details.discount > 0 && <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"><span className="text-xs text-green-700 dark:text-green-400">Discount</span><p className="text-sm font-bold text-green-600 dark:text-green-400 mt-1">-${(selectedTripForView.details.discount || 0).toFixed(2)}</p></div>}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Ratings */}
+                          {selectedTripForView.status === 'Completed' && (() => {
+                            const tripRating = ratingsData?.find(r => r.bookingId === selectedTripForView.id);
+                            return (
+                              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                                <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Ratings</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  {tripRating?.stars ? (
+                                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                      <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400 uppercase">Guest Rating of Host</span>
+                                      <div className="flex items-center gap-2 mt-2">
+                                        {[1,2,3,4,5].map(star => (<span key={star} className={`text-xl ${star <= (tripRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-400'}`}>★</span>))}
+                                        <span className="text-sm font-bold text-yellow-700 dark:text-yellow-400 ml-2">{tripRating.stars}/5</span>
+                                      </div>
+                                      {tripRating.comment && <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-2 italic">"{tripRating.comment}"</p>}
+                                    </div>
+                                  ) : (
+                                    <div className="p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
+                                      Guest has not rated this host yet
+                                    </div>
+                                  )}
+                                  {tripRating?.hostStarsToClient ? (
+                                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase">Host Rating of Guest</span>
+                                      <div className="flex items-center gap-2 mt-2">
+                                        {[1,2,3,4,5].map(star => (<span key={star} className={`text-xl ${star <= (tripRating.hostStarsToClient || 0) ? 'text-blue-400' : 'text-zinc-400'}`}>★</span>))}
+                                        <span className="text-sm font-bold text-blue-700 dark:text-blue-400 ml-2">{tripRating.hostStarsToClient}/5</span>
+                                      </div>
+                                      {tripRating.hostCommentToClient && <p className="text-xs text-blue-700 dark:text-blue-400 mt-2 italic">"{tripRating.hostCommentToClient}"</p>}
+                                    </div>
+                                  ) : (
+                                    <div className="p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
+                                      Host has not rated this guest yet
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Driver License Info */}
+                          {selectedTripForView.driver.licenseNumber && (
+                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Driver License</h4>
+                              <p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.licenseNumber}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 </>
               )}
 
