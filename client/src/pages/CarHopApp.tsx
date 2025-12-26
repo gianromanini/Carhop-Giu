@@ -7015,7 +7015,16 @@ export default function CarHopApp() {
                           return (
                             <div key={senderId} className="space-y-2">
                               <button
-                                onClick={() => setExpandedSupportGroup(isExpanded ? null : senderId)}
+                                onClick={async () => {
+                                  if (!isExpanded && hasUnread) {
+                                    const unreadMsgs = messages.filter((m: any) => !m.read);
+                                    for (const msg of unreadMsgs) {
+                                      await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+                                    }
+                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                  }
+                                  setExpandedSupportGroup(isExpanded ? null : senderId);
+                                }}
                                 className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md ${
                                   hasUnread 
                                     ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
