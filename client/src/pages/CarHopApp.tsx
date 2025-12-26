@@ -6806,35 +6806,43 @@ export default function CarHopApp() {
                       )}
                     </div>
 
+                    {/* Client Message Preview - Mobile */}
+                    <div className="md:hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-blue-600">Mensagem Cliente</span>
+                      </div>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap line-clamp-3">{selectedSupportMessage.text}</p>
+                    </div>
+
                     {/* Admin Reply Section - Show existing replies and allow adding more */}
                     <div className="space-y-4">
                       {selectedSupportMessage.adminReply && (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 md:p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <Reply size={16} className="text-green-600" />
-                            <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
+                            <span className="text-xs md:text-sm font-bold text-green-600">Resposta do Admin</span>
                             {selectedSupportMessage.adminRepliedAt && (
                               <span className="text-xs text-zinc-500">
                                 {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                               </span>
                             )}
                           </div>
-                          <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
+                          <p className="text-xs md:text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
                         </div>
                       )}
                       
                       {/* Always show textarea for additional messages */}
                       <div className="space-y-3">
-                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
+                        <label className="block text-xs md:text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
                         <textarea
                           value={supportReplyText}
                           onChange={(e) => setSupportReplyText(e.target.value)}
                           placeholder={selectedSupportMessage.adminReply ? 'Adicione uma mensagem de acompanhamento...' : 'Digite sua resposta...'}
-                          className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none"
-                          rows={4}
+                          className="w-full p-2 md:p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs md:text-sm text-zinc-900 dark:text-white resize-none"
+                          rows={3}
                           data-testid="textarea-support-reply"
                         />
-                        <div className="flex gap-3">
+                        <div className="flex flex-col md:flex-row gap-2 md:gap-3">
                           <button
                             onClick={async () => {
                               if (!supportReplyText.trim()) return;
@@ -6854,10 +6862,10 @@ export default function CarHopApp() {
                                 toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
                               }
                             }}
-                            className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 py-2 md:py-3 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                             data-testid="button-send-support-reply"
                           >
-                            <Send size={18} /> {selectedSupportMessage.adminReply ? 'Enviar Mensagem' : 'Enviar Resposta'}
+                            <Send size={16} /> {selectedSupportMessage.adminReply ? 'Enviar' : 'Responder'}
                           </button>
                           {!selectedSupportMessage.read && (
                             <button
@@ -6870,10 +6878,10 @@ export default function CarHopApp() {
                                   toast({ description: 'Erro ao marcar como lido', variant: 'destructive' });
                                 }
                               }}
-                              className="px-4 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
+                              className="px-3 md:px-4 py-2 md:py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
                               data-testid="button-mark-read"
                             >
-                              <Check size={18} />
+                              <Check size={16} />
                             </button>
                           )}
                           <button
@@ -6889,10 +6897,10 @@ export default function CarHopApp() {
                                 }
                               }
                             }}
-                            className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+                            className="px-3 md:px-4 py-2 md:py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
                             data-testid="button-delete-support-message"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
