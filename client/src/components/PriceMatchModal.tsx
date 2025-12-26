@@ -97,7 +97,7 @@ export function PriceMatchModal({ trigger, vehicleName, currentPrice }: PriceMat
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Price Match Guarantee
+                Host and Rent For The Best Prices
               </DialogTitle>
               <DialogDescription>
                 Found a lower price? We'll match it or beat it! Submit the competitor's offer 

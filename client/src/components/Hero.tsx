@@ -25,7 +25,7 @@ export function Hero({ onSearch }: HeroProps) {
               className="bg-white/20 text-white border-white/30 backdrop-blur-sm"
             >
               <Shield className="h-3 w-3 mr-1" />
-              Price Match Guarantee
+              Host and Rent For The Best Prices
             </Badge>
             
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
