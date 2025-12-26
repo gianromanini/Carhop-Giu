@@ -2265,14 +2265,16 @@ export default function CarHopApp() {
               }
               setClientChatSending(true);
               try {
-                await apiRequest('POST', '/api/support-messages', {
+                const messagePayload = {
                   senderType: 'client',
                   senderId: clientUser?.email || clientChatForm.email,
                   senderName: clientChatForm.name,
                   senderIdentifier: clientChatForm.email,
                   text: `[${clientChatForm.subject}] ${clientChatForm.message}\n\nTelefone: ${clientChatForm.phone || 'Não informado'}`,
                   images: clientChatImages
-                });
+                };
+                console.log('📨 Enviando mensagem:', messagePayload);
+                await apiRequest('POST', '/api/support-messages', messagePayload);
                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                 toast({ description: 'Mensagem enviada com sucesso! Entraremos em contato em breve.' });
                 setShowClientChatModal(false);
