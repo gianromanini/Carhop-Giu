@@ -536,6 +536,7 @@ export default function CarHopApp() {
   const [adminTab, setAdminTab] = useState('fleet');
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
+  const [expandedSupportGroup, setExpandedSupportGroup] = useState<string | null>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
   const [showClientChatModal, setShowClientChatModal] = useState(false);
   const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
@@ -6804,15 +6805,15 @@ export default function CarHopApp() {
                 {/* Sub-tabs for Clients and Hosts */}
                 <div className="flex gap-2 mb-4">
                   <button
-                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); }}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'client' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'client' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-clients"
                   >
                     <Users size={16} className="inline mr-2" />
                     Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})
                   </button>
                   <button
-                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); }}
+                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
                     className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-hosts"
                   >
@@ -6824,7 +6825,7 @@ export default function CarHopApp() {
                 {/* Messages List */}
                 <Card className="p-4">
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-                    <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-blue-500' : 'text-orange-500'} />
+                    <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-green-500' : 'text-orange-500'} />
                     {supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}
                   </h3>
                   
@@ -6835,172 +6836,150 @@ export default function CarHopApp() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {supportMessagesData
-                        .filter((m: any) => m.senderType === supportSubTab)
-                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                        .map((message: any) => (
-                          <div
-                            key={message.id}
-                            onClick={() => setSelectedSupportMessage(message)}
-                            className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-                              !message.read 
-                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' 
-                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
-                            } ${selectedSupportMessage?.id === message.id ? 'ring-2 ring-green-500' : ''}`}
-                            data-testid={`card-support-message-${message.id}`}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2">
-                                {!message.read && (
-                                  <span className="w-2 h-2 bg-blue-500 rounded-full" />
-                                )}
-                                <span className="font-bold text-zinc-900 dark:text-white">{message.senderName}</span>
-                                <span className="text-xs text-zinc-500">{message.senderIdentifier}</span>
-                              </div>
-                              <span className="text-xs text-zinc-500">
-                                {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <p className="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2">{message.text}</p>
-                            {message.adminReply && (
-                              <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                                <div className="flex items-center gap-1 text-xs text-green-600">
-                                  <Reply size={12} />
-                                  <span>Respondido</span>
+                      {(() => {
+                        const grouped = {} as any;
+                        supportMessagesData
+                          .filter((m: any) => m.senderType === supportSubTab)
+                          .forEach((msg: any) => {
+                            const key = msg.senderIdentifier || msg.senderId;
+                            if (!grouped[key]) grouped[key] = [];
+                            grouped[key].push(msg);
+                          });
+                        
+                        return Object.entries(grouped).map(([senderId, messages]: any) => {
+                          const firstMsg = messages.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+                          const senderName = firstMsg.senderName;
+                          const isExpanded = expandedSupportGroup === senderId;
+                          const hasUnread = messages.some((m: any) => !m.read);
+                          
+                          const messageText = firstMsg.text || '';
+                          const subjectMatch = messageText.match(/\[(.*?)\]/);
+                          const subject = subjectMatch ? subjectMatch[1] : '';
+                          const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
+                          const phone = phoneMatch ? phoneMatch[1] : '';
+                          
+                          return (
+                            <div key={senderId} className="space-y-2">
+                              <button
+                                onClick={() => setExpandedSupportGroup(isExpanded ? null : senderId)}
+                                className={`w-full p-4 rounded-lg border transition-all text-left hover:shadow-md ${
+                                  hasUnread 
+                                    ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
+                                    : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
+                                } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
+                                data-testid={`button-support-group-${senderId}`}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <ChevronDown size={18} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        {hasUnread && <span className={`w-2 h-2 rounded-full ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
+                                        <span className={`font-bold ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                                          {senderName}
+                                        </span>
+                                      </div>
+                                      {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{subject}</p>}
+                                      <p className="text-xs text-zinc-500 mt-0.5">{firstMsg.senderIdentifier}</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-zinc-500 ml-2">
+                                    {messages.length} msg
+                                  </span>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                              </button>
+                              
+                              {isExpanded && (
+                                <div className="ml-4 space-y-2 border-l-2 border-zinc-300 dark:border-zinc-700 pl-4">
+                                  {messages.map((message: any, idx: number) => {
+                                    const isFirstMsg = idx === 0;
+                                    return (
+                                      <div key={message.id} className="space-y-2">
+                                        <div className={`p-3 rounded-lg ${supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}`}>
+                                          <div className="flex justify-between mb-2">
+                                            <span className={`text-xs font-bold ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                                              {supportSubTab === 'client' ? 'Cliente' : 'Host'}
+                                            </span>
+                                            <span className="text-xs text-zinc-500">
+                                              {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                          </div>
+                                          
+                                          {isFirstMsg && subject && (
+                                            <div className="mb-2 pb-2 border-b border-zinc-300 dark:border-zinc-600">
+                                              <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Assunto: {subject}</p>
+                                              <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderIdentifier}</p>
+                                              {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
+                                            </div>
+                                          )}
+                                          
+                                          <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">
+                                            {message.text.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim()}
+                                          </p>
+                                          
+                                          {message.images && message.images.length > 0 && (
+                                            <div className="grid grid-cols-3 gap-2 mt-2">
+                                              {message.images.map((img: string, i: number) => (
+                                                <img key={i} src={img} alt="" className="rounded h-12 w-full object-cover cursor-pointer" onClick={() => setSelectedImage(img)} />
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        {message.adminReply && (
+                                          <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-700">
+                                            <div className="flex items-center gap-1 mb-1">
+                                              <Reply size={12} className="text-blue-600" />
+                                              <span className="text-xs font-bold text-blue-600">Admin</span>
+                                            </div>
+                                            <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">{message.adminReply}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                  
+                                  <div className="pt-3 border-t border-zinc-300 dark:border-zinc-700">
+                                    <textarea
+                                      value={supportReplyText}
+                                      onChange={(e) => setSupportReplyText(e.target.value)}
+                                      placeholder="Responder a este grupo..."
+                                      className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm resize-none"
+                                      rows={2}
+                                      data-testid="textarea-support-group-reply"
+                                    />
+                                    <button
+                                      onClick={async () => {
+                                        if (!supportReplyText.trim()) return;
+                                        try {
+                                          const lastMsg = messages[messages.length - 1];
+                                          const newReply = lastMsg.adminReply 
+                                            ? `${lastMsg.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${supportReplyText}`
+                                            : supportReplyText;
+                                          
+                                          await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: true });
+                                          queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                          setSupportReplyText('');
+                                          toast({ description: 'Mensagem enviada!' });
+                                        } catch (error) {
+                                          toast({ description: 'Erro ao enviar', variant: 'destructive' });
+                                        }
+                                      }}
+                                      className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
+                                      data-testid="button-send-group-reply"
+                                    >
+                                      <Send size={14} /> Enviar
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                 </Card>
-
-                {/* Selected Message Detail */}
-                {selectedSupportMessage && (
-                  <Card className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{selectedSupportMessage.senderName}</h3>
-                        <p className="text-sm text-zinc-500">{selectedSupportMessage.senderIdentifier}</p>
-                        <p className="text-xs text-zinc-400 mt-1">
-                          {new Date(selectedSupportMessage.createdAt).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setSelectedSupportMessage(null)}
-                        className="text-zinc-400 hover:text-zinc-600"
-                        data-testid="button-close-support-detail"
-                      >
-                        <X size={24} />
-                      </button>
-                    </div>
-
-                    {/* Message Content */}
-                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 mb-4">
-                      <p className="text-zinc-900 dark:text-white whitespace-pre-wrap">{selectedSupportMessage.text}</p>
-                      {selectedSupportMessage.images && selectedSupportMessage.images.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 mt-4">
-                          {selectedSupportMessage.images.map((img: string, idx: number) => (
-                            <img key={idx} src={img} alt={`Attachment ${idx + 1}`} className="rounded-lg cursor-pointer hover:opacity-80" onClick={() => setSelectedImage(img)} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Admin Reply Section - Show existing replies and allow adding more */}
-                    <div className="space-y-4">
-                      {selectedSupportMessage.adminReply && (
-                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Reply size={16} className="text-green-600" />
-                            <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
-                            {selectedSupportMessage.adminRepliedAt && (
-                              <span className="text-xs text-zinc-500">
-                                {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
-                        </div>
-                      )}
-                      
-                      {/* Always show textarea for additional messages */}
-                      <div className="space-y-3">
-                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">{selectedSupportMessage.adminReply ? 'Adicionar Mensagem' : 'Responder'}</label>
-                        <textarea
-                          value={supportReplyText}
-                          onChange={(e) => setSupportReplyText(e.target.value)}
-                          placeholder={selectedSupportMessage.adminReply ? 'Adicione uma mensagem de acompanhamento...' : 'Digite sua resposta...'}
-                          className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none"
-                          rows={4}
-                          data-testid="textarea-support-reply"
-                        />
-                        <div className="flex gap-3">
-                          <button
-                            onClick={async () => {
-                              if (!supportReplyText.trim()) return;
-                              try {
-                                const newReply = selectedSupportMessage.adminReply 
-                                  ? `${selectedSupportMessage.adminReply}\n\n---\n\n${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}\n${supportReplyText}`
-                                  : supportReplyText;
-                                
-                                await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, {
-                                  adminReply: newReply,
-                                  read: true
-                                });
-                                queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                setSupportReplyText('');
-                                toast({ description: 'Mensagem enviada com sucesso!' });
-                              } catch (error) {
-                                toast({ description: 'Erro ao enviar mensagem', variant: 'destructive' });
-                              }
-                            }}
-                            className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-                            data-testid="button-send-support-reply"
-                          >
-                            <Send size={18} /> {selectedSupportMessage.adminReply ? 'Enviar Mensagem' : 'Enviar Resposta'}
-                          </button>
-                          {!selectedSupportMessage.read && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, { read: true });
-                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                  toast({ description: 'Marcado como lido' });
-                                } catch (error) {
-                                  toast({ description: 'Erro ao marcar como lido', variant: 'destructive' });
-                                }
-                              }}
-                              className="px-4 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
-                              data-testid="button-mark-read"
-                            >
-                              <Check size={18} />
-                            </button>
-                          )}
-                          <button
-                            onClick={async () => {
-                              if (confirm('Tem certeza que deseja excluir esta mensagem?')) {
-                                try {
-                                  await apiRequest('DELETE', `/api/support-messages/${selectedSupportMessage.id}`);
-                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                  setSelectedSupportMessage(null);
-                                  toast({ description: 'Mensagem excluída' });
-                                } catch (error) {
-                                  toast({ description: 'Erro ao excluir mensagem', variant: 'destructive' });
-                                }
-                              }
-                            }}
-                            className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
-                            data-testid="button-delete-support-message"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                )}
               </div>
             )}
 
