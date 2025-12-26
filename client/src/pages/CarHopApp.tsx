@@ -84,77 +84,110 @@ const STATE_ABBREVIATIONS: { [key: string]: string } = {
 const formatAddressForDisplay = (fullAddress: string): string => {
   if (!fullAddress) return fullAddress;
   
-  // Parse address from Nominatim format
-  // Example: "Walmart, 150, Barnum Avenue Cutoff, Stratford, Greater Bridgeport Planning Region, Connecticut, 06614, United States"
-  // Want: "Walmart, 150 Barnum Avenue Cutoff, Stratford - CT, 06614"
-  
   const parts = fullAddress.split(',').map(p => p.trim());
-  if (parts.length < 4) return fullAddress;
+  if (parts.length < 3) return fullAddress;
   
-  // Find components
-  let placeName = '';
-  let number = '';
-  let streetName = '';
-  let city = '';
-  let state = '';
+  // First, find ZIP code and STATE from the end
   let zip = '';
-  let startIdx = 0;
+  let state = '';
+  let stateIndex = -1;
+  let zipIndex = -1;
   
-  // Check if first part is a place name (non-numeric) - like Walmart, Target, etc.
-  if (!/^\d+$/.test(parts[0]) && !parts[0].match(/^(\d+)\s+/)) {
-    placeName = parts[0];
-    startIdx = 1;
-  }
-  
-  // Parse from startIdx
-  const remainingParts = parts.slice(startIdx);
-  
-  // First remaining part is usually the number
-  if (remainingParts.length > 0) {
-    if (/^\d+$/.test(remainingParts[0])) {
-      number = remainingParts[0];
-      streetName = remainingParts[1] || '';
-      city = remainingParts[2] || '';
-    } else {
-      // Number might be combined with street
-      const streetMatch = remainingParts[0].match(/^(\d+)\s+(.+)$/);
-      if (streetMatch) {
-        number = streetMatch[1];
-        streetName = streetMatch[2];
-        city = remainingParts[1] || '';
-      } else if (placeName === '') {
-        // No place name and couldn't parse, return original
-        return fullAddress;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+    if (!zip) {
+      const zipMatch = part.match(/(\d{5})/);
+      if (zipMatch) {
+        zip = zipMatch[1];
+        zipIndex = i;
+      }
+    }
+    if (!state && i !== zipIndex) {
+      if (STATE_ABBREVIATIONS[part]) {
+        state = STATE_ABBREVIATIONS[part];
+        stateIndex = i;
+      } else if (/^[A-Z]{2}$/.test(part)) {
+        state = part;
+        stateIndex = i;
       }
     }
   }
   
-  // Find state and zip from remaining parts (start after city)
-  for (let i = startIdx + 3; i < parts.length; i++) {
-    const part = parts[i];
-    
-    // Check if it's a state name
-    if (STATE_ABBREVIATIONS[part]) {
-      state = STATE_ABBREVIATIONS[part];
-    }
-    // Check if already abbreviated state
-    if (/^[A-Z]{2}$/.test(part)) {
-      state = part;
-    }
-    // Check for zip code
-    const zipMatch = part.match(/(\d{5})/);
-    if (zipMatch) {
-      zip = zipMatch[1];
+  if (!zip || !state) return fullAddress;
+  
+  // Now work backwards from state to find city
+  let city = '';
+  let cityIndex = -1;
+  if (stateIndex > 0) {
+    // Go backwards from state, skip regional areas, find city
+    for (let i = stateIndex - 1; i >= 0; i--) {
+      const part = parts[i];
+      if (part && !part.match(/Region|County|Area|District/i)) {
+        city = part;
+        cityIndex = i;
+        break;
+      }
     }
   }
   
-  // Build formatted address: PlaceName, Street Number Street, City - State, Zip
-  if (placeName && number && streetName && city && state && zip) {
+  if (!city) return fullAddress;
+  
+  // Get everything before city as street/number/place
+  let streetParts = parts.slice(0, cityIndex).join(', ');
+  
+  // Try to extract place name and street number
+  let placeName = '';
+  let number = '';
+  let streetName = '';
+  
+  const firstParts = parts.slice(0, cityIndex);
+  if (firstParts.length > 0) {
+    // First part might be place name if non-numeric
+    let startIdx = 0;
+    if (!/^\d+$/.test(firstParts[0]) && !firstParts[0].match(/^(\d+)\s+/)) {
+      placeName = firstParts[0];
+      startIdx = 1;
+    }
+    
+    // Next parts: look for number and street
+    const remaining = firstParts.slice(startIdx);
+    if (remaining.length > 0) {
+      if (/^\d+$/.test(remaining[0])) {
+        // Standalone number
+        number = remaining[0];
+        if (remaining.length > 1) {
+          streetName = remaining.slice(1).join(' ');
+        }
+      } else {
+        // Try to extract number from first element
+        const match = remaining[0].match(/^(\d+)\s+(.+)$/);
+        if (match) {
+          number = match[1];
+          const rest = [match[2], ...remaining.slice(1)];
+          streetName = rest.join(' ');
+        } else {
+          // No number found, use everything as street
+          streetName = remaining.join(' ');
+        }
+      }
+    }
+  }
+  
+  // Build formatted address
+  if (placeName && number && streetName) {
     return `${placeName}, ${number} ${streetName}, ${city} - ${state}, ${zip}`;
   }
-  
-  if (number && streetName && city && state && zip) {
+  if (placeName && streetName) {
+    return `${placeName}, ${streetName}, ${city} - ${state}, ${zip}`;
+  }
+  if (number && streetName) {
     return `${number} ${streetName}, ${city} - ${state}, ${zip}`;
+  }
+  if (streetName) {
+    return `${streetName}, ${city} - ${state}, ${zip}`;
+  }
+  if (city && state && zip) {
+    return `${city} - ${state}, ${zip}`;
   }
   
   return fullAddress;
