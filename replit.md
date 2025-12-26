@@ -190,6 +190,16 @@ Preferred communication style: Simple, everyday language.
     - Message detail view with reply functionality
     - Mark as read and delete options
     - Unread count badge (red, up to 9+) on the Chat tab icon
+21. **Client Chat Support Modal (Dec 26):**
+    - Floating chat modal accessible from main page header (MessageCircle icon)
+    - Auto-fills name, email, phone for logged-in users
+    - Guest users see form fields for name, email, phone
+    - Subject dropdown: Dúvidas, Open a Claim, Report an Issue, Talk with Support
+    - Message textarea with required validation
+    - Image attachment upload (multiple files, base64 encoded)
+    - File validation: max 5MB per image, images only
+    - Success/error toast notifications
+    - Integrates with existing /api/support-messages endpoint
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
