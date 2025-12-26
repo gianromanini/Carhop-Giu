@@ -4797,12 +4797,7 @@ export default function CarHopApp() {
               {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'support'].map(tab => {
                 const unreadSupportCount = tab === 'support' ? supportMessagesData.filter((m: any) => !m.read).length : 0;
                 return (
-                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-1.5 sm:px-2 md:px-3 py-2 rounded-lg font-bold text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
-                  {tab === 'support' && unreadSupportCount > 0 && (
-                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                      {unreadSupportCount > 9 ? '9+' : unreadSupportCount}
-                    </span>
-                  )}
+                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-3 sm:px-6 py-3 rounded-lg font-bold text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
                   <div className="hidden md:block">
                     {tab === 'fleet' && <Car size={18} />}
                     {tab === 'bookings' && <Briefcase size={18} />}
