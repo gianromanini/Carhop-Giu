@@ -2176,7 +2176,7 @@ export default function CarHopApp() {
             <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); setClientChatTab('new'); setClientChatReply(''); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
             
             <h2 className="text-xl font-bold mb-4 text-center text-zinc-900 dark:text-white flex items-center justify-center gap-2">
-              <MessageCircle className="text-green-500" size={24}/> Fale Conosco
+              <MessageCircle className="text-green-500" size={24}/> Contact Us
             </h2>
             
             {hasMessages && (
@@ -2186,14 +2186,14 @@ export default function CarHopApp() {
                   className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
                   data-testid="button-chat-history"
                 >
-                  Conversas
+                  Conversations
                 </button>
                 <button
                   onClick={() => setClientChatTab('new')}
                   className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'new' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
                   data-testid="button-chat-new"
                 >
-                  Novo Chat
+                  New Chat
                 </button>
               </div>
             )}
@@ -2251,7 +2251,7 @@ export default function CarHopApp() {
                   if (deletingChatGroup === groupKey) {
                     return (
                       <div key={groupKey} className="border border-red-300 dark:border-red-700 rounded-lg overflow-hidden bg-red-50 dark:bg-red-900/20 p-3">
-                        <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Deseja deletar esta conversa?</p>
+                        <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this conversation?</p>
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
@@ -2263,7 +2263,7 @@ export default function CarHopApp() {
                             className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
                             data-testid={`button-cancel-delete-${groupKey}`}
                           >
-                            Cancelar
+                            Cancel
                           </button>
                           <button
                             onClick={() => {
@@ -2275,12 +2275,12 @@ export default function CarHopApp() {
                                 apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting message:', err));
                               });
                               queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                              toast({ description: 'Conversa deletada!' });
+                              toast({ description: 'Conversation deleted!' });
                             }}
                             className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
                             data-testid={`button-confirm-delete-${groupKey}`}
                           >
-                            Deletar
+                            Delete
                           </button>
                         </div>
                       </div>
@@ -2354,7 +2354,7 @@ export default function CarHopApp() {
                             <textarea
                               value={clientChatReply}
                               onChange={(e) => setClientChatReply(e.target.value)}
-                              placeholder="Responder a este assunto..."
+                              placeholder="Reply to this subject..."
                               className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm resize-none"
                               rows={2}
                             />
@@ -2365,21 +2365,21 @@ export default function CarHopApp() {
                                   await apiRequest('POST', '/api/support-messages', {
                                     senderType: 'client',
                                     senderId: clientUser?.email || userEmail,
-                                    senderName: clientUser?.name || 'Cliente',
+                                    senderName: clientUser?.name || 'Client',
                                     senderIdentifier: userEmail,
                                     text: `[${subject}] ${clientChatReply}`,
                                     images: []
                                   });
                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                   setClientChatReply('');
-                                  toast({ description: 'Resposta enviada!' });
+                                  toast({ description: 'Reply sent!' });
                                 } catch (error) {
-                                  toast({ description: 'Erro ao enviar resposta', variant: 'destructive' });
+                                  toast({ description: 'Error sending reply', variant: 'destructive' });
                                 }
                               }}
                               className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
                             >
-                              <Send size={14} /> Enviar
+                              <Send size={14} /> Send
                             </button>
                           </div>
                         </div>
@@ -2405,18 +2405,18 @@ export default function CarHopApp() {
                   senderId: clientUser?.email || clientChatForm.email,
                   senderName: clientChatForm.name,
                   senderIdentifier: clientChatForm.email,
-                  text: `[${clientChatForm.subject}] ${clientChatForm.message}\n\nTelefone: ${clientChatForm.phone || 'Não informado'}`,
+                  text: `[${clientChatForm.subject}] ${clientChatForm.message}\n\nPhone: ${clientChatForm.phone || 'Not provided'}`,
                   images: clientChatImages
                 };
                 console.log('📨 Enviando mensagem:', messagePayload);
                 await apiRequest('POST', '/api/support-messages', messagePayload);
                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                toast({ description: 'Mensagem enviada com sucesso! Entraremos em contato em breve.' });
+                toast({ description: 'Message sent successfully! We will contact you soon.' });
                 setShowClientChatModal(false);
                 setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
                 setClientChatImages([]);
               } catch (error) {
-                toast({ description: 'Erro ao enviar mensagem. Tente novamente.', variant: 'destructive' });
+                toast({ description: 'Error sending message. Please try again.', variant: 'destructive' });
               } finally {
                 setClientChatSending(false);
               }
@@ -2424,12 +2424,12 @@ export default function CarHopApp() {
               {!clientUser && (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Nome *</label>
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Name *</label>
                     <input
                       type="text"
                       value={clientChatForm.name}
                       onChange={(e) => setClientChatForm(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Seu nome completo"
+                      placeholder="Your full name"
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                       required
                       data-testid="input-chat-name"
@@ -2441,14 +2441,14 @@ export default function CarHopApp() {
                       type="email"
                       value={clientChatForm.email}
                       onChange={(e) => setClientChatForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="seu@email.com"
+                      placeholder="your@email.com"
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                       required
                       data-testid="input-chat-email"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Telefone</label>
+                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Phone</label>
                     <input
                       type="tel"
                       value={clientChatForm.phone}
@@ -2472,14 +2472,14 @@ export default function CarHopApp() {
               )}
               
               <div>
-                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Assunto *</label>
+                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Subject *</label>
                 <select
                   value={clientChatForm.subject}
                   onChange={(e) => setClientChatForm(prev => ({ ...prev, subject: e.target.value }))}
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                   data-testid="select-chat-subject"
                 >
-                  <option value="Duvidas">Dúvidas</option>
+                  <option value="Duvidas">Questions</option>
                   <option value="Open a Claim">Open a Claim</option>
                   <option value="Report an Issue">Report an Issue</option>
                   <option value="Talk with Support">Talk with Support</option>
@@ -2487,11 +2487,11 @@ export default function CarHopApp() {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Mensagem *</label>
+                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Message *</label>
                 <textarea
                   value={clientChatForm.message}
                   onChange={(e) => setClientChatForm(prev => ({ ...prev, message: e.target.value }))}
-                  placeholder="Digite sua mensagem aqui..."
+                  placeholder="Type your message here..."
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm resize-none"
                   rows={4}
                   required
@@ -2500,18 +2500,18 @@ export default function CarHopApp() {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Anexos (opcional)</label>
+                <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Attachments (optional)</label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {clientChatImages.map((img, idx) => (
                     <div key={idx} className="relative w-16 h-16">
-                      <img src={img} alt={`Anexo ${idx + 1}`} className="w-full h-full object-cover rounded-lg border border-zinc-300 dark:border-zinc-700"/>
+                      <img src={img} alt={`Attachment ${idx + 1}`} className="w-full h-full object-cover rounded-lg border border-zinc-300 dark:border-zinc-700"/>
                       <button type="button" onClick={() => setClientChatImages(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"><X size={12}/></button>
                     </div>
                   ))}
                 </div>
                 <label className="flex items-center justify-center gap-2 w-full px-3 py-2 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg cursor-pointer hover:border-green-500 transition-colors">
                   <Upload size={18} className="text-zinc-500"/>
-                  <span className="text-sm text-zinc-500">Adicionar imagem</span>
+                  <span className="text-sm text-zinc-500">Add Image</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -2522,11 +2522,11 @@ export default function CarHopApp() {
                       if (files) {
                         Array.from(files).forEach(file => {
                           if (file.size > 5 * 1024 * 1024) {
-                            toast({ description: 'Arquivo muito grande. Máximo 5MB por imagem.', variant: 'destructive' });
+                            toast({ description: 'File too large. Maximum 5MB per image.', variant: 'destructive' });
                             return;
                           }
                           if (!file.type.startsWith('image/')) {
-                            toast({ description: 'Apenas imagens são permitidas.', variant: 'destructive' });
+                            toast({ description: 'Only images are allowed.', variant: 'destructive' });
                             return;
                           }
                           const reader = new FileReader();
@@ -2536,7 +2536,7 @@ export default function CarHopApp() {
                             }
                           };
                           reader.onerror = () => {
-                            toast({ description: 'Erro ao carregar imagem.', variant: 'destructive' });
+                            toast({ description: 'Error loading image.', variant: 'destructive' });
                           };
                           reader.readAsDataURL(file);
                         });
@@ -2548,7 +2548,7 @@ export default function CarHopApp() {
               </div>
               
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3" disabled={clientChatSending} data-testid="button-send-chat">
-                {clientChatSending ? <><Loader size={18} className="animate-spin"/> Enviando...</> : <><Send size={18}/> Enviar Mensagem</>}
+                {clientChatSending ? <><Loader size={18} className="animate-spin"/> Sending...</> : <><Send size={18}/> Send Message</>}
               </Button>
             </form>
             )}
@@ -6980,7 +6980,7 @@ export default function CarHopApp() {
                     data-testid="button-support-clients"
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
-                    <span>Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})</span>
+                    <span>Clients ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})</span>
                   </button>
                   <button
                     onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
@@ -6996,14 +6996,14 @@ export default function CarHopApp() {
                 <Card className="p-2 sm:p-4">
                   <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
                     <MessageSquare size={18} className={`${supportSubTab === 'client' ? 'text-green-500' : 'text-orange-500'}`} />
-                    <span className="hidden sm:inline">{supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}</span>
-                    <span className="sm:hidden text-xs">{supportSubTab === 'client' ? 'Clientes' : 'Hosts'}</span>
+                    <span className="hidden sm:inline">{supportSubTab === 'client' ? 'Client Messages' : 'Host Messages'}</span>
+                    <span className="sm:hidden text-xs">{supportSubTab === 'client' ? 'Clients' : 'Hosts'}</span>
                   </h3>
                   
                   {supportMessagesData.filter((m: any) => m.senderType === supportSubTab).length === 0 ? (
                     <div className="text-center py-8 text-zinc-500">
                       <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma mensagem de {supportSubTab === 'client' ? 'clientes' : 'hosts'} ainda</p>
+                      <p>No messages from {supportSubTab === 'client' ? 'clients' : 'hosts'} yet</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -7157,7 +7157,7 @@ export default function CarHopApp() {
                                                     setEditingSupportMessageText(message.adminReply);
                                                   }}
                                                   className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:text-blue-700"
-                                                  title="Editar mensagem"
+                                                  title="Edit message"
                                                   data-testid={`button-edit-admin-reply-${message.id}`}
                                                 >
                                                   <Edit size={14} />
@@ -7175,7 +7175,7 @@ export default function CarHopApp() {
                                     <textarea
                                       value={supportReplyText}
                                       onChange={(e) => setSupportReplyText(e.target.value)}
-                                      placeholder="Responder..."
+                                      placeholder="Reply..."
                                       className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded text-xs sm:text-sm resize-none"
                                       rows={2}
                                       data-testid="textarea-support-group-reply"
@@ -7192,15 +7192,15 @@ export default function CarHopApp() {
                                           await apiRequest('PUT', `/api/support-messages/${lastMsg.id}`, { adminReply: newReply, read: false });
                                           queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                           setSupportReplyText('');
-                                          toast({ description: 'Mensagem enviada!' });
+                                          toast({ description: 'Message sent!' });
                                         } catch (error) {
-                                          toast({ description: 'Erro ao enviar', variant: 'destructive' });
+                                          toast({ description: 'Error sending', variant: 'destructive' });
                                         }
                                       }}
                                       className="w-full mt-2 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2"
                                       data-testid="button-send-group-reply"
                                     >
-                                      <Send size={12} className="sm:w-4 sm:h-4" /> <span>Enviar</span>
+                                      <Send size={12} className="sm:w-4 sm:h-4" /> <span>Send</span>
                                     </button>
                                   </div>
                                 </div>
