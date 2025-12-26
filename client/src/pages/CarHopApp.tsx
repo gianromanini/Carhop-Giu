@@ -673,6 +673,7 @@ export default function CarHopApp() {
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
+  const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -3909,7 +3910,7 @@ export default function CarHopApp() {
                                 {/* Rate Your Guest Button */}
                                 {!bookingRating?.hostStarsToClient && (
                                   <button 
-                                    onClick={() => setShowRateGuestModal(true)}
+                                    onClick={() => { setSelectedBookingForRating(b.id); setShowRateGuestModal(true); setHostRatingStars(5); setHostRatingComment(''); }}
                                     className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
                                     data-testid={`button-rate-guest-${b.id}`}
                                   >
@@ -5865,7 +5866,7 @@ export default function CarHopApp() {
                                 {/* Rate Your Guest Button */}
                                 {!bookingRating?.hostStarsToClient && (
                                   <button 
-                                    onClick={() => setShowRateGuestModal(true)}
+                                    onClick={() => { setSelectedBookingForRating(b.id); setShowRateGuestModal(true); setHostRatingStars(5); setHostRatingComment(''); }}
                                     className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
                                     data-testid={`button-rate-guest-${b.id}`}
                                   >
@@ -9034,8 +9035,8 @@ export default function CarHopApp() {
       )}
 
       {/* Rate your Guest Modal */}
-      {showRateGuestModal && manageBookingId && (() => {
-        const b = bookings.find(bk => bk.id === manageBookingId);
+      {showRateGuestModal && selectedBookingForRating && (() => {
+        const b = bookings.find(bk => bk.id === selectedBookingForRating);
         if (!b || b.status !== 'Completed' || !b.driver) return null;
         return (
           <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
@@ -9069,8 +9070,10 @@ export default function CarHopApp() {
                     const rating = ratingsData?.find(r => r.bookingId === b.id);
                     if (rating) {
                       updateRatingMutation.mutate({ id: rating.id, hostStarsToClient: hostRatingStars, hostCommentToClient: hostRatingComment });
+                      toast({ title: "Sucesso", description: `Você avaliou ${b.driver.name} com ${hostRatingStars} estrelas!` });
                     }
                     setShowRateGuestModal(false);
+                    setSelectedBookingForRating(null);
                   }} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors" data-testid="button-submit-rating">Submit Rating</button>
                 </div>
               </div>
