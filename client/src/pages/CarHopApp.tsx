@@ -6688,6 +6688,33 @@ export default function CarHopApp() {
                     </div>
                   )}
 
+                  {/* Check-in Photos */}
+                  {((receiptBooking.checkInData?.photosOutside?.length || 0) + (receiptBooking.checkInData?.photosInside?.length || 0)) > 0 && (
+                    <div className="no-print">
+                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({(receiptBooking.checkInData?.photosOutside?.length || 0) + (receiptBooking.checkInData?.photosInside?.length || 0)})</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[...(receiptBooking.checkInData?.photosOutside || []), ...(receiptBooking.checkInData?.photosInside || [])].map((photo, idx) => (
+                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(receiptBooking.checkInData?.photosOutside || []), ...(receiptBooking.checkInData?.photosInside || [])], idx)}>
+                            <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Check-out Photos */}
+                  {((receiptBooking.checkOutData?.photosOutside?.length || 0) + (receiptBooking.checkOutData?.photosInside?.length || 0)) > 0 && (
+                    <div className="no-print">
+                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({(receiptBooking.checkOutData?.photosOutside?.length || 0) + (receiptBooking.checkOutData?.photosInside?.length || 0)})</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[...(receiptBooking.checkOutData?.photosOutside || []), ...(receiptBooking.checkOutData?.photosInside || [])].map((photo, idx) => (
+                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(receiptBooking.checkOutData?.photosOutside || []), ...(receiptBooking.checkOutData?.photosInside || [])], idx)}>
+                            <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Mileage Info */}
                   {receiptBooking.checkInData?.miles && receiptBooking.checkOutData?.miles && (
