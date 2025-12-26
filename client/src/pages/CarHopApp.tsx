@@ -4004,6 +4004,7 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
+                          {/* GUEST & HOST RATINGS SECTION - MOVED HERE */}
                           {/* Guest Ratings Section */}
                           {b.status === 'Completed' && (() => {
                             const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
@@ -4174,29 +4175,6 @@ export default function CarHopApp() {
                               })()}
                             </div>
                           </div>
-
-                          {/* Host Ratings Section */}
-                          {(() => {
-                            const bookingRatings = ratingsData.filter(r => r.bookingId === b.id);
-                            return (
-                              bookingRatings.length > 0 && (
-                                <div className="bg-yellow-950/30 rounded-lg p-4 border border-yellow-900/50">
-                                  <h4 className="text-xs font-bold uppercase text-yellow-400 mb-3 flex items-center gap-2">Rating Received from Client</h4>
-                                  {bookingRatings.map((rating, idx) => (
-                                    <div key={idx}>
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-xs text-zinc-400">Client Rating:</span>
-                                        <div className="flex gap-0.5">
-                                          {[1,2,3,4,5].map(star => (<span key={star} className={star <= rating.stars ? 'text-yellow-400 text-lg' : 'text-zinc-600 text-lg'}>★</span>))}
-                                        </div>
-                                      </div>
-                                      {rating.comment && <p className="text-xs text-zinc-400 italic mb-2">"{rating.comment}"</p>}
-                                    </div>
-                                  ))}
-                                </div>
-                              )
-                            );
-                          })()}
 
                           {/* Rate Client Option */}
                           {b.status === 'Completed' && (() => {
@@ -4720,6 +4698,9 @@ export default function CarHopApp() {
                           </div>
                         </div>
                       </div>
+                      <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-update-configuration">
+                        Update Configuration
+                      </Button>
                     </div>
                   </Card>
 
