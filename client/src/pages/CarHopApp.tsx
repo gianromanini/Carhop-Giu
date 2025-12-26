@@ -6832,32 +6832,33 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'support' && (
-              <div className="space-y-6">
+              <div className="space-y-4 overflow-x-hidden">
                 {/* Sub-tabs for Clients and Hosts */}
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-3 flex-wrap">
                   <button
                     onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'client' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 ${supportSubTab === 'client' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-clients"
                   >
-                    <Users size={16} className="inline mr-2" />
-                    Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})
+                    <Users size={14} className="sm:w-4 sm:h-4" />
+                    <span>Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})</span>
                   </button>
                   <button
                     onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-hosts"
                   >
-                    <Building2 size={16} className="inline mr-2" />
-                    Hosts ({supportMessagesData.filter((m: any) => m.senderType === 'host').length})
+                    <Building2 size={14} className="sm:w-4 sm:h-4" />
+                    <span>Hosts ({supportMessagesData.filter((m: any) => m.senderType === 'host').length})</span>
                   </button>
                 </div>
 
                 {/* Messages List */}
-                <Card className="p-4">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
-                    <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-green-500' : 'text-orange-500'} />
-                    {supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}
+                <Card className="p-2 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+                    <MessageSquare size={18} className={`${supportSubTab === 'client' ? 'text-green-500' : 'text-orange-500'}`} />
+                    <span className="hidden sm:inline">{supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}</span>
+                    <span className="sm:hidden text-xs">{supportSubTab === 'client' ? 'Clientes' : 'Hosts'}</span>
                   </h3>
                   
                   {supportMessagesData.filter((m: any) => m.senderType === supportSubTab).length === 0 ? (
@@ -6893,35 +6894,35 @@ export default function CarHopApp() {
                             <div key={senderId} className="space-y-2">
                               <button
                                 onClick={() => setExpandedSupportGroup(isExpanded ? null : senderId)}
-                                className={`w-full p-4 rounded-lg border transition-all text-left hover:shadow-md ${
+                                className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md ${
                                   hasUnread 
                                     ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
                                     : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
                                 } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
                                 data-testid={`button-support-group-${senderId}`}
                               >
-                                <div className="flex justify-between items-start">
-                                  <div className="flex items-center gap-3 flex-1">
-                                    <ChevronDown size={18} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        {hasUnread && <span className={`w-2 h-2 rounded-full ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
-                                        <span className={`font-bold ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                                <div className="flex justify-between items-start gap-2 min-w-0">
+                                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                    <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
+                                        <span className={`font-bold text-xs sm:text-sm truncate ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                           {senderName}
                                         </span>
                                       </div>
-                                      {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{subject}</p>}
-                                      <p className="text-xs text-zinc-500 mt-0.5">{firstMsg.senderIdentifier}</p>
+                                      {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{subject}</p>}
+                                      <p className="text-xs text-zinc-500 mt-0.5 truncate">{firstMsg.senderIdentifier}</p>
                                     </div>
                                   </div>
-                                  <span className="text-xs text-zinc-500 ml-2">
-                                    {messages.length} msg
+                                  <span className="text-xs text-zinc-500 flex-shrink-0">
+                                    {messages.length}
                                   </span>
                                 </div>
                               </button>
                               
                               {isExpanded && (
-                                <div className="ml-4 space-y-1 border-l-2 border-zinc-300 dark:border-zinc-700 pl-4">
+                                <div className="ml-2 sm:ml-4 space-y-1 border-l-2 border-zinc-300 dark:border-zinc-700 pl-2 sm:pl-4">
                                   {messages.map((message: any, idx: number) => {
                                     const isFirstMsg = idx === 0;
                                     const isLastMsg = idx === messages.length - 1;
@@ -7022,12 +7023,12 @@ export default function CarHopApp() {
                                     );
                                   })}
                                   
-                                  <div className="pt-3 border-t border-zinc-300 dark:border-zinc-700">
+                                  <div className="pt-2 sm:pt-3 border-t border-zinc-300 dark:border-zinc-700">
                                     <textarea
                                       value={supportReplyText}
                                       onChange={(e) => setSupportReplyText(e.target.value)}
-                                      placeholder="Responder a este grupo..."
-                                      className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm resize-none"
+                                      placeholder="Responder..."
+                                      className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded text-xs sm:text-sm resize-none"
                                       rows={2}
                                       data-testid="textarea-support-group-reply"
                                     />
@@ -7048,10 +7049,10 @@ export default function CarHopApp() {
                                           toast({ description: 'Erro ao enviar', variant: 'destructive' });
                                         }
                                       }}
-                                      className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2"
+                                      className="w-full mt-2 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2"
                                       data-testid="button-send-group-reply"
                                     >
-                                      <Send size={14} /> Enviar
+                                      <Send size={12} className="sm:w-4 sm:h-4" /> <span>Enviar</span>
                                     </button>
                                   </div>
                                 </div>
