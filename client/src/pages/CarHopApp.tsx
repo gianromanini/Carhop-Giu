@@ -5497,8 +5497,8 @@ export default function CarHopApp() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number</label>
-                      <input type="text" placeholder="Search code..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number or Name</label>
+                      <input type="text" placeholder="Search number or name..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
                     </div>
                   </div>
                   
@@ -5524,7 +5524,12 @@ export default function CarHopApp() {
                         }
                         const vehicle = vehicles.find(v => v.id === b.vehicleId);
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
-                        if (bookingFilterNumber && !b.bookingCode.toLowerCase().includes(bookingFilterNumber.toLowerCase())) matches = false;
+                        if (bookingFilterNumber) {
+                          const searchTerm = bookingFilterNumber.toLowerCase();
+                          const matchesCode = b.bookingCode.toLowerCase().includes(searchTerm);
+                          const matchesName = b.driver?.name?.toLowerCase().includes(searchTerm) || false;
+                          if (!matchesCode && !matchesName) matches = false;
+                        }
                         return matches;
                       })
                       .map(b => {
