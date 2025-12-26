@@ -4984,26 +4984,44 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* Rental Dates & Status */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                              <span className="text-xs font-bold text-zinc-500 uppercase">Pickup</span>
-                              <p className="text-sm font-medium text-zinc-900 dark:text-white mt-1">{selectedTripForView.startDate}</p>
-                              <p className="text-xs text-zinc-600 dark:text-zinc-400">{selectedTripForView.startTime}</p>
+                          {/* Rental Dates & Status with Pickup/Delivery indicator */}
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                <span className="text-xs font-bold text-zinc-500 uppercase">Pickup</span>
+                                <p className="text-sm font-medium text-zinc-900 dark:text-white mt-1">{selectedTripForView.startDate}</p>
+                                <p className="text-xs text-zinc-600 dark:text-zinc-400">{selectedTripForView.startTime}</p>
+                              </div>
+                              <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                <span className="text-xs font-bold text-zinc-500 uppercase">Return</span>
+                                <p className="text-sm font-medium text-zinc-900 dark:text-white mt-1">{selectedTripForView.returnDate}</p>
+                                <p className="text-xs text-zinc-600 dark:text-zinc-400">{selectedTripForView.returnTime}</p>
+                              </div>
+                              <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                <span className="text-xs font-bold text-zinc-500 uppercase">Status</span>
+                                <p className={`text-sm font-bold mt-1 px-2 py-1 rounded w-fit ${selectedTripForView.status === 'Completed' ? 'bg-green-600 text-white' : selectedTripForView.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{selectedTripForView.status}</p>
+                              </div>
+                              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase">Total</span>
+                                <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">${selectedTripForView.total.toFixed(2)}</p>
+                              </div>
                             </div>
-                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                              <span className="text-xs font-bold text-zinc-500 uppercase">Return</span>
-                              <p className="text-sm font-medium text-zinc-900 dark:text-white mt-1">{selectedTripForView.returnDate}</p>
-                              <p className="text-xs text-zinc-600 dark:text-zinc-400">{selectedTripForView.returnTime}</p>
-                            </div>
-                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                              <span className="text-xs font-bold text-zinc-500 uppercase">Status</span>
-                              <p className={`text-sm font-bold mt-1 px-2 py-1 rounded w-fit ${selectedTripForView.status === 'Completed' ? 'bg-green-600 text-white' : selectedTripForView.status === 'Cancelled' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{selectedTripForView.status}</p>
-                            </div>
-                            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                              <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase">Total</span>
-                              <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">${selectedTripForView.total.toFixed(2)}</p>
-                            </div>
+                            {/* Pickup vs Delivery Indicator */}
+                            {(selectedTripForView.details as any)?.deliveryType && (
+                              <div className={`p-3 rounded-lg border flex items-center gap-2 ${(selectedTripForView.details as any)?.deliveryType === 'delivery' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'}`}>
+                                {(selectedTripForView.details as any)?.deliveryType === 'delivery' ? (
+                                  <>
+                                    <Truck size={18} className="text-green-600" />
+                                    <span className="font-bold text-green-700 dark:text-green-400">Delivery</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <MapPin size={18} className="text-blue-600" />
+                                    <span className="font-bold text-blue-700 dark:text-blue-400">Pickup at Location</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Location */}
@@ -5012,18 +5030,182 @@ export default function CarHopApp() {
                             <p className="text-sm text-zinc-700 dark:text-zinc-300 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">{formatAddressForDisplay(selectedTripForView.location)}</p>
                           </div>
 
-                          {/* Rental Details */}
-                          {selectedTripForView.details && (
-                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Rental Details</h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Daily Rate</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.rate || 0).toFixed(2)}</p></div>
-                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Protection</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.protection || 0).toFixed(2)}</p></div>
-                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Extras</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.extras || 0).toFixed(2)}</p></div>
-                                {selectedTripForView.details.fees > 0 && <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Fees</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.fees || 0).toFixed(2)}</p></div>}
-                                {selectedTripForView.details.tax > 0 && <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><span className="text-xs text-zinc-600 dark:text-zinc-400">Tax</span><p className="text-sm font-bold text-zinc-900 dark:text-white mt-1">${(selectedTripForView.details.tax || 0).toFixed(2)}</p></div>}
-                                {selectedTripForView.details.discount > 0 && <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"><span className="text-xs text-green-700 dark:text-green-400">Discount</span><p className="text-sm font-bold text-green-600 dark:text-green-400 mt-1">-${(selectedTripForView.details.discount || 0).toFixed(2)}</p></div>}
+                          {/* Check-in Photos */}
+                          {((selectedTripForView.checkInData?.photosOutside?.length || 0) + (selectedTripForView.checkInData?.photosInside?.length || 0)) > 0 && (
+                            <div>
+                              <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({(selectedTripForView.checkInData?.photosOutside?.length || 0) + (selectedTripForView.checkInData?.photosInside?.length || 0)})</p>
+                              <div className="grid grid-cols-3 gap-3">
+                                {[...(selectedTripForView.checkInData?.photosOutside || []), ...(selectedTripForView.checkInData?.photosInside || [])].map((photo, idx) => (
+                                  <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(selectedTripForView.checkInData?.photosOutside || []), ...(selectedTripForView.checkInData?.photosInside || [])], idx)}>
+                                    <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                                  </div>
+                                ))}
                               </div>
+                            </div>
+                          )}
+
+                          {/* Check-out Photos */}
+                          {((selectedTripForView.checkOutData?.photosOutside?.length || 0) + (selectedTripForView.checkOutData?.photosInside?.length || 0)) > 0 && (
+                            <div>
+                              <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({(selectedTripForView.checkOutData?.photosOutside?.length || 0) + (selectedTripForView.checkOutData?.photosInside?.length || 0)})</p>
+                              <div className="grid grid-cols-3 gap-3">
+                                {[...(selectedTripForView.checkOutData?.photosOutside || []), ...(selectedTripForView.checkOutData?.photosInside || [])].map((photo, idx) => (
+                                  <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(selectedTripForView.checkOutData?.photosOutside || []), ...(selectedTripForView.checkOutData?.photosInside || [])], idx)}>
+                                    <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Mileage Info */}
+                          {selectedTripForView.checkInData?.miles && selectedTripForView.checkOutData?.miles && (
+                            <div className="space-y-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-xs text-zinc-500 uppercase">Check-in Mileage</p>
+                                  <p className="text-lg font-bold text-zinc-900 dark:text-white">{selectedTripForView.checkInData.miles} mi</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-zinc-500 uppercase">Check-out Mileage</p>
+                                  <p className="text-lg font-bold text-zinc-900 dark:text-white">{selectedTripForView.checkOutData.miles} mi</p>
+                                </div>
+                              </div>
+                              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                                <p className="text-xs text-zinc-500 uppercase">Included Miles</p>
+                                <p className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">{vehicleForTrip?.pricing?.includedMiles || settings.includedMiles} miles/day × {selectedTripForView.days} days = {((vehicleForTrip?.pricing?.includedMiles || settings.includedMiles) * selectedTripForView.days)} miles total</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Payment Method */}
+                          {selectedTripForView.paymentRaw && (
+                            <div className={`p-4 rounded-lg border ${selectedTripForView.paymentRaw?.type === 'paypal' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
+                              <p className={`text-xs font-bold uppercase tracking-wider ${selectedTripForView.paymentRaw?.type === 'paypal' ? 'text-blue-900 dark:text-blue-200' : 'text-red-900 dark:text-red-200'}`}>Payment Method</p>
+                              <p className={`text-sm mt-1 ${selectedTripForView.paymentRaw?.type === 'paypal' ? 'text-blue-800 dark:text-blue-300' : 'text-red-800 dark:text-red-300'}`}>
+                                {selectedTripForView.paymentRaw?.type === 'paypal' ? 'PayPal' : `Credit Card (${selectedTripForView.paymentRaw?.type || 'Visa'}) ****${selectedTripForView.paymentRaw?.cardNumber?.slice(-4)}`}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Price Breakdown */}
+                          {selectedTripForView.details && (
+                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-6">
+                              {(() => {
+                                const carForReceipt = vehicles.find(v => v.id === selectedTripForView.vehicleId);
+                                const cleaningFeeForReceipt = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
+                                
+                                // Calculate initial payment
+                                const rentalRate = selectedTripForView.details?.rate || 0;
+                                const protection = selectedTripForView.details?.protection || 0;
+                                const extras = selectedTripForView.details?.extras || 0;
+                                const initialSubtotal = rentalRate + protection + extras + cleaningFeeForReceipt;
+                                const initialTax = initialSubtotal > 0 ? initialSubtotal * ((settings.taxes || 0) / 100) : 0;
+                                const initialPayment = initialSubtotal + initialTax;
+                                
+                                // Calculate additional charges
+                                const extendedRate = selectedTripForView.details?.extendedRate || 0;
+                                const manualChargesTotal = (selectedTripForView.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const extraPaymentsTotal = (selectedTripForView.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                const discount = selectedTripForView.details?.discount || 0;
+                                const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                                const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
+                                const additionalCharges = additionalChargesBeforeTax + additionalTax;
+                                
+                                return (
+                                  <>
+                                    {/* Initial Payment Section */}
+                                    <div>
+                                      <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Initial Payment Breakdown</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({selectedTripForView.days} days)</span>
+                                          <span className="text-zinc-900 dark:text-white">${rentalRate.toFixed(2)}</span>
+                                        </div>
+                                        {protection > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-600 dark:text-zinc-400">Protection - {selectedTripForView.details?.protectionType || 'Standard'}</span>
+                                            <span className="text-zinc-900 dark:text-white">+${protection.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {extras > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
+                                            <span className="text-green-600 dark:text-green-400">+${extras.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
+                                          <span className="text-zinc-900 dark:text-white">+${cleaningFeeForReceipt.toFixed(2)}</span>
+                                        </div>
+                                        {initialTax > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
+                                            <span className="text-purple-600 dark:text-purple-400">+${initialTax.toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                          <span className="font-bold text-zinc-900 dark:text-white">Initial Payment</span>
+                                          <span className="font-bold text-zinc-900 dark:text-white">${initialPayment.toFixed(2)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Additional Charges Section */}
+                                    {additionalChargesBeforeTax > 0 && (
+                                      <div>
+                                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Additional Charges</h4>
+                                        <div className="space-y-2">
+                                          {extendedRate > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                              <span className="text-zinc-600 dark:text-zinc-400">Extended Days - {Math.round(extendedRate / (carForReceipt?.price || 1))} Days</span>
+                                              <span className="text-blue-600 dark:text-blue-400">+${extendedRate.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          {selectedTripForView.details?.manualCharges && selectedTripForView.details.manualCharges.map((charge, idx) => (
+                                            <div key={idx} className="flex justify-between text-sm">
+                                              <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
+                                              <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                          {selectedTripForView.extraPayments && selectedTripForView.extraPayments.map((payment, idx) => (
+                                            <div key={`ep-${idx}`} className="flex justify-between text-sm">
+                                              <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                                                <Check size={12} className="text-green-500"/> {payment.type}
+                                              </span>
+                                              <span className="text-green-600 dark:text-green-400">+${payment.amount.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                          {discount > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                              <span className="text-zinc-600 dark:text-zinc-400">Discount</span>
+                                              <span className="text-green-600 dark:text-green-400">-${discount.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          {additionalTax > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                              <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
+                                              <span className="text-purple-600 dark:text-purple-400">+${additionalTax.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                            <span className="font-bold text-zinc-900 dark:text-white">Additional Charges</span>
+                                            <span className="font-bold text-zinc-900 dark:text-white">+${additionalCharges.toFixed(2)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Final Total */}
+                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-lg font-bold text-green-900 dark:text-green-200">Total Amount</span>
+                                        <span className="text-2xl font-bold text-green-600 dark:text-green-400">${(initialPayment + additionalCharges).toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           )}
 
