@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, Send, Bell, MoreVertical, Building2, Truck
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply
 } from 'lucide-react';
 import type { Vehicle, Booking } from '@shared/schema';
 type User = typeof import('@shared/schema').users.$inferSelect;
@@ -534,6 +534,9 @@ export default function CarHopApp() {
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
   const [adminTab, setAdminTab] = useState('fleet');
+  const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
+  const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
+  const [supportReplyText, setSupportReplyText] = useState('');
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedTripForView, setSelectedTripForView] = useState<Booking | null>(null);
@@ -707,6 +710,7 @@ export default function CarHopApp() {
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
+  const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'] });
   const [hostTab, setHostTab] = useState('fleet');
   const [editingHost, setEditingHost] = useState<any>(null);
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
@@ -4431,14 +4435,22 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex justify-center gap-1 md:gap-2 mb-6 overflow-x-auto pb-2">
-              {['fleet', 'bookings', 'clients', 'hosts', 'earnings'].map(tab => (
-                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+              {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'support'].map(tab => {
+                const unreadSupportCount = tab === 'support' ? supportMessagesData.filter((m: any) => !m.read).length : 0;
+                return (
+                <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-2 md:px-3 py-2 rounded-lg font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
+                  {tab === 'support' && unreadSupportCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {unreadSupportCount > 9 ? '9+' : unreadSupportCount}
+                    </span>
+                  )}
                   <div className="hidden md:block">
                     {tab === 'fleet' && <Car size={18} />}
                     {tab === 'bookings' && <Briefcase size={18} />}
                     {tab === 'clients' && <Users size={18} />}
                     {tab === 'hosts' && <Building2 size={18} />}
                     {tab === 'earnings' && <TrendingUp size={18} />}
+                    {tab === 'support' && <MessageSquare size={18} />}
                   </div>
                   <div className="md:hidden">
                     {tab === 'fleet' && <Car size={14} />}
@@ -4446,10 +4458,11 @@ export default function CarHopApp() {
                     {tab === 'clients' && <Users size={14} />}
                     {tab === 'hosts' && <Building2 size={14} />}
                     {tab === 'earnings' && <TrendingUp size={14} />}
+                    {tab === 'support' && <MessageSquare size={14} />}
                   </div>
-                  <span>{tab}</span>
+                  <span>{tab === 'support' ? 'Chat' : tab}</span>
                 </button>
-              ))}
+              );})}
             </div>
 
             {adminTab === 'fleet' && (
@@ -6483,6 +6496,205 @@ export default function CarHopApp() {
                     )}
                   </div>
                 </Card>
+              </div>
+            )}
+
+            {adminTab === 'support' && (
+              <div className="space-y-6">
+                {/* Sub-tabs for Clients and Hosts */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); }}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'client' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    data-testid="button-support-clients"
+                  >
+                    <Users size={16} className="inline mr-2" />
+                    Clientes ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})
+                  </button>
+                  <button
+                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); }}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    data-testid="button-support-hosts"
+                  >
+                    <Building2 size={16} className="inline mr-2" />
+                    Hosts ({supportMessagesData.filter((m: any) => m.senderType === 'host').length})
+                  </button>
+                </div>
+
+                {/* Messages List */}
+                <Card className="p-4">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                    <MessageSquare size={20} className={supportSubTab === 'client' ? 'text-blue-500' : 'text-orange-500'} />
+                    {supportSubTab === 'client' ? 'Mensagens de Clientes' : 'Mensagens de Hosts'}
+                  </h3>
+                  
+                  {supportMessagesData.filter((m: any) => m.senderType === supportSubTab).length === 0 ? (
+                    <div className="text-center py-8 text-zinc-500">
+                      <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>Nenhuma mensagem de {supportSubTab === 'client' ? 'clientes' : 'hosts'} ainda</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {supportMessagesData
+                        .filter((m: any) => m.senderType === supportSubTab)
+                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .map((message: any) => (
+                          <div
+                            key={message.id}
+                            onClick={() => setSelectedSupportMessage(message)}
+                            className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                              !message.read 
+                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' 
+                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
+                            } ${selectedSupportMessage?.id === message.id ? 'ring-2 ring-green-500' : ''}`}
+                            data-testid={`card-support-message-${message.id}`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center gap-2">
+                                {!message.read && (
+                                  <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                                )}
+                                <span className="font-bold text-zinc-900 dark:text-white">{message.senderName}</span>
+                                <span className="text-xs text-zinc-500">{message.senderIdentifier}</span>
+                              </div>
+                              <span className="text-xs text-zinc-500">
+                                {new Date(message.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2">{message.text}</p>
+                            {message.adminReply && (
+                              <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                <div className="flex items-center gap-1 text-xs text-green-600">
+                                  <Reply size={12} />
+                                  <span>Respondido</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </Card>
+
+                {/* Selected Message Detail */}
+                {selectedSupportMessage && (
+                  <Card className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{selectedSupportMessage.senderName}</h3>
+                        <p className="text-sm text-zinc-500">{selectedSupportMessage.senderIdentifier}</p>
+                        <p className="text-xs text-zinc-400 mt-1">
+                          {new Date(selectedSupportMessage.createdAt).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedSupportMessage(null)}
+                        className="text-zinc-400 hover:text-zinc-600"
+                        data-testid="button-close-support-detail"
+                      >
+                        <X size={24} />
+                      </button>
+                    </div>
+
+                    {/* Message Content */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 mb-4">
+                      <p className="text-zinc-900 dark:text-white whitespace-pre-wrap">{selectedSupportMessage.text}</p>
+                      {selectedSupportMessage.images && selectedSupportMessage.images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          {selectedSupportMessage.images.map((img: string, idx: number) => (
+                            <img key={idx} src={img} alt={`Attachment ${idx + 1}`} className="rounded-lg cursor-pointer hover:opacity-80" onClick={() => setSelectedImage(img)} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Admin Reply Section */}
+                    {selectedSupportMessage.adminReply ? (
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Reply size={16} className="text-green-600" />
+                          <span className="text-sm font-bold text-green-600">Resposta do Admin</span>
+                          {selectedSupportMessage.adminRepliedAt && (
+                            <span className="text-xs text-zinc-500">
+                              {new Date(selectedSupportMessage.adminRepliedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedSupportMessage.adminReply}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <label className="block text-sm font-bold text-zinc-600 dark:text-zinc-400">Responder</label>
+                        <textarea
+                          value={supportReplyText}
+                          onChange={(e) => setSupportReplyText(e.target.value)}
+                          placeholder="Digite sua resposta..."
+                          className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-white resize-none"
+                          rows={4}
+                          data-testid="textarea-support-reply"
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            onClick={async () => {
+                              if (!supportReplyText.trim()) return;
+                              try {
+                                await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, {
+                                  adminReply: supportReplyText,
+                                  read: true
+                                });
+                                queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                setSupportReplyText('');
+                                toast({ description: 'Resposta enviada com sucesso!' });
+                                setSelectedSupportMessage(null);
+                              } catch (error) {
+                                toast({ description: 'Erro ao enviar resposta', variant: 'destructive' });
+                              }
+                            }}
+                            className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                            data-testid="button-send-support-reply"
+                          >
+                            <Send size={18} /> Enviar Resposta
+                          </button>
+                          {!selectedSupportMessage.read && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await apiRequest('PUT', `/api/support-messages/${selectedSupportMessage.id}`, { read: true });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                  toast({ description: 'Marcado como lido' });
+                                } catch (error) {
+                                  toast({ description: 'Erro ao marcar como lido', variant: 'destructive' });
+                                }
+                              }}
+                              className="px-4 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors"
+                              data-testid="button-mark-read"
+                            >
+                              <Check size={18} />
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (confirm('Tem certeza que deseja excluir esta mensagem?')) {
+                                try {
+                                  await apiRequest('DELETE', `/api/support-messages/${selectedSupportMessage.id}`);
+                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                  setSelectedSupportMessage(null);
+                                  toast({ description: 'Mensagem excluída' });
+                                } catch (error) {
+                                  toast({ description: 'Erro ao excluir mensagem', variant: 'destructive' });
+                                }
+                              }
+                            }}
+                            className="px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+                            data-testid="button-delete-support-message"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
               </div>
             )}
 
