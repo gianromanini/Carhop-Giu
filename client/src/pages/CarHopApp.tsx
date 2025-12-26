@@ -7739,15 +7739,19 @@ export default function CarHopApp() {
                       <h2 className="text-2xl font-bold text-orange-500 mb-2">Pickup Only Available</h2>
                       <p className="text-zinc-500 mb-4">Delivery was not available at this time. You can pick up the vehicle at the location below.</p>
                       {originalPickupAddress && (
-                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(originalPickupAddress)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                        >
-                          <MapPin size={16} />
-                          View Pickup Location
-                        </a>
+                        <div className="mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                          <p className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Pickup Location:</p>
+                          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">{formatAddressForDisplay(originalPickupAddress)}</p>
+                          <a 
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(originalPickupAddress)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                          >
+                            <MapPin size={16} />
+                            View on Google Maps
+                          </a>
+                        </div>
                       )}
                     </>
                   )}
