@@ -7496,7 +7496,9 @@ export default function CarHopApp() {
                           .map(([subject, senderGroups]: any) => [
                             subject,
                             Object.entries(senderGroups).filter(([senderId, messages]: any) => {
+                              if (!messages || messages.length === 0) return false;
                               const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+                              if (!firstMsg) return false;
                               const senderName = firstMsg.senderName || '';
                               const senderEmail = firstMsg.senderIdentifier || firstMsg.senderEmail || '';
                               const searchLower = supportSearchTerm.toLowerCase();
@@ -7535,7 +7537,7 @@ export default function CarHopApp() {
                                 const isFinished = firstMsg.isFinished;
                                 const finishedBy = firstMsg.finishedBy;
                                 
-                                const phoneMatch = firstMsg.text.match(/Telefone:\s*(.*?)(?:\n|$)/);
+                                const phoneMatch = (firstMsg.text || '').match(/Telefone:\s*(.*?)(?:\n|$)/);
                                 const phone = phoneMatch ? phoneMatch[1] : '';
                           
                                 return (
