@@ -538,6 +538,8 @@ export default function CarHopApp() {
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [expandedSupportGroup, setExpandedSupportGroup] = useState<string | null>(null);
   const [supportReplyText, setSupportReplyText] = useState('');
+  const [supportSortBy, setSupportSortBy] = useState<'date' | 'name'>('date');
+  const [supportSearchTerm, setSupportSearchTerm] = useState('');
   const [editingSupportMessageId, setEditingSupportMessageId] = useState<number | null>(null);
   const [editingSupportMessageText, setEditingSupportMessageText] = useState('');
   const [showClientChatModal, setShowClientChatModal] = useState(false);
@@ -7405,7 +7407,7 @@ export default function CarHopApp() {
                 {/* Sub-tabs for Clients and Hosts */}
                 <div className="flex gap-2 mb-3 flex-wrap">
                   <button
-                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
+                    onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); setSupportSearchTerm(''); }}
                     className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 relative ${supportSubTab === 'client' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-clients"
                   >
@@ -7418,7 +7420,7 @@ export default function CarHopApp() {
                     )}
                   </button>
                   <button
-                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
+                    onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); setSupportSearchTerm(''); }}
                     className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 relative ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-hosts"
                   >
@@ -7431,6 +7433,31 @@ export default function CarHopApp() {
                     )}
                   </button>
                 </div>
+
+                {/* Filters: Sort and Search */}
+                <Card className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        placeholder="🔍 Search by name or email..."
+                        value={supportSearchTerm}
+                        onChange={(e) => setSupportSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white text-xs sm:text-sm"
+                        data-testid="input-support-search"
+                      />
+                    </div>
+                    <select
+                      value={supportSortBy}
+                      onChange={(e) => setSupportSortBy(e.target.value as 'date' | 'name')}
+                      className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white text-xs sm:text-sm font-bold"
+                      data-testid="select-support-sort"
+                    >
+                      <option value="date">📅 Oldest First</option>
+                      <option value="name">🔤 Name (A-Z)</option>
+                    </select>
+                  </div>
+                </Card>
 
                 {/* Messages List */}
                 <Card className="p-2 sm:p-4">
@@ -7464,7 +7491,36 @@ export default function CarHopApp() {
                             groupedBySubject[subject][senderId].push(msg);
                           });
                         
-                        return Object.entries(groupedBySubject).map(([subject, senderGroups]: any) => (
+                        // Apply filters
+                        let filtered = Object.entries(groupedBySubject)
+                          .map(([subject, senderGroups]: any) => [
+                            subject,
+                            Object.entries(senderGroups).filter(([senderId, messages]: any) => {
+                              const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+                              const senderName = firstMsg.senderName || '';
+                              const senderEmail = firstMsg.senderIdentifier || firstMsg.senderEmail || '';
+                              const searchLower = supportSearchTerm.toLowerCase();
+                              return senderName.toLowerCase().includes(searchLower) || senderEmail.toLowerCase().includes(searchLower);
+                            })
+                          ] as any[])
+                          .filter(([_, senderGroups]: any) => senderGroups.length > 0);
+                        
+                        // Sort senders within each subject
+                        filtered = filtered.map(([subject, senderGroups]: any) => [
+                          subject,
+                          senderGroups.sort((a: any, b: any) => {
+                            const firstMsgA = (a[1] as any[]).sort((x: any, y: any) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime())[0];
+                            const firstMsgB = (b[1] as any[]).sort((x: any, y: any) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime())[0];
+                            
+                            if (supportSortBy === 'name') {
+                              return (firstMsgA.senderName || '').localeCompare(firstMsgB.senderName || '');
+                            } else {
+                              return new Date(firstMsgA.createdAt).getTime() - new Date(firstMsgB.createdAt).getTime();
+                            }
+                          })
+                        ] as any[]);
+                        
+                        return filtered.map(([subject, senderGroups]: any) => (
                           <div key={subject} className="space-y-2 border-b border-zinc-200 dark:border-zinc-700 pb-4">
                             <h4 className={`font-bold text-sm px-2 py-1 rounded ${supportSubTab === 'client' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'}`}>
                               📋 {subject}
