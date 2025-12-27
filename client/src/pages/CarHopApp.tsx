@@ -7529,6 +7529,7 @@ export default function CarHopApp() {
                             </h4>
                             <div className="space-y-2 ml-2">
                               {Object.entries(senderGroups).map(([senderId, messages]: any) => {
+                                const chatSubject = subject;
                                 const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
                                 const senderName = firstMsg.senderName;
                                 const groupKeyFull = subject + "_" + senderId;
@@ -7642,7 +7643,7 @@ export default function CarHopApp() {
                                             </span>
                                           </div>
                                           
-                                          {isFirstMsg && subject && (
+                                          {isFirstMsg && chatSubject && (
                                             <div className="mb-1 pb-1 border-b border-zinc-300 dark:border-zinc-600">
                                             <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderIdentifier}</p>
                                             {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
