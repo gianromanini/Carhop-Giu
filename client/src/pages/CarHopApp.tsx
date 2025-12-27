@@ -7536,7 +7536,7 @@ export default function CarHopApp() {
                                 const groupKeyFull = subject + "_" + senderId;
                                 const isExpanded = expandedSupportGroup === groupKeyFull;
                                 const hasUnread = messages.some((m: any) => !m.read);
-                                const hasAdminReplyNotification = messages.some((m: any) => m.adminReply && !m.adminReplyNotificationSeen);
+                                const hasAdminReplyNotification = messages.some((m: any) => m.adminReply && !m.read);
                                 const isFinished = firstMsg.isFinished;
                                 const finishedBy = firstMsg.finishedBy;
                                 
@@ -7561,9 +7561,6 @@ export default function CarHopApp() {
                                             await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
                                           }
                                           queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                        }
-                                        if (!isExpanded) {
-                                          await apiRequest('PUT', `/api/support-messages/notification-seen`, { senderId, subject: chatSubject }).catch(err => console.error('Error marking notification as seen:', err));
                                         }
                                         setExpandedSupportGroup(isExpanded ? null : groupKeyFull);
                                       }}
