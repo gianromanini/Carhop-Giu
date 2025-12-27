@@ -2301,60 +2301,13 @@ export default function CarHopApp() {
                   const [subject, date] = groupKey.split('_');
                   const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                   
-                  if (isFinished && deletingChatGroup !== groupKey) {
+                  if (isFinished) {
                     return (
                       <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800">
-                        <div className="px-3 py-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
-                            <span className="text-xs text-zinc-500">• {date}</span>
-                          </div>
-                          <button
-                            onClick={() => setDeletingChatGroup(groupKey)}
-                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            data-testid={`button-delete-chat-${groupKey}`}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  if (deletingChatGroup === groupKey) {
-                    return (
-                      <div key={groupKey} className="border border-red-300 dark:border-red-700 rounded-lg overflow-hidden bg-red-50 dark:bg-red-900/20 p-3">
-                        <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this conversation?</p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              const newFinished = new Set(finishedClientChatGroups);
-                              newFinished.delete(groupKey);
-                              setFinishedClientChatGroups(newFinished);
-                              setDeletingChatGroup(null);
-                            }}
-                            className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
-                            data-testid={`button-cancel-delete-${groupKey}`}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => {
-                              const newFinished = new Set(finishedClientChatGroups);
-                              newFinished.delete(groupKey);
-                              setFinishedClientChatGroups(newFinished);
-                              setDeletingChatGroup(null);
-                              groupMsgs.forEach((msg: any) => {
-                                apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting message:', err));
-                              });
-                              queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                              toast({ description: 'Conversation deleted!' });
-                            }}
-                            className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
-                            data-testid={`button-confirm-delete-${groupKey}`}
-                          >
-                            Delete
-                          </button>
+                        <div className="px-3 py-2 flex items-center gap-2">
+                          <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
+                          <span className="text-xs text-zinc-500">• {date}</span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded ml-auto">Finished</span>
                         </div>
                       </div>
                     );
@@ -5043,60 +4996,13 @@ export default function CarHopApp() {
                         const [subject, date] = groupKey.split('_');
                         const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                         
-                        if (isFinished && deletingHostChatGroup !== groupKey) {
+                        if (isFinished) {
                           return (
                             <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800">
-                              <div className="px-3 py-2 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
-                                  <span className="text-xs text-zinc-500">• {date}</span>
-                                </div>
-                                <button
-                                  onClick={() => setDeletingHostChatGroup(groupKey)}
-                                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                                  data-testid={`button-delete-host-chat-${groupKey}`}
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        }
-                        
-                        if (deletingHostChatGroup === groupKey) {
-                          return (
-                            <div key={groupKey} className="border border-red-300 dark:border-red-700 rounded-lg overflow-hidden bg-red-50 dark:bg-red-900/20 p-3">
-                              <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this conversation?</p>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => {
-                                    const newFinished = new Set(finishedHostChatGroups);
-                                    newFinished.delete(groupKey);
-                                    setFinishedHostChatGroups(newFinished);
-                                    setDeletingHostChatGroup(null);
-                                  }}
-                                  className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
-                                  data-testid={`button-cancel-delete-host-${groupKey}`}
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const newFinished = new Set(finishedHostChatGroups);
-                                    newFinished.delete(groupKey);
-                                    setFinishedHostChatGroups(newFinished);
-                                    setDeletingHostChatGroup(null);
-                                    groupMsgs.forEach((msg: any) => {
-                                      apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting message:', err));
-                                    });
-                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                    toast({ description: 'Conversation deleted!' });
-                                  }}
-                                  className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
-                                  data-testid={`button-confirm-delete-host-${groupKey}`}
-                                >
-                                  Delete
-                                </button>
+                              <div className="px-3 py-2 flex items-center gap-2">
+                                <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
+                                <span className="text-xs text-zinc-500">• {date}</span>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded ml-auto">Finished</span>
                               </div>
                             </div>
                           );
