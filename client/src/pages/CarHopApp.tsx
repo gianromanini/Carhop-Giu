@@ -7650,7 +7650,7 @@ export default function CarHopApp() {
                                         )}
                                           
                                           <p className="text-xs text-zinc-900 dark:text-white whitespace-pre-wrap">
-                                            {message.text.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim()}
+                                            {(message.text || '').replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim()}
                                           </p>
                                           
                                           {message.images && message.images.length > 0 && (
