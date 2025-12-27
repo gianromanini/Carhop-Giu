@@ -257,6 +257,7 @@ export const supportMessages = pgTable("support_messages", {
   senderId: varchar("sender_id").notNull(), // userId (UUID) for clients, hostId (numeric string) for hosts
   senderName: varchar("sender_name").notNull(),
   senderIdentifier: varchar("sender_identifier").notNull(), // email for clients, @username for hosts
+  senderEmail: varchar("sender_email"), // email for hosts (used for display)
   text: text("text").notNull(),
   images: text("images").array().default([]),
   read: boolean("read").default(false),

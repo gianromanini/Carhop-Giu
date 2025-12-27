@@ -4839,9 +4839,10 @@ export default function CarHopApp() {
 
           {hostTab === 'chat' && (() => {
             const hostEmail = currentHost?.email || '';
+            const hostUsername = currentHost?.username || '';
             const hostName = `${currentHost?.firstName || ''} ${currentHost?.lastName || ''}`.trim();
             const hostMessages = supportMessagesData.filter((m: any) => 
-              m.senderType === 'host' && m.senderIdentifier === hostEmail
+              m.senderType === 'host' && (m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail)
             ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             
             const hasMessages = hostMessages.length > 0;
@@ -4879,7 +4880,8 @@ export default function CarHopApp() {
                         senderType: 'host',
                         senderId: hostEmail,
                         senderName: hostName,
-                        senderIdentifier: hostEmail,
+                        senderIdentifier: `@${hostUsername}`,
+                        senderEmail: hostEmail,
                         text: `[${hostChatForm.subject}] ${hostChatForm.message}`,
                         images: hostChatImages,
                         read: false
@@ -7473,10 +7475,11 @@ export default function CarHopApp() {
                                       <div className="flex items-center gap-2 min-w-0">
                                         {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
                                         <span className={`font-bold text-xs sm:text-sm truncate ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
-                                          {senderName} <span className="text-zinc-600 dark:text-zinc-400">@{firstMsg.senderIdentifier}</span>
+                                          {senderName} {supportSubTab === 'host' && <span className="text-zinc-600 dark:text-zinc-400">{firstMsg.senderIdentifier}</span>}
                                         </span>
                                       </div>
                                       {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{subject}</p>}
+                                      {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-zinc-500 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
                                     </div>
                                   </div>
                                   <span className="text-xs text-zinc-500 flex-shrink-0">
