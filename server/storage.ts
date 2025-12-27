@@ -1520,24 +1520,35 @@ export class DatabaseStorage implements IStorage {
   async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
     if (!this.initialized) return false;
     try {
+      // Get ALL messages first
       const allMessages = await this.db.select().from(supportMessages);
+      
+      // Filter messages by subject and senderId
       const messagesToFinish = allMessages.filter((msg: SupportMessage) => {
         const msgText = msg.text || '';
         const msgSubject = msgText.match(/\[(.*?)\]/)?.[1] || 'Sem Assunto';
         const msgSenderId = msg.senderIdentifier || msg.senderEmail || '';
-        return msgSubject === subject && msgSenderId === senderId;
+        return msgSubject === subject && msgSenderId === senderId && !msg.isFinished;
       });
 
-      if (messagesToFinish.length === 0) return false;
+      if (messagesToFinish.length === 0) {
+        console.log(`No messages found to finish for subject: ${subject}, senderId: ${senderId}`);
+        return true; // Already finished or no messages
+      }
 
+      console.log(`Finishing ${messagesToFinish.length} messages for subject: ${subject}, senderId: ${senderId}`);
+
+      // Update ALL matching messages at once
+      const ids = messagesToFinish.map((m: SupportMessage) => m.id);
       const result = await this.db.update(supportMessages).set({ 
         isFinished: true, 
         finishedBy,
         finishedAt: new Date()
       }).where(
-        or(...messagesToFinish.map((m: SupportMessage) => eq(supportMessages.id, m.id)))
+        or(...ids.map((id: number) => eq(supportMessages.id, id)))
       ).returning();
       
+      console.log(`Successfully finished ${result.length} messages`);
       return result.length > 0;
     } catch (error) {
       console.error("Error finishing support message group by subject and sender:", error);

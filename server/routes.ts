@@ -1919,16 +1919,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const { subject, senderId, finishedBy } = req.body;
       
       if (!subject || !senderId || !finishedBy) {
+        console.log("Missing fields:", { subject, senderId, finishedBy });
         return res.status(400).json({ message: "Missing required fields" });
       }
       
+      console.log(`Finishing chat - Subject: ${subject}, SenderId: ${senderId}, FinishedBy: ${finishedBy}`);
       const success = await (storage as any).finishSupportMessageGroupBySubjectAndSender(subject, senderId, finishedBy);
       
       if (!success) {
-        return res.status(400).json({ message: "Failed to finish chat" });
+        console.log("Failed to finish chat - no messages found or already finished");
+        return res.status(400).json({ message: "Failed to finish chat - no messages found" });
       }
       
-      res.json({ message: "Chat finished successfully" });
+      res.json({ message: "Chat conversation finished successfully" });
     } catch (error) {
       console.error("Error finishing chat group:", error);
       res.status(500).json({ message: "Failed to finish chat" });
