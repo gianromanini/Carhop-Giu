@@ -5117,10 +5117,11 @@ export default function CarHopApp() {
                                               onClick={async () => {
                                                 try {
                                                   await apiRequest('POST', '/api/support-messages/finish-chat', {
-                                                    senderIdentifier: hostEmail,
+                                                    senderIdentifier: `@${hostUsername}`,
                                                     senderType: 'host',
                                                     finishedBy: 'host'
                                                   });
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                                   const newFinished = new Set(finishedHostChatGroups);
                                                   newFinished.add(groupKey);
                                                   setFinishedHostChatGroups(newFinished);
