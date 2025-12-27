@@ -9,7 +9,7 @@ import {
   type SupportMessage, type InsertSupportMessage
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq, ilike, or, and } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
@@ -1519,36 +1519,23 @@ export class DatabaseStorage implements IStorage {
   async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
     if (!this.initialized) return false;
     try {
-      // Get ALL messages first
-      const allMessages = await this.db.select().from(supportMessages);
+      console.log(`Finishing ALL messages for senderId: ${senderId} (subject hint: ${subject})`);
       
-      // Filter messages by subject and senderId
-      const messagesToFinish = allMessages.filter((msg: SupportMessage) => {
-        const msgText = msg.text || '';
-        const msgSubject = msgText.match(/\[(.*?)\]/)?.[1] || 'Sem Assunto';
-        const msgSenderId = msg.senderIdentifier || msg.senderEmail || '';
-        return msgSubject === subject && msgSenderId === senderId && !msg.isFinished;
-      });
-
-      if (messagesToFinish.length === 0) {
-        console.log(`No messages found to finish for subject: ${subject}, senderId: ${senderId}`);
-        return true; // Already finished or no messages
-      }
-
-      console.log(`Finishing ${messagesToFinish.length} messages for subject: ${subject}, senderId: ${senderId}`);
-
-      // Update ALL matching messages at once
-      const ids = messagesToFinish.map((m: SupportMessage) => m.id);
+      // Filter by senderIdentifier OR senderEmail directly in SQL - no regex parsing needed
+      // This marks ALL messages from this sender as finished (the entire conversation)
+      const filter = or(
+        eq(supportMessages.senderIdentifier, senderId),
+        eq(supportMessages.senderEmail, senderId)
+      );
+      
       const result = await this.db.update(supportMessages).set({ 
         isFinished: true, 
         finishedBy,
         finishedAt: new Date()
-      }).where(
-        or(...ids.map((id: number) => eq(supportMessages.id, id)))
-      ).returning();
+      }).where(and(filter, eq(supportMessages.isFinished, false))).returning();
       
-      console.log(`Successfully finished ${result.length} messages`);
-      return result.length > 0;
+      console.log(`Successfully finished ${result.length} messages for senderId: ${senderId}`);
+      return true; // Return true even if no messages found (may already be finished)
     } catch (error) {
       console.error("Error finishing support message group by subject and sender:", error);
       return false;
