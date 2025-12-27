@@ -7554,8 +7554,7 @@ export default function CarHopApp() {
                                           : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
                                       } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
                                       onClick={async () => {
-                                        if (isFinished) return;
-                                        if (!isExpanded && hasUnread) {
+                                        if (!isExpanded && hasUnread && !isFinished) {
                                           const unreadMsgs = messages.filter((m: any) => !m.read);
                                           for (const msg of unreadMsgs) {
                                             await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
