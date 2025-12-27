@@ -7573,8 +7573,8 @@ export default function CarHopApp() {
                                                 {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
                                                 <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                                   {senderName}
-                                                  {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
-                                                  <span className="text-[9px] font-normal text-gray-600 dark:text-gray-400">{sessionTime}</span>
+                                                  {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-zinc-500 dark:text-zinc-400 font-normal">({firstMsg.senderIdentifier})</span>}
+                                                  <span className="text-[9px] font-normal text-gray-600 dark:text-gray-400">{messages.length} msg</span>
                                                 </span>
                                                 {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
                                               </div>
