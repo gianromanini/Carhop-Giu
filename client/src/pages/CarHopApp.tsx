@@ -5052,9 +5052,9 @@ export default function CarHopApp() {
                             >
                               <div className="flex items-center gap-2">
                                 <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
-                                <span className="text-sm font-bold text-zinc-900 dark:text-white">{subject}</span>
+                                <span className={`text-sm font-bold ${hasUnread ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
                                 <span className="text-xs text-zinc-500">• {date}</span>
-                                {hasUnread && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
+                                {hasUnread && <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"/>}
                               </div>
                               <span className="text-xs text-zinc-500">{groupMsgs.length} msg</span>
                             </button>
@@ -5144,6 +5144,7 @@ export default function CarHopApp() {
                                               onClick={async () => {
                                                 try {
                                                   await apiRequest('POST', '/api/support-messages/finish-chat', {
+                                                    subject: subject,
                                                     senderIdentifier: `@${hostUsername}`,
                                                     senderType: 'host',
                                                     finishedBy: 'host'
@@ -7413,9 +7414,9 @@ export default function CarHopApp() {
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
                     <span>Clients</span>
-                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read).length > 0 && (
+                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).length > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
-                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read).length}
+                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).length}
                       </span>
                     )}
                   </button>
@@ -7426,9 +7427,9 @@ export default function CarHopApp() {
                   >
                     <Building2 size={14} className="sm:w-4 sm:h-4" />
                     <span>Hosts</span>
-                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read).length > 0 && (
+                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && m.adminReply && !m.read).length > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
-                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read).length}
+                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && m.adminReply && !m.read).length}
                       </span>
                     )}
                   </button>
