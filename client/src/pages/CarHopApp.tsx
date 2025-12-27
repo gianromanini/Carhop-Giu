@@ -7446,118 +7446,128 @@ export default function CarHopApp() {
                       <p>No messages from {supportSubTab === 'client' ? 'clients' : 'hosts'} yet</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {(() => {
-                        const grouped = {} as any;
+                        // Group by Subject, then by Sender
+                        const groupedBySubject = {} as any;
                         supportMessagesData
                           .filter((m: any) => m.senderType === supportSubTab)
                           .forEach((msg: any) => {
-                            const key = msg.senderIdentifier || msg.senderId;
-                            if (!grouped[key]) grouped[key] = [];
-                            grouped[key].push(msg);
+                            const messageText = msg.text || '';
+                            const subjectMatch = messageText.match(/\[(.*?)\]/);
+                            const subject = subjectMatch ? subjectMatch[1] : 'Sem Assunto';
+                            
+                            if (!groupedBySubject[subject]) groupedBySubject[subject] = {};
+                            
+                            const senderId = msg.senderIdentifier || msg.senderId;
+                            if (!groupedBySubject[subject][senderId]) groupedBySubject[subject][senderId] = [];
+                            groupedBySubject[subject][senderId].push(msg);
                           });
                         
-                        return Object.entries(grouped).map(([senderId, messages]: any) => {
-                          const firstMsg = messages.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
-                          const senderName = firstMsg.senderName;
-                          const isExpanded = expandedSupportGroup === senderId;
-                          const hasUnread = messages.some((m: any) => !m.read);
-                          const isFinished = firstMsg.isFinished;
-                          const finishedBy = firstMsg.finishedBy;
+                        return Object.entries(groupedBySubject).map(([subject, senderGroups]: any) => (
+                          <div key={subject} className="space-y-2 border-b border-zinc-200 dark:border-zinc-700 pb-4">
+                            <h4 className={`font-bold text-sm px-2 py-1 rounded ${supportSubTab === 'client' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'}`}>
+                              📋 {subject}
+                            </h4>
+                            <div className="space-y-2 ml-2">
+                              {Object.entries(senderGroups).map(([senderId, messages]: any) => {
+                                const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+                                const senderName = firstMsg.senderName;
+                                const groupKeyFull = subject + "_" + senderId;
+                                const isExpanded = expandedSupportGroup === groupKeyFull;
+                                const hasUnread = messages.some((m: any) => !m.read);
+                                const isFinished = firstMsg.isFinished;
+                                const finishedBy = firstMsg.finishedBy;
+                                
+                                const phoneMatch = firstMsg.text.match(/Telefone:\s*(.*?)(?:\n|$)/);
+                                const phone = phoneMatch ? phoneMatch[1] : '';
                           
-                          const messageText = firstMsg.text || '';
-                          const subjectMatch = messageText.match(/\[(.*?)\]/);
-                          const subject = subjectMatch ? subjectMatch[1] : '';
-                          const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
-                          const phone = phoneMatch ? phoneMatch[1] : '';
-                          
-                          return (
-                            <div key={senderId} className="space-y-2">
-                              <div
-                                className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md ${
-                                  hasUnread 
-                                    ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
-                                    : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
-                                } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
-                              >
-                                <button
-                                  onClick={async () => {
-                                    if (!isExpanded && hasUnread) {
-                                      const unreadMsgs = messages.filter((m: any) => !m.read);
-                                      for (const msg of unreadMsgs) {
-                                        await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
-                                      }
-                                      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                    }
-                                    setExpandedSupportGroup(isExpanded ? null : senderId);
-                                  }}
-                                  className="w-full text-left"
-                                  data-testid={`button-support-group-${senderId}`}
-                                >
-                                  <div className="flex justify-between items-start gap-2 min-w-0">
-                                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                      <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                          {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
-                                          <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
-                                            {senderName}
-                                            {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
-                                          </span>
-                                          {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
+                                return (
+                                  <div key={groupKeyFull} className="space-y-2">
+                                    <div
+                                      className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md ${
+                                        hasUnread 
+                                          ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
+                                          : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
+                                      } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
+                                    >
+                                      <button
+                                        onClick={async () => {
+                                          if (!isExpanded && hasUnread) {
+                                            const unreadMsgs = messages.filter((m: any) => !m.read);
+                                            for (const msg of unreadMsgs) {
+                                              await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+                                            }
+                                            queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                          }
+                                          setExpandedSupportGroup(isExpanded ? null : groupKeyFull);
+                                        }}
+                                        className="w-full text-left"
+                                        data-testid={`button-support-group-${groupKeyFull}`}
+                                      >
+                                        <div className="flex justify-between items-start gap-2 min-w-0">
+                                          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                            <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                                {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
+                                                <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                                                  {senderName}
+                                                  {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
+                                                </span>
+                                                {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
+                                              </div>
+                                              {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-1 flex-shrink-0">
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); setDeletingAdminChatGroup(groupKeyFull); }}
+                                              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                                              title="Delete chat"
+                                              data-testid={`button-delete-admin-chat-${groupKeyFull}`}
+                                            >
+                                              <Trash2 size={14} />
+                                            </button>
+                                            <span className="text-xs text-zinc-500">
+                                              {messages.length}
+                                            </span>
+                                          </div>
                                         </div>
-                                        {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{subject}</p>}
-                                        {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
+                                      </button>
+                                    </div>
+                                    
+                                    {deletingAdminChatGroup === groupKeyFull && (
+                                    <div className="ml-2 sm:ml-4 border-l-2 border-red-300 dark:border-red-700 pl-2 sm:pl-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                      <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this chat?</p>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => setDeletingAdminChatGroup(null)}
+                                          className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                                          data-testid={`button-cancel-delete-admin-chat-${groupKeyFull}`}
+                                        >
+                                          Cancel
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            for (const msg of messages) {
+                                              await apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting:', err));
+                                            }
+                                            queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                            toast({ description: 'Chat deleted' });
+                                            setExpandedSupportGroup(null);
+                                            setDeletingAdminChatGroup(null);
+                                          }}
+                                          className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
+                                          data-testid={`button-confirm-delete-admin-chat-${groupKeyFull}`}
+                                        >
+                                          Delete
+                                        </button>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setDeletingAdminChatGroup(senderId); }}
-                                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
-                                        title="Delete chat"
-                                        data-testid={`button-delete-admin-chat-${senderId}`}
-                                      >
-                                        <Trash2 size={14} />
-                                      </button>
-                                      <span className="text-xs text-zinc-500">
-                                        {messages.length}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </button>
-                              </div>
-                              
-                              {deletingAdminChatGroup === senderId && (
-                                <div className="ml-2 sm:ml-4 border-l-2 border-red-300 dark:border-red-700 pl-2 sm:pl-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                  <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this chat?</p>
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={() => setDeletingAdminChatGroup(null)}
-                                      className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
-                                      data-testid={`button-cancel-delete-admin-chat-${senderId}`}
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        for (const msg of messages) {
-                                          await apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting:', err));
-                                        }
-                                        queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                        toast({ description: 'Chat deleted' });
-                                        setExpandedSupportGroup(null);
-                                        setDeletingAdminChatGroup(null);
-                                      }}
-                                      className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
-                                      data-testid={`button-confirm-delete-admin-chat-${senderId}`}
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {isExpanded && deletingAdminChatGroup !== senderId && (
+                                  )}
+                                  
+                                  {isExpanded && deletingAdminChatGroup !== groupKeyFull && (
                                 <div className="ml-2 sm:ml-4 space-y-1 border-l-2 border-zinc-300 dark:border-zinc-700 pl-2 sm:pl-4">
                                   {messages.map((message: any, idx: number) => {
                                     const isFirstMsg = idx === 0;
@@ -7576,11 +7586,10 @@ export default function CarHopApp() {
                                           
                                           {isFirstMsg && subject && (
                                             <div className="mb-1 pb-1 border-b border-zinc-300 dark:border-zinc-600">
-                                              <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Assunto: {subject}</p>
-                                              <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderIdentifier}</p>
-                                              {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
-                                            </div>
-                                          )}
+                                            <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderIdentifier}</p>
+                                            {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
+                                          </div>
+                                        )}
                                           
                                           <p className="text-xs text-zinc-900 dark:text-white whitespace-pre-wrap">
                                             {message.text.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim()}
@@ -7691,11 +7700,14 @@ export default function CarHopApp() {
                                       <Send size={12} className="sm:w-4 sm:h-4" /> <span>Send</span>
                                     </button>
                                   </div>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                                );
+                              })}
                             </div>
-                          );
-                        });
+                          </div>
+                        ));
                       })()}
                     </div>
                   )}
