@@ -4872,19 +4872,6 @@ export default function CarHopApp() {
                       return;
                     }
                     
-                    // Check if chat with this subject is finished
-                    const existingChat = Array.from(hostMessages).find((msg: any) => {
-                      const msgText = msg.text || '';
-                      const msgSubject = msgText.match(/\[(.*?)\]/)?.[1] || 'No subject';
-                      return msgSubject === hostChatForm.subject;
-                    });
-                    
-                    const isFinishedChat = existingChat && finishedHostChatGroups.has(hostChatForm.subject);
-                    if (isFinishedChat) {
-                      toast({ description: 'This chat is finished. New messages create a new chat.', variant: 'destructive' });
-                      return;
-                    }
-                    
                     setHostChatSending(true);
                     try {
                       const messageData = {
