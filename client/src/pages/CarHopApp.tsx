@@ -2279,15 +2279,27 @@ export default function CarHopApp() {
                 });
               }
               
-              // Group by subject only (same subject = same chat, even on different dates)
+              // Group by subject + timestamp (each chat session is separate, even with same subject)
               const groupedMessages: Record<string, any[]> = {};
               clientMessages.forEach((msg: any) => {
                 const messageText = msg.text || '';
                 const subjectMatch = messageText.match(/\[(.*?)\]/);
                 const subject = subjectMatch ? subjectMatch[1] : 'Sem assunto';
-                const groupKey = subject;
-                if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
-                groupedMessages[groupKey].push(msg);
+                
+                // Find existing non-finished group with same subject
+                const existingGroupKey = Object.keys(groupedMessages).find(
+                  key => key.startsWith(subject + "_") && !finishedClientChatGroups.has(key)
+                );
+                
+                if (existingGroupKey) {
+                  // Add to existing active group
+                  groupedMessages[existingGroupKey].push(msg);
+                } else {
+                  // Create new session group with subject + timestamp
+                  const groupKey = subject + "_" + new Date(msg.createdAt).getTime();
+                  if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
+                  groupedMessages[groupKey].push(msg);
+                }
               });
               
               const sortedGroups = Object.entries(groupedMessages).sort((a, b) => new Date(b[1][0].createdAt).getTime() - new Date(a[1][0].createdAt).getTime());
@@ -2297,7 +2309,7 @@ export default function CarHopApp() {
                 {sortedGroups.map(([groupKey, groupMsgs]) => {
                   const isExpanded = expandedClientChatGroups.has(groupKey);
                   const isFinished = finishedClientChatGroups.has(groupKey);
-                  const subject = groupKey;
+                  const subject = groupKey.split("_")[0];
                   const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                   const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                   
@@ -2430,14 +2442,6 @@ export default function CarHopApp() {
                                     images: []
                                   });
                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                  
-                                  // If this subject was finished, remove it from finished list so new message creates new active chat
-                                  if (finishedClientChatGroups.has(subject)) {
-                                    const newFinished = new Set(finishedClientChatGroups);
-                                    newFinished.delete(subject);
-                                    setFinishedClientChatGroups(newFinished);
-                                  }
-                                  
                                   setClientChatReply('');
                                   toast({ description: 'Reply sent!' });
                                 } catch (error) {
@@ -2478,14 +2482,6 @@ export default function CarHopApp() {
                 console.log('📨 Enviando mensagem:', messagePayload);
                 await apiRequest('POST', '/api/support-messages', messagePayload);
                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                
-                // If this subject was finished, remove it from finished list so new message creates new active chat
-                if (finishedClientChatGroups.has(clientChatForm.subject)) {
-                  const newFinished = new Set(finishedClientChatGroups);
-                  newFinished.delete(clientChatForm.subject);
-                  setFinishedClientChatGroups(newFinished);
-                }
-                
                 toast({ description: 'Message sent successfully! We will contact you soon.' });
                 setShowClientChatModal(false);
                 setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
@@ -4861,15 +4857,27 @@ export default function CarHopApp() {
             
             const hasMessages = hostMessages.length > 0;
             
-            // Group by subject only (same subject = same chat, even on different dates)
+            // Group by subject + timestamp (each chat session is separate, even with same subject)
             const groupedMessages: Record<string, any[]> = {};
             hostMessages.forEach((msg: any) => {
               const messageText = msg.text || '';
               const subjectMatch = messageText.match(/\[(.*?)\]/);
               const subject = subjectMatch ? subjectMatch[1] : 'No subject';
-              const groupKey = subject;
-              if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
-              groupedMessages[groupKey].push(msg);
+              
+              // Find existing non-finished group with same subject
+              const existingGroupKey = Object.keys(groupedMessages).find(
+                key => key.startsWith(subject + "_") && !finishedHostChatGroups.has(key)
+              );
+              
+              if (existingGroupKey) {
+                // Add to existing active group
+                groupedMessages[existingGroupKey].push(msg);
+              } else {
+                // Create new session group with subject + timestamp
+                const groupKey = subject + "_" + new Date(msg.createdAt).getTime();
+                if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
+                groupedMessages[groupKey].push(msg);
+              }
             });
             
             const sortedGroups = Object.entries(groupedMessages).sort((a, b) => new Date(b[1][0].createdAt).getTime() - new Date(a[1][0].createdAt).getTime());
@@ -4902,14 +4910,6 @@ export default function CarHopApp() {
                       };
                       await apiRequest('POST', '/api/support-messages', messageData);
                       queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                      
-                      // If this subject was finished, remove it from finished list so new message creates new active chat
-                      if (finishedHostChatGroups.has(hostChatForm.subject)) {
-                        const newFinished = new Set(finishedHostChatGroups);
-                        newFinished.delete(hostChatForm.subject);
-                        setFinishedHostChatGroups(newFinished);
-                      }
-                      
                       setHostChatForm({ subject: 'Talk with Support', message: '' });
                       setHostChatImages([]);
                       toast({ description: 'Message sent successfully!' });
@@ -5017,7 +5017,7 @@ export default function CarHopApp() {
                       {sortedGroups.map(([groupKey, groupMsgs]) => {
                         const isExpanded = expandedHostChatGroups.has(groupKey);
                         const isFinished = finishedHostChatGroups.has(groupKey);
-                        const subject = groupKey;
+                        const subject = groupKey.split("_")[0];
                         const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
                         const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                         
