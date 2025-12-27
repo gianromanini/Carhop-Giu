@@ -7485,16 +7485,14 @@ export default function CarHopApp() {
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-1 flex-shrink-0">
-                                      {isFinished && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); setDeletingAdminChatGroup(senderId); }}
-                                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
-                                          title="Delete finished chat"
-                                          data-testid={`button-delete-finished-chat-${senderId}`}
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
-                                      )}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setDeletingAdminChatGroup(senderId); }}
+                                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                                        title="Delete chat"
+                                        data-testid={`button-delete-admin-chat-${senderId}`}
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
                                       <span className="text-xs text-zinc-500">
                                         {messages.length}
                                       </span>
