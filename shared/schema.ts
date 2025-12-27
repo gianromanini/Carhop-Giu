@@ -263,10 +263,13 @@ export const supportMessages = pgTable("support_messages", {
   read: boolean("read").default(false),
   adminReply: text("admin_reply"),
   adminRepliedAt: timestamp("admin_replied_at"),
+  isFinished: boolean("is_finished").default(false),
+  finishedBy: varchar("finished_by"), // 'client' | 'host' | 'admin'
+  finishedAt: timestamp("finished_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true, adminRepliedAt: true });
+export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true, adminRepliedAt: true, finishedAt: true });
 export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
 export type SupportMessage = typeof supportMessages.$inferSelect;
 

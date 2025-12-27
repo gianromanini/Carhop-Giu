@@ -1887,6 +1887,32 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // Finish chat (client/host closes conversation)
+  app.post("/api/support-messages/finish-chat", async (req, res) => {
+    try {
+      const { senderIdentifier, senderType, finishedBy } = req.body;
+      
+      if (!senderIdentifier || !senderType || !finishedBy) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      if (senderType !== 'client' && senderType !== 'host') {
+        return res.status(400).json({ message: "Invalid sender type" });
+      }
+      
+      const success = await (storage as any).finishSupportMessageGroup(senderIdentifier, senderType, finishedBy);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Failed to finish chat" });
+      }
+      
+      res.json({ message: "Chat finished successfully" });
+    } catch (error) {
+      console.error("Error finishing chat:", error);
+      res.status(500).json({ message: "Failed to finish chat" });
+    }
+  });
+
   // Forgot password endpoint
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {

@@ -549,6 +549,7 @@ export default function CarHopApp() {
   const [expandedClientChatGroups, setExpandedClientChatGroups] = useState<Set<string>>(new Set());
   const [finishedClientChatGroups, setFinishedClientChatGroups] = useState<Set<string>>(new Set());
   const [deletingChatGroup, setDeletingChatGroup] = useState<string | null>(null);
+  const [finishingChatGroup, setFinishingChatGroup] = useState<string | null>(null);
   const [showChatLoginScreen, setShowChatLoginScreen] = useState(false);
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
   const [selectedClient, setSelectedClient] = useState<any>(null);
@@ -773,6 +774,7 @@ export default function CarHopApp() {
   const [hostChatReply, setHostChatReply] = useState('');
   const [expandedHostChatGroups, setExpandedHostChatGroups] = useState<Set<string>>(new Set());
   const [finishedHostChatGroups, setFinishedHostChatGroups] = useState<Set<string>>(new Set());
+  const [finishingHostChatGroup, setFinishingHostChatGroup] = useState<string | null>(null);
   const [deletingHostChatGroup, setDeletingHostChatGroup] = useState<string | null>(null);
   
   const { toast } = useToast();
@@ -2405,20 +2407,53 @@ export default function CarHopApp() {
                               );
                             })}
                           </div>
-                          <button
-                            onClick={() => {
-                              const newFinished = new Set(finishedClientChatGroups);
-                              newFinished.add(groupKey);
-                              setFinishedClientChatGroups(newFinished);
-                              const newExpanded = new Set(expandedClientChatGroups);
-                              newExpanded.delete(groupKey);
-                              setExpandedClientChatGroups(newExpanded);
-                            }}
-                            className="w-full px-2 py-1.5 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-900 dark:text-white font-bold rounded text-xs flex items-center justify-center gap-1"
-                            data-testid={`button-finish-chat-${groupKey}`}
-                          >
-                            <CheckCircle size={14} /> Finish Chat
-                          </button>
+                          {finishingChatGroup === groupKey ? (
+                            <div className="w-full p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded space-y-2">
+                              <p className="text-xs font-bold text-yellow-900 dark:text-yellow-300">Finish this conversation? It cannot be reopened.</p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setFinishingChatGroup(null)}
+                                  className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                                  data-testid={`button-cancel-finish-chat-${groupKey}`}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await apiRequest('POST', '/api/support-messages/finish-chat', {
+                                        senderIdentifier: userEmail,
+                                        senderType: 'client',
+                                        finishedBy: 'client'
+                                      });
+                                      const newFinished = new Set(finishedClientChatGroups);
+                                      newFinished.add(groupKey);
+                                      setFinishedClientChatGroups(newFinished);
+                                      const newExpanded = new Set(expandedClientChatGroups);
+                                      newExpanded.delete(groupKey);
+                                      setExpandedClientChatGroups(newExpanded);
+                                      setFinishingChatGroup(null);
+                                      toast({ description: 'Chat finished. Admin will be notified.' });
+                                    } catch (error) {
+                                      toast({ description: 'Error finishing chat', variant: 'destructive' });
+                                    }
+                                  }}
+                                  className="flex-1 px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded text-xs"
+                                  data-testid={`button-confirm-finish-chat-${groupKey}`}
+                                >
+                                  Confirm
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setFinishingChatGroup(groupKey)}
+                              className="w-full px-2 py-1.5 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 text-zinc-900 dark:text-white font-bold rounded text-xs flex items-center justify-center gap-1"
+                              data-testid={`button-finish-chat-${groupKey}`}
+                            >
+                              <CheckCircle size={14} /> Finish Chat
+                            </button>
+                          )}
                           
                           <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
                             <textarea
@@ -5159,20 +5194,53 @@ export default function CarHopApp() {
                                       >
                                         <Send size={14}/> Send
                                       </button>
-                                      <button
-                                        onClick={() => {
-                                          const newFinished = new Set(finishedHostChatGroups);
-                                          newFinished.add(groupKey);
-                                          setFinishedHostChatGroups(newFinished);
-                                          const newExpanded = new Set(expandedHostChatGroups);
-                                          newExpanded.delete(groupKey);
-                                          setExpandedHostChatGroups(newExpanded);
-                                        }}
-                                        className="px-3 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-bold rounded text-sm flex items-center gap-1"
-                                        data-testid={`button-finish-host-chat-${groupKey}`}
-                                      >
-                                        <CheckCircle size={14}/> Finish Chat
-                                      </button>
+                                      {finishingHostChatGroup === groupKey ? (
+                                        <div className="flex-1 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded space-y-2">
+                                          <p className="text-xs font-bold text-yellow-900 dark:text-yellow-300">Finish this conversation? It cannot be reopened.</p>
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => setFinishingHostChatGroup(null)}
+                                              className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                                              data-testid={`button-cancel-finish-host-chat-${groupKey}`}
+                                            >
+                                              Cancel
+                                            </button>
+                                            <button
+                                              onClick={async () => {
+                                                try {
+                                                  await apiRequest('POST', '/api/support-messages/finish-chat', {
+                                                    senderIdentifier: hostEmail,
+                                                    senderType: 'host',
+                                                    finishedBy: 'host'
+                                                  });
+                                                  const newFinished = new Set(finishedHostChatGroups);
+                                                  newFinished.add(groupKey);
+                                                  setFinishedHostChatGroups(newFinished);
+                                                  const newExpanded = new Set(expandedHostChatGroups);
+                                                  newExpanded.delete(groupKey);
+                                                  setExpandedHostChatGroups(newExpanded);
+                                                  setFinishingHostChatGroup(null);
+                                                  toast({ description: 'Chat finished. Admin will be notified.' });
+                                                } catch (error) {
+                                                  toast({ description: 'Error finishing chat', variant: 'destructive' });
+                                                }
+                                              }}
+                                              className="flex-1 px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded text-xs"
+                                              data-testid={`button-confirm-finish-host-chat-${groupKey}`}
+                                            >
+                                              Confirm
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => setFinishingHostChatGroup(groupKey)}
+                                          className="px-3 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-bold rounded text-sm flex items-center gap-1"
+                                          data-testid={`button-finish-host-chat-${groupKey}`}
+                                        >
+                                          <CheckCircle size={14}/> Finish Chat
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                 )}
@@ -7450,6 +7518,8 @@ export default function CarHopApp() {
                           const senderName = firstMsg.senderName;
                           const isExpanded = expandedSupportGroup === senderId;
                           const hasUnread = messages.some((m: any) => !m.read);
+                          const isFinished = firstMsg.isFinished;
+                          const finishedBy = firstMsg.finishedBy;
                           
                           const messageText = firstMsg.text || '';
                           const subjectMatch = messageText.match(/\[(.*?)\]/);
@@ -7481,20 +7551,40 @@ export default function CarHopApp() {
                                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                     <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 min-w-0">
+                                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                         {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
                                         <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                           {senderName}
                                           {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
                                         </span>
+                                        {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
                                       </div>
                                       {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{subject}</p>}
                                       {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
                                     </div>
                                   </div>
-                                  <span className="text-xs text-zinc-500 flex-shrink-0">
-                                    {messages.length}
-                                  </span>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    {isFinished && (
+                                      <button
+                                        onClick={async () => {
+                                          for (const msg of messages) {
+                                            await apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting:', err));
+                                          }
+                                          queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                          toast({ description: 'Chat deleted' });
+                                          setExpandedSupportGroup(null);
+                                        }}
+                                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                                        title="Delete finished chat"
+                                        data-testid={`button-delete-finished-chat-${senderId}`}
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
+                                    <span className="text-xs text-zinc-500">
+                                      {messages.length}
+                                    </span>
+                                  </div>
                                 </div>
                               </button>
                               

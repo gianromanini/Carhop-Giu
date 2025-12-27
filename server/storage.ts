@@ -71,6 +71,7 @@ export interface IStorage {
   createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage>;
   updateSupportMessage(id: number, message: Partial<InsertSupportMessage>): Promise<SupportMessage | undefined>;
   deleteSupportMessage(id: number): Promise<boolean>;
+  finishSupportMessageGroup(senderIdentifier: string, senderType: string, finishedBy: string): Promise<boolean>;
   getUnreadSupportMessagesCount(senderType: string): Promise<number>;
 }
 
@@ -983,6 +984,20 @@ export class MemStorage implements IStorage {
     return this.supportMessagesMap.delete(id);
   }
 
+  async finishSupportMessageGroup(senderIdentifier: string, senderType: string, finishedBy: string): Promise<boolean> {
+    const messages = Array.from(this.supportMessagesMap.values());
+    let updated = false;
+    for (const msg of messages) {
+      if (msg.senderIdentifier === senderIdentifier) {
+        msg.isFinished = true;
+        msg.finishedBy = finishedBy;
+        msg.finishedAt = new Date();
+        updated = true;
+      }
+    }
+    return updated;
+  }
+
   async getUnreadSupportMessagesCount(senderType: string): Promise<number> {
     return Array.from(this.supportMessagesMap.values()).filter(m => m.senderType === senderType && !m.read).length;
   }
@@ -1474,6 +1489,26 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating support message:", error);
       return undefined;
+    }
+  }
+
+  async finishSupportMessageGroup(senderIdentifier: string, senderType: string, finishedBy: string): Promise<boolean> {
+    if (!this.initialized) return false;
+    try {
+      const filter = senderType === 'client' 
+        ? eq(supportMessages.senderIdentifier, senderIdentifier)
+        : (supportMessages: any) => supportMessages.senderIdentifier === senderIdentifier || supportMessages.senderEmail === senderIdentifier;
+      
+      const result = await this.db.update(supportMessages).set({ 
+        isFinished: true, 
+        finishedBy,
+        finishedAt: new Date()
+      }).where(eq(supportMessages.senderIdentifier, senderIdentifier)).returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error finishing support message group:", error);
+      return false;
     }
   }
 
