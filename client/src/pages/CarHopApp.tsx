@@ -766,6 +766,15 @@ export default function CarHopApp() {
     return saved ? JSON.parse(saved) : [];
   });
   
+  // Host Chat Support states
+  const [hostChatForm, setHostChatForm] = useState({ subject: 'Talk with Support', message: '' });
+  const [hostChatImages, setHostChatImages] = useState<string[]>([]);
+  const [hostChatSending, setHostChatSending] = useState(false);
+  const [hostChatReply, setHostChatReply] = useState('');
+  const [expandedHostChatGroups, setExpandedHostChatGroups] = useState<Set<string>>(new Set());
+  const [finishedHostChatGroups, setFinishedHostChatGroups] = useState<Set<string>>(new Set());
+  const [deletingHostChatGroup, setDeletingHostChatGroup] = useState<string | null>(null);
+  
   const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
@@ -3554,14 +3563,25 @@ export default function CarHopApp() {
           </div>
           
           <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
-            {['fleet', 'bookings', 'earnings'].map(tab => (
-              <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
+            {['fleet', 'bookings', 'earnings', 'chat'].map(tab => {
+              const hostEmail = currentHost?.email || '';
+              const hostUnreadCount = tab === 'chat' ? supportMessagesData.filter((m: any) => 
+                m.senderType === 'host' && m.senderIdentifier === hostEmail && m.adminReply && !m.read
+              ).length : 0;
+              return (
+              <button key={tab} onClick={() => setHostTab(tab)} className={`relative flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
                 {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                <span>{tab}</span>
+                {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                <span>{tab === 'chat' ? 'Support' : tab}</span>
+                {tab === 'chat' && hostUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    {hostUnreadCount > 9 ? '9+' : hostUnreadCount}
+                  </span>
+                )}
               </button>
-            ))}
+            );})}
           </div>
 
           {hostTab === 'fleet' && (() => {
@@ -4793,6 +4813,354 @@ export default function CarHopApp() {
                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Net Earnings</h4>
                   <p className="text-3xl font-bold text-green-500">${Math.max(0, netEarnings).toFixed(2)}</p>
                   <p className="text-xs text-zinc-500 mt-1">Your profit</p>
+                </Card>
+              </div>
+            );
+          })()}
+
+          {hostTab === 'chat' && (() => {
+            const hostEmail = currentHost?.email || '';
+            const hostName = `${currentHost?.firstName || ''} ${currentHost?.lastName || ''}`.trim();
+            const hostMessages = supportMessagesData.filter((m: any) => 
+              m.senderType === 'host' && m.senderIdentifier === hostEmail
+            ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            
+            const hasMessages = hostMessages.length > 0;
+            
+            // Mark unread messages as read when viewing
+            const unreadReplies = hostMessages.filter((m: any) => m.adminReply && !m.read);
+            if (unreadReplies.length > 0) {
+              unreadReplies.forEach((msg: any) => {
+                apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+              });
+            }
+            
+            // Group by subject + date
+            const groupedMessages: Record<string, any[]> = {};
+            hostMessages.forEach((msg: any) => {
+              const messageText = msg.text || '';
+              const subjectMatch = messageText.match(/\[(.*?)\]/);
+              const subject = subjectMatch ? subjectMatch[1] : 'No subject';
+              const date = new Date(msg.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+              const groupKey = `${subject}_${date}`;
+              if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
+              groupedMessages[groupKey].push(msg);
+            });
+            
+            const sortedGroups = Object.entries(groupedMessages).sort((a, b) => new Date(b[1][0].createdAt).getTime() - new Date(a[1][0].createdAt).getTime());
+            
+            return (
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* New Message Form */}
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                    <MessageCircle className="text-green-500" size={20}/> Contact Support
+                  </h3>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!hostChatForm.message.trim()) {
+                      toast({ description: 'Please enter a message', variant: 'destructive' });
+                      return;
+                    }
+                    setHostChatSending(true);
+                    try {
+                      const messageData = {
+                        senderType: 'host',
+                        senderId: hostEmail,
+                        senderName: hostName,
+                        senderIdentifier: hostEmail,
+                        text: `[${hostChatForm.subject}] ${hostChatForm.message}`,
+                        images: hostChatImages,
+                        read: false
+                      };
+                      await apiRequest('POST', '/api/support-messages', messageData);
+                      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                      setHostChatForm({ subject: 'Talk with Support', message: '' });
+                      setHostChatImages([]);
+                      toast({ description: 'Message sent successfully!' });
+                    } catch (error) {
+                      toast({ description: 'Error sending message', variant: 'destructive' });
+                    } finally {
+                      setHostChatSending(false);
+                    }
+                  }} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Subject *</label>
+                      <select
+                        value={hostChatForm.subject}
+                        onChange={(e) => setHostChatForm(prev => ({ ...prev, subject: e.target.value }))}
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                        data-testid="select-host-chat-subject"
+                      >
+                        <option value="Talk with Support">Talk with Support</option>
+                        <option value="Suggestion">Suggestion</option>
+                        <option value="Report an Issue">Report an Issue</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Message *</label>
+                      <textarea
+                        value={hostChatForm.message}
+                        onChange={(e) => setHostChatForm(prev => ({ ...prev, message: e.target.value }))}
+                        placeholder="Type your message here..."
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm resize-none"
+                        rows={4}
+                        required
+                        data-testid="textarea-host-chat-message"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">Attachments (optional)</label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {hostChatImages.map((img, idx) => (
+                          <div key={idx} className="relative w-16 h-16">
+                            <img src={img} alt={`Attachment ${idx + 1}`} className="w-full h-full object-cover rounded-lg border border-zinc-300 dark:border-zinc-700"/>
+                            <button type="button" onClick={() => setHostChatImages(prev => prev.filter((_, i) => i !== idx))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"><X size={12}/></button>
+                          </div>
+                        ))}
+                      </div>
+                      <label className="flex items-center justify-center gap-2 w-full px-3 py-2 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg cursor-pointer hover:border-green-500 transition-colors">
+                        <Upload size={18} className="text-zinc-500"/>
+                        <span className="text-sm text-zinc-500">Add Image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (files) {
+                              Array.from(files).forEach(file => {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  toast({ description: 'File too large. Maximum 5MB per image.', variant: 'destructive' });
+                                  return;
+                                }
+                                if (!file.type.startsWith('image/')) {
+                                  toast({ description: 'Only images are allowed.', variant: 'destructive' });
+                                  return;
+                                }
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  if (ev.target?.result) {
+                                    setHostChatImages(prev => [...prev, ev.target!.result as string]);
+                                  }
+                                };
+                                reader.onerror = () => {
+                                  toast({ description: 'Error loading image.', variant: 'destructive' });
+                                };
+                                reader.readAsDataURL(file);
+                              });
+                            }
+                          }}
+                          data-testid="input-host-chat-attachments"
+                        />
+                      </label>
+                    </div>
+                    
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3" disabled={hostChatSending} data-testid="button-host-send-chat">
+                      {hostChatSending ? <><Loader size={18} className="animate-spin"/> Sending...</> : <><Send size={18}/> Send Message</>}
+                    </Button>
+                  </form>
+                </Card>
+
+                {/* Conversations */}
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                    <MessageSquare className="text-blue-500" size={20}/> Conversations
+                  </h3>
+                  
+                  {!hasMessages ? (
+                    <div className="text-center py-8 text-zinc-500">
+                      <MessageCircle size={48} className="mx-auto mb-4 opacity-30"/>
+                      <p>No conversations yet</p>
+                      <p className="text-sm">Send your first message to get started</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                      {sortedGroups.map(([groupKey, groupMsgs]) => {
+                        const isExpanded = expandedHostChatGroups.has(groupKey);
+                        const isFinished = finishedHostChatGroups.has(groupKey);
+                        const [subject, date] = groupKey.split('_');
+                        const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
+                        
+                        if (isFinished && deletingHostChatGroup !== groupKey) {
+                          return (
+                            <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800">
+                              <div className="px-3 py-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
+                                  <span className="text-xs text-zinc-500">• {date}</span>
+                                </div>
+                                <button
+                                  onClick={() => setDeletingHostChatGroup(groupKey)}
+                                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  data-testid={`button-delete-host-chat-${groupKey}`}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        if (deletingHostChatGroup === groupKey) {
+                          return (
+                            <div key={groupKey} className="border border-red-300 dark:border-red-700 rounded-lg overflow-hidden bg-red-50 dark:bg-red-900/20 p-3">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this conversation?</p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    const newFinished = new Set(finishedHostChatGroups);
+                                    newFinished.delete(groupKey);
+                                    setFinishedHostChatGroups(newFinished);
+                                    setDeletingHostChatGroup(null);
+                                  }}
+                                  className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                                  data-testid={`button-cancel-delete-host-${groupKey}`}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const newFinished = new Set(finishedHostChatGroups);
+                                    newFinished.delete(groupKey);
+                                    setFinishedHostChatGroups(newFinished);
+                                    setDeletingHostChatGroup(null);
+                                    groupMsgs.forEach((msg: any) => {
+                                      apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting message:', err));
+                                    });
+                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                    toast({ description: 'Conversation deleted!' });
+                                  }}
+                                  className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
+                                  data-testid={`button-confirm-delete-host-${groupKey}`}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnread ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                            <button
+                              onClick={() => {
+                                const newExpanded = new Set(expandedHostChatGroups);
+                                if (isExpanded) {
+                                  newExpanded.delete(groupKey);
+                                } else {
+                                  newExpanded.add(groupKey);
+                                }
+                                setExpandedHostChatGroups(newExpanded);
+                              }}
+                              className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                              data-testid={`button-expand-host-chat-${groupKey}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
+                                <span className="text-sm font-bold text-zinc-900 dark:text-white">{subject}</span>
+                                <span className="text-xs text-zinc-500">• {date}</span>
+                                {hasUnread && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
+                              </div>
+                              <span className="text-xs text-zinc-500">{groupMsgs.length} msg</span>
+                            </button>
+                            
+                            {isExpanded && (
+                              <div className="border-t border-zinc-200 dark:border-zinc-700 p-3 space-y-3 bg-white dark:bg-zinc-900">
+                                {groupMsgs.map((msg: any) => (
+                                  <div key={msg.id} className="space-y-2">
+                                    {/* Host message */}
+                                    <div className="flex justify-end">
+                                      <div className="bg-blue-600 text-white rounded-lg px-3 py-2 max-w-[80%]">
+                                        <p className="text-sm">{msg.text?.replace(/\[.*?\]\s*/, '')}</p>
+                                        <p className="text-[10px] opacity-70 mt-1">{new Date(msg.createdAt).toLocaleString()}</p>
+                                        {msg.images?.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mt-2">
+                                            {msg.images.map((img: string, i: number) => (
+                                              <img key={i} src={img} alt="" className="w-12 h-12 object-cover rounded cursor-pointer" onClick={() => setSelectedImage(img)}/>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Admin reply */}
+                                    {msg.adminReply && (
+                                      <div className="flex justify-start">
+                                        <div className="bg-zinc-200 dark:bg-zinc-700 rounded-lg px-3 py-2 max-w-[80%]">
+                                          <p className="text-xs font-bold text-green-600 dark:text-green-400 mb-1">Admin</p>
+                                          <p className="text-sm text-zinc-900 dark:text-white">{msg.adminReply}</p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                
+                                {/* Reply textarea */}
+                                {!isFinished && (
+                                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                    <textarea
+                                      value={hostChatReply}
+                                      onChange={(e) => setHostChatReply(e.target.value)}
+                                      placeholder="Type your reply..."
+                                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm resize-none"
+                                      rows={2}
+                                      data-testid={`textarea-host-reply-${groupKey}`}
+                                    />
+                                    <div className="flex gap-2 mt-2">
+                                      <button
+                                        onClick={async () => {
+                                          if (!hostChatReply.trim()) return;
+                                          try {
+                                            const messageData = {
+                                              senderType: 'host',
+                                              senderId: hostEmail,
+                                              senderName: hostName,
+                                              senderIdentifier: hostEmail,
+                                              text: `[${subject}] ${hostChatReply}`,
+                                              images: [],
+                                              read: false
+                                            };
+                                            await apiRequest('POST', '/api/support-messages', messageData);
+                                            queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                            setHostChatReply('');
+                                            toast({ description: 'Reply sent!' });
+                                          } catch (error) {
+                                            toast({ description: 'Error sending reply', variant: 'destructive' });
+                                          }
+                                        }}
+                                        className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-sm flex items-center justify-center gap-2"
+                                        data-testid={`button-send-host-reply-${groupKey}`}
+                                      >
+                                        <Send size={14}/> Send
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const newFinished = new Set(finishedHostChatGroups);
+                                          newFinished.add(groupKey);
+                                          setFinishedHostChatGroups(newFinished);
+                                          const newExpanded = new Set(expandedHostChatGroups);
+                                          newExpanded.delete(groupKey);
+                                          setExpandedHostChatGroups(newExpanded);
+                                        }}
+                                        className="px-3 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-bold rounded text-sm flex items-center gap-1"
+                                        data-testid={`button-finish-host-chat-${groupKey}`}
+                                      >
+                                        <CheckCircle size={14}/> Finish Chat
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </Card>
               </div>
             );
