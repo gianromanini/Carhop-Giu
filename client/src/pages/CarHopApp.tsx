@@ -549,6 +549,7 @@ export default function CarHopApp() {
   const [expandedClientChatGroups, setExpandedClientChatGroups] = useState<Set<string>>(new Set());
   const [finishedClientChatGroups, setFinishedClientChatGroups] = useState<Set<string>>(new Set());
   const [deletingChatGroup, setDeletingChatGroup] = useState<string | null>(null);
+  const [deletingAdminChatGroup, setDeletingAdminChatGroup] = useState<string | null>(null);
   const [finishingChatGroup, setFinishingChatGroup] = useState<string | null>(null);
   const [showChatLoginScreen, setShowChatLoginScreen] = useState(false);
   const [earningsSortBy, setEarningsSortBy] = useState('carName');
@@ -7539,66 +7540,93 @@ export default function CarHopApp() {
                           
                           return (
                             <div key={senderId} className="space-y-2">
-                              <button
-                                onClick={async () => {
-                                  if (!isExpanded && hasUnread) {
-                                    const unreadMsgs = messages.filter((m: any) => !m.read);
-                                    for (const msg of unreadMsgs) {
-                                      await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
-                                    }
-                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                  }
-                                  setExpandedSupportGroup(isExpanded ? null : senderId);
-                                }}
+                              <div
                                 className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md ${
                                   hasUnread 
                                     ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
                                     : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
                                 } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
-                                data-testid={`button-support-group-${senderId}`}
                               >
-                                <div className="flex justify-between items-start gap-2 min-w-0">
-                                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                    <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                        {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
-                                        <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
-                                          {senderName}
-                                          {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
-                                        </span>
-                                        {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
+                                <button
+                                  onClick={async () => {
+                                    if (!isExpanded && hasUnread) {
+                                      const unreadMsgs = messages.filter((m: any) => !m.read);
+                                      for (const msg of unreadMsgs) {
+                                        await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+                                      }
+                                      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                    }
+                                    setExpandedSupportGroup(isExpanded ? null : senderId);
+                                  }}
+                                  className="w-full text-left"
+                                  data-testid={`button-support-group-${senderId}`}
+                                >
+                                  <div className="flex justify-between items-start gap-2 min-w-0">
+                                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                      <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                          {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
+                                          <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                                            {senderName}
+                                            {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
+                                          </span>
+                                          {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
+                                        </div>
+                                        {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{subject}</p>}
+                                        {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
                                       </div>
-                                      {subject && <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 truncate">{subject}</p>}
-                                      {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      {isFinished && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setDeletingAdminChatGroup(senderId); }}
+                                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                                          title="Delete finished chat"
+                                          data-testid={`button-delete-finished-chat-${senderId}`}
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      )}
+                                      <span className="text-xs text-zinc-500">
+                                        {messages.length}
+                                      </span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    {isFinished && (
-                                      <button
-                                        onClick={async () => {
-                                          for (const msg of messages) {
-                                            await apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting:', err));
-                                          }
-                                          queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                          toast({ description: 'Chat deleted' });
-                                          setExpandedSupportGroup(null);
-                                        }}
-                                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
-                                        title="Delete finished chat"
-                                        data-testid={`button-delete-finished-chat-${senderId}`}
-                                      >
-                                        <Trash2 size={14} />
-                                      </button>
-                                    )}
-                                    <span className="text-xs text-zinc-500">
-                                      {messages.length}
-                                    </span>
+                                </button>
+                              </div>
+                              
+                              {deletingAdminChatGroup === senderId && (
+                                <div className="ml-2 sm:ml-4 border-l-2 border-red-300 dark:border-red-700 pl-2 sm:pl-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                  <p className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Delete this chat?</p>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => setDeletingAdminChatGroup(null)}
+                                      className="flex-1 px-2 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
+                                      data-testid={`button-cancel-delete-admin-chat-${senderId}`}
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        for (const msg of messages) {
+                                          await apiRequest('DELETE', `/api/support-messages/${msg.id}`).catch(err => console.error('Error deleting:', err));
+                                        }
+                                        queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                        toast({ description: 'Chat deleted' });
+                                        setExpandedSupportGroup(null);
+                                        setDeletingAdminChatGroup(null);
+                                      }}
+                                      className="flex-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-xs"
+                                      data-testid={`button-confirm-delete-admin-chat-${senderId}`}
+                                    >
+                                      Delete
+                                    </button>
                                   </div>
                                 </div>
-                              </button>
+                              )}
                               
-                              {isExpanded && (
+                              {isExpanded && deletingAdminChatGroup !== senderId && (
                                 <div className="ml-2 sm:ml-4 space-y-1 border-l-2 border-zinc-300 dark:border-zinc-700 pl-2 sm:pl-4">
                                   {messages.map((message: any, idx: number) => {
                                     const isFirstMsg = idx === 0;
