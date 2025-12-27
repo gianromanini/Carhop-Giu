@@ -1756,7 +1756,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   // Create support message
   app.post("/api/support-messages", async (req, res) => {
     try {
-      const { senderType, senderId, senderName, senderIdentifier, text, images } = req.body;
+      const { senderType, senderId, senderName, senderIdentifier, senderEmail, text, images } = req.body;
       
       if (!senderType || !senderId || !senderName || !senderIdentifier || !text) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -1771,6 +1771,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         senderId,
         senderName,
         senderIdentifier,
+        senderEmail: senderEmail || null,
         text,
         images: images || [],
         read: false,
@@ -1789,6 +1790,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const id = parseInt(req.params.id);
       const { adminReply, read } = req.body;
       
+      // Get the original message first to get sender info for email notification
+      const originalMessage = await storage.getSupportMessage(id);
+      if (!originalMessage) {
+        return res.status(404).json({ message: "Support message not found" });
+      }
+      
       const updateData: any = {};
       if (adminReply !== undefined) updateData.adminReply = adminReply;
       if (read !== undefined) updateData.read = read;
@@ -1796,6 +1803,64 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const updatedMessage = await storage.updateSupportMessage(id, updateData);
       if (!updatedMessage) {
         return res.status(404).json({ message: "Support message not found" });
+      }
+      
+      // Send email notification when admin replies to a host message
+      if (adminReply && originalMessage.senderType === 'host') {
+        const hostEmail = originalMessage.senderEmail || originalMessage.senderIdentifier;
+        if (hostEmail && hostEmail.includes('@')) {
+          try {
+            await transporter.sendMail({
+              from: process.env.EMAIL_FROM || 'noreply@carhop.com',
+              to: hostEmail,
+              subject: 'CarHop Support - New Reply to Your Message',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #16a34a;">CarHop Support</h2>
+                  <p>Hello ${originalMessage.senderName},</p>
+                  <p>You have received a new reply from CarHop Support:</p>
+                  <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin: 0; white-space: pre-wrap;">${adminReply}</p>
+                  </div>
+                  <p>Log in to your Host Dashboard to continue the conversation.</p>
+                  <p style="color: #666; font-size: 12px;">This is an automated message from CarHop.</p>
+                </div>
+              `
+            });
+            console.log(`Support reply email sent to host: ${hostEmail}`);
+          } catch (emailError) {
+            console.error('Error sending support reply email to host:', emailError);
+          }
+        }
+      }
+      
+      // Send email notification when admin replies to a client message
+      if (adminReply && originalMessage.senderType === 'client') {
+        const clientEmail = originalMessage.senderIdentifier;
+        if (clientEmail && clientEmail.includes('@')) {
+          try {
+            await transporter.sendMail({
+              from: process.env.EMAIL_FROM || 'noreply@carhop.com',
+              to: clientEmail,
+              subject: 'CarHop Support - New Reply to Your Message',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #16a34a;">CarHop Support</h2>
+                  <p>Hello ${originalMessage.senderName},</p>
+                  <p>You have received a new reply from CarHop Support:</p>
+                  <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin: 0; white-space: pre-wrap;">${adminReply}</p>
+                  </div>
+                  <p>Thank you for contacting CarHop Support.</p>
+                  <p style="color: #666; font-size: 12px;">This is an automated message from CarHop.</p>
+                </div>
+              `
+            });
+            console.log(`Support reply email sent to client: ${clientEmail}`);
+          } catch (emailError) {
+            console.error('Error sending support reply email to client:', emailError);
+          }
+        }
       }
       
       res.json(updatedMessage);

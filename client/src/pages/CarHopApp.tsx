@@ -1032,8 +1032,12 @@ export default function CarHopApp() {
   useEffect(() => {
     if (hostTab === 'chat' && currentHost?.email) {
       const hostEmail = currentHost.email;
+      const hostUsername = currentHost.username || '';
+      // Handle both old format (email as senderIdentifier) and new format (@username)
       const unreadHostReplies = supportMessagesData.filter((m: any) => 
-        m.senderType === 'host' && m.senderIdentifier === hostEmail && m.adminReply && !m.read
+        m.senderType === 'host' && 
+        (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
+        m.adminReply && !m.read
       );
       if (unreadHostReplies.length > 0) {
         Promise.all(
@@ -1045,7 +1049,7 @@ export default function CarHopApp() {
         }).catch(err => console.error('Error marking host messages as read:', err));
       }
     }
-  }, [hostTab, currentHost?.email, supportMessagesData]);
+  }, [hostTab, currentHost?.email, currentHost?.username, supportMessagesData]);
 
   // Recalculate delivery fee when pickup location or delivery type changes
   useEffect(() => {
@@ -3584,8 +3588,12 @@ export default function CarHopApp() {
           <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
             {['fleet', 'bookings', 'earnings', 'chat'].map(tab => {
               const hostEmail = currentHost?.email || '';
+              const hostUsername = currentHost?.username || '';
+              // Handle both old format (email as senderIdentifier) and new format (@username)
               const hostUnreadCount = tab === 'chat' ? supportMessagesData.filter((m: any) => 
-                m.senderType === 'host' && m.senderIdentifier === hostEmail && m.adminReply && !m.read
+                m.senderType === 'host' && 
+                (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
+                m.adminReply && !m.read
               ).length : 0;
               return (
               <button key={tab} onClick={() => setHostTab(tab)} className={`relative flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
@@ -4841,8 +4849,9 @@ export default function CarHopApp() {
             const hostEmail = currentHost?.email || '';
             const hostUsername = currentHost?.username || '';
             const hostName = `${currentHost?.firstName || ''} ${currentHost?.lastName || ''}`.trim();
+            // Handle both old format (email as senderIdentifier) and new format (@username)
             const hostMessages = supportMessagesData.filter((m: any) => 
-              m.senderType === 'host' && (m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail)
+              m.senderType === 'host' && (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail)
             ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             
             const hasMessages = hostMessages.length > 0;
