@@ -7414,9 +7414,9 @@ export default function CarHopApp() {
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
                     <span>Clients</span>
-                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).length > 0 && (
+                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read && !m.isFinished).length > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
-                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).length}
+                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read && !m.isFinished).length}
                       </span>
                     )}
                   </button>
@@ -7427,9 +7427,9 @@ export default function CarHopApp() {
                   >
                     <Building2 size={14} className="sm:w-4 sm:h-4" />
                     <span>Hosts</span>
-                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && m.adminReply && !m.read).length > 0 && (
+                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read && !m.isFinished).length > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
-                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && m.adminReply && !m.read).length}
+                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read && !m.isFinished).length}
                       </span>
                     )}
                   </button>

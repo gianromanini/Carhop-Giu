@@ -1519,23 +1519,43 @@ export class DatabaseStorage implements IStorage {
   async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
     if (!this.initialized) return false;
     try {
-      console.log(`Finishing ALL messages for senderId: ${senderId} (subject hint: ${subject})`);
+      console.log(`Finishing messages for Subject: "${subject}", SenderId: ${senderId}`);
       
-      // Filter by senderIdentifier OR senderEmail directly in SQL - no regex parsing needed
-      // This marks ALL messages from this sender as finished (the entire conversation)
-      const filter = or(
+      // First, get all messages from this sender that contain this subject
+      const senderFilter = or(
         eq(supportMessages.senderIdentifier, senderId),
         eq(supportMessages.senderEmail, senderId)
       );
       
-      const result = await this.db.update(supportMessages).set({ 
-        isFinished: true, 
-        finishedBy,
-        finishedAt: new Date()
-      }).where(and(filter, eq(supportMessages.isFinished, false))).returning();
+      const allMessages = await this.db.select().from(supportMessages).where(senderFilter);
       
-      console.log(`Successfully finished ${result.length} messages for senderId: ${senderId}`);
-      return true; // Return true even if no messages found (may already be finished)
+      // Filter by subject in the message text (subject is stored as [Subject] at the start)
+      const subjectPattern = `[${subject}]`;
+      const matchingIds = allMessages
+        .filter((m: SupportMessage) => {
+          const text = m.text || '';
+          return text.includes(subjectPattern) && !m.isFinished;
+        })
+        .map((m: SupportMessage) => m.id);
+      
+      if (matchingIds.length === 0) {
+        console.log(`No matching messages found for Subject: "${subject}", SenderId: ${senderId}`);
+        return true; // Return true - may already be finished
+      }
+      
+      // Update all matching messages
+      let updatedCount = 0;
+      for (const id of matchingIds) {
+        await this.db.update(supportMessages).set({ 
+          isFinished: true, 
+          finishedBy,
+          finishedAt: new Date()
+        }).where(eq(supportMessages.id, id));
+        updatedCount++;
+      }
+      
+      console.log(`Successfully finished ${updatedCount} messages for Subject: "${subject}", SenderId: ${senderId}`);
+      return true;
     } catch (error) {
       console.error("Error finishing support message group by subject and sender:", error);
       return false;
