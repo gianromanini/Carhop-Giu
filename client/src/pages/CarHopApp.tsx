@@ -2430,6 +2430,14 @@ export default function CarHopApp() {
                                     images: []
                                   });
                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                  
+                                  // If this subject was finished, remove it from finished list so new message creates new active chat
+                                  if (finishedClientChatGroups.has(subject)) {
+                                    const newFinished = new Set(finishedClientChatGroups);
+                                    newFinished.delete(subject);
+                                    setFinishedClientChatGroups(newFinished);
+                                  }
+                                  
                                   setClientChatReply('');
                                   toast({ description: 'Reply sent!' });
                                 } catch (error) {
@@ -2470,6 +2478,14 @@ export default function CarHopApp() {
                 console.log('📨 Enviando mensagem:', messagePayload);
                 await apiRequest('POST', '/api/support-messages', messagePayload);
                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                
+                // If this subject was finished, remove it from finished list so new message creates new active chat
+                if (finishedClientChatGroups.has(clientChatForm.subject)) {
+                  const newFinished = new Set(finishedClientChatGroups);
+                  newFinished.delete(clientChatForm.subject);
+                  setFinishedClientChatGroups(newFinished);
+                }
+                
                 toast({ description: 'Message sent successfully! We will contact you soon.' });
                 setShowClientChatModal(false);
                 setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
@@ -4886,6 +4902,14 @@ export default function CarHopApp() {
                       };
                       await apiRequest('POST', '/api/support-messages', messageData);
                       queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                      
+                      // If this subject was finished, remove it from finished list so new message creates new active chat
+                      if (finishedHostChatGroups.has(hostChatForm.subject)) {
+                        const newFinished = new Set(finishedHostChatGroups);
+                        newFinished.delete(hostChatForm.subject);
+                        setFinishedHostChatGroups(newFinished);
+                      }
+                      
                       setHostChatForm({ subject: 'Talk with Support', message: '' });
                       setHostChatImages([]);
                       toast({ description: 'Message sent successfully!' });
