@@ -7545,29 +7545,25 @@ export default function CarHopApp() {
                                 return (
                                   <div key={groupKeyFull} className="space-y-2">
                                     <div
-                                      className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md ${
+                                      className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md cursor-pointer ${
                                         hasUnread 
                                           ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
                                           : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
                                       } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
-                                    >
-                                      <button
-                                        onClick={async () => {
-                                          if (isFinished) return;
-                                          if (!isExpanded && hasUnread) {
-                                            const unreadMsgs = messages.filter((m: any) => !m.read);
-                                            for (const msg of unreadMsgs) {
-                                              await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
-                                            }
-                                            queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                      onClick={async () => {
+                                        if (isFinished) return;
+                                        if (!isExpanded && hasUnread) {
+                                          const unreadMsgs = messages.filter((m: any) => !m.read);
+                                          for (const msg of unreadMsgs) {
+                                            await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
                                           }
-                                          setExpandedSupportGroup(isExpanded ? null : groupKeyFull);
-                                        }}
-                                        className="w-full text-left"
-                                        data-testid={`button-support-group-${groupKeyFull}`}
-                                        disabled={isFinished}
-                                      >
-                                        <div className="flex justify-between items-start gap-2 min-w-0">
+                                          queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                        }
+                                        setExpandedSupportGroup(isExpanded ? null : groupKeyFull);
+                                      }}
+                                      data-testid={`button-support-group-${groupKeyFull}`}
+                                    >
+                                      <div className="flex justify-between items-start gap-2 min-w-0">
                                           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                             <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                                             <div className="flex-1 min-w-0">
@@ -7616,7 +7612,6 @@ export default function CarHopApp() {
                                             </span>
                                           </div>
                                         </div>
-                                      </button>
                                     </div>
                                     
                                     {deletingAdminChatGroup === groupKeyFull && (
