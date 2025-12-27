@@ -1935,6 +1935,59 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // Admin reply to support message
+  app.put("/api/support-messages/:id/admin-reply", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { adminReply } = req.body;
+      
+      if (!adminReply) {
+        return res.status(400).json({ message: "Admin reply is required" });
+      }
+      
+      const message = await storage.getSupportMessage(parseInt(id));
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      const updated = await storage.updateSupportMessage(parseInt(id), { 
+        adminReply,
+        adminReplyNotificationSeen: false
+      });
+      
+      if (!updated) {
+        return res.status(500).json({ message: "Failed to add admin reply" });
+      }
+      
+      res.json({ message: "Admin reply added successfully", data: updated });
+    } catch (error) {
+      console.error("Error adding admin reply:", error);
+      res.status(500).json({ message: "Failed to add admin reply" });
+    }
+  });
+
+  // Mark admin reply notification as seen
+  app.put("/api/support-messages/notification-seen", async (req, res) => {
+    try {
+      const { senderId, subject } = req.body;
+      
+      if (!senderId || !subject) {
+        return res.status(400).json({ message: "SenderId and subject are required" });
+      }
+      
+      const success = await (storage as any).markAdminReplyNotificationAsSeen(senderId, subject);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Failed to mark notification as seen" });
+      }
+      
+      res.json({ message: "Notification marked as seen" });
+    } catch (error) {
+      console.error("Error marking notification as seen:", error);
+      res.status(500).json({ message: "Failed to mark notification as seen" });
+    }
+  });
+
   // Forgot password endpoint
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {

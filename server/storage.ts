@@ -73,6 +73,7 @@ export interface IStorage {
   deleteSupportMessage(id: number): Promise<boolean>;
   finishSupportMessageGroup(senderIdentifier: string, senderType: string, finishedBy: string): Promise<boolean>;
   finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean>;
+  markAdminReplyNotificationAsSeen(senderId: string, subject: string): Promise<boolean>;
   getUnreadSupportMessagesCount(senderType: string): Promise<number>;
 }
 
@@ -1551,6 +1552,32 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting support message:", error);
+      return false;
+    }
+  }
+
+  async markAdminReplyNotificationAsSeen(senderId: string, subject: string): Promise<boolean> {
+    if (!this.initialized) return false;
+    try {
+      const allMessages = await this.db.select().from(supportMessages);
+      const messagesToUpdate = allMessages.filter((msg: SupportMessage) => {
+        const msgText = msg.text || '';
+        const msgSubject = msgText.match(/\[(.*?)\]/)?.[1] || 'Sem Assunto';
+        const msgSenderId = msg.senderIdentifier || msg.senderEmail || '';
+        return msgSubject === subject && msgSenderId === senderId && msg.adminReply;
+      });
+
+      if (messagesToUpdate.length === 0) return false;
+
+      const result = await this.db.update(supportMessages).set({ 
+        adminReplyNotificationSeen: true
+      }).where(
+        or(...messagesToUpdate.map((m: SupportMessage) => eq(supportMessages.id, m.id)))
+      ).returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error marking admin reply notification as seen:", error);
       return false;
     }
   }

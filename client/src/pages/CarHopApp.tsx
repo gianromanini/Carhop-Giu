@@ -7536,6 +7536,7 @@ export default function CarHopApp() {
                                 const groupKeyFull = subject + "_" + senderId;
                                 const isExpanded = expandedSupportGroup === groupKeyFull;
                                 const hasUnread = messages.some((m: any) => !m.read);
+                                const hasAdminReplyNotification = messages.some((m: any) => m.adminReply && !m.adminReplyNotificationSeen);
                                 const isFinished = firstMsg.isFinished;
                                 const finishedBy = firstMsg.finishedBy;
                                 
@@ -7548,6 +7549,8 @@ export default function CarHopApp() {
                                       className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md cursor-pointer ${
                                         hasUnread 
                                           ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
+                                          : hasAdminReplyNotification
+                                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
                                           : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
                                       } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
                                       onClick={async () => {
@@ -7559,6 +7562,9 @@ export default function CarHopApp() {
                                           }
                                           queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                         }
+                                        if (!isExpanded) {
+                                          await apiRequest('PUT', `/api/support-messages/notification-seen`, { senderId, subject: chatSubject }).catch(err => console.error('Error marking notification as seen:', err));
+                                        }
                                         setExpandedSupportGroup(isExpanded ? null : groupKeyFull);
                                       }}
                                       data-testid={`button-support-group-${groupKeyFull}`}
@@ -7569,6 +7575,7 @@ export default function CarHopApp() {
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                                 {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
+                                                {hasAdminReplyNotification && <Bell size={14} className="text-blue-500 animate-pulse flex-shrink-0" />}
                                                 <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                                   {senderName}
                                                   {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-zinc-500 dark:text-zinc-400 font-normal">({firstMsg.senderIdentifier})</span>}
