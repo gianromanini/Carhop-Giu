@@ -1913,6 +1913,28 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // Finish chat by subject and sender (admin only)
+  app.post("/api/support-messages/finish-group", async (req, res) => {
+    try {
+      const { subject, senderId, finishedBy } = req.body;
+      
+      if (!subject || !senderId || !finishedBy) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      const success = await (storage as any).finishSupportMessageGroupBySubjectAndSender(subject, senderId, finishedBy);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Failed to finish chat" });
+      }
+      
+      res.json({ message: "Chat finished successfully" });
+    } catch (error) {
+      console.error("Error finishing chat group:", error);
+      res.status(500).json({ message: "Failed to finish chat" });
+    }
+  });
+
   // Forgot password endpoint
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {

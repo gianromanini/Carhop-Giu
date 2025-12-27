@@ -7553,6 +7553,7 @@ export default function CarHopApp() {
                                     >
                                       <button
                                         onClick={async () => {
+                                          if (isFinished) return;
                                           if (!isExpanded && hasUnread) {
                                             const unreadMsgs = messages.filter((m: any) => !m.read);
                                             for (const msg of unreadMsgs) {
@@ -7564,6 +7565,7 @@ export default function CarHopApp() {
                                         }}
                                         className="w-full text-left"
                                         data-testid={`button-support-group-${groupKeyFull}`}
+                                        disabled={isFinished}
                                       >
                                         <div className="flex justify-between items-start gap-2 min-w-0">
                                           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -7582,6 +7584,25 @@ export default function CarHopApp() {
                                             </div>
                                           </div>
                                           <div className="flex items-center gap-1 flex-shrink-0">
+                                            {!isFinished && (
+                                              <button
+                                                onClick={async (e) => { 
+                                                  e.stopPropagation();
+                                                  try {
+                                                    await apiRequest('POST', `/api/support-messages/finish-group`, { subject: chatSubject, senderId, finishedBy: 'admin' });
+                                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                                    toast({ description: 'Chat finalized!' });
+                                                  } catch (error) {
+                                                    toast({ description: 'Error finishing chat', variant: 'destructive' });
+                                                  }
+                                                }}
+                                                className="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 text-xs"
+                                                title="Finish chat (closes entire conversation)"
+                                                data-testid={`button-finish-admin-chat-${groupKeyFull}`}
+                                              >
+                                                <CheckCircle size={14} />
+                                              </button>
+                                            )}
                                             <button
                                               onClick={(e) => { e.stopPropagation(); setDeletingAdminChatGroup(groupKeyFull); }}
                                               className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs"
