@@ -9,7 +9,7 @@ import {
   type SupportMessage, type InsertSupportMessage
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, ilike } from "drizzle-orm";
+import { eq, ilike, or } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
@@ -1497,13 +1497,16 @@ export class DatabaseStorage implements IStorage {
     try {
       const filter = senderType === 'client' 
         ? eq(supportMessages.senderIdentifier, senderIdentifier)
-        : (supportMessages: any) => supportMessages.senderIdentifier === senderIdentifier || supportMessages.senderEmail === senderIdentifier;
+        : or(
+            eq(supportMessages.senderIdentifier, senderIdentifier),
+            eq(supportMessages.senderEmail, senderIdentifier)
+          );
       
       const result = await this.db.update(supportMessages).set({ 
         isFinished: true, 
         finishedBy,
         finishedAt: new Date()
-      }).where(eq(supportMessages.senderIdentifier, senderIdentifier)).returning();
+      }).where(filter).returning();
       
       return result.length > 0;
     } catch (error) {
