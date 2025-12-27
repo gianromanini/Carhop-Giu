@@ -7475,7 +7475,7 @@ export default function CarHopApp() {
                   ) : (
                     <div className="space-y-4">
                       {(() => {
-                        // Group by Subject, then by Sender
+                        // Group by Subject, then by Sender, then by Session (finishedAt)
                         const groupedBySubject = {} as any;
                         supportMessagesData
                           .filter((m: any) => m.senderType === supportSubTab)
@@ -7487,23 +7487,34 @@ export default function CarHopApp() {
                             if (!groupedBySubject[subject]) groupedBySubject[subject] = {};
                             
                             const senderId = msg.senderIdentifier || msg.senderId;
-                            if (!groupedBySubject[subject][senderId]) groupedBySubject[subject][senderId] = [];
-                            groupedBySubject[subject][senderId].push(msg);
+                            if (!groupedBySubject[subject][senderId]) groupedBySubject[subject][senderId] = {};
+                            
+                            // Group by session (using finishedAt or 'active')
+                            const sessionKey = msg.finishedAt ? new Date(msg.finishedAt).toISOString() : 'active';
+                            if (!groupedBySubject[subject][senderId][sessionKey]) {
+                              groupedBySubject[subject][senderId][sessionKey] = [];
+                            }
+                            groupedBySubject[subject][senderId][sessionKey].push(msg);
                           });
                         
                         // Apply filters
                         let filtered = Object.entries(groupedBySubject)
                           .map(([subject, senderGroups]: any) => [
                             subject,
-                            Object.entries(senderGroups).filter(([senderId, messages]: any) => {
-                              if (!messages || messages.length === 0) return false;
-                              const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
-                              if (!firstMsg) return false;
-                              const senderName = firstMsg.senderName || '';
-                              const senderEmail = firstMsg.senderIdentifier || firstMsg.senderEmail || '';
-                              const searchLower = supportSearchTerm.toLowerCase();
-                              return senderName.toLowerCase().includes(searchLower) || senderEmail.toLowerCase().includes(searchLower);
-                            })
+                            Object.entries(senderGroups)
+                              .map(([senderId, sessions]: any) => [
+                                senderId,
+                                Object.entries(sessions).filter(([_, messages]: any) => {
+                                  if (!messages || messages.length === 0) return false;
+                                  const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+                                  if (!firstMsg) return false;
+                                  const senderName = firstMsg.senderName || '';
+                                  const senderEmail = firstMsg.senderIdentifier || firstMsg.senderEmail || '';
+                                  const searchLower = supportSearchTerm.toLowerCase();
+                                  return senderName.toLowerCase().includes(searchLower) || senderEmail.toLowerCase().includes(searchLower);
+                                })
+                              ] as any[])
+                              .filter(([_, sessions]: any) => Object.keys(sessions).length > 0)
                           ] as any[])
                           .filter(([_, senderGroups]: any) => senderGroups.length > 0);
                         
@@ -7511,8 +7522,12 @@ export default function CarHopApp() {
                         filtered = filtered.map(([subject, senderGroups]: any) => [
                           subject,
                           senderGroups.sort((a: any, b: any) => {
-                            const firstMsgA = (a[1] as any[]).sort((x: any, y: any) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime())[0];
-                            const firstMsgB = (b[1] as any[]).sort((x: any, y: any) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime())[0];
+                            const sessionsA = a[1];
+                            const sessionsB = b[1];
+                            const firstMsgA = Object.values(sessionsA)[0]?.[0];
+                            const firstMsgB = Object.values(sessionsB)[0]?.[0];
+                            
+                            if (!firstMsgA || !firstMsgB) return 0;
                             
                             if (supportSortBy === 'name') {
                               return (firstMsgA.senderName || '').localeCompare(firstMsgB.senderName || '');
@@ -7528,18 +7543,21 @@ export default function CarHopApp() {
                               📋 {subject}
                             </h4>
                             <div className="space-y-2 ml-2">
-                              {Object.entries(senderGroups).map(([senderId, messages]: any) => {
-                                const chatSubject = subject;
-                                const firstMsg = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
-                                const senderName = firstMsg.senderName;
-                                const groupKeyFull = subject + "_" + senderId;
-                                const isExpanded = expandedSupportGroup === groupKeyFull;
-                                const hasUnread = messages.some((m: any) => !m.read);
-                                const isFinished = firstMsg.isFinished;
-                                const finishedBy = firstMsg.finishedBy;
-                                
-                                const phoneMatch = (firstMsg.text || '').match(/Telefone:\s*(.*?)(?:\n|$)/);
-                                const phone = phoneMatch ? phoneMatch[1] : '';
+                              {senderGroups.map(([senderId, sessions]: any) => {
+                                return Object.entries(sessions).map(([sessionKey, messages]: any) => {
+                                  const chatSubject = subject;
+                                  const sortedMessages = (messages as any[]).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                                  const firstMsg = sortedMessages[0];
+                                  const senderName = firstMsg.senderName;
+                                  const sessionTime = sessionKey === 'active' ? 'Ativa' : new Date(sessionKey).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                  const groupKeyFull = subject + "_" + senderId + "_" + sessionKey;
+                                  const isExpanded = expandedSupportGroup === groupKeyFull;
+                                  const hasUnread = messages.some((m: any) => !m.read);
+                                  const isFinished = firstMsg.isFinished;
+                                  const finishedBy = firstMsg.finishedBy;
+                                  
+                                  const phoneMatch = (firstMsg.text || '').match(/Telefone:\s*(.*?)(?:\n|$)/);
+                                  const phone = phoneMatch ? phoneMatch[1] : '';
                           
                                 return (
                                   <div key={groupKeyFull} className="space-y-2">
@@ -7573,6 +7591,7 @@ export default function CarHopApp() {
                                                 <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                                   {senderName}
                                                   {supportSubTab === 'host' && firstMsg.senderIdentifier && <span className="text-white">{firstMsg.senderIdentifier}</span>}
+                                                  <span className="text-[9px] font-normal text-gray-600 dark:text-gray-400">{sessionTime}</span>
                                                 </span>
                                                 {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
                                               </div>
@@ -7763,6 +7782,7 @@ export default function CarHopApp() {
                                   )}
                                 </div>
                                 );
+                                });
                               })}
                             </div>
                           </div>
