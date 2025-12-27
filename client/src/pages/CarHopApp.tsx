@@ -5422,9 +5422,9 @@ export default function CarHopApp() {
                   </div>
                   <div className="relative">
                     <span>{tab === 'support' ? 'Chat' : tab}</span>
-                    {tab === 'support' && supportMessagesData.filter((m: any) => !m.read).length > 0 && (
-                      <span className="absolute -top-4 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                        {supportMessagesData.filter((m: any) => !m.read).length > 9 ? '9+' : supportMessagesData.filter((m: any) => !m.read).length}
+                    {tab === 'support' && supportMessagesData.length > 0 && (
+                      <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                        !
                       </span>
                     )}
                   </div>
@@ -7472,19 +7472,29 @@ export default function CarHopApp() {
                 <div className="flex gap-2 mb-3 flex-wrap">
                   <button
                     onClick={() => { setSupportSubTab('client'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
-                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 ${supportSubTab === 'client' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 relative ${supportSubTab === 'client' ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-clients"
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
-                    <span>Clients ({supportMessagesData.filter((m: any) => m.senderType === 'client').length})</span>
+                    <span>Clients</span>
+                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read).length > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read).length}
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => { setSupportSubTab('host'); setSelectedSupportMessage(null); setExpandedSupportGroup(null); }}
-                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center gap-1 relative ${supportSubTab === 'host' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                     data-testid="button-support-hosts"
                   >
                     <Building2 size={14} className="sm:w-4 sm:h-4" />
-                    <span>Hosts ({supportMessagesData.filter((m: any) => m.senderType === 'host').length})</span>
+                    <span>Hosts</span>
+                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read).length > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read).length}
+                      </span>
+                    )}
                   </button>
                 </div>
 
