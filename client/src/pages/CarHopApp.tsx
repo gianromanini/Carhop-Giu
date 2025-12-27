@@ -2279,14 +2279,13 @@ export default function CarHopApp() {
                 });
               }
               
-              // Group by subject + date
+              // Group by subject only (same subject = same chat, even on different dates)
               const groupedMessages: Record<string, any[]> = {};
               clientMessages.forEach((msg: any) => {
                 const messageText = msg.text || '';
                 const subjectMatch = messageText.match(/\[(.*?)\]/);
                 const subject = subjectMatch ? subjectMatch[1] : 'Sem assunto';
-                const date = new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                const groupKey = `${subject}_${date}`;
+                const groupKey = subject;
                 if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
                 groupedMessages[groupKey].push(msg);
               });
@@ -2298,7 +2297,8 @@ export default function CarHopApp() {
                 {sortedGroups.map(([groupKey, groupMsgs]) => {
                   const isExpanded = expandedClientChatGroups.has(groupKey);
                   const isFinished = finishedClientChatGroups.has(groupKey);
-                  const [subject, date] = groupKey.split('_');
+                  const subject = groupKey;
+                  const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                   const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                   
                   if (isFinished) {
@@ -4845,14 +4845,13 @@ export default function CarHopApp() {
             
             const hasMessages = hostMessages.length > 0;
             
-            // Group by subject + date
+            // Group by subject only (same subject = same chat, even on different dates)
             const groupedMessages: Record<string, any[]> = {};
             hostMessages.forEach((msg: any) => {
               const messageText = msg.text || '';
               const subjectMatch = messageText.match(/\[(.*?)\]/);
               const subject = subjectMatch ? subjectMatch[1] : 'No subject';
-              const date = new Date(msg.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
-              const groupKey = `${subject}_${date}`;
+              const groupKey = subject;
               if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
               groupedMessages[groupKey].push(msg);
             });
@@ -4872,6 +4871,20 @@ export default function CarHopApp() {
                       toast({ description: 'Please enter a message', variant: 'destructive' });
                       return;
                     }
+                    
+                    // Check if chat with this subject is finished
+                    const existingChat = Array.from(hostMessages).find((msg: any) => {
+                      const msgText = msg.text || '';
+                      const msgSubject = msgText.match(/\[(.*?)\]/)?.[1] || 'No subject';
+                      return msgSubject === hostChatForm.subject;
+                    });
+                    
+                    const isFinishedChat = existingChat && finishedHostChatGroups.has(hostChatForm.subject);
+                    if (isFinishedChat) {
+                      toast({ description: 'This chat is finished. New messages create a new chat.', variant: 'destructive' });
+                      return;
+                    }
+                    
                     setHostChatSending(true);
                     try {
                       const messageData = {
@@ -4993,7 +5006,8 @@ export default function CarHopApp() {
                       {sortedGroups.map(([groupKey, groupMsgs]) => {
                         const isExpanded = expandedHostChatGroups.has(groupKey);
                         const isFinished = finishedHostChatGroups.has(groupKey);
-                        const [subject, date] = groupKey.split('_');
+                        const subject = groupKey;
+                        const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
                         const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                         
                         if (isFinished) {
