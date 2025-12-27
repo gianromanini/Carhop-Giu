@@ -5083,7 +5083,8 @@ export default function CarHopApp() {
                                               senderType: 'host',
                                               senderId: hostEmail,
                                               senderName: hostName,
-                                              senderIdentifier: hostEmail,
+                                              senderIdentifier: `@${hostUsername}`,
+                                              senderEmail: hostEmail,
                                               text: `[${subject}] ${hostChatReply}`,
                                               images: [],
                                               read: false
