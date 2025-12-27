@@ -1028,6 +1028,25 @@ export default function CarHopApp() {
     window.scrollTo(0, 0);
   }, [view]);
 
+  // Mark host chat messages as read when opening chat tab
+  useEffect(() => {
+    if (hostTab === 'chat' && currentHost?.email) {
+      const hostEmail = currentHost.email;
+      const unreadHostReplies = supportMessagesData.filter((m: any) => 
+        m.senderType === 'host' && m.senderIdentifier === hostEmail && m.adminReply && !m.read
+      );
+      if (unreadHostReplies.length > 0) {
+        Promise.all(
+          unreadHostReplies.map((msg: any) => 
+            apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true })
+          )
+        ).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+        }).catch(err => console.error('Error marking host messages as read:', err));
+      }
+    }
+  }, [hostTab, currentHost?.email, supportMessagesData]);
+
   // Recalculate delivery fee when pickup location or delivery type changes
   useEffect(() => {
     if (selectedDeliveryType === 'pickup') {
@@ -4826,14 +4845,6 @@ export default function CarHopApp() {
             ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             
             const hasMessages = hostMessages.length > 0;
-            
-            // Mark unread messages as read when viewing
-            const unreadReplies = hostMessages.filter((m: any) => m.adminReply && !m.read);
-            if (unreadReplies.length > 0) {
-              unreadReplies.forEach((msg: any) => {
-                apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
-              });
-            }
             
             // Group by subject + date
             const groupedMessages: Record<string, any[]> = {};
