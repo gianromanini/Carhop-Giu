@@ -211,6 +211,14 @@ Preferred communication style: Simple, everyday language.
     - Orange blinking animation for clients with unread messages
     - Filter buttons: Todas (All), Não Lidas (Unread), Lidas (Read)
     - Chronological message sorting (oldest first)
+23. **Chat Notification System Improvements (Dec 27):**
+    - Badge in Admin Support tabs now correctly shows only unread ADMIN REPLIES (m.adminReply && !m.read)
+    - For Clients tab: red badge shows count of unread admin replies to client messages
+    - For Hosts tab: red badge shows count of unread admin replies to host messages
+    - Host Subject highlighting: Subject text turns orange (text-orange-600) when unread admin reply exists
+    - Host Subject indicator: pulsing orange dot appears next to subject when unread admin reply
+    - Finish Chat endpoint now receives `subject` parameter to properly finish entire conversation group
+    - Admin can expand finished conversations to review history
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
