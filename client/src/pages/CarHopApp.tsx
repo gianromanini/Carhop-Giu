@@ -2437,7 +2437,7 @@ export default function CarHopApp() {
                                 try {
                                   await apiRequest('POST', '/api/support-messages', {
                                     senderType: 'client',
-                                    senderId: clientUser?.email || userEmail,
+                                    senderId: userEmail,
                                     senderName: clientUser?.name || 'Client',
                                     senderIdentifier: userEmail,
                                     text: `[${subject}] ${clientChatReply}`,
@@ -2475,7 +2475,7 @@ export default function CarHopApp() {
               try {
                 const messagePayload = {
                   senderType: 'client',
-                  senderId: clientUser?.email || clientChatForm.email,
+                  senderId: clientChatForm.email,
                   senderName: clientChatForm.name,
                   senderIdentifier: clientChatForm.email,
                   text: `[${clientChatForm.subject}] ${clientChatForm.message}\n\nPhone: ${clientChatForm.phone || 'Not provided'}`,
@@ -4902,7 +4902,7 @@ export default function CarHopApp() {
                     try {
                       const messageData = {
                         senderType: 'host',
-                        senderId: hostEmail,
+                        senderId: `@${hostUsername}`,
                         senderName: hostName,
                         senderIdentifier: `@${hostUsername}`,
                         senderEmail: hostEmail,
