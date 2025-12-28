@@ -4853,9 +4853,9 @@ export default function CarHopApp() {
             const hostUsername = currentHost?.username || '';
             const hostName = `${currentHost?.firstName || ''} ${currentHost?.lastName || ''}`.trim();
             // Handle both old format (email as senderIdentifier) and new format (@username)
-            // Only show ACTIVE (non-finished) conversations
+            // Show ALL conversations (active and finished)
             const hostMessages = supportMessagesData.filter((m: any) => 
-              m.senderType === 'host' && (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && !m.isFinished
+              m.senderType === 'host' && (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail)
             ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             
             const hasMessages = hostMessages.length > 0;
@@ -5013,6 +5013,44 @@ export default function CarHopApp() {
                         const subject = groupKey;
                         const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
                         const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
+                        const allFinished = groupMsgs.every((m: any) => m.isFinished);
+                        
+                        // Finished conversation - show as completed
+                        if (allFinished) {
+                          return (
+                            <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                              <div className="px-3 py-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{subject}</span>
+                                  <span className="text-xs text-zinc-500">• {date}</span>
+                                  <span className="text-[9px] font-bold px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">Finished</span>
+                                </div>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm(`Delete entire "${subject}" conversation? This cannot be undone.`)) {
+                                      try {
+                                        setDeletingHostChatGroup(groupKey);
+                                        for (const msg of groupMsgs) {
+                                          await apiRequest('DELETE', `/api/support-messages/${msg.id}`, {});
+                                        }
+                                        queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                        toast({ description: 'Conversation deleted' });
+                                      } catch (error) {
+                                        toast({ description: 'Error deleting conversation', variant: 'destructive' });
+                                      } finally {
+                                        setDeletingHostChatGroup(null);
+                                      }
+                                    }
+                                  }}
+                                  className="px-2 py-1 text-[10px] bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded font-bold"
+                                  data-testid={`button-delete-host-chat-${groupKey}`}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
                         
                         return (
                           <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnread ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
