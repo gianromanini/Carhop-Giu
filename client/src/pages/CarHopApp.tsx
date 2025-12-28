@@ -2410,7 +2410,7 @@ export default function CarHopApp() {
                 
                 // Find existing non-finished group with same subject
                 const existingGroupKey = Object.keys(groupedMessages).find(
-                  key => key.startsWith(subject + "_") && !finishedClientChatGroups.has(key)
+                  key => key.startsWith(subject + "_")
                 );
                 
                 if (existingGroupKey) {
@@ -2430,7 +2430,7 @@ export default function CarHopApp() {
               <div className="flex-1 overflow-y-auto space-y-2 mb-4">
                 {sortedGroups.map(([groupKey, groupMsgs]) => {
                   const isExpanded = expandedClientChatGroups.has(groupKey);
-                  const isFinished = finishedClientChatGroups.has(groupKey);
+                  const isFinished = groupMsgs.every((m: any) => m.isFinished);
                   const subject = groupKey.split("_")[0];
                   const dateTime = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
                   const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
@@ -2529,14 +2529,12 @@ export default function CarHopApp() {
                                         senderId: userEmail,
                                         finishedBy: 'client'
                                       });
-                                      const newFinished = new Set(finishedClientChatGroups);
-                                      newFinished.add(groupKey);
-                                      setFinishedClientChatGroups(newFinished);
+                                      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                       const newExpanded = new Set(expandedClientChatGroups);
                                       newExpanded.delete(groupKey);
                                       setExpandedClientChatGroups(newExpanded);
                                       setFinishingChatGroup(null);
-                                      toast({ description: 'Chat finished. Admin will be notified.' });
+                                      toast({ description: 'Chat finished. All messages closed.' });
                                     } catch (error) {
                                       toast({ description: 'Error finishing chat', variant: 'destructive' });
                                     }
