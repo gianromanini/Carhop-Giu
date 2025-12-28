@@ -689,7 +689,7 @@ export default function CarHopApp() {
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
-  const [bookingFilterCarModel, setBookingFilterCarModel] = useState<''>('');
+  const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
@@ -4088,6 +4088,10 @@ export default function CarHopApp() {
                                   hasElectricSeats: car.hasElectricSeats || false,
                                   hasPaddleShifters: car.hasPaddleShifters || false,
                                   hasKeylessEntry: car.hasKeylessEntry || false,
+                                  hasBlindSpotWarning: car.hasBlindSpotWarning || false,
+                                  hasDriveAssist: car.hasDriveAssist || false,
+                                  hasUSBCharger: car.hasUSBCharger || false,
+                                  isPriceMatch: car.isPriceMatch || false,
                                   images: car.images || [],
                                   commission: car.commission || 10,
                                   deductible: car.deductible || 1000,
@@ -5026,7 +5030,7 @@ export default function CarHopApp() {
                                   <span className="text-xs text-zinc-500">• {date}</span>
                                   <span className="text-[9px] font-bold px-2 py-0.5 bg-zinc-300 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded">Finished</span>
                                 </div>
-                                {currentUser?.isAdmin && (
+                                {authUser?.isAdmin && (
                                   <button
                                     onClick={async () => {
                                       if (confirm(`Delete entire "${subject}" conversation? This cannot be undone.`)) {
