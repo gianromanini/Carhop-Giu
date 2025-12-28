@@ -4864,15 +4864,11 @@ export default function CarHopApp() {
             
             const hasMessages = hostMessages.length > 0;
             
-            // Group by subject + finished status (separate active from finished)
+            // Group by chatStartedAt (each unique chat session gets unique timestamp)
             const groupedMessages: Record<string, any[]> = {};
             hostMessages.forEach((msg: any) => {
-              const messageText = msg.text || '';
-              const subjectMatch = messageText.match(/\[(.*?)\]/);
-              const subject = subjectMatch ? subjectMatch[1] : 'No subject';
-              
-              // Group by subject + finished status so finished conversations stay separate
-              const groupKey = `${subject}_${msg.isFinished ? 'finished' : 'active'}`;
+              const chatTime = msg.chatStartedAt ? new Date(msg.chatStartedAt).getTime() : new Date(msg.createdAt).getTime();
+              const groupKey = `${chatTime}`;
               if (!groupedMessages[groupKey]) {
                 groupedMessages[groupKey] = [];
               }
@@ -4903,7 +4899,8 @@ export default function CarHopApp() {
                         senderName: hostName,
                         senderIdentifier: `@${hostUsername}`,
                         senderEmail: hostEmail,
-                        text: `[${hostChatForm.subject}] ${hostChatForm.message}`,
+                        subject: hostChatForm.subject,
+                        text: hostChatForm.message,
                         images: hostChatImages,
                         read: false
                       };
@@ -5015,8 +5012,11 @@ export default function CarHopApp() {
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {sortedGroups.map(([groupKey, groupMsgs]) => {
                         const isExpanded = expandedHostChatGroups.has(groupKey);
-                        const subject = groupKey;
-                        const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+                        const subject = groupMsgs[0]?.subject || 'No subject';
+                        const chatStartedAt = groupMsgs[0]?.chatStartedAt ? new Date(groupMsgs[0].chatStartedAt) : new Date(groupMsgs[0]?.createdAt);
+                        const dateStr = chatStartedAt.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+                        const timeStr = chatStartedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                        const displayDate = `${dateStr} ${timeStr}`;
                         const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                         const allFinished = groupMsgs.every((m: any) => m.isFinished);
                         
@@ -5027,7 +5027,7 @@ export default function CarHopApp() {
                               <div className="px-3 py-2 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{subject}</span>
-                                  <span className="text-xs text-zinc-500">• {date}</span>
+                                  <span className="text-xs text-zinc-500">• {displayDate}</span>
                                   <span className="text-[9px] font-bold px-2 py-0.5 bg-zinc-300 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded">Finished</span>
                                 </div>
                                 {authUser?.isAdmin && (

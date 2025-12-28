@@ -258,6 +258,7 @@ export const supportMessages = pgTable("support_messages", {
   senderName: varchar("sender_name").notNull(),
   senderIdentifier: varchar("sender_identifier").notNull(), // email for clients, @username for hosts
   senderEmail: varchar("sender_email"), // email for hosts (used for display)
+  subject: varchar("subject").notNull().default('Duvidas'),
   text: text("text").notNull(),
   images: text("images").array().default([]),
   read: boolean("read").default(false),
@@ -266,10 +267,11 @@ export const supportMessages = pgTable("support_messages", {
   isFinished: boolean("is_finished").default(false),
   finishedBy: varchar("finished_by"), // 'client' | 'host' | 'admin'
   finishedAt: timestamp("finished_at"),
+  chatStartedAt: timestamp("chat_started_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true, adminRepliedAt: true, finishedAt: true });
+export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true, adminRepliedAt: true, finishedAt: true, chatStartedAt: true });
 export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
 export type SupportMessage = typeof supportMessages.$inferSelect;
 

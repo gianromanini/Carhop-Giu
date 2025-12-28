@@ -950,19 +950,38 @@ export class MemStorage implements IStorage {
     return this.supportMessagesMap.get(id);
   }
 
-  async createSupportMessage(messageData: InsertSupportMessage): Promise<SupportMessage> {
+  async createSupportMessage(messageData: InsertSupportMessage & { subject?: string; chatStartedAt?: Date }): Promise<SupportMessage> {
     const id = this.supportMessageId++;
+    
+    // Determine chatStartedAt: if provided, use it; otherwise check for active chat with same subject
+    let chatStartedAt = messageData.chatStartedAt;
+    if (!chatStartedAt) {
+      const activeChat = Array.from(this.supportMessagesMap.values()).find(m =>
+        m.senderId === messageData.senderId &&
+        m.senderType === messageData.senderType &&
+        m.subject === (messageData.subject || 'Duvidas') &&
+        !m.isFinished
+      );
+      chatStartedAt = activeChat?.chatStartedAt || new Date();
+    }
+    
     const newMessage: SupportMessage = {
       id,
       senderType: messageData.senderType,
       senderId: messageData.senderId,
       senderName: messageData.senderName,
       senderIdentifier: messageData.senderIdentifier,
+      senderEmail: messageData.senderEmail || null,
+      subject: messageData.subject || 'Duvidas',
       text: messageData.text,
       images: messageData.images ?? [],
       read: messageData.read ?? false,
       adminReply: messageData.adminReply ?? null,
       adminRepliedAt: null,
+      isFinished: false,
+      finishedBy: null,
+      finishedAt: null,
+      chatStartedAt: chatStartedAt,
       createdAt: new Date(),
     };
     this.supportMessagesMap.set(id, newMessage);
@@ -990,6 +1009,20 @@ export class MemStorage implements IStorage {
     let updated = false;
     for (const msg of messages) {
       if (msg.senderIdentifier === senderIdentifier) {
+        msg.isFinished = true;
+        msg.finishedBy = finishedBy;
+        msg.finishedAt = new Date();
+        updated = true;
+      }
+    }
+    return updated;
+  }
+
+  async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
+    const messages = Array.from(this.supportMessagesMap.values());
+    let updated = false;
+    for (const msg of messages) {
+      if (msg.subject === subject && msg.senderId === senderId && !msg.isFinished) {
         msg.isFinished = true;
         msg.finishedBy = finishedBy;
         msg.finishedAt = new Date();
@@ -1467,10 +1500,28 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage> {
+  async createSupportMessage(messageData: InsertSupportMessage & { subject?: string; chatStartedAt?: Date }): Promise<SupportMessage> {
     if (!this.initialized) throw new Error("Database not initialized");
     try {
-      const result = await this.db.insert(supportMessages).values(message).returning();
+      // Determine chatStartedAt: if provided, use it; otherwise check for active chat with same subject
+      let chatStartedAt = messageData.chatStartedAt;
+      if (!chatStartedAt) {
+        const activeChat = await this.db.select().from(supportMessages).where(
+          and(
+            eq(supportMessages.senderId, messageData.senderId),
+            eq(supportMessages.senderType, messageData.senderType),
+            eq(supportMessages.subject, messageData.subject || 'Duvidas'),
+            eq(supportMessages.isFinished, false)
+          )
+        ).limit(1);
+        chatStartedAt = activeChat.length > 0 ? activeChat[0].chatStartedAt : new Date();
+      }
+      
+      const result = await this.db.insert(supportMessages).values({
+        ...messageData,
+        subject: messageData.subject || 'Duvidas',
+        chatStartedAt: chatStartedAt
+      }).returning();
       return result[0];
     } catch (error) {
       console.error("Error creating support message:", error);

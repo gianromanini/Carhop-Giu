@@ -1756,7 +1756,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   // Create support message
   app.post("/api/support-messages", async (req, res) => {
     try {
-      const { senderType, senderId, senderName, senderIdentifier, senderEmail, text, images } = req.body;
+      const { senderType, senderId, senderName, senderIdentifier, senderEmail, subject, text, images } = req.body;
       
       if (!senderType || !senderId || !senderName || !senderIdentifier || !text) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -1766,12 +1766,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         return res.status(400).json({ message: "Invalid sender type. Must be 'client' or 'host'" });
       }
       
-      const newMessage = await storage.createSupportMessage({
+      const newMessage = await (storage as any).createSupportMessage({
         senderType,
         senderId,
         senderName,
         senderIdentifier,
         senderEmail: senderEmail || null,
+        subject: subject || 'Duvidas',
         text,
         images: images || [],
         read: false,
