@@ -543,7 +543,7 @@ export default function CarHopApp() {
   const [editingSupportMessageId, setEditingSupportMessageId] = useState<number | null>(null);
   const [editingSupportMessageText, setEditingSupportMessageText] = useState('');
   const [showClientChatModal, setShowClientChatModal] = useState(false);
-  const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
+  const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Questions', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
   const [clientChatSending, setClientChatSending] = useState(false);
   const [clientChatTab, setClientChatTab] = useState<'history' | 'new'>('new');
@@ -2248,7 +2248,7 @@ export default function CarHopApp() {
         return (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto flex flex-col">
-            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' }); setClientChatImages([]); setClientChatTab('new'); setClientChatReply(''); setShowChatLoginScreen(false); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
+            <button onClick={() => { setShowClientChatModal(false); setClientChatForm({ name: '', email: '', phone: '', subject: 'Questions', message: '' }); setClientChatImages([]); setClientChatTab('new'); setClientChatReply(''); setShowChatLoginScreen(false); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-chat-modal"><X size={20}/></button>
             
             <h2 className="text-xl font-bold mb-4 text-center text-zinc-900 dark:text-white flex items-center justify-center gap-2">
               <MessageCircle className="text-green-500" size={24}/> Contact Us
@@ -2284,9 +2284,7 @@ export default function CarHopApp() {
               // Group by subject + timestamp (each chat session is separate, even with same subject)
               const groupedMessages: Record<string, any[]> = {};
               clientMessages.forEach((msg: any) => {
-                const messageText = msg.text || '';
-                const subjectMatch = messageText.match(/\[(.*?)\]/);
-                const subject = subjectMatch ? subjectMatch[1] : 'Sem assunto';
+                const subject = msg.subject || 'No Subject';
                 
                 // Find existing non-finished group with same subject
                 const existingGroupKey = Object.keys(groupedMessages).find(
@@ -2486,7 +2484,7 @@ export default function CarHopApp() {
                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                 toast({ description: 'Message sent successfully! We will contact you soon.' });
                 setShowClientChatModal(false);
-                setClientChatForm({ name: '', email: '', phone: '', subject: 'Duvidas', message: '' });
+                setClientChatForm({ name: '', email: '', phone: '', subject: 'Questions', message: '' });
                 setClientChatImages([]);
               } catch (error) {
                 toast({ description: 'Error sending message. Please try again.', variant: 'destructive' });
@@ -2552,7 +2550,7 @@ export default function CarHopApp() {
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                   data-testid="select-chat-subject"
                 >
-                  <option value="Duvidas">Questions</option>
+                  <option value="Questions">Questions</option>
                   <option value="Open a Claim">Open a Claim</option>
                   <option value="Report an Issue">Report an Issue</option>
                   <option value="Talk with Support">Talk with Support</option>
@@ -7499,9 +7497,7 @@ export default function CarHopApp() {
                         supportMessagesData
                           .filter((m: any) => m.senderType === supportSubTab)
                           .forEach((msg: any) => {
-                            const messageText = msg.text || '';
-                            const subjectMatch = messageText.match(/\[(.*?)\]/);
-                            const subject = subjectMatch ? subjectMatch[1] : 'Sem Assunto';
+                            const subject = msg.subject || 'No Subject';
                             
                             if (!groupedBySubject[subject]) groupedBySubject[subject] = {};
                             

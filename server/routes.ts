@@ -1772,7 +1772,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         senderName,
         senderIdentifier,
         senderEmail: senderEmail || null,
-        subject: subject || 'Duvidas',
+        subject: subject || 'Questions',
         text,
         images: images || [],
         read: false,
