@@ -3958,15 +3958,17 @@ export default function CarHopApp() {
                 m.adminReply
               ).length : 0;
               return (
-              <button key={tab} onClick={() => setHostTab(tab)} className={`relative flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
-                {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
+              <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
+                <div className="flex items-center gap-1">
+                  {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                  {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                  {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                  {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                  {tab === 'chat' && hostUnreadCount > 0 && (
+                    <span className="text-orange-500 text-[14px] font-bold">!</span>
+                  )}
+                </div>
                 <span>{tab === 'chat' ? 'Support' : tab}</span>
-                {tab === 'chat' && hostUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 text-orange-500 text-[14px] font-bold">!</span>
-                )}
               </button>
             );})}
           </div>
@@ -5423,7 +5425,7 @@ export default function CarHopApp() {
                         }
                         
                         return (
-                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnreadAdminReply ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : hasUnreadSenderMsg ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnreadAdminReply ? 'border-blue-600 bg-blue-600' : hasUnreadSenderMsg ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
                             <button
                               onClick={() => {
                                 const newExpanded = new Set(expandedHostChatGroups);
@@ -5434,14 +5436,14 @@ export default function CarHopApp() {
                                 }
                                 setExpandedHostChatGroups(newExpanded);
                               }}
-                              className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                              className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnreadAdminReply ? 'hover:bg-blue-700' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                               data-testid={`button-expand-host-chat-${groupKey}`}
                             >
                               <div className="flex items-center gap-2">
                                 <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
-                                <span className={`text-sm font-bold ${hasUnreadAdminReply ? 'text-blue-600 dark:text-blue-400' : hasUnreadSenderMsg ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
-                                <span className="text-xs text-zinc-500">• {displayDate}</span>
-                                {hasUnreadAdminReply && <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"/>}
+                                <span className={`text-sm font-bold ${hasUnreadAdminReply ? 'text-white' : hasUnreadSenderMsg ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
+                                <span className={`text-xs ${hasUnreadAdminReply ? 'text-blue-100' : 'text-zinc-500'}`}>• {displayDate}</span>
+                                {hasUnreadAdminReply && <span className="w-2 h-2 bg-blue-200 rounded-full animate-pulse"/>}
                                 {hasUnreadSenderMsg && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
                               </div>
                               {(() => {
