@@ -790,7 +790,32 @@ export default function CarHopApp() {
   }>({ phone: '', email: '', licenseFrontImage: '', licenseBackImage: '' });
   const [hostProfileSaving, setHostProfileSaving] = useState(false);
   
+  // Refs for closing menus when clicking outside
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const mobileActionsMenuRef = useRef<HTMLDivElement>(null);
+  const hostMobileMenuRef = useRef<HTMLDivElement>(null);
+  
   const { toast } = useToast();
+  
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      
+      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setNotificationsOpen(false);
+      }
+      if (mobileActionsMenuRef.current && !mobileActionsMenuRef.current.contains(target)) {
+        setMobileActionsMenuOpen(false);
+      }
+      if (hostMobileMenuRef.current && !hostMobileMenuRef.current.contains(target)) {
+        setHostMobileMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
   const settings: SettingsType = {
@@ -2035,7 +2060,7 @@ export default function CarHopApp() {
             {clientUser ? (
               <div className="flex items-center gap-3">
                 {/* Notifications Bell */}
-                <div className="relative">
+                <div className="relative" ref={notificationsRef}>
                   <button 
                     onClick={() => { setNotificationsOpen(!notificationsOpen); if (!notificationsOpen) markNotificationsAsRead(); }} 
                     className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" 
@@ -2118,7 +2143,7 @@ export default function CarHopApp() {
                   )}
                 </button>
                 {/* Mobile Notifications Bell */}
-                <div className="relative">
+                <div className="relative" ref={notificationsRef}>
                   <button 
                     onClick={() => { setNotificationsOpen(!notificationsOpen); if (!notificationsOpen) markNotificationsAsRead(); }} 
                     className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" 
@@ -2166,7 +2191,7 @@ export default function CarHopApp() {
             )}
             {/* Client Menu - Small hamburger (only when NOT logged in as host) */}
             {!(view === 'host-dashboard' && currentHost) && (
-            <div className="relative sm:hidden">
+            <div className="relative sm:hidden" ref={mobileActionsMenuRef}>
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
                 <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
@@ -2200,7 +2225,7 @@ export default function CarHopApp() {
             )}
             {/* Host Menu - Large hamburger with Edit Profile and Logout (only when logged in as host) */}
             {view === 'host-dashboard' && currentHost && (
-              <div className="relative sm:hidden">
+              <div className="relative sm:hidden" ref={hostMobileMenuRef}>
                 <button 
                   onClick={() => setHostMobileMenuOpen(!hostMobileMenuOpen)} 
                   className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
