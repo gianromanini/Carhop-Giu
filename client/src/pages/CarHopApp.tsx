@@ -5424,8 +5424,9 @@ export default function CarHopApp() {
                           );
                         }
                         
+                        const hasAdminReply = groupMsgs.some((m: any) => m.adminReply);
                         return (
-                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnreadAdminReply ? 'border-blue-600 bg-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasAdminReply ? 'border-blue-600 bg-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
                             <button
                               onClick={() => {
                                 const newExpanded = new Set(expandedHostChatGroups);
@@ -5436,18 +5437,18 @@ export default function CarHopApp() {
                                 }
                                 setExpandedHostChatGroups(newExpanded);
                               }}
-                              className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnreadAdminReply ? 'hover:bg-blue-700' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                              className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasAdminReply ? 'hover:bg-blue-700' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                               data-testid={`button-expand-host-chat-${groupKey}`}
                             >
                               <div className="flex items-center gap-2">
                                 <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
-                                <span className={`text-sm font-bold ${hasUnreadAdminReply ? 'text-white' : hasUnreadSenderMsg ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
-                                <span className={`text-xs ${hasUnreadAdminReply ? 'text-blue-100' : 'text-zinc-500'}`}>• {displayDate}</span>
-                                {hasUnreadAdminReply && <span className="w-2 h-2 bg-blue-200 rounded-full animate-pulse"/>}
+                                <span className={`text-sm font-bold ${hasAdminReply ? 'text-white' : hasUnreadSenderMsg ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
+                                <span className={`text-xs ${hasAdminReply ? 'text-blue-100' : 'text-zinc-500'}`}>• {displayDate}</span>
+                                {hasAdminReply && <span className="w-2 h-2 bg-blue-200 rounded-full animate-pulse"/>}
                                 {hasUnreadSenderMsg && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
                               </div>
                               {(() => {
-                                const unreadCount = groupMsgs.filter((m: any) => m.adminReply && !m.read).length;
+                                const unreadCount = groupMsgs.filter((m: any) => m.adminReply).length;
                                 return unreadCount > 0 ? (
                                   <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{unreadCount}</span>
                                 ) : (
