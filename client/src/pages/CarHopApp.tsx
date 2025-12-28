@@ -4860,18 +4860,19 @@ export default function CarHopApp() {
             
             const hasMessages = hostMessages.length > 0;
             
-            // Group by subject (all messages with same subject go in same group)
+            // Group by subject + finished status (separate active from finished)
             const groupedMessages: Record<string, any[]> = {};
             hostMessages.forEach((msg: any) => {
               const messageText = msg.text || '';
               const subjectMatch = messageText.match(/\[(.*?)\]/);
               const subject = subjectMatch ? subjectMatch[1] : 'No subject';
               
-              // Group by subject only - no timestamp separation needed
-              if (!groupedMessages[subject]) {
-                groupedMessages[subject] = [];
+              // Group by subject + finished status so finished conversations stay separate
+              const groupKey = `${subject}_${msg.isFinished ? 'finished' : 'active'}`;
+              if (!groupedMessages[groupKey]) {
+                groupedMessages[groupKey] = [];
               }
-              groupedMessages[subject].push(msg);
+              groupedMessages[groupKey].push(msg);
             });
             
             const sortedGroups = Object.entries(groupedMessages).sort((a, b) => new Date(b[1][0].createdAt).getTime() - new Date(a[1][0].createdAt).getTime());
@@ -5025,7 +5026,7 @@ export default function CarHopApp() {
                                   <span className="text-xs text-zinc-500">• {date}</span>
                                   <span className="text-[9px] font-bold px-2 py-0.5 bg-zinc-300 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded">Finished</span>
                                 </div>
-                                {view === 'admin' && (
+                                {view === 'host-dashboard' && currentUser?.isAdmin && (
                                   <button
                                     onClick={async () => {
                                       if (confirm(`Delete entire "${subject}" conversation? This cannot be undone.`)) {
