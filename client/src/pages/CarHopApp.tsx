@@ -3840,81 +3840,6 @@ export default function CarHopApp() {
               <Button variant="ghost" size="sm" className="hidden sm:flex text-sm px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => { setCurrentHost(null); setView('home'); }} data-testid="button-host-logout">
                 <LogOut size={16} className="mr-1" /> Logout
               </Button>
-              
-              {/* Mobile: Hamburger menu */}
-              <div className="relative sm:hidden">
-                <button 
-                  onClick={() => setHostMobileMenuOpen(!hostMobileMenuOpen)} 
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                  data-testid="button-host-mobile-menu"
-                >
-                  <Menu size={24} />
-                </button>
-                {hostMobileMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[200px] overflow-hidden">
-                    <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800">
-                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentHost.firstName} {currentHost.lastName}</p>
-                      <p className="text-xs text-zinc-500">@{currentHost.username}</p>
-                    </div>
-                    <button 
-                      onClick={() => { 
-                        setHostTab('chat'); 
-                        setHostMobileMenuOpen(false); 
-                      }} 
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
-                      data-testid="button-host-menu-support"
-                    >
-                      <MessageCircle size={18} className="text-green-600" />
-                      <span>Chat / Support</span>
-                      {(() => {
-                        const hostEmail = currentHost?.email || '';
-                        const hostUsername = currentHost?.username || '';
-                        const unreadCount = supportMessagesData.filter((m: any) => 
-                          m.senderType === 'host' && 
-                          (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
-                          m.adminReply && !m.read
-                        ).length;
-                        return unreadCount > 0 ? (
-                          <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">!</span>
-                        ) : null;
-                      })()}
-                    </button>
-                    <button 
-                      onClick={() => { 
-                        setHostEditProfileForm({
-                          phone: currentHost.phone || '',
-                          email: currentHost.email || '',
-                          licenseFrontImage: currentHost.licenseFrontImage || '',
-                          licenseBackImage: currentHost.licenseBackImage || ''
-                        });
-                        setShowHostEditProfileModal(true); 
-                        setHostMobileMenuOpen(false); 
-                      }} 
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
-                      data-testid="button-host-menu-edit-profile"
-                    >
-                      <User size={18} className="text-blue-600" />
-                      <span>Edit Profile</span>
-                    </button>
-                    <button 
-                      onClick={() => { setDarkMode(!darkMode); setHostMobileMenuOpen(false); }} 
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
-                      data-testid="button-host-menu-theme"
-                    >
-                      {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-                      <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-                    </button>
-                    <button 
-                      onClick={() => { setCurrentHost(null); setView('home'); setHostMobileMenuOpen(false); }} 
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-3 text-red-600 font-bold"
-                      data-testid="button-host-menu-logout"
-                    >
-                      <LogOut size={18} />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
           
@@ -4052,6 +3977,14 @@ export default function CarHopApp() {
                           createVehicleMutation.mutate(vehicleData);
                         }
                       }} className="space-y-3 sm:space-y-4">
+                        {/* Action Buttons - Moved to top */}
+                        <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
+                          <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => { setEditingHostVehicle(null); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
+                          <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
+                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update' : 'Add'} Vehicle
+                          </Button>
+                        </div>
+                        
                         <div>
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Car Model *</label>
                           <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. Tesla Model 3" required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-model" />
@@ -4323,10 +4256,6 @@ export default function CarHopApp() {
                             }
                           }} data-testid="input-host-vehicle-image-url" />
                         </div>
-
-                        <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" data-testid="button-host-add-vehicle">
-                          {editingHostVehicle ? 'Update Vehicle' : 'Add Vehicle'}
-                        </Button>
                       </form>
                     </Card>
                   </div>
@@ -4446,7 +4375,7 @@ export default function CarHopApp() {
                             updateSettingMutation.mutate({ key: 'prices', value: priceConfigForm.prices });
                           }
                         }} data-testid="button-save-price-config">
-                          <Check size={12} className="sm:w-4 sm:h-4"/> Save
+                          <Check size={12} className="sm:w-4 sm:h-4"/> Save Price config
                         </Button>
                       </div>
                     </Card>
