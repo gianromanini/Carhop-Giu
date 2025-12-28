@@ -5027,7 +5027,8 @@ export default function CarHopApp() {
                         const dateStr = chatStartedAt.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
                         const timeStr = chatStartedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                         const displayDate = `${dateStr} ${timeStr}`;
-                        const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
+                        const hasUnreadAdminReply = groupMsgs.some((m: any) => m.adminReply && !m.read);
+                        const hasUnreadSenderMsg = groupMsgs.some((m: any) => !m.read && !m.adminReply);
                         const allFinished = groupMsgs.every((m: any) => m.isFinished);
                         
                         // Finished conversation - show as completed
@@ -5070,7 +5071,7 @@ export default function CarHopApp() {
                         }
                         
                         return (
-                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnread ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnreadAdminReply ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : hasUnreadSenderMsg ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
                             <button
                               onClick={() => {
                                 const newExpanded = new Set(expandedHostChatGroups);
@@ -5086,9 +5087,10 @@ export default function CarHopApp() {
                             >
                               <div className="flex items-center gap-2">
                                 <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
-                                <span className={`text-sm font-bold ${hasUnread ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
+                                <span className={`text-sm font-bold ${hasUnreadAdminReply ? 'text-blue-600 dark:text-blue-400' : hasUnreadSenderMsg ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
                                 <span className="text-xs text-zinc-500">• {displayDate}</span>
-                                {hasUnread && <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"/>}
+                                {hasUnreadAdminReply && <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"/>}
+                                {hasUnreadSenderMsg && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
                               </div>
                               <span className="text-xs text-zinc-500">{groupMsgs.length} msg</span>
                             </button>
@@ -7571,7 +7573,7 @@ export default function CarHopApp() {
                                 const senderName = firstMsg.senderName;
                                 const groupKeyFull = subject + "_" + senderId;
                                 const isExpanded = expandedSupportGroup === groupKeyFull;
-                                const hasUnread = messages.some((m: any) => !m.read);
+                                const hasUnreadSenderMsg = messages.some((m: any) => !m.read && !m.adminReply);
                                 const hasAdminReplyNotification = messages.some((m: any) => m.adminReply && !m.read);
                                 const isFinished = firstMsg.isFinished;
                                 const finishedBy = firstMsg.finishedBy;
@@ -7583,14 +7585,14 @@ export default function CarHopApp() {
                                   <div key={groupKeyFull} className="space-y-2">
                                     <div
                                       className={`w-full p-2 sm:p-4 rounded-lg border transition-all text-left hover:shadow-md cursor-pointer ${
-                                        hasUnread 
-                                          ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
-                                          : hasAdminReplyNotification
+                                        hasAdminReplyNotification 
                                           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
+                                          : hasUnreadSenderMsg
+                                          ? (supportSubTab === 'client' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700')
                                           : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
                                       } ${isExpanded ? 'ring-2 ring-green-500' : ''}`}
                                       onClick={async () => {
-                                        if (!isExpanded && hasUnread && !isFinished) {
+                                        if (!isExpanded && (hasUnreadSenderMsg || hasAdminReplyNotification) && !isFinished) {
                                           const unreadMsgs = messages.filter((m: any) => !m.read);
                                           for (const msg of unreadMsgs) {
                                             await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
@@ -7606,7 +7608,7 @@ export default function CarHopApp() {
                                             <ChevronDown size={16} className={`transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                                {hasUnread && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
+                                                {hasUnreadSenderMsg && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${supportSubTab === 'client' ? 'bg-green-500 animate-pulse' : 'bg-orange-500 animate-pulse'}`} />}
                                                 {hasAdminReplyNotification && <Bell size={14} className="text-blue-500 animate-pulse flex-shrink-0" />}
                                                 <span className={`font-bold text-xs sm:text-sm flex items-center gap-1 flex-wrap ${supportSubTab === 'client' ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                                                   {senderName}
