@@ -3955,7 +3955,7 @@ export default function CarHopApp() {
               const hostUnreadCount = tab === 'chat' ? supportMessagesData.filter((m: any) => 
                 m.senderType === 'host' && 
                 (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
-                m.adminReply && !m.read
+                m.adminReply
               ).length : 0;
               return (
               <button key={tab} onClick={() => setHostTab(tab)} className={`relative flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
@@ -5445,7 +5445,7 @@ export default function CarHopApp() {
                                 {hasUnreadSenderMsg && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
                               </div>
                               {(() => {
-                                const unreadCount = groupMsgs.filter((m: any) => !m.read).length;
+                                const unreadCount = groupMsgs.filter((m: any) => m.adminReply).length;
                                 return unreadCount > 0 ? (
                                   <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{unreadCount}</span>
                                 ) : (
