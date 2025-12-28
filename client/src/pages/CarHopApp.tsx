@@ -2164,7 +2164,41 @@ export default function CarHopApp() {
                 </div>
               </>
             )}
-            {/* Host Menu - Large hamburger with Edit Profile and Logout */}
+            {/* Client Menu - Small hamburger (only when NOT logged in as host) */}
+            {!(view === 'host-dashboard' && currentHost) && (
+            <div className="relative sm:hidden">
+              <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+              {mobileActionsMenuOpen && (
+                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[150px] overflow-hidden">
+                  {clientUser ? (
+                    <>
+                      <div className="w-full px-4 py-2 text-center text-sm text-green-600 font-bold flex items-center justify-center gap-2">Hi, {clientUser.name.split(' ')[0]}</div>
+                      <button onClick={() => { setView('bookings'); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-bookings"><Briefcase className="h-4 w-4" />My Bookings</button>
+                      <button onClick={() => { 
+                        if (clientUser) {
+                          setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
+                        }
+                        setShowClientChatModal(true);
+                        setMobileActionsMenuOpen(false); 
+                      }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat-logged"><MessageCircle className="h-4 w-4" />Chat</button>
+                      <button onClick={() => { setShowProfileModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-profile"><User className="h-4 w-4" />Edit Profile</button>
+                      <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
+                      <button onClick={() => { handleSignOut(); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 text-red-600 dark:text-red-400" data-testid="button-menu-logout"><LogOut className="h-4 w-4" />Logout</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => { setShowLoginModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-center text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center gap-2" data-testid="button-menu-signin">Sign In</button>
+                      <button onClick={() => { setShowClientChatModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat"><MessageCircle className="h-4 w-4" />Chat / Support</button>
+                      <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            )}
+            {/* Host Menu - Large hamburger with Edit Profile and Logout (only when logged in as host) */}
             {view === 'host-dashboard' && currentHost && (
               <div className="relative sm:hidden">
                 <button 
