@@ -5023,30 +5023,32 @@ export default function CarHopApp() {
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{subject}</span>
                                   <span className="text-xs text-zinc-500">• {date}</span>
-                                  <span className="text-[9px] font-bold px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">Finished</span>
+                                  <span className="text-[9px] font-bold px-2 py-0.5 bg-zinc-300 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded">Finished</span>
                                 </div>
-                                <button
-                                  onClick={async () => {
-                                    if (confirm(`Delete entire "${subject}" conversation? This cannot be undone.`)) {
-                                      try {
-                                        setDeletingHostChatGroup(groupKey);
-                                        for (const msg of groupMsgs) {
-                                          await apiRequest('DELETE', `/api/support-messages/${msg.id}`, {});
+                                {view === 'admin' && (
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm(`Delete entire "${subject}" conversation? This cannot be undone.`)) {
+                                        try {
+                                          setDeletingHostChatGroup(groupKey);
+                                          for (const msg of groupMsgs) {
+                                            await apiRequest('DELETE', `/api/support-messages/${msg.id}`, {});
+                                          }
+                                          queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                          toast({ description: 'Conversation deleted' });
+                                        } catch (error) {
+                                          toast({ description: 'Error deleting conversation', variant: 'destructive' });
+                                        } finally {
+                                          setDeletingHostChatGroup(null);
                                         }
-                                        queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                        toast({ description: 'Conversation deleted' });
-                                      } catch (error) {
-                                        toast({ description: 'Error deleting conversation', variant: 'destructive' });
-                                      } finally {
-                                        setDeletingHostChatGroup(null);
                                       }
-                                    }
-                                  }}
-                                  className="px-2 py-1 text-[10px] bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded font-bold"
-                                  data-testid={`button-delete-host-chat-${groupKey}`}
-                                >
-                                  Delete
-                                </button>
+                                    }}
+                                    className="px-2 py-1 text-[10px] bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded font-bold"
+                                    data-testid={`button-delete-host-chat-${groupKey}`}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
                               </div>
                             </div>
                           );
