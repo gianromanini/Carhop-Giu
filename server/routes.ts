@@ -1278,6 +1278,99 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // Host profile update (self-service with limited fields)
+  app.put("/api/hosts/:id/profile", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { phone, email, licenseFrontImage, licenseBackImage } = req.body;
+
+      // Get the current host
+      const host = await storage.getHost(id);
+      if (!host) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+
+      // Track what fields changed for notification
+      const changes: string[] = [];
+      if (phone && phone !== host.phone) changes.push(`Phone: ${host.phone || 'N/A'} → ${phone}`);
+      if (email && email !== host.email) changes.push(`Email: ${host.email} → ${email}`);
+      if (licenseFrontImage !== undefined && licenseFrontImage !== host.licenseFrontImage) {
+        changes.push(licenseFrontImage ? 'Driver License (Front) updated' : 'Driver License (Front) removed');
+      }
+      if (licenseBackImage !== undefined && licenseBackImage !== host.licenseBackImage) {
+        changes.push(licenseBackImage ? 'Driver License (Back) updated' : 'Driver License (Back) removed');
+      }
+
+      // Only allow specific fields to be updated (accept empty strings for image removal)
+      const updates: any = {};
+      if (phone) updates.phone = phone;
+      if (email) updates.email = email;
+      if (licenseFrontImage !== undefined) updates.licenseFrontImage = licenseFrontImage;
+      if (licenseBackImage !== undefined) updates.licenseBackImage = licenseBackImage;
+
+      const updatedHost = await storage.updateHost(id, updates);
+      if (!updatedHost) {
+        return res.status(404).json({ message: "Host not found" });
+      }
+
+      // Send notification email to Admin if any changes were made
+      if (changes.length > 0) {
+        try {
+          const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+          if (adminEmail) {
+            await transporter.sendMail({
+              from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+              to: adminEmail,
+              subject: `CarHop - Host Profile Updated: ${host.firstName} ${host.lastName}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1 style="margin: 0; font-size: 24px;">Host Profile Updated</h1>
+                  </div>
+                  
+                  <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+                    <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">
+                      <strong>${host.firstName} ${host.lastName}</strong> (@${host.username}) has updated their profile.
+                    </p>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+                      <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 16px;">Changes Made:</h3>
+                      <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+                        ${changes.map(c => `<li style="margin-bottom: 8px;">${c}</li>`).join('')}
+                      </ul>
+                    </div>
+                    
+                    <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px;">
+                      <p style="margin: 0; color: #92400e; font-size: 14px;">
+                        <strong>Action Required:</strong> Please verify the updated information in the Admin Dashboard.
+                      </p>
+                    </div>
+                    
+                    <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                      Updated at: ${new Date().toLocaleString()}<br/>
+                      CarHop LLC - Connecticut, USA
+                    </p>
+                  </div>
+                </div>
+              `,
+            });
+            console.log(`Host profile update notification sent to admin for host ${host.id}`);
+          }
+        } catch (emailError) {
+          console.error("Error sending host profile update notification:", emailError);
+        }
+      }
+
+      res.json({ 
+        message: "Profile updated successfully", 
+        host: { ...updatedHost, passwordHash: undefined }
+      });
+    } catch (error) {
+      console.error("Error updating host profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Update host (Admin Matriz edit capability)
   app.patch("/api/hosts/:id", async (req, res) => {
     try {

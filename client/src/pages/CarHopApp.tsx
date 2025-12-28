@@ -779,6 +779,17 @@ export default function CarHopApp() {
   const [finishingHostChatGroup, setFinishingHostChatGroup] = useState<string | null>(null);
   const [deletingHostChatGroup, setDeletingHostChatGroup] = useState<string | null>(null);
   
+  // Host mobile menu and edit profile states
+  const [hostMobileMenuOpen, setHostMobileMenuOpen] = useState(false);
+  const [showHostEditProfileModal, setShowHostEditProfileModal] = useState(false);
+  const [hostEditProfileForm, setHostEditProfileForm] = useState<{
+    phone: string;
+    email: string;
+    licenseFrontImage: string;
+    licenseBackImage: string;
+  }>({ phone: '', email: '', licenseFrontImage: '', licenseBackImage: '' });
+  const [hostProfileSaving, setHostProfileSaving] = useState(false);
+  
   const { toast } = useToast();
 
   const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
@@ -3581,20 +3592,329 @@ export default function CarHopApp() {
         </div>
       )}
 
+      {/* Host Edit Profile Modal */}
+      {showHostEditProfileModal && currentHost && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowHostEditProfileModal(false)} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-host-profile-modal"><X size={20}/></button>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white flex items-center justify-center gap-2">
+              <User className="text-green-600" size={24}/> Edit Profile
+            </h2>
+            
+            <div className="space-y-4">
+              {/* Read-only fields */}
+              <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4 space-y-3">
+                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Personal Information</h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-zinc-500 mb-1">First Name</label>
+                    <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded text-sm text-zinc-600 dark:text-zinc-300">{currentHost.firstName}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 mb-1">Last Name</label>
+                    <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded text-sm text-zinc-600 dark:text-zinc-300">{currentHost.lastName}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1">Username</label>
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded text-sm text-zinc-600 dark:text-zinc-300">@{currentHost.username}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1">Address</label>
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded text-sm text-zinc-600 dark:text-zinc-300">
+                    {currentHost.address ? `${currentHost.address}, ${currentHost.city || ''} ${currentHost.state || ''} ${currentHost.zipCode || ''}` : 'Not provided'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1">Tax ID / SSN</label>
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded text-sm text-zinc-600 dark:text-zinc-300 flex items-center gap-2">
+                    <Lock size={14} className="text-zinc-400" />
+                    <span>***-**-{currentHost.socialSecurityNumber?.slice(-4) || '****'}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1">License Number</label>
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded text-sm text-zinc-600 dark:text-zinc-300">{currentHost.licenseNumber || 'Not provided'}</div>
+                </div>
+              </div>
+              
+              {/* Editable fields */}
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 space-y-3 border border-green-200 dark:border-green-800">
+                <h3 className="text-xs font-bold text-green-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Edit size={14}/> Editable Fields
+                </h3>
+                
+                <div>
+                  <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    value={hostEditProfileForm.phone}
+                    onChange={(e) => setHostEditProfileForm({...hostEditProfileForm, phone: e.target.value})}
+                    placeholder="(555) 123-4567"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-host-profile-phone" 
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    value={hostEditProfileForm.email}
+                    onChange={(e) => setHostEditProfileForm({...hostEditProfileForm, email: e.target.value})}
+                    placeholder="email@example.com"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-host-profile-email" 
+                  />
+                </div>
+                
+                {/* License Images */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">Driver's License (Front)</label>
+                    <div className="relative">
+                      {hostEditProfileForm.licenseFrontImage ? (
+                        <div className="relative">
+                          <img 
+                            src={hostEditProfileForm.licenseFrontImage} 
+                            alt="License Front" 
+                            className="w-full h-24 object-cover rounded border border-zinc-300 dark:border-zinc-700 cursor-pointer hover:opacity-80"
+                            onClick={() => setSelectedImage(hostEditProfileForm.licenseFrontImage)}
+                          />
+                          <button 
+                            onClick={() => setHostEditProfileForm({...hostEditProfileForm, licenseFrontImage: ''})}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X size={12}/>
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:border-green-500 transition-colors">
+                          <Upload size={20} className="text-zinc-400 mb-1"/>
+                          <span className="text-xs text-zinc-500">Upload Front</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  setHostEditProfileForm({...hostEditProfileForm, licenseFrontImage: ev.target?.result as string});
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">Driver's License (Back)</label>
+                    <div className="relative">
+                      {hostEditProfileForm.licenseBackImage ? (
+                        <div className="relative">
+                          <img 
+                            src={hostEditProfileForm.licenseBackImage} 
+                            alt="License Back" 
+                            className="w-full h-24 object-cover rounded border border-zinc-300 dark:border-zinc-700 cursor-pointer hover:opacity-80"
+                            onClick={() => setSelectedImage(hostEditProfileForm.licenseBackImage)}
+                          />
+                          <button 
+                            onClick={() => setHostEditProfileForm({...hostEditProfileForm, licenseBackImage: ''})}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X size={12}/>
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded cursor-pointer hover:border-green-500 transition-colors">
+                          <Upload size={20} className="text-zinc-400 mb-1"/>
+                          <span className="text-xs text-zinc-500">Upload Back</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  setHostEditProfileForm({...hostEditProfileForm, licenseBackImage: ev.target?.result as string});
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-xs text-zinc-500 text-center">
+                Any changes will be notified to Admin for verification.
+              </p>
+              
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => setShowHostEditProfileModal(false)}
+                  data-testid="button-host-profile-cancel"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  disabled={hostProfileSaving}
+                  onClick={async () => {
+                    setHostProfileSaving(true);
+                    try {
+                      const response = await apiRequest('PUT', `/api/hosts/${currentHost.id}/profile`, hostEditProfileForm);
+                      if (response.ok) {
+                        toast({
+                          title: 'Profile Updated',
+                          description: 'Your profile has been updated and Admin has been notified.',
+                        });
+                        setShowHostEditProfileModal(false);
+                        queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+                        // Update current host data
+                        setCurrentHost({
+                          ...currentHost,
+                          phone: hostEditProfileForm.phone,
+                          email: hostEditProfileForm.email,
+                          licenseFrontImage: hostEditProfileForm.licenseFrontImage,
+                          licenseBackImage: hostEditProfileForm.licenseBackImage
+                        });
+                      } else {
+                        const error = await response.json();
+                        toast({
+                          title: 'Update Failed',
+                          description: error.message || 'Failed to update profile',
+                          variant: 'destructive'
+                        });
+                      }
+                    } catch (err) {
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to update profile',
+                        variant: 'destructive'
+                      });
+                    } finally {
+                      setHostProfileSaving(false);
+                    }
+                  }}
+                  data-testid="button-host-profile-update"
+                >
+                  {hostProfileSaving ? <Loader className="animate-spin mr-2" size={16}/> : null}
+                  Update
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {view === 'host-dashboard' && currentHost && (
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-20 sm:py-24">
           <div className="flex items-start justify-between mb-6 sm:mb-8 gap-2">
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white truncate" data-testid="text-host-title">Host Dashboard</h1>
-              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">Welcome, {currentHost.firstName} {currentHost.lastName}</p>
+              <h1 className="text-lg sm:text-2xl font-bold text-zinc-900 dark:text-white truncate" data-testid="text-host-title">Host Dashboard</h1>
+              <p className="text-sm sm:text-base text-zinc-500 truncate">Welcome, <span className="font-semibold text-zinc-700 dark:text-zinc-300">{currentHost.firstName} {currentHost.lastName}</span></p>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-host-theme">
-                {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {/* Desktop: Theme toggle and Logout button */}
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={() => setDarkMode(!darkMode)} data-testid="button-host-theme">
+                {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               </Button>
-              <Button variant="ghost" size="sm" className="text-[10px] sm:text-xs px-2 sm:px-3" onClick={() => { setCurrentHost(null); setView('home'); }} data-testid="button-host-logout">
-                <LogOut size={12} className="sm:mr-1" /> <span className="hidden sm:inline">Logout</span>
+              <Button variant="ghost" size="sm" className="hidden sm:flex text-sm px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => { setCurrentHost(null); setView('home'); }} data-testid="button-host-logout">
+                <LogOut size={16} className="mr-1" /> Logout
               </Button>
+              
+              {/* Mobile: Hamburger menu */}
+              <div className="relative sm:hidden">
+                <button 
+                  onClick={() => setHostMobileMenuOpen(!hostMobileMenuOpen)} 
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  data-testid="button-host-mobile-menu"
+                >
+                  <Menu size={24} />
+                </button>
+                {hostMobileMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[180px] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800">
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentHost.firstName} {currentHost.lastName}</p>
+                      <p className="text-xs text-zinc-500">@{currentHost.username}</p>
+                    </div>
+                    <button 
+                      onClick={() => { 
+                        setHostTab('chat'); 
+                        setHostMobileMenuOpen(false); 
+                      }} 
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
+                      data-testid="button-host-menu-support"
+                    >
+                      <MessageCircle size={18} className="text-green-600" />
+                      <span>Chat / Support</span>
+                      {(() => {
+                        const hostEmail = currentHost?.email || '';
+                        const hostUsername = currentHost?.username || '';
+                        const unreadCount = supportMessagesData.filter((m: any) => 
+                          m.senderType === 'host' && 
+                          (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
+                          m.adminReply && !m.read
+                        ).length;
+                        return unreadCount > 0 ? (
+                          <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">!</span>
+                        ) : null;
+                      })()}
+                    </button>
+                    <button 
+                      onClick={() => { 
+                        setHostEditProfileForm({
+                          phone: currentHost.phone || '',
+                          email: currentHost.email || '',
+                          licenseFrontImage: currentHost.licenseFrontImage || '',
+                          licenseBackImage: currentHost.licenseBackImage || ''
+                        });
+                        setShowHostEditProfileModal(true); 
+                        setHostMobileMenuOpen(false); 
+                      }} 
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
+                      data-testid="button-host-menu-edit-profile"
+                    >
+                      <User size={18} className="text-blue-600" />
+                      <span>Edit Profile</span>
+                    </button>
+                    <button 
+                      onClick={() => { setDarkMode(!darkMode); setHostMobileMenuOpen(false); }} 
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
+                      data-testid="button-host-menu-theme"
+                    >
+                      {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+                      <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                    </button>
+                    <button 
+                      onClick={() => { setCurrentHost(null); setView('home'); setHostMobileMenuOpen(false); }} 
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-3 text-red-600 font-bold"
+                      data-testid="button-host-menu-logout"
+                    >
+                      <LogOut size={18} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
