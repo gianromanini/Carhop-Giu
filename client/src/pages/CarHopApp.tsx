@@ -8405,59 +8405,65 @@ export default function CarHopApp() {
                 </div>
 
                 <div className="prose dark:prose-invert max-w-none">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">VEHICLE RENTAL AGREEMENT</h3>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOP VEHICLE SHARING AGREEMENT</h3>
                   
                   <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
-                    <p><strong>This Car Rental Agreement ("Agreement")</strong> is entered into on this date between <strong>CarHop Rental Services</strong> ("Lessor") and <strong>{driverDetails.name}</strong> ("Lessee").</p>
+                    <p><strong>This Vehicle Sharing Agreement ("Agreement")</strong> is between <strong>CarHop Rental Services</strong> ("Platform") and <strong>{driverDetails.name}</strong> ("Guest"). The Guest acknowledges that CarHop is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">1. VEHICLE AND TERMS</h4>
-                      <p>The Lessee agrees to lease a vehicle as specified in the rental confirmation. The lease term shall be from the pickup date and time until the return date and time specified in the booking.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">1. NATURE OF AGREEMENT</h4>
+                      <p>This Vehicle Sharing Agreement ("Agreement") is between CarHop Rental Services ("Platform") and the Guest. The Guest acknowledges that CarHop is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">2. RENTAL PAYMENT</h4>
-                      <p>The Lessee agrees to pay the total rental amount as quoted. Payment is due before or at the time of vehicle pickup. Additional charges may apply for late returns, excess mileage, fuel, or vehicle damage.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">2. RENTAL PERIOD & PAYMENT</h4>
+                      <p>The Guest agrees to pay the total charges quoted, including rental fees, taxes, and applicable fees. Payment is due at or before pickup.</p>
+                      <p className="mt-2"><strong>Late Returns:</strong> Returns made 30 minutes past the agreed time will incur a late fee plus an additional hourly usage charge.</p>
+                      <p className="mt-2"><strong>Repo Rights:</strong> CarHop reserves the right to repossess the vehicle at the Guest's expense without notice if the vehicle is not returned on time or is used in violation of this Agreement.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">3. DRIVER LICENSE AND LIABILITY</h4>
-                      <p>The Lessee confirms that they hold a valid driver's license and are authorized to operate the vehicle. The Lessee assumes full responsibility for the vehicle and all liability during the rental period. The Lessee is responsible for all accidents, traffic violations, and damage to the vehicle.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">3. DRIVER ELIGIBILITY & LIABILITY</h4>
+                      <p>The Guest warrants they hold a valid driver's license. The Guest acknowledges that their personal auto insurance is the PRIMARY source of coverage for any liability, collision, or damage claims arising during the booking, to the full extent permitted by Connecticut law.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">4. VEHICLE CONDITION</h4>
-                      <p>The Lessee acknowledges receipt of the vehicle in good working condition and agrees to return it in the same condition. Any damage, scratches, or mechanical issues discovered will be charged to the Lessee.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">4. VEHICLE CONDITION & REPORTING</h4>
+                      <p>The Guest accepts the vehicle in its current condition. The Guest must inspect the vehicle before driving and upload photos of any pre-existing damage to the CarHop App/System. Failure to report pre-existing damage constitutes acceptance of the vehicle as damage-free. Any new damage found upon return will be charged to the Guest.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE AND FUEL</h4>
-                      <p>The Lessee is entitled to {settings.includedMiles} miles per day included in the rental. Excess mileage will be charged at ${settings.extraMileRate.toFixed(2)} per mile. The vehicle must be returned with a full fuel tank. Refueling charges will apply if the vehicle is returned with less fuel.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE, FUEL & CLEANING</h4>
+                      <p><strong>Mileage:</strong> 50 miles per day are included. Excess mileage is charged at $1.20 per mile.</p>
+                      <p className="mt-2"><strong>Fuel:</strong> The vehicle must be returned with the same fuel level as pickup. Refueling will incur the cost of gas plus a $10.00 convenience fee.</p>
+                      <p className="mt-2"><strong>Cleaning:</strong> The vehicle must be returned in a clean condition. Smoking of any kind is strictly prohibited and will result in a $250.00 cleaning fee.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">6. INSURANCE AND PROTECTION</h4>
-                      <p>The Lessee has selected a protection plan as detailed in the booking. This covers damage up to the specified franchise amount. The Lessee remains responsible for any damage exceeding the franchise limit.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">6. INSURANCE & DEDUCTIBLE (IMPORTANT)</h4>
+                      <p>The Guest has selected a protection plan. This plan limits the Guest's financial responsibility for physical damage to the vehicle to the "Deductible" (formerly Franchise) amount specified in the booking. <strong>Exclusion:</strong> If the Guest violates any terms of this Agreement (e.g., drunk driving, unauthorized drivers), the protection plan is VOID, and the Guest is liable for 100% of damages.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">7. GOVERNING LAW - STATE OF CONNECTICUT</h4>
-                      <p>This Agreement shall be governed by and construed in accordance with the laws of the State of Connecticut, without regard to its conflict of law principles. The Lessee consents to the exclusive jurisdiction and venue of the federal and state courts located in Connecticut for any legal proceedings arising out of this Agreement.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">7. PROHIBITED USES</h4>
+                      <p>Using the vehicle for the following is strictly prohibited and voids all insurance protection:</p>
+                      <p className="mt-2">(a) Commercial use (Uber, Lyft, DoorDash, etc.)<br/>(b) Off-road driving<br/>(c) Towing or pushing anything<br/>(d) Driving by anyone not listed on the booking<br/>(e) Commission of a crime</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">8. COMPLIANCE WITH LAWS</h4>
-                      <p>The Lessee agrees to comply with all federal, state, and local laws while operating the vehicle, including speed limits, traffic regulations, and parking ordinances. The Lessee is responsible for all fines, tickets, or penalties incurred during the rental period.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">8. GPS TRACKING DISCLOSURE</h4>
+                      <p>The Guest consents to the use of GPS tracking devices on the vehicle. CarHop may use GPS data to locate the vehicle if it is not returned on time, stolen, or to assist in emergency roadside assistance.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">9. LIMITATION OF LIABILITY</h4>
-                      <p>CarHop shall not be liable for any loss, damage, or injury to the Lessee or their belongings, except as provided by the selected protection plan. The Lessee assumes all risk associated with vehicle operation.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">9. DISPUTE RESOLUTION & ARBITRATION</h4>
+                      <p><strong>Governing Law:</strong> This Agreement is governed by the laws of the State of Connecticut.</p>
+                      <p className="mt-2"><strong>Arbitration:</strong> ANY DISPUTE ARISING OUT OF THIS AGREEMENT SHALL BE RESOLVED BY BINDING ARBITRATION IN CONNECTICUT. THE GUEST WAIVES THE RIGHT TO A JURY TRIAL OR TO PARTICIPATE IN A CLASS ACTION LAWSUIT.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">10. ACKNOWLEDGMENT</h4>
-                      <p>By accepting this agreement, the Lessee acknowledges that they have read, understood, and agree to all terms and conditions set forth herein. The Lessee assumes all responsibility and liability for the vehicle during the rental period.</p>
+                      <p>By accepting the keys or clicking "I Agree," the Guest assumes full responsibility for the vehicle and agrees to indemnify and hold CarHop harmless from any claims, losses, or legal fees arising from the Guest's use of the vehicle.</p>
                     </div>
                   </div>
                 </div>
