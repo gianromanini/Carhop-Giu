@@ -776,7 +776,6 @@ export default function CarHopApp() {
   const [hostChatSending, setHostChatSending] = useState(false);
   const [hostChatReply, setHostChatReply] = useState('');
   const [expandedHostChatGroups, setExpandedHostChatGroups] = useState<Set<string>>(new Set());
-  const [finishedHostChatGroups, setFinishedHostChatGroups] = useState<Set<string>>(new Set());
   const [finishingHostChatGroup, setFinishingHostChatGroup] = useState<string | null>(null);
   const [deletingHostChatGroup, setDeletingHostChatGroup] = useState<string | null>(null);
   
@@ -4853,33 +4852,25 @@ export default function CarHopApp() {
             const hostUsername = currentHost?.username || '';
             const hostName = `${currentHost?.firstName || ''} ${currentHost?.lastName || ''}`.trim();
             // Handle both old format (email as senderIdentifier) and new format (@username)
+            // Only show ACTIVE (non-finished) conversations
             const hostMessages = supportMessagesData.filter((m: any) => 
-              m.senderType === 'host' && (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail)
+              m.senderType === 'host' && (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && !m.isFinished
             ).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
             
             const hasMessages = hostMessages.length > 0;
             
-            // Group by subject + timestamp (each chat session is separate, even with same subject)
+            // Group by subject (all messages with same subject go in same group)
             const groupedMessages: Record<string, any[]> = {};
             hostMessages.forEach((msg: any) => {
               const messageText = msg.text || '';
               const subjectMatch = messageText.match(/\[(.*?)\]/);
               const subject = subjectMatch ? subjectMatch[1] : 'No subject';
               
-              // Find existing non-finished group with same subject
-              const existingGroupKey = Object.keys(groupedMessages).find(
-                key => key.startsWith(subject + "_") && !finishedHostChatGroups.has(key)
-              );
-              
-              if (existingGroupKey) {
-                // Add to existing active group
-                groupedMessages[existingGroupKey].push(msg);
-              } else {
-                // Create new session group with subject + timestamp
-                const groupKey = subject + "_" + new Date(msg.createdAt).getTime();
-                if (!groupedMessages[groupKey]) groupedMessages[groupKey] = [];
-                groupedMessages[groupKey].push(msg);
+              // Group by subject only - no timestamp separation needed
+              if (!groupedMessages[subject]) {
+                groupedMessages[subject] = [];
               }
+              groupedMessages[subject].push(msg);
             });
             
             const sortedGroups = Object.entries(groupedMessages).sort((a, b) => new Date(b[1][0].createdAt).getTime() - new Date(a[1][0].createdAt).getTime());
@@ -5018,22 +5009,9 @@ export default function CarHopApp() {
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                       {sortedGroups.map(([groupKey, groupMsgs]) => {
                         const isExpanded = expandedHostChatGroups.has(groupKey);
-                        const isFinished = finishedHostChatGroups.has(groupKey);
-                        const subject = groupKey.split("_")[0];
+                        const subject = groupKey;
                         const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
                         const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
-                        
-                        if (isFinished) {
-                          return (
-                            <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800">
-                              <div className="px-3 py-2 flex items-center gap-2">
-                                <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
-                                <span className="text-xs text-zinc-500">• {date}</span>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded ml-auto">Finished</span>
-                              </div>
-                            </div>
-                          );
-                        }
                         
                         return (
                           <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnread ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
@@ -5149,14 +5127,11 @@ export default function CarHopApp() {
                                                     finishedBy: 'host'
                                                   });
                                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
-                                                  const newFinished = new Set(finishedHostChatGroups);
-                                                  newFinished.add(groupKey);
-                                                  setFinishedHostChatGroups(newFinished);
                                                   const newExpanded = new Set(expandedHostChatGroups);
                                                   newExpanded.delete(groupKey);
                                                   setExpandedHostChatGroups(newExpanded);
                                                   setFinishingHostChatGroup(null);
-                                                  toast({ description: 'Chat finished. Admin will be notified.' });
+                                                  toast({ description: 'Chat finished. All messages closed.' });
                                                 } catch (error) {
                                                   toast({ description: 'Error finishing chat', variant: 'destructive' });
                                                 }
