@@ -467,7 +467,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
-const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, platinumProtection: 40, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -479,6 +479,7 @@ interface SettingsType {
   prices: { 
     insurance500: number; 
     insurance1000: number; 
+    platinumProtection: number;
     childSeat: number; 
     childSeatPerTrip: boolean;
     prepaidFuel: number; 
@@ -698,8 +699,8 @@ export default function CarHopApp() {
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
-  const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
-  const [editingPricingStrings, setEditingPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
+  const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string; platinumProtection: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15', platinumProtection: '40'});
+  const [editingPricingStrings, setEditingPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string; platinumProtection: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15', platinumProtection: '40'});
   const [editingId, setEditingId] = useState<number | null>(null);
   const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
@@ -817,7 +818,7 @@ export default function CarHopApp() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
+  const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, platinumProtection: 40, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
   const settings: SettingsType = {
     taxes: settingsData?.taxes ?? defaultSettings.taxes,
     cleaningFee: settingsData?.cleaningFee ?? defaultSettings.cleaningFee,
@@ -826,6 +827,7 @@ export default function CarHopApp() {
     prices: {
       insurance500: settingsData?.prices?.insurance500 ?? defaultSettings.prices.insurance500,
       insurance1000: settingsData?.prices?.insurance1000 ?? defaultSettings.prices.insurance1000,
+      platinumProtection: settingsData?.prices?.platinumProtection ?? defaultSettings.prices.platinumProtection,
       childSeat: settingsData?.prices?.childSeat ?? defaultSettings.prices.childSeat,
       childSeatPerTrip: settingsData?.prices?.childSeatPerTrip ?? defaultSettings.prices.childSeatPerTrip,
       prepaidFuel: settingsData?.prices?.prepaidFuel ?? defaultSettings.prices.prepaidFuel,
@@ -838,7 +840,7 @@ export default function CarHopApp() {
     locations: settingsData?.locations ?? defaultSettings.locations,
   };
 
-  const defaultPricingStrings = {taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'};
+  const defaultPricingStrings = {taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15', platinumProtection: '40'};
   const createVehicleMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/vehicles', data),
     onSuccess: () => { 
@@ -1266,7 +1268,8 @@ export default function CarHopApp() {
     let runningTotal = cart.car.price * days; 
     if (cart.extrasSelected.includes('childSeat')) runningTotal += settings.prices.childSeat;
     if (cart.insuranceOption === '500') runningTotal += (settings.prices.insurance500 * days); 
-    if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days); 
+    if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days);
+    if (cart.insuranceOption === 'platinum') runningTotal += (settings.prices.platinumProtection * days); 
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
     if (deliveryValidationStatus === 'valid') runningTotal += deliveryFee;
     const taxAmount = runningTotal * ((carPricing.taxes || settings.taxes) / 100); 
@@ -1303,8 +1306,8 @@ export default function CarHopApp() {
         details: { 
           rate: cart.car!.price * days, 
           extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), 
-          protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, 
-          protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
+          protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : cart.insuranceOption === '1000' ? settings.prices.insurance1000 : settings.prices.platinumProtection) * days, 
+          protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Platinum'), 
           fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
           deliveryFee: totalData.deliveryFee || 0, 
           tax: totalData.taxAmount, 
@@ -1393,7 +1396,7 @@ export default function CarHopApp() {
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
       deliveryType: selectedDeliveryType,
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType, deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, pickupAddress: pickupAddress },
+      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : cart.insuranceOption === '1000' ? settings.prices.insurance1000 : settings.prices.platinumProtection) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Platinum'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType, deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, pickupAddress: pickupAddress },
       messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
@@ -9590,17 +9593,16 @@ export default function CarHopApp() {
                       className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '500' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
                       data-testid="option-protection-gold"
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <h4 className="font-semibold text-white flex items-center gap-2">
-                              Gold Protection 
-                              {cart.insuranceOption === '500' && <Check size={16} className="text-green-500" />}
-                            </h4>
-                            <p className="text-xs text-zinc-500">$500 Deductible</p>
-                          </div>
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
+                            Gold Protection 
+                            {cart.insuranceOption === '500' && <Check size={16} className="text-green-500" />}
+                          </h4>
+                          <p className="text-xs text-zinc-400 mb-2">Covers third party vehicles + bodily injuries and property damage.</p>
+                          <p className="text-xs text-zinc-500">$500 Deductible</p>
                         </div>
-                        <span className="font-bold text-white">+${settings.prices.insurance500}/day</span>
+                        <span className="font-bold text-white whitespace-nowrap">+${settings.prices.insurance500}/day</span>
                       </div>
                     </div>
                     <div 
@@ -9608,17 +9610,33 @@ export default function CarHopApp() {
                       className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '1000' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
                       data-testid="option-protection-standard"
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <h4 className="font-semibold text-white flex items-center gap-2">
-                              Standard Protection 
-                              {cart.insuranceOption === '1000' && <Check size={16} className="text-green-500" />}
-                            </h4>
-                            <p className="text-xs text-zinc-500">$1,000 Deductible</p>
-                          </div>
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
+                            Standard Protection 
+                            {cart.insuranceOption === '1000' && <Check size={16} className="text-green-500" />}
+                          </h4>
+                          <p className="text-xs text-zinc-400 mb-2">Covers damage to host's vehicle.</p>
+                          <p className="text-xs text-zinc-500">$1,000 Deductible</p>
                         </div>
-                        <span className="font-bold text-white">+${settings.prices.insurance1000}/day</span>
+                        <span className="font-bold text-white whitespace-nowrap">+${settings.prices.insurance1000}/day</span>
+                      </div>
+                    </div>
+                    <div 
+                      onClick={() => setCart({...cart, insuranceOption: 'platinum'})} 
+                      className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === 'platinum' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                      data-testid="option-protection-platinum"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
+                            Platinum Protection 
+                            {cart.insuranceOption === 'platinum' && <Check size={16} className="text-green-500" />}
+                          </h4>
+                          <p className="text-xs text-zinc-400 mb-2">Full coverage - includes third party vehicles, bodily injuries, property damage, and host's vehicle damage.</p>
+                          <p className="text-xs text-zinc-500">Complete Protection</p>
+                        </div>
+                        <span className="font-bold text-white whitespace-nowrap">+${settings.prices.platinumProtection}/day</span>
                       </div>
                     </div>
                   </div>
@@ -9799,7 +9817,7 @@ export default function CarHopApp() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-white">Protection</span>
-                      <span className="text-white">+${((cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays).toFixed(2)}</span>
+                      <span className="text-white">+${((cart.insuranceOption === '500' ? settings.prices.insurance500 : cart.insuranceOption === '1000' ? settings.prices.insurance1000 : settings.prices.platinumProtection) * cart.billingDays).toFixed(2)}</span>
                     </div>
                     {cart.extrasSelected.includes('childSeat') && (
                       <div className="flex justify-between">

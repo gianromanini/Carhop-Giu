@@ -78,6 +78,7 @@ export const vehicles = pgTable("vehicles", {
     prices: { 
       insurance500: number; 
       insurance1000: number; 
+      platinumProtection: number;
       childSeat: number; 
       childSeatPerTrip: boolean;
       prepaidFuel: number; 
