@@ -3851,7 +3851,7 @@ export default function CarHopApp() {
                   <Menu size={24} />
                 </button>
                 {hostMobileMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[180px] overflow-hidden">
+                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-50 min-w-[200px] overflow-hidden">
                     <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800">
                       <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentHost.firstName} {currentHost.lastName}</p>
                       <p className="text-xs text-zinc-500">@{currentHost.username}</p>
@@ -3950,6 +3950,72 @@ export default function CarHopApp() {
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                   <div className="lg:col-span-1">
+                    {/* My Vehicles - Moved above Add New Vehicle */}
+                    <Card className="p-3 sm:p-6 mb-4 sm:mb-6">
+                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
+                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                        {hostVehicles.length > 0 ? hostVehicles.map((car) => (
+                          <div key={car.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
+                              <p className="text-[10px] sm:text-xs font-bold text-green-600 mt-0.5 sm:mt-1">${car.price}/d | {car.commission || 10}%</p>
+                            </div>
+                            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                              <button onClick={() => { 
+                                setEditingHostVehicle(car); 
+                                setFormData({
+                                  model: car.model || '',
+                                  price: String(car.price || ''),
+                                  fuel: car.fuel || 'Gasoline',
+                                  seats: car.seats || 5,
+                                  transmission: car.transmission || 'Automatic',
+                                  category: car.category || '',
+                                  consumption: car.consumption || '',
+                                  driveType: car.driveType || 'AWD',
+                                  isAWD: car.isAWD || false,
+                                  hasCarPlay: car.hasCarPlay || false,
+                                  hasBluetooth: car.hasBluetooth || false,
+                                  hasReverseCamera: car.hasReverseCamera || false,
+                                  hasHeatedSeats: car.hasHeatedSeats || false,
+                                  hasHeatedSteering: car.hasHeatedSteering || false,
+                                  hasElectricSeats: car.hasElectricSeats || false,
+                                  hasPaddleShifters: car.hasPaddleShifters || false,
+                                  hasKeylessEntry: car.hasKeylessEntry || false,
+                                  hasBlindSpotWarning: car.hasBlindSpotWarning || false,
+                                  hasDriveAssist: car.hasDriveAssist || false,
+                                  hasUSBCharger: car.hasUSBCharger || false,
+                                  isPriceMatch: car.isPriceMatch || false,
+                                  images: car.images || [],
+                                  commission: car.commission || 10,
+                                  deductible: car.deductible || 1000,
+                                  availableLocations: car.availableLocations || [],
+                                  isDeliveryEnabled: car.isDeliveryEnabled || false,
+                                  maxDeliveryDistance: car.maxDeliveryDistance || 50,
+                                  minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
+                                  minDeliveryFee: car.minDeliveryFee || 15,
+                                  deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
+                                  minDeliveryHours: car.minDeliveryHours || 6,
+                                  pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
+                                });
+                                setHostVehicleImages(car.images || []);
+                                window.scrollTo(0, 0);
+                              }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
+                                <Edit size={14} className="sm:w-4 sm:h-4" />
+                              </button>
+                              <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                                <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
+                        )}
+                      </div>
+                    </Card>
+
+                    {/* Add New Vehicle */}
                     <Card className="p-3 sm:p-6">
                       <div className="flex items-center justify-between mb-3 sm:mb-4">
                         <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white">
@@ -4382,71 +4448,6 @@ export default function CarHopApp() {
                         }} data-testid="button-save-price-config">
                           <Check size={12} className="sm:w-4 sm:h-4"/> Save
                         </Button>
-                      </div>
-                    </Card>
-
-                    {/* My Vehicles */}
-                    <Card className="p-3 sm:p-6">
-                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
-                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
-                        {hostVehicles.length > 0 ? hostVehicles.map((car) => (
-                          <div key={car.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
-                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
-                              <p className="text-[10px] sm:text-xs font-bold text-green-600 mt-0.5 sm:mt-1">${car.price}/d | {car.commission || 10}%</p>
-                            </div>
-                            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                              <button onClick={() => { 
-                                setEditingHostVehicle(car); 
-                                setFormData({
-                                  model: car.model || '',
-                                  price: String(car.price || ''),
-                                  fuel: car.fuel || 'Gasoline',
-                                  seats: car.seats || 5,
-                                  transmission: car.transmission || 'Automatic',
-                                  category: car.category || '',
-                                  consumption: car.consumption || '',
-                                  driveType: car.driveType || 'AWD',
-                                  isAWD: car.isAWD || false,
-                                  hasCarPlay: car.hasCarPlay || false,
-                                  hasBluetooth: car.hasBluetooth || false,
-                                  hasReverseCamera: car.hasReverseCamera || false,
-                                  hasHeatedSeats: car.hasHeatedSeats || false,
-                                  hasHeatedSteering: car.hasHeatedSteering || false,
-                                  hasElectricSeats: car.hasElectricSeats || false,
-                                  hasPaddleShifters: car.hasPaddleShifters || false,
-                                  hasKeylessEntry: car.hasKeylessEntry || false,
-                                  hasBlindSpotWarning: car.hasBlindSpotWarning || false,
-                                  hasDriveAssist: car.hasDriveAssist || false,
-                                  hasUSBCharger: car.hasUSBCharger || false,
-                                  isPriceMatch: car.isPriceMatch || false,
-                                  images: car.images || [],
-                                  commission: car.commission || 10,
-                                  deductible: car.deductible || 1000,
-                                  availableLocations: car.availableLocations || [],
-                                  isDeliveryEnabled: car.isDeliveryEnabled || false,
-                                  maxDeliveryDistance: car.maxDeliveryDistance || 50,
-                                  minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
-                                  minDeliveryFee: car.minDeliveryFee || 15,
-                                  deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
-                                  minDeliveryHours: car.minDeliveryHours || 6,
-                                  pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
-                                });
-                                setHostVehicleImages(car.images || []);
-                                window.scrollTo(0, 0);
-                              }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
-                                <Edit size={14} className="sm:w-4 sm:h-4" />
-                              </button>
-                              <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
-                                <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        )) : (
-                          <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
-                        )}
                       </div>
                     </Card>
 
