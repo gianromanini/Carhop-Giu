@@ -5661,6 +5661,60 @@ export default function CarHopApp() {
                 </Card>
               </div>
             </div>
+
+            {/* Benefits Section */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-16 sm:mt-20 scroll-mt-32">
+              <div className="text-center mb-12 sm:mb-16">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-white mb-3 sm:mb-4" data-testid="text-benefits-title">Why Choose CarHopGo?</h2>
+                <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">The best car rental experience with incredible benefits for both renters and hosts</p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {/* Benefit 1: Best Prices */}
+                <Card className="p-5 sm:p-6 hover-elevate">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                      <DollarSign size={24} className="text-green-600" />
+                    </div>
+                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Best Market Prices</h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Unbeatable rates compared to traditional rental agencies. Save up to 40% on daily rentals.</p>
+                </Card>
+
+                {/* Benefit 2: Lower Fees */}
+                <Card className="p-5 sm:p-6 hover-elevate">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <TrendingUp size={24} className="text-blue-600" />
+                    </div>
+                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Fewer Fees</h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Transparent pricing with minimal hidden charges. Only pay for what you use.</p>
+                </Card>
+
+                {/* Benefit 3: Easy Booking */}
+                <Card className="p-5 sm:p-6 hover-elevate">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                      <Smartphone size={24} className="text-purple-600" />
+                    </div>
+                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Easy Booking</h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Simple 3-step booking process. Rent your perfect car in minutes, not hours.</p>
+                </Card>
+
+                {/* Benefit 4: Best Host Program */}
+                <Card className="p-5 sm:p-6 hover-elevate">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                      <Building2 size={24} className="text-orange-600" />
+                    </div>
+                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Best Host Program 2026</h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Most profitable hosting program with complete management tools and support.</p>
+                </Card>
+              </div>
+            </div>
             
             <div id="fleet" className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 scroll-mt-32">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
