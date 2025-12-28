@@ -1570,41 +1570,20 @@ export class DatabaseStorage implements IStorage {
   async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
     if (!this.initialized) return false;
     try {
-      // Get all messages from this sender (search by senderId OR senderEmail for compatibility)
-      const senderFilter = or(
-        eq(supportMessages.senderId, senderId),
-        eq(supportMessages.senderEmail, senderId)
-      );
-      
-      const allMessages = await this.db.select().from(supportMessages).where(senderFilter);
-      
-      console.log(`[FinishChat] Found ${allMessages.length} messages for sender: ${senderId}`);
-      
-      // Filter by subject in the message text (subject is stored as [Subject] at the start)
-      const subjectPattern = `[${subject}]`;
-      const matchingIds: number[] = [];
-      allMessages.forEach((m: SupportMessage) => {
-        const text = m.text || '';
-        console.log(`[FinishChat] Checking msg ${m.id}: text="${text.substring(0, 50)}", isFinished=${m.isFinished}, matches=${text.includes(subjectPattern)}`);
-        if (text.includes(subjectPattern) && !m.isFinished) {
-          matchingIds.push(m.id);
-        }
-      });
-      
-      console.log(`[FinishChat] Matching IDs to finish: ${matchingIds.join(', ')}`);
-      
-      if (matchingIds.length === 0) {
-        console.log(`[FinishChat] No unfinished messages found for subject: ${subject}`);
-        return true; // Already finished or no messages found
-      }
-      
-      // Update ALL matching messages in a single batch operation
-      await this.db.update(supportMessages).set({ 
+      // Update all messages with matching subject and sender that are not yet finished
+      const result = await this.db.update(supportMessages).set({ 
         isFinished: true, 
         finishedBy,
         finishedAt: new Date()
-      }).where(inArray(supportMessages.id, matchingIds));
+      }).where(
+        and(
+          eq(supportMessages.subject, subject),
+          eq(supportMessages.senderId, senderId),
+          eq(supportMessages.isFinished, false)
+        )
+      ).returning();
       
+      console.log(`[FinishChat] Finished ${result.length} messages for subject: ${subject}, senderId: ${senderId}`);
       return true;
     } catch (error) {
       console.error("Error finishing support message group:", error);
