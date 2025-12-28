@@ -8420,10 +8420,10 @@ export default function CarHopApp() {
                 )}
 
                 <div className="prose dark:prose-invert max-w-none">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOP VEHICLE SHARING AGREEMENT</h3>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOPGO CAR SHARING AGREEMENT</h3>
                   
                   <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
-                    <p><strong>This Vehicle Sharing Agreement ("Agreement")</strong> is between <strong>CarHopGo</strong> ("Platform") and <strong>{driverDetails.name}</strong> ("Guest"). The Guest acknowledges that CarHopGo is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">The person identified as "Guest" on the Trip Summary above was connected through CarHopGo.com. The Guest agrees to be bound by the CarHopGo Terms of Service and incorporated policies.</p>
                     
                     {cart.car && (
                       <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-xs">
@@ -8434,14 +8434,25 @@ export default function CarHopApp() {
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Return Location:</strong> {pickupAddress || 'To be confirmed'}</p>
                       </div>
                     )}
-
+                    
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">1. NATURE OF AGREEMENT</h4>
-                      <p>This Vehicle Sharing Agreement ("Agreement") is between CarHopGo ("Platform") and the Guest. The Guest acknowledges that CarHopGo is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">DEFINITIONS</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Extras:</strong> Optional child seats and other products selected by Guest.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Guest:</strong> The person identified as Guest on this Agreement ({driverDetails.name}).</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> The {cart.car?.model} identified on this Agreement.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">2. RENTAL PERIOD & PAYMENT</h4>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">TERMS OF SERVICE</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Vehicle Ownership & Condition:</strong> Vehicle is provided "as-is". Guest accepts Vehicle in current condition and has inspected it. Guest must report any pre-existing damage.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Personal Property:</strong> CarHopGo is not responsible for loss or damage to Guest's personal property during or after the Reservation Period.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle Return:</strong> Guest must return Vehicle in same condition as received, ordinary wear and tear excepted. Late returns incur additional fees.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Financial Responsibility:</strong> Guest is financially responsible for all damage to Vehicle during Reservation Period, regardless of fault. Guest's personal auto insurance is PRIMARY coverage.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">CARHOPGO RENTAL TERMS</h4>
                       <p>The Guest agrees to pay the total charges quoted, including rental fees, taxes, and applicable fees. Payment is due at or before pickup.</p>
                       {cart.car && (
                         <p className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/30 p-2 rounded border border-blue-200 dark:border-blue-800">
@@ -8453,47 +8464,37 @@ export default function CarHopApp() {
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">3. DRIVER ELIGIBILITY & LIABILITY</h4>
-                      <p>The Guest warrants they hold a valid driver's license. The Guest acknowledges that their personal auto insurance is the PRIMARY source of coverage for any liability, collision, or damage claims arising during the booking, to the full extent permitted by Connecticut law.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GUEST PROTECTION PLANS & INSURANCE (IMPORTANT)</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Selected Plan:</strong> {cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'} (${cart.insuranceOption === '500' ? '500' : '1,000'} deductible)</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Coverage:</strong> {cart.insuranceOption === '500' ? 'Covers damage to host\'s vehicle' : 'Covers damage to host\'s vehicle, third party vehicles, bodily injuries and property damage'}</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Deductible:</strong> Maximum Guest pays for vehicle damage</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Exclusions:</strong> Protection plan is VOID if Guest violates terms (drunk driving, unauthorized drivers, commercial use)</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">4. VEHICLE CONDITION & REPORTING</h4>
-                      <p>The Guest accepts the vehicle in its current condition. The Guest must inspect the vehicle before driving and upload photos of any pre-existing damage to the CarHop App/System. Failure to report pre-existing damage constitutes acceptance of the vehicle as damage-free. Any new damage found upon return will be charged to the Guest.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">PROHIBITED USES</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Strictly prohibited and voids insurance protection: (a) Commercial use (Uber, Lyft, DoorDash), (b) Off-road driving, (c) Towing or pushing, (d) Unauthorized drivers, (e) Criminal activity</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE, FUEL & CLEANING</h4>
-                      <p><strong>Mileage:</strong> {settings.includedMiles} miles per day are included. Excess mileage is charged at ${settings.extraMileRate} per mile.</p>
-                      <p className="mt-2"><strong>Fuel:</strong> The vehicle must be returned with the same fuel level as pickup. Refueling will incur the cost of gas plus a service fee.</p>
-                      <p className="mt-2"><strong>Cleaning:</strong> The vehicle must be returned in a clean condition. {cart.extrasSelected.includes('childSeat') && 'Child safety seat must be returned clean. '}Smoking of any kind is strictly prohibited and will result in a cleaning fee.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GPS TRACKING & SAFETY</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Guest consents to GPS tracking. CarHopGo may use GPS data for vehicle recovery if not returned on time, stolen, or emergency assistance.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">6. INSURANCE & DEDUCTIBLE (IMPORTANT)</h4>
-                      <p>The Guest has selected {cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'} ($${cart.insuranceOption === '500' ? '500' : '1,000'} deductible). This plan limits the Guest's financial responsibility for physical damage to the vehicle to the deductible amount specified. <strong>Coverage Details:</strong> {cart.insuranceOption === '500' ? 'Covers damage to host\'s vehicle' : 'Covers damage to host\'s vehicle, third party vehicles, bodily injuries and property damage'}. <strong>Exclusion:</strong> If the Guest violates any terms of this Agreement (e.g., drunk driving, unauthorized drivers, commercial use), the protection plan is VOID, and the Guest is liable for 100% of damages.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GOVERNING LAW & DISPUTES</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Governing Law:</strong> Connecticut law governs this Agreement.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Binding Arbitration:</strong> All disputes shall be resolved by binding arbitration in Connecticut. Guest waives right to jury trial or class action.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">7. PROHIBITED USES</h4>
-                      <p>Using the vehicle for the following is strictly prohibited and voids all insurance protection:</p>
-                      <p className="mt-2">(a) Commercial use (Uber, Lyft, DoorDash, etc.)<br/>(b) Off-road driving<br/>(c) Towing or pushing anything<br/>(d) Driving by anyone not listed on the booking<br/>(e) Commission of a crime</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GENERAL</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">If any provision is invalid, remaining provisions remain enforceable. This Agreement cannot be modified except in writing through CarHopGo. In case of conflict between this Agreement and CarHopGo Terms of Service, the Terms of Service control.</p>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">8. GPS TRACKING DISCLOSURE</h4>
-                      <p>The Guest consents to the use of GPS tracking devices on the vehicle. CarHop may use GPS data to locate the vehicle if it is not returned on time, stolen, or to assist in emergency roadside assistance.</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">9. DISPUTE RESOLUTION & ARBITRATION</h4>
-                      <p><strong>Governing Law:</strong> This Agreement is governed by the laws of the State of Connecticut.</p>
-                      <p className="mt-2"><strong>Arbitration:</strong> ANY DISPUTE ARISING OUT OF THIS AGREEMENT SHALL BE RESOLVED BY BINDING ARBITRATION IN CONNECTICUT. THE GUEST WAIVES THE RIGHT TO A JURY TRIAL OR TO PARTICIPATE IN A CLASS ACTION LAWSUIT.</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">10. ACKNOWLEDGMENT</h4>
-                      <p>By accepting the keys or clicking "I Agree," the Guest assumes full responsibility for the vehicle and agrees to indemnify and hold CarHop harmless from any claims, losses, or legal fees arising from the Guest's use of the vehicle.</p>
+                      <h4 className="font-bold text-zinc-900 dark:text-white mt-4">ACKNOWLEDGMENT</h4>
+                      <p>By accepting or clicking "I Agree," Guest assumes full responsibility for the vehicle and agrees to hold CarHopGo harmless from any claims, losses, or legal fees arising from Guest's use of the vehicle.</p>
                     </div>
                   </div>
                 </div>
