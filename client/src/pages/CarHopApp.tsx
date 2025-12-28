@@ -4902,7 +4902,7 @@ export default function CarHopApp() {
                     try {
                       const messageData = {
                         senderType: 'host',
-                        senderId: `@${hostUsername}`,
+                        senderId: hostEmail,
                         senderName: hostName,
                         senderIdentifier: `@${hostUsername}`,
                         senderEmail: hostEmail,
@@ -5108,7 +5108,7 @@ export default function CarHopApp() {
                                           try {
                                             const messageData = {
                                               senderType: 'host',
-                                              senderId: `@${hostUsername}`,
+                                              senderId: hostEmail,
                                               senderName: hostName,
                                               senderIdentifier: `@${hostUsername}`,
                                               senderEmail: hostEmail,
@@ -5143,10 +5143,9 @@ export default function CarHopApp() {
                                             <button
                                               onClick={async () => {
                                                 try {
-                                                  await apiRequest('POST', '/api/support-messages/finish-chat', {
+                                                  await apiRequest('POST', '/api/support-messages/finish-group', {
                                                     subject: subject,
-                                                    senderIdentifier: `@${hostUsername}`,
-                                                    senderType: 'host',
+                                                    senderId: hostEmail,
                                                     finishedBy: 'host'
                                                   });
                                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
