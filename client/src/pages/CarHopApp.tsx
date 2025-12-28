@@ -8394,28 +8394,62 @@ export default function CarHopApp() {
               </div>
 
               <div className="printable-agreement p-8 space-y-6">
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm text-blue-900 dark:text-blue-300">
-                    <span className="font-bold">Client Name: </span>{driverDetails.name}
-                  </p>
-                </div>
+                {/* Trip Summary Header */}
+                {cart.car && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                    <h4 className="font-bold text-blue-900 dark:text-blue-200">{driverDetails.name}'s (Guest) trip with CarHopGo</h4>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Vehicle</p>
+                        <p className="text-blue-900 dark:text-blue-200">{cart.car.model}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Protection Plan</p>
+                        <p className="text-blue-900 dark:text-blue-200">{cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Deductible</p>
+                        <p className="text-blue-900 dark:text-blue-200">${cart.insuranceOption === '500' ? '500' : '1,000'}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Miles Included</p>
+                        <p className="text-blue-900 dark:text-blue-200">{settings.includedMiles} mi/day</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="prose dark:prose-invert max-w-none">
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOP VEHICLE SHARING AGREEMENT</h3>
                   
                   <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
-                    <p><strong>This Vehicle Sharing Agreement ("Agreement")</strong> is between <strong>CarHop Rental Services</strong> ("Platform") and <strong>{driverDetails.name}</strong> ("Guest"). The Guest acknowledges that CarHop is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
+                    <p><strong>This Vehicle Sharing Agreement ("Agreement")</strong> is between <strong>CarHopGo</strong> ("Platform") and <strong>{driverDetails.name}</strong> ("Guest"). The Guest acknowledges that CarHopGo is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
+                    
+                    {cart.car && (
+                      <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-xs">
+                        <p className="font-bold mb-2 text-zinc-900 dark:text-white">Trip Details:</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip Start:</strong> {formatDisplayDate(searchParams.start, searchParams.startTime)}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip End:</strong> {formatDisplayDate(searchParams.end, searchParams.endTime)}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Pickup Location:</strong> {pickupAddress || 'To be confirmed'}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Return Location:</strong> {pickupAddress || 'To be confirmed'}</p>
+                      </div>
+                    )}
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">1. NATURE OF AGREEMENT</h4>
-                      <p>This Vehicle Sharing Agreement ("Agreement") is between CarHop Rental Services ("Platform") and the Guest. The Guest acknowledges that CarHop is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
+                      <p>This Vehicle Sharing Agreement ("Agreement") is between CarHopGo ("Platform") and the Guest. The Guest acknowledges that CarHopGo is a vehicle sharing platform facilitating the temporary use of a vehicle. This is not a lease.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">2. RENTAL PERIOD & PAYMENT</h4>
                       <p>The Guest agrees to pay the total charges quoted, including rental fees, taxes, and applicable fees. Payment is due at or before pickup.</p>
+                      {cart.car && (
+                        <p className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/30 p-2 rounded border border-blue-200 dark:border-blue-800">
+                          <strong>Duration:</strong> {cart.billingDays} day(s) | <strong>Rate:</strong> ${cart.car.price}/day | <strong>Total Rental:</strong> ${(cart.car.price * cart.billingDays).toFixed(2)}
+                        </p>
+                      )}
                       <p className="mt-2"><strong>Late Returns:</strong> Returns made 30 minutes past the agreed time will incur a late fee plus an additional hourly usage charge.</p>
-                      <p className="mt-2"><strong>Repo Rights:</strong> CarHop reserves the right to repossess the vehicle at the Guest's expense without notice if the vehicle is not returned on time or is used in violation of this Agreement.</p>
+                      <p className="mt-2"><strong>Repo Rights:</strong> CarHopGo reserves the right to repossess the vehicle at the Guest's expense without notice if the vehicle is not returned on time or is used in violation of this Agreement.</p>
                     </div>
 
                     <div>
@@ -8430,14 +8464,14 @@ export default function CarHopApp() {
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">5. MILEAGE, FUEL & CLEANING</h4>
-                      <p><strong>Mileage:</strong> 50 miles per day are included. Excess mileage is charged at $1.20 per mile.</p>
-                      <p className="mt-2"><strong>Fuel:</strong> The vehicle must be returned with the same fuel level as pickup. Refueling will incur the cost of gas plus a $10.00 convenience fee.</p>
-                      <p className="mt-2"><strong>Cleaning:</strong> The vehicle must be returned in a clean condition. Smoking of any kind is strictly prohibited and will result in a $250.00 cleaning fee.</p>
+                      <p><strong>Mileage:</strong> {settings.includedMiles} miles per day are included. Excess mileage is charged at ${settings.extraMileRate} per mile.</p>
+                      <p className="mt-2"><strong>Fuel:</strong> The vehicle must be returned with the same fuel level as pickup. Refueling will incur the cost of gas plus a service fee.</p>
+                      <p className="mt-2"><strong>Cleaning:</strong> The vehicle must be returned in a clean condition. {cart.extrasSelected.includes('childSeat') && 'Child safety seat must be returned clean. '}Smoking of any kind is strictly prohibited and will result in a cleaning fee.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">6. INSURANCE & DEDUCTIBLE (IMPORTANT)</h4>
-                      <p>The Guest has selected a protection plan. This plan limits the Guest's financial responsibility for physical damage to the vehicle to the "Deductible" (formerly Franchise) amount specified in the booking. <strong>Exclusion:</strong> If the Guest violates any terms of this Agreement (e.g., drunk driving, unauthorized drivers), the protection plan is VOID, and the Guest is liable for 100% of damages.</p>
+                      <p>The Guest has selected {cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'} ($${cart.insuranceOption === '500' ? '500' : '1,000'} deductible). This plan limits the Guest's financial responsibility for physical damage to the vehicle to the deductible amount specified. <strong>Coverage Details:</strong> {cart.insuranceOption === '500' ? 'Covers damage to host\'s vehicle' : 'Covers damage to host\'s vehicle, third party vehicles, bodily injuries and property damage'}. <strong>Exclusion:</strong> If the Guest violates any terms of this Agreement (e.g., drunk driving, unauthorized drivers, commercial use), the protection plan is VOID, and the Guest is liable for 100% of damages.</p>
                     </div>
 
                     <div>
