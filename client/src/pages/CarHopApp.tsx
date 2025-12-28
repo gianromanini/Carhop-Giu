@@ -3955,7 +3955,7 @@ export default function CarHopApp() {
               const hostUnreadCount = tab === 'chat' ? supportMessagesData.filter((m: any) => 
                 m.senderType === 'host' && 
                 (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
-                m.adminReply
+                m.adminReply && !m.read
               ).length : 0;
               return (
               <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
