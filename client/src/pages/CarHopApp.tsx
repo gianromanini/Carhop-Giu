@@ -5108,7 +5108,7 @@ export default function CarHopApp() {
                                           try {
                                             const messageData = {
                                               senderType: 'host',
-                                              senderId: hostEmail,
+                                              senderId: `@${hostUsername}`,
                                               senderName: hostName,
                                               senderIdentifier: `@${hostUsername}`,
                                               senderEmail: hostEmail,
