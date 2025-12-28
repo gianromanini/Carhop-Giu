@@ -1045,11 +1045,13 @@ export class MemStorage implements IStorage {
     let updated = false;
     for (const msg of messages) {
       const matchesChatTime = !chatStartedAt || (msg.chatStartedAt && new Date(msg.chatStartedAt).getTime() === new Date(chatStartedAt).getTime());
-      if (msg.subject === subject && msg.senderId === senderId && msg.isFinished && matchesChatTime) {
-        msg.isFinished = false;
-        msg.finishedBy = null;
-        msg.finishedAt = null;
-        updated = true;
+      if (msg.subject === subject && msg.senderId === senderId && matchesChatTime) {
+        if (msg.isFinished) {
+          msg.isFinished = false;
+          msg.finishedBy = null;
+          msg.finishedAt = null;
+          updated = true;
+        }
       }
     }
     return updated;
@@ -1634,17 +1636,17 @@ export class DatabaseStorage implements IStorage {
   async reopenChat(subject: string, senderId: string, chatStartedAt?: Date): Promise<boolean> {
     if (!this.initialized) return false;
     try {
+      const whereCondition = and(
+        eq(supportMessages.subject, subject),
+        eq(supportMessages.senderId, senderId),
+        eq(supportMessages.isFinished, true)
+      );
       const result = await this.db.update(supportMessages).set({
         isFinished: false,
         finishedBy: null,
         finishedAt: null
-      }).where(
-        and(
-          eq(supportMessages.subject, subject),
-          eq(supportMessages.senderId, senderId),
-          eq(supportMessages.isFinished, true)
-        )
-      ).returning();
+      }).where(whereCondition).returning();
+      console.log(`[ReopenChat] Reopened ${result.length} messages for subject: ${subject}, senderId: ${senderId}`);
       return result.length > 0;
     } catch (error) {
       console.error("Error reopening chat:", error);

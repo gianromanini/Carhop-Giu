@@ -5777,7 +5777,7 @@ export default function CarHopApp() {
                   </div>
                   <div className="relative">
                     <span>{tab === 'support' ? 'Chat' : tab}</span>
-                    {tab === 'support' && supportMessagesData.filter((m: any) => !m.read && !m.isFinished && !m.adminReply).length > 0 && (
+                    {tab === 'support' && supportMessagesData.filter((m: any) => !m.read && !m.adminReply).length > 0 && (
                       <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         !
                       </span>
@@ -7832,9 +7832,9 @@ export default function CarHopApp() {
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
                     <span>Clients</span>
-                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read && !m.isFinished).length > 0 && (
+                    {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read).length > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
-                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read && !m.isFinished).length}
+                        {supportMessagesData.filter((m: any) => m.senderType === 'client' && !m.read).length}
                       </span>
                     )}
                   </button>
@@ -7845,9 +7845,9 @@ export default function CarHopApp() {
                   >
                     <Building2 size={14} className="sm:w-4 sm:h-4" />
                     <span>Hosts</span>
-                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read && !m.isFinished).length > 0 && (
+                    {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read).length > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
-                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read && !m.isFinished).length}
+                        {supportMessagesData.filter((m: any) => m.senderType === 'host' && !m.read).length}
                       </span>
                     )}
                   </button>
