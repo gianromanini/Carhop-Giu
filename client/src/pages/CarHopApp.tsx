@@ -3965,7 +3965,7 @@ export default function CarHopApp() {
                   {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'chat' && hostUnreadCount > 0 && (
-                    <span className="text-orange-500 text-[14px] font-bold">!</span>
+                    <span className="w-5 h-5 flex items-center justify-center rounded border-2 border-orange-500 bg-orange-500 text-white text-[12px] font-bold">!</span>
                   )}
                 </div>
                 <span>{tab === 'chat' ? 'Support' : tab}</span>
@@ -5425,7 +5425,7 @@ export default function CarHopApp() {
                         }
                         
                         return (
-                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnreadAdminReply ? 'border-blue-600 bg-blue-600' : hasUnreadSenderMsg ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnreadAdminReply ? 'border-blue-600 bg-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
                             <button
                               onClick={() => {
                                 const newExpanded = new Set(expandedHostChatGroups);
@@ -5447,7 +5447,7 @@ export default function CarHopApp() {
                                 {hasUnreadSenderMsg && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
                               </div>
                               {(() => {
-                                const unreadCount = groupMsgs.filter((m: any) => m.adminReply).length;
+                                const unreadCount = groupMsgs.filter((m: any) => m.adminReply && !m.read).length;
                                 return unreadCount > 0 ? (
                                   <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{unreadCount}</span>
                                 ) : (
