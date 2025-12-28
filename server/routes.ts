@@ -1859,16 +1859,41 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         return res.status(400).json({ message: "Invalid sender type. Must be 'client' or 'host'" });
       }
       
+      const finalSubject = subject || 'Questions';
+      
+      // Check if there's a finished chat with same subject/sender and reopen it
+      const lastFinished = await (storage as any).getLastFinishedChat(finalSubject, senderId);
+      if (lastFinished && lastFinished.isFinished) {
+        // Reopen the chat
+        await (storage as any).reopenChat(finalSubject, senderId, lastFinished.chatStartedAt);
+        
+        // Create system message about reopening
+        const reopenTime = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const systemMessage = await (storage as any).createSupportMessage({
+          senderType: senderType,
+          senderId: senderId,
+          senderName: senderName,
+          senderIdentifier: senderIdentifier,
+          senderEmail: senderEmail || null,
+          subject: finalSubject,
+          text: `(Cliente Reabriu o chat ${reopenTime})`,
+          images: [],
+          read: true,
+          chatStartedAt: lastFinished.chatStartedAt
+        });
+      }
+      
       const newMessage = await (storage as any).createSupportMessage({
         senderType,
         senderId,
         senderName,
         senderIdentifier,
         senderEmail: senderEmail || null,
-        subject: subject || 'Questions',
+        subject: finalSubject,
         text,
         images: images || [],
         read: false,
+        chatStartedAt: lastFinished?.chatStartedAt || undefined
       });
       
       res.status(201).json(newMessage);

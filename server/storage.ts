@@ -1033,6 +1033,28 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async getLastFinishedChat(subject: string, senderId: string): Promise<SupportMessage | null> {
+    const messages = Array.from(this.supportMessagesMap.values());
+    const finished = messages.filter(m => m.subject === subject && m.senderId === senderId && m.isFinished);
+    if (finished.length === 0) return null;
+    return finished[finished.length - 1];
+  }
+
+  async reopenChat(subject: string, senderId: string, chatStartedAt?: Date): Promise<boolean> {
+    const messages = Array.from(this.supportMessagesMap.values());
+    let updated = false;
+    for (const msg of messages) {
+      const matchesChatTime = !chatStartedAt || (msg.chatStartedAt && new Date(msg.chatStartedAt).getTime() === new Date(chatStartedAt).getTime());
+      if (msg.subject === subject && msg.senderId === senderId && msg.isFinished && matchesChatTime) {
+        msg.isFinished = false;
+        msg.finishedBy = null;
+        msg.finishedAt = null;
+        updated = true;
+      }
+    }
+    return updated;
+  }
+
   async getUnreadSupportMessagesCount(senderType: string): Promise<number> {
     return Array.from(this.supportMessagesMap.values()).filter(m => m.senderType === senderType && !m.read).length;
   }
@@ -1588,6 +1610,44 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error finishing support message group:", error);
+      return false;
+    }
+  }
+
+  async getLastFinishedChat(subject: string, senderId: string): Promise<SupportMessage | null> {
+    if (!this.initialized) return null;
+    try {
+      const result = await this.db.select().from(supportMessages).where(
+        and(
+          eq(supportMessages.subject, subject),
+          eq(supportMessages.senderId, senderId),
+          eq(supportMessages.isFinished, true)
+        )
+      ).orderBy(supportMessages.finishedAt).limit(1);
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error("Error getting last finished chat:", error);
+      return null;
+    }
+  }
+
+  async reopenChat(subject: string, senderId: string, chatStartedAt?: Date): Promise<boolean> {
+    if (!this.initialized) return false;
+    try {
+      const result = await this.db.update(supportMessages).set({
+        isFinished: false,
+        finishedBy: null,
+        finishedAt: null
+      }).where(
+        and(
+          eq(supportMessages.subject, subject),
+          eq(supportMessages.senderId, senderId),
+          eq(supportMessages.isFinished, true)
+        )
+      ).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error reopening chat:", error);
       return false;
     }
   }
