@@ -3965,8 +3965,8 @@ export default function CarHopApp() {
                 {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 <span>{tab === 'chat' ? 'Support' : tab}</span>
                 {tab === 'chat' && hostUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                    !
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-orange-400 text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {hostUnreadCount}
                   </span>
                 )}
               </button>
@@ -5446,7 +5446,14 @@ export default function CarHopApp() {
                                 {hasUnreadAdminReply && <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"/>}
                                 {hasUnreadSenderMsg && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>}
                               </div>
-                              <span className="text-xs text-zinc-500">{groupMsgs.length} msg</span>
+                              {(() => {
+                                const adminReplyCount = groupMsgs.filter((m: any) => m.adminReply).length;
+                                return adminReplyCount > 0 ? (
+                                  <span className="text-xs font-bold px-2 py-1 bg-green-500 text-orange-400 rounded-full">{adminReplyCount} msg</span>
+                                ) : (
+                                  <span className="text-xs text-zinc-500">{groupMsgs.length} msg</span>
+                                );
+                              })()}
                             </button>
                             
                             {isExpanded && (
