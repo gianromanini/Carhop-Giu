@@ -2328,19 +2328,29 @@ export default function CarHopApp() {
                   return (
                     <div key={groupKey} className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           const newSet = new Set(expandedClientChatGroups);
-                          if (newSet.has(groupKey)) newSet.delete(groupKey);
+                          const isCurrentlyExpanded = newSet.has(groupKey);
+                          
+                          if (!isCurrentlyExpanded && hasUnread && !isFinished) {
+                            const unreadMsgs = groupMsgs.filter((m: any) => m.adminReply && !m.read);
+                            for (const msg of unreadMsgs) {
+                              await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+                            }
+                            queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                          }
+                          
+                          if (isCurrentlyExpanded) newSet.delete(groupKey);
                           else newSet.add(groupKey);
                           setExpandedClientChatGroups(newSet);
                         }}
-                        className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnread ? 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                        className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnread ? 'bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800/40' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                       >
                         <div className="flex items-center gap-2">
                           <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          <span className={`text-xs font-bold ${hasUnread ? 'text-green-700 dark:text-green-300' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
+                          <span className={`text-xs font-bold ${hasUnread ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
                           <span className="text-xs text-zinc-500">• {date}</span>
-                          {hasUnread && <div className="w-2 h-2 bg-green-600 rounded-full"></div>}
+                          {hasUnread && <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{groupMsgs.filter((m: any) => m.adminReply && !m.read).length}</span>}
                         </div>
                       </button>
                       
@@ -5378,7 +5388,7 @@ export default function CarHopApp() {
                   </div>
                   <div className="relative">
                     <span>{tab === 'support' ? 'Chat' : tab}</span>
-                    {tab === 'support' && supportMessagesData.length > 0 && (
+                    {tab === 'support' && supportMessagesData.filter((m: any) => m.adminReply && !m.read && !m.isFinished).length > 0 && (
                       <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         !
                       </span>
@@ -7542,9 +7552,17 @@ export default function CarHopApp() {
                         
                         return filtered.map(([subject, senderGroups]: any) => (
                           <div key={subject} className="space-y-2 border-b border-zinc-200 dark:border-zinc-700 pb-4">
-                            <h4 className={`font-bold text-sm px-2 py-1 rounded ${supportSubTab === 'client' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'}`}>
-                              📋 {subject}
-                            </h4>
+                            {(() => {
+                              const subjectHasAdminReply = senderGroups.some(([_, msgs]: any) => (msgs as any[]).some((m: any) => m.adminReply && !m.read));
+                              const adminReplyCount = senderGroups.reduce((sum: number, [_, msgs]: any) => sum + (msgs as any[]).filter((m: any) => m.adminReply && !m.read).length, 0);
+                              return (
+                                <h4 className={`font-bold text-sm px-2 py-1 rounded flex items-center gap-2 ${subjectHasAdminReply ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : (supportSubTab === 'client' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300')}`}>
+                                  <span>📋 {subject}</span>
+                                  {adminReplyCount > 0 && <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{adminReplyCount}</span>}
+                                </h4>
+                              );
+                            })()}
+                            
                             <div className="space-y-2 ml-2">
                               {senderGroups.map(([senderId, messages]: any) => {
                                 const chatSubject = subject;
