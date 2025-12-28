@@ -5424,16 +5424,28 @@ export default function CarHopApp() {
                           );
                         }
                         
-                        const hasAdminReply = groupMsgs.some((m: any) => m.adminReply);
+                        const hasAdminReply = groupMsgs.some((m: any) => m.adminReply && !m.read);
                         return (
                           <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasAdminReply ? 'border-blue-600 bg-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`}>
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 const newExpanded = new Set(expandedHostChatGroups);
                                 if (isExpanded) {
                                   newExpanded.delete(groupKey);
                                 } else {
                                   newExpanded.add(groupKey);
+                                  // Mark unread messages as read when expanding
+                                  const unreadMsgs = groupMsgs.filter((m: any) => m.adminReply && !m.read);
+                                  for (const msg of unreadMsgs) {
+                                    try {
+                                      await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true });
+                                    } catch (error) {
+                                      console.error('Error marking message as read:', error);
+                                    }
+                                  }
+                                  if (unreadMsgs.length > 0) {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+                                  }
                                 }
                                 setExpandedHostChatGroups(newExpanded);
                               }}
