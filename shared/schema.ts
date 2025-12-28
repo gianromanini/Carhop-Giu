@@ -267,7 +267,7 @@ export const supportMessages = pgTable("support_messages", {
   isFinished: boolean("is_finished").default(false),
   finishedBy: varchar("finished_by"), // 'client' | 'host' | 'admin'
   finishedAt: timestamp("finished_at"),
-  chatStartedAt: timestamp("chat_started_at").notNull(),
+  chatStartedAt: timestamp("chat_started_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
