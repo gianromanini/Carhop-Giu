@@ -1520,10 +1520,7 @@ export class DatabaseStorage implements IStorage {
     if (!this.initialized) return false;
     try {
       // Get all messages from this sender
-      const senderFilter = or(
-        eq(supportMessages.senderIdentifier, senderId),
-        eq(supportMessages.senderEmail, senderId)
-      );
+      const senderFilter = eq(supportMessages.senderId, senderId);
       
       const allMessages = await this.db.select().from(supportMessages).where(senderFilter);
       
