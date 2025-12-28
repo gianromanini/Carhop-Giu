@@ -1705,7 +1705,8 @@ export default function CarHopApp() {
   const markNotificationsAsRead = () => {
     const notifications = getClientNotifications();
     const allIds = notifications.map(n => n.id);
-    const newReadIds = [...new Set([...readNotificationIds, ...allIds])];
+    const idSet = new Set([...readNotificationIds, ...allIds]);
+    const newReadIds = Array.from(idSet);
     setReadNotificationIds(newReadIds);
     localStorage.setItem('carhop_read_notifications', JSON.stringify(newReadIds));
   };
@@ -5069,8 +5070,7 @@ export default function CarHopApp() {
                                 ))}
                                 
                                 {/* Reply textarea */}
-                                {!isFinished && (
-                                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
                                     <textarea
                                       value={hostChatReply}
                                       onChange={(e) => setHostChatReply(e.target.value)}
@@ -5154,7 +5154,6 @@ export default function CarHopApp() {
                                       )}
                                     </div>
                                   </div>
-                                )}
                               </div>
                             )}
                           </div>
@@ -6380,9 +6379,9 @@ export default function CarHopApp() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Car Model</label>
-                      <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-carmodel">
+                      <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value as string)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-carmodel">
                         <option value="">All Models</option>
-                        {[...new Set(vehicles.map(v => v.model))].sort().map(model => (
+                        {Array.from(new Set(vehicles.map(v => v.model))).sort().map(model => (
                           <option key={model} value={model}>{model}</option>
                         ))}
                       </select>
