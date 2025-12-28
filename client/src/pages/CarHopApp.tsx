@@ -2524,10 +2524,9 @@ export default function CarHopApp() {
                                   onClick={async () => {
                                     try {
                                       const subjectFromGroup = groupKey.split("_")[0];
-                                      await apiRequest('POST', '/api/support-messages/finish-chat', {
-                                        senderIdentifier: userEmail,
-                                        senderType: 'client',
+                                      await apiRequest('POST', '/api/support-messages/finish-group', {
                                         subject: subjectFromGroup,
+                                        senderId: userEmail,
                                         finishedBy: 'client'
                                       });
                                       const newFinished = new Set(finishedClientChatGroups);
