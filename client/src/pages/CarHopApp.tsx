@@ -543,7 +543,7 @@ export default function CarHopApp() {
   const [editingSupportMessageId, setEditingSupportMessageId] = useState<number | null>(null);
   const [editingSupportMessageText, setEditingSupportMessageText] = useState('');
   const [showClientChatModal, setShowClientChatModal] = useState(false);
-  const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Questions', message: '' });
+  const [clientChatForm, setClientChatForm] = useState({ name: '', email: '', phone: '', subject: 'Talk with Support', message: '' });
   const [clientChatImages, setClientChatImages] = useState<string[]>([]);
   const [clientChatSending, setClientChatSending] = useState(false);
   const [clientChatTab, setClientChatTab] = useState<'history' | 'new'>('new');
@@ -2425,7 +2425,7 @@ export default function CarHopApp() {
                   const isExpanded = expandedClientChatGroups.has(groupKey);
                   const isFinished = finishedClientChatGroups.has(groupKey);
                   const subject = groupKey.split("_")[0];
-                  const date = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                  const dateTime = new Date(groupMsgs[groupMsgs.length - 1].createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
                   const hasUnread = groupMsgs.some((m: any) => m.adminReply && !m.read);
                   
                   if (isFinished) {
@@ -2433,7 +2433,7 @@ export default function CarHopApp() {
                       <div key={groupKey} className="border border-zinc-300 dark:border-zinc-600 rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800">
                         <div className="px-3 py-2 flex items-center gap-2">
                           <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">{subject}</span>
-                          <span className="text-xs text-zinc-500">• {date}</span>
+                          <span className="text-xs text-zinc-500">• {dateTime}</span>
                           <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded ml-auto">Finished</span>
                         </div>
                       </div>
@@ -2464,7 +2464,7 @@ export default function CarHopApp() {
                         <div className="flex items-center gap-2">
                           <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                           <span className={`text-xs font-bold ${hasUnread ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
-                          <span className="text-xs text-zinc-500">• {date}</span>
+                          <span className="text-xs text-zinc-500">• {dateTime}</span>
                           {hasUnread && <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{groupMsgs.filter((m: any) => m.adminReply && !m.read).length}</span>}
                         </div>
                       </button>
@@ -2480,14 +2480,18 @@ export default function CarHopApp() {
                               
                               return (
                                 <div key={msg.id} className="space-y-1 pb-2 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
-                                  <div className="flex justify-between items-start">
-                                    <span className="text-xs text-zinc-500">
-                                      {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                    {idx === 0 && phone && phone !== 'Não informado' && (
+                                  {idx !== 0 && (
+                                    <div className="flex justify-between items-start">
+                                      <span className="text-xs text-zinc-500">
+                                        {new Date(msg.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {idx === 0 && phone && phone !== 'Não informado' && (
+                                    <div className="flex justify-end">
                                       <span className="text-xs text-zinc-600 dark:text-zinc-400">{phone}</span>
-                                    )}
-                                  </div>
+                                    </div>
+                                  )}
                                   <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap line-clamp-2">{cleanText}</p>
                                   {msg.adminReply && (
                                     <div className="mt-1 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-xs text-green-700 dark:text-green-300">
@@ -2611,7 +2615,8 @@ export default function CarHopApp() {
                 queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                 toast({ description: 'Message sent successfully! We will contact you soon.' });
                 setShowClientChatModal(false);
-                setClientChatForm({ name: '', email: '', phone: '', subject: 'Questions', message: '' });
+                setClientChatTab('history');
+                setClientChatForm({ name: '', email: '', phone: '', subject: 'Talk with Support', message: '' });
                 setClientChatImages([]);
               } catch (error) {
                 toast({ description: 'Error sending message. Please try again.', variant: 'destructive' });
@@ -2677,10 +2682,8 @@ export default function CarHopApp() {
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
                   data-testid="select-chat-subject"
                 >
-                  <option value="Questions">Questions</option>
-                  <option value="Open a Claim">Open a Claim</option>
-                  <option value="Report an Issue">Report an Issue</option>
                   <option value="Talk with Support">Talk with Support</option>
+                  <option value="Report an Issue">Report an Issue</option>
                 </select>
               </div>
               
