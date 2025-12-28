@@ -5447,7 +5447,7 @@ export default function CarHopApp() {
                               {(() => {
                                 const unreadCount = groupMsgs.filter((m: any) => !m.read).length;
                                 return unreadCount > 0 ? (
-                                  <span className="text-xs font-bold text-orange-500">{unreadCount}</span>
+                                  <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{unreadCount}</span>
                                 ) : (
                                   <span className="text-xs text-zinc-500">{groupMsgs.length} msg</span>
                                 );
