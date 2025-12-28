@@ -1018,11 +1018,12 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
+  async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string, chatStartedAt?: Date): Promise<boolean> {
     const messages = Array.from(this.supportMessagesMap.values());
     let updated = false;
     for (const msg of messages) {
-      if (msg.subject === subject && msg.senderId === senderId && !msg.isFinished) {
+      const matchesChatTime = !chatStartedAt || (msg.chatStartedAt && new Date(msg.chatStartedAt).getTime() === new Date(chatStartedAt).getTime());
+      if (msg.subject === subject && msg.senderId === senderId && !msg.isFinished && matchesChatTime) {
         msg.isFinished = true;
         msg.finishedBy = finishedBy;
         msg.finishedAt = new Date();

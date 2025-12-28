@@ -2524,10 +2524,12 @@ export default function CarHopApp() {
                                   onClick={async () => {
                                     try {
                                       const subjectFromGroup = groupKey.split("_")[0];
+                                      const chatStartedAtFromGroup = groupMessages[groupKey]?.[0]?.chatStartedAt;
                                       await apiRequest('POST', '/api/support-messages/finish-group', {
                                         subject: subjectFromGroup,
                                         senderId: userEmail,
-                                        finishedBy: 'client'
+                                        finishedBy: 'client',
+                                        chatStartedAt: chatStartedAtFromGroup
                                       });
                                       queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                       const newExpanded = new Set(expandedClientChatGroups);
@@ -5562,10 +5564,12 @@ export default function CarHopApp() {
                                             <button
                                               onClick={async () => {
                                                 try {
+                                                  const chatStartedAtFromGroup = groupMsgs[0]?.chatStartedAt;
                                                   await apiRequest('POST', '/api/support-messages/finish-group', {
                                                     subject: subject,
                                                     senderId: hostEmail,
-                                                    finishedBy: 'host'
+                                                    finishedBy: 'host',
+                                                    chatStartedAt: chatStartedAtFromGroup
                                                   });
                                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                                   const newExpanded = new Set(expandedHostChatGroups);
@@ -8015,7 +8019,7 @@ export default function CarHopApp() {
                                                 onClick={async (e) => { 
                                                   e.stopPropagation();
                                                   try {
-                                                    await apiRequest('POST', `/api/support-messages/finish-group`, { subject: chatSubject, senderId, finishedBy: 'admin' });
+                                                    await apiRequest('POST', `/api/support-messages/finish-group`, { subject: chatSubject, senderId, finishedBy: 'admin', chatStartedAt: firstMsg.chatStartedAt });
                                                     queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                                     toast({ description: 'Chat finalized!' });
                                                   } catch (error) {

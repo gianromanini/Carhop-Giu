@@ -2010,15 +2010,16 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   // Finish chat by subject and sender (admin only)
   app.post("/api/support-messages/finish-group", async (req, res) => {
     try {
-      const { subject, senderId, finishedBy } = req.body;
+      const { subject, senderId, finishedBy, chatStartedAt } = req.body;
       
       if (!subject || !senderId || !finishedBy) {
         console.log("Missing fields:", { subject, senderId, finishedBy });
         return res.status(400).json({ message: "Missing required fields" });
       }
       
-      console.log(`Finishing chat - Subject: ${subject}, SenderId: ${senderId}, FinishedBy: ${finishedBy}`);
-      const success = await (storage as any).finishSupportMessageGroupBySubjectAndSender(subject, senderId, finishedBy);
+      console.log(`Finishing chat - Subject: ${subject}, SenderId: ${senderId}, ChatStartedAt: ${chatStartedAt}, FinishedBy: ${finishedBy}`);
+      const chatStartedAtDate = chatStartedAt ? new Date(chatStartedAt) : undefined;
+      const success = await (storage as any).finishSupportMessageGroupBySubjectAndSender(subject, senderId, finishedBy, chatStartedAtDate);
       
       if (!success) {
         console.log("Failed to finish chat - no messages found or already finished");
