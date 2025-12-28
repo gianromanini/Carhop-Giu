@@ -2438,7 +2438,8 @@ export default function CarHopApp() {
                                     senderId: userEmail,
                                     senderName: clientUser?.name || 'Client',
                                     senderIdentifier: userEmail,
-                                    text: `[${subject}] ${clientChatReply}`,
+                                    subject: subject,
+                                    text: clientChatReply,
                                     images: []
                                   });
                                   queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
@@ -2476,7 +2477,8 @@ export default function CarHopApp() {
                   senderId: clientChatForm.email,
                   senderName: clientChatForm.name,
                   senderIdentifier: clientChatForm.email,
-                  text: `[${clientChatForm.subject}] ${clientChatForm.message}\n\nPhone: ${clientChatForm.phone || 'Not provided'}`,
+                  subject: clientChatForm.subject,
+                  text: `${clientChatForm.message}\n\nPhone: ${clientChatForm.phone || 'Not provided'}`,
                   images: clientChatImages
                 };
                 console.log('📨 Enviando mensagem:', messagePayload);
@@ -5133,7 +5135,8 @@ export default function CarHopApp() {
                                               senderName: hostName,
                                               senderIdentifier: `@${hostUsername}`,
                                               senderEmail: hostEmail,
-                                              text: `[${subject}] ${hostChatReply}`,
+                                              subject: subject,
+                                              text: hostChatReply,
                                               images: [],
                                               read: false
                                             };
