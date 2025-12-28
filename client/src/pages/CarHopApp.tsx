@@ -732,7 +732,36 @@ export default function CarHopApp() {
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
-  const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'] });
+  const [lastNotifiedMessageIds, setLastNotifiedMessageIds] = useState<Set<number>>(new Set());
+  const { data: supportMessagesData = [], refetch: refetchSupportMessages } = useQuery<any[]>({ 
+    queryKey: ['/api/support-messages'],
+    refetchInterval: 3000 // Poll every 3 seconds for new admin replies
+  });
+
+  // Notify client when admin replies to their support message
+  useEffect(() => {
+    if (supportMessagesData && supportMessagesData.length > 0 && toast) {
+      supportMessagesData.forEach((msg: any) => {
+        // Check if message has adminReply and we haven't notified yet
+        if (msg.adminReply && !lastNotifiedMessageIds.has(msg.id)) {
+          // Only notify if this is a message from client or host (not admin)
+          if ((msg.senderType === 'client' || msg.senderType === 'host') && msg.senderIdentifier) {
+            try {
+              toast({
+                title: "Support Reply",
+                description: `You have a new reply from CarHop Support regarding: ${msg.subject || 'Your Support Message'}`,
+                variant: "default"
+              });
+            } catch (e) {
+              // Silent fallback if toast fails
+            }
+            // Mark as notified
+            setLastNotifiedMessageIds(prev => new Set(prev).add(msg.id));
+          }
+        }
+      });
+    }
+  }, [supportMessagesData, lastNotifiedMessageIds]);
   const [hostTab, setHostTab] = useState('fleet');
   const [editingHost, setEditingHost] = useState<any>(null);
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
