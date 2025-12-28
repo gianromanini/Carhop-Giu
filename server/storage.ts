@@ -1519,10 +1519,6 @@ export class DatabaseStorage implements IStorage {
   async finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean> {
     if (!this.initialized) return false;
     try {
-      console.log(`=== FINISH CHAT DEBUG ===`);
-      console.log(`Subject: "${subject}"`);
-      console.log(`SenderId: "${senderId}"`);
-      
       // Get all messages from this sender
       const senderFilter = or(
         eq(supportMessages.senderIdentifier, senderId),
@@ -1530,43 +1526,31 @@ export class DatabaseStorage implements IStorage {
       );
       
       const allMessages = await this.db.select().from(supportMessages).where(senderFilter);
-      console.log(`Found ${allMessages.length} total messages from senderId: ${senderId}`);
       
       // Filter by subject in the message text (subject is stored as [Subject] at the start)
       const subjectPattern = `[${subject}]`;
-      console.log(`Looking for messages with subject pattern: "${subjectPattern}"`);
-      
       const matchingIds: number[] = [];
       allMessages.forEach((m: SupportMessage) => {
         const text = m.text || '';
-        const hasSubject = text.includes(subjectPattern);
-        const notFinished = !m.isFinished;
-        console.log(`Message ID ${m.id}: hasSubject=${hasSubject}, notFinished=${notFinished}, text preview="${text.substring(0, 50)}..."`);
-        if (hasSubject && notFinished) {
+        if (text.includes(subjectPattern) && !m.isFinished) {
           matchingIds.push(m.id);
         }
       });
       
-      console.log(`Matching IDs to finish: ${JSON.stringify(matchingIds)} (total: ${matchingIds.length})`);
-      
       if (matchingIds.length === 0) {
-        console.log(`No matching messages found - returning true`);
-        return true;
+        return true; // Already finished or no messages found
       }
       
       // Update ALL matching messages in a single batch operation
-      const result = await this.db.update(supportMessages).set({ 
+      await this.db.update(supportMessages).set({ 
         isFinished: true, 
         finishedBy,
         finishedAt: new Date()
-      }).where(inArray(supportMessages.id, matchingIds)).returning();
+      }).where(inArray(supportMessages.id, matchingIds));
       
-      console.log(`✓ Successfully finished ${result.length} messages`);
-      console.log(`=== END DEBUG ===`);
       return true;
     } catch (error) {
-      console.error("❌ Error finishing support message group:", error);
-      console.log(`=== END DEBUG ===`);
+      console.error("Error finishing support message group:", error);
       return false;
     }
   }
