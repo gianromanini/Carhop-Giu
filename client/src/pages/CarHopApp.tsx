@@ -3616,8 +3616,8 @@ export default function CarHopApp() {
                 {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 <span>{tab === 'chat' ? 'Support' : tab}</span>
                 {tab === 'chat' && hostUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
-                    {hostUnreadCount > 9 ? '9+' : hostUnreadCount}
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                    !
                   </span>
                 )}
               </button>
@@ -5388,7 +5388,7 @@ export default function CarHopApp() {
                   </div>
                   <div className="relative">
                     <span>{tab === 'support' ? 'Chat' : tab}</span>
-                    {tab === 'support' && supportMessagesData.filter((m: any) => m.adminReply && !m.read && !m.isFinished).length > 0 && (
+                    {tab === 'support' && supportMessagesData.filter((m: any) => !m.read && !m.isFinished && !m.adminReply).length > 0 && (
                       <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         !
                       </span>
@@ -7553,12 +7553,12 @@ export default function CarHopApp() {
                         return filtered.map(([subject, senderGroups]: any) => (
                           <div key={subject} className="space-y-2 border-b border-zinc-200 dark:border-zinc-700 pb-4">
                             {(() => {
-                              const subjectHasAdminReply = senderGroups.some(([_, msgs]: any) => (msgs as any[]).some((m: any) => m.adminReply && !m.read));
-                              const adminReplyCount = senderGroups.reduce((sum: number, [_, msgs]: any) => sum + (msgs as any[]).filter((m: any) => m.adminReply && !m.read).length, 0);
+                              const subjectHasUnreadMessage = senderGroups.some(([_, msgs]: any) => (msgs as any[]).some((m: any) => !m.read && !m.adminReply));
+                              const unreadMessageCount = senderGroups.reduce((sum: number, [_, msgs]: any) => sum + (msgs as any[]).filter((m: any) => !m.read && !m.adminReply).length, 0);
                               return (
-                                <h4 className={`font-bold text-sm px-2 py-1 rounded flex items-center gap-2 ${subjectHasAdminReply ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : (supportSubTab === 'client' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300')}`}>
+                                <h4 className={`font-bold text-sm px-2 py-1 rounded flex items-center gap-2 ${subjectHasUnreadMessage ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : (supportSubTab === 'client' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300')}`}>
                                   <span>📋 {subject}</span>
-                                  {adminReplyCount > 0 && <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{adminReplyCount}</span>}
+                                  {unreadMessageCount > 0 && <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{unreadMessageCount}</span>}
                                 </h4>
                               );
                             })()}
@@ -7615,7 +7615,6 @@ export default function CarHopApp() {
                                                 </span>
                                                 {isFinished && <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded whitespace-nowrap">Finished by {finishedBy}</span>}
                                               </div>
-                                              {supportSubTab === 'host' && firstMsg.senderEmail && <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 truncate">{firstMsg.senderEmail}</p>}
                                             </div>
                                           </div>
                                           <div className="flex items-center gap-1 flex-shrink-0">
