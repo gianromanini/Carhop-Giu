@@ -696,6 +696,11 @@ export default function CarHopApp() {
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
 
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordError, setAdminPasswordError] = useState('');
+
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
@@ -2002,6 +2007,7 @@ export default function CarHopApp() {
       includedMiles: String(pricing.includedMiles || ''),
       insurance500: String(pricing.prices?.insurance500 || ''),
       insurance1000: String(pricing.prices?.insurance1000 || ''),
+      platinumProtection: String(pricing.prices?.platinumProtection || ''),
     });
     setEditingId(car.id);
     window.scrollTo(0, 0);
@@ -2134,7 +2140,15 @@ export default function CarHopApp() {
                 <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadAdminRepliesCount() > 9 ? '9+' : getClientUnreadAdminRepliesCount()}</span>
               )}
             </button>
-            <button onClick={() => setView('admin')} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
+            <button onClick={() => {
+              if (adminAuthenticated) {
+                setView('admin');
+              } else {
+                setShowAdminPasswordModal(true);
+                setAdminPasswordInput('');
+                setAdminPasswordError('');
+              }
+            }} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
           </div>
 
           <div className="flex md:hidden items-center justify-end gap-1 sm:gap-2 flex-1">
@@ -2307,6 +2321,52 @@ export default function CarHopApp() {
       </header>
 
       {selectedImage && <ImageViewer src={selectedImage} onClose={() => setSelectedImage(null)} />}
+
+      {showAdminPasswordModal && (
+        <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button onClick={() => { setShowAdminPasswordModal(false); setAdminPasswordInput(''); setAdminPasswordError(''); }} className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" data-testid="button-close-admin-password-modal"><X size={20}/></button>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Admin Access</h2>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (adminPasswordInput === 'xablau321') {
+                setAdminAuthenticated(true);
+                setShowAdminPasswordModal(false);
+                setAdminPasswordInput('');
+                setAdminPasswordError('');
+                setView('admin');
+              } else {
+                setAdminPasswordError('Incorrect password');
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Password</label>
+                <input 
+                  type="password" 
+                  value={adminPasswordInput}
+                  onChange={(e) => {
+                    setAdminPasswordInput(e.target.value);
+                    setAdminPasswordError('');
+                  }}
+                  placeholder="Enter admin password" 
+                  required 
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500" 
+                  data-testid="input-admin-password" 
+                  autoFocus
+                />
+              </div>
+              {adminPasswordError && (
+                <div className="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-3 rounded-lg">
+                  <p className="text-sm text-red-800 dark:text-red-300">{adminPasswordError}</p>
+                </div>
+              )}
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2" data-testid="button-submit-admin-password">Access Admin Panel</Button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isProcessingPayment && (
         <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4 text-center">
