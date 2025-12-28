@@ -2324,6 +2324,10 @@ export default function CarHopApp() {
         const activeTab = clientChatTab || defaultTab;
         const isLoggedIn = !!clientUser;
         
+        // Count unread admin replies for Conversations badge
+        const unreadAdminRepliesCount = clientMessages.filter((m: any) => m.adminReply && !m.read).length;
+        const conversationsCount = clientMessages.length;
+        
         // Show login screen if not logged in and not already showing form
         if (!isLoggedIn && !showChatLoginScreen) {
           return (
@@ -2373,10 +2377,13 @@ export default function CarHopApp() {
               <div className="flex gap-2 mb-4">
                 <button
                   onClick={() => setClientChatTab('history')}
-                  className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
+                  className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
                   data-testid="button-chat-history"
                 >
                   Conversations
+                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded min-w-max ${unreadAdminRepliesCount > 0 ? 'bg-red-600 text-white' : 'bg-zinc-300 dark:bg-zinc-600 text-zinc-900 dark:text-white border border-zinc-400 dark:border-zinc-500'}`}>
+                    {conversationsCount}
+                  </span>
                 </button>
                 <button
                   onClick={() => setClientChatTab('new')}
