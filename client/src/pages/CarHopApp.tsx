@@ -5026,7 +5026,7 @@ export default function CarHopApp() {
                                   <span className="text-xs text-zinc-500">• {date}</span>
                                   <span className="text-[9px] font-bold px-2 py-0.5 bg-zinc-300 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded">Finished</span>
                                 </div>
-                                {view === 'host-dashboard' && currentUser?.isAdmin && (
+                                {currentUser?.isAdmin && (
                                   <button
                                     onClick={async () => {
                                       if (confirm(`Delete entire "${subject}" conversation? This cannot be undone.`)) {
