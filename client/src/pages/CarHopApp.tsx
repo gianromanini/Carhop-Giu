@@ -2163,7 +2163,7 @@ export default function CarHopApp() {
             <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            {!adminAuthenticated && <button onClick={handleManageBookingClick} className="hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>}
+            <button onClick={handleManageBookingClick} className="hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
             {clientUser ? (
               <div className="flex items-center gap-3">
                 {/* Notifications Bell */}
@@ -2222,11 +2222,9 @@ export default function CarHopApp() {
                 <button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800" data-testid="button-signout"><LogOut size={12}/></button>
               </div>
             ) : (
-              !adminAuthenticated ? (
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider" data-testid="button-signin">Sign In</button>
-                </div>
-              ) : null
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowLoginModal(true)} className="px-5 py-2 border border-zinc-300 dark:border-zinc-600 rounded text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-white dark:hover:text-black transition-all uppercase text-xs font-bold tracking-wider" data-testid="button-signin">Sign In</button>
+              </div>
             )}
             <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
             <button onClick={() => {
@@ -6022,6 +6020,9 @@ export default function CarHopApp() {
               <div className="flex flex-col items-center gap-0.5">
                 <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
                   {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
+                  <MessageCircle size={14}/>
                 </Button>
               </div>
             </div>
