@@ -8210,7 +8210,7 @@ export default function CarHopApp() {
                                           
                                           {isFirstMsg && chatSubject && (
                                             <div className="mb-1 pb-1 border-b border-zinc-300 dark:border-zinc-600">
-                                            <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderIdentifier}</p>
+                                            <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderEmail || message.senderIdentifier}</p>
                                             {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
                                           </div>
                                         )}
