@@ -5851,7 +5851,7 @@ export default function CarHopApp() {
                         <div className="w-1 h-3 bg-green-600 rounded-full"></div>
                       </div>
                       <div className="space-y-2 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200 dark:border-green-900/30">
-                        {['Up to 40% savings vs traditional agencies', 'Price match guarantee', 'No hidden fees', 'Weekly discount specials', 'Loyalty rewards program', 'Transparent pricing upfront', 'Seasonal promotions', 'Group discount options', 'Long-term rental discounts', 'Fuel-saver car collection'].map((benefit, idx) => (
+                        {['Up to 40% savings vs Another Plataforms', 'Cheap Prices', 'No hidden fees', 'Transparent pricing upfront', 'Seasonal promotions', 'Fuel-saver car collection'].map((benefit, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                             <Check size={16} className="text-green-600 flex-shrink-0" />
                             <span>{benefit}</span>
@@ -5884,7 +5884,7 @@ export default function CarHopApp() {
                         <div className="w-1 h-3 bg-blue-600 rounded-full"></div>
                       </div>
                       <div className="space-y-2 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-900/30">
-                        {['No booking fees', 'No cancellation charges', 'Free damage waiver (basic)', 'No airport surcharges', 'Free roadside assistance', 'No mileage overage penalties', 'Flexible payment options', 'No hidden admin costs', 'Free GPS device rental', 'Transparent tax breakdown'].map((benefit, idx) => (
+                        {['No booking fees', 'No cancellation charges with Less than 6 Hours', 'Flexible payment options', 'No hidden admin costs', 'Transparent tax breakdown'].map((benefit, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                             <Check size={16} className="text-blue-600 flex-shrink-0" />
                             <span>{benefit}</span>
@@ -5917,7 +5917,7 @@ export default function CarHopApp() {
                         <div className="w-1 h-3 bg-purple-600 rounded-full"></div>
                       </div>
                       <div className="space-y-2 bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-200 dark:border-purple-900/30">
-                        {['Book in under 2 minutes', 'Mobile-friendly interface', 'One-page checkout process', 'Instant confirmation email', 'No credit card required upfront', 'Multiple payment methods', 'Flexible date selection', 'Real-time availability', 'Automatic receipt generation', '24/7 customer support'].map((benefit, idx) => (
+                        {['Book in under 3 minutes', 'Mobile-friendly interface !', 'Delivery System Option !', 'Easy Steps to checkout process', 'Email Confirmation booking', 'Multiple payment methods', 'Flexible date selection', 'Automatic receipt generation', 'Customer support Chat'].map((benefit, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                             <Check size={16} className="text-purple-600 flex-shrink-0" />
                             <span>{benefit}</span>
@@ -5950,7 +5950,7 @@ export default function CarHopApp() {
                         <div className="w-1 h-3 bg-orange-600 rounded-full"></div>
                       </div>
                       <div className="space-y-2 bg-orange-50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-900/30">
-                        {['Earn up to $5,000/month passive income', 'Automated booking management', 'Professional insurance coverage included', '24/7 dedicated host support team', 'Marketing & promotion included', 'Analytics dashboard included', 'Maintenance coordination service', 'Guest screening & verification', 'Monthly payouts guaranteed', 'Host community & networking'].map((benefit, idx) => (
+                        {['Up to 40% Cheaper Comission Fees vs Another Platforms', 'More money in your pocket', 'Cheap Fees with low Deductible', 'Earn up to 30% More than Another Platform', 'Customized Car Options with Cleaning Fees & Child Chair', 'Customized Booking management', 'Professional insurance coverage included', 'Host to Admin support team', 'Marketing & promotion included', 'Maintenance coordination service', 'Guest screening & verification', 'Biweekly or Monthly Payouts'].map((benefit, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                             <Check size={16} className="text-orange-600 flex-shrink-0" />
                             <span>{benefit}</span>
