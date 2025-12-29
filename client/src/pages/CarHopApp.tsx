@@ -5844,7 +5844,7 @@ export default function CarHopApp() {
                     <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Unbeatable rates compared to traditional rental agencies. Save up to 40% on daily rentals.</p>
                   </Card>
                   {expandedBenefit === 'prices' && (
-                    <div className="mt-4 space-y-2 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200 dark:border-green-900/30">
+                    <div className="mt-1 space-y-2 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200 dark:border-green-900/30">
                       {['Up to 40% savings vs traditional agencies', 'Price match guarantee', 'No hidden fees', 'Weekly discount specials', 'Loyalty rewards program', 'Transparent pricing upfront', 'Seasonal promotions', 'Group discount options', 'Long-term rental discounts', 'Fuel-saver car collection'].map((benefit, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                           <Check size={16} className="text-green-600 flex-shrink-0" />
@@ -5870,7 +5870,7 @@ export default function CarHopApp() {
                     <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Transparent pricing with minimal hidden charges. Only pay for what you use.</p>
                   </Card>
                   {expandedBenefit === 'fees' && (
-                    <div className="mt-4 space-y-2 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-900/30">
+                    <div className="mt-1 space-y-2 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-900/30">
                       {['No booking fees', 'No cancellation charges', 'Free damage waiver (basic)', 'No airport surcharges', 'Free roadside assistance', 'No mileage overage penalties', 'Flexible payment options', 'No hidden admin costs', 'Free GPS device rental', 'Transparent tax breakdown'].map((benefit, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                           <Check size={16} className="text-blue-600 flex-shrink-0" />
@@ -5896,7 +5896,7 @@ export default function CarHopApp() {
                     <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Simple 3-step booking process. Rent your perfect car in minutes, not hours.</p>
                   </Card>
                   {expandedBenefit === 'booking' && (
-                    <div className="mt-4 space-y-2 bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-200 dark:border-purple-900/30">
+                    <div className="mt-1 space-y-2 bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-200 dark:border-purple-900/30">
                       {['Book in under 2 minutes', 'Mobile-friendly interface', 'One-page checkout process', 'Instant confirmation email', 'No credit card required upfront', 'Multiple payment methods', 'Flexible date selection', 'Real-time availability', 'Automatic receipt generation', '24/7 customer support'].map((benefit, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                           <Check size={16} className="text-purple-600 flex-shrink-0" />
@@ -5922,7 +5922,7 @@ export default function CarHopApp() {
                     <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Most profitable hosting program with complete management tools and support.</p>
                   </Card>
                   {expandedBenefit === 'host' && (
-                    <div className="mt-4 space-y-2 bg-orange-50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-900/30">
+                    <div className="mt-1 space-y-2 bg-orange-50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-900/30">
                       {['Earn up to $5,000/month passive income', 'Automated booking management', 'Professional insurance coverage included', '24/7 dedicated host support team', 'Marketing & promotion included', 'Analytics dashboard included', 'Maintenance coordination service', 'Guest screening & verification', 'Monthly payouts guaranteed', 'Host community & networking'].map((benefit, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
                           <Check size={16} className="text-orange-600 flex-shrink-0" />
@@ -6017,14 +6017,6 @@ export default function CarHopApp() {
           <div className="max-w-7xl mx-auto px-2 sm:px-6 py-8">
             <div className="flex items-start justify-between mb-8 gap-2">
               <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin {adminUnit === '01' && 'Matriz'}</h1>
-              <div className="flex flex-col items-center gap-0.5">
-                <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={() => setDarkMode(!darkMode)} data-testid="button-admin-theme">
-                  {darkMode ? <Sun size={14} /> : <Moon size={14} />}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 p-0" data-testid="button-admin-chat">
-                  <MessageCircle size={14}/>
-                </Button>
-              </div>
             </div>
             
             <div className="flex justify-start gap-0.5 sm:gap-1 md:gap-2 mb-6 overflow-x-auto pb-2 px-0 sm:px-2">
