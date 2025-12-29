@@ -492,59 +492,97 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
     return <div className="w-full flex items-center justify-center text-zinc-400 py-12">No completed bookings yet</div>;
   }
 
-  const maxValue = Math.max(...activeMonths.map(m => monthlyData[m].gross + monthlyData[m].commission), 1);
+  const maxGross = Math.max(...activeMonths.map(m => monthlyData[m].gross), 1);
 
   return (
     <div className="w-full mt-6 select-none">
-      <div className="flex items-end justify-center gap-3 h-80">
+      <div className="flex items-end justify-center gap-6 h-96">
         {activeMonths.map((month) => {
           const data = monthlyData[month];
-          const total = data.gross + data.commission;
-          const barHeight = (total / maxValue) * 100;
-          const grossPercent = total > 0 ? (data.gross / total) * 100 : 0;
-          const commPercent = total > 0 ? (data.commission / total) * 100 : 0;
+          const grossHeight = (data.gross / maxGross) * 100;
+          const commissionPercent = (data.commission / data.gross) * 100;
+          const netPercent = (data.net / data.gross) * 100;
           
           return (
-            <div key={month} className="flex flex-col items-center group flex-1 max-w-16">
+            <div key={month} className="flex flex-col items-center group flex-1 max-w-20">
               {/* Tooltip on hover */}
-              <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-white dark:bg-zinc-900/95 text-zinc-900 dark:text-white text-[10px] p-3 rounded-lg shadow-xl z-20 w-40 backdrop-blur-sm border border-zinc-200 dark:border-zinc-700">
-                <div className="font-bold text-sm border-b border-zinc-700 pb-1 mb-1 text-center">{month}</div>
-                <div className="flex justify-between"><span className="text-blue-600 dark:text-blue-400">Gross Earnings:</span> <span className="font-bold">${data.gross.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span className="text-orange-600 dark:text-orange-400">Commission:</span> <span className="font-bold">${data.commission.toFixed(2)}</span></div>
-                <div className="flex justify-between font-bold border-t border-zinc-200 dark:border-zinc-700 pt-1 mt-1"><span className="text-green-600 dark:text-green-400">Net Earnings:</span> <span>${data.net.toFixed(2)}</span></div>
+              <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col gap-2 bg-white dark:bg-zinc-900/95 text-zinc-900 dark:text-white text-[9px] p-3 rounded-lg shadow-xl z-20 w-52 backdrop-blur-sm border border-zinc-200 dark:border-zinc-700">
+                <div className="font-bold text-sm border-b border-zinc-300 dark:border-zinc-600 pb-1 mb-1 text-center">{month}</div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 flex justify-between gap-2">
+                    <span>Gross Revenue:</span>
+                    <span className="font-bold">${data.gross.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 flex justify-between gap-2">
+                    <span>Commission:</span>
+                    <span className="font-bold">${data.commission.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 border-t border-zinc-300 dark:border-zinc-600 pt-2 mt-1">
+                  <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 flex justify-between gap-2">
+                    <span>Net Earnings:</span>
+                    <span className="font-bold">${data.net.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
               
-              {/* Vertical stacked bar */}
+              {/* 3D Nested Bar Container */}
               <div 
-                className="w-full rounded-t-lg overflow-hidden flex flex-col-reverse transition-all hover:brightness-110 cursor-pointer relative"
-                style={{ height: `${Math.max(barHeight, 5)}%` }}
+                className="relative w-14 rounded-t-2xl overflow-visible transition-all hover:scale-105 cursor-pointer"
+                style={{ height: `${Math.max(grossHeight, 5)}%` }}
               >
-                {/* Gross - Blue (bottom) */}
-                {grossPercent > 0 && (
+                {/* Main Blue Bar (Gross Revenue) - with 3D effect */}
+                <div
+                  className="w-full h-full bg-gradient-to-b from-blue-400 to-blue-700 rounded-t-2xl relative flex flex-col justify-start items-center pt-2"
+                  style={{
+                    boxShadow: '10px 10px 20px rgba(0,0,0,0.4), -3px -3px 10px rgba(255,255,255,0.1) inset, 8px 8px 0px rgba(30,58,138,0.6)',
+                  }}
+                >
+                  {/* Gross Label */}
+                  {grossHeight > 30 && (
+                    <span className="text-[7px] font-bold text-white drop-shadow-lg text-center px-1">
+                      ${data.gross > 999 ? (data.gross/1000).toFixed(1) + 'k' : data.gross.toFixed(0)}
+                    </span>
+                  )}
+                  
+                  {/* Orange Bar Inside (Commission) - Nested Level */}
                   <div 
-                    className="w-full bg-blue-500 flex items-center justify-center text-white"
-                    style={{ height: `${grossPercent}%` }}
+                    className="absolute bottom-0 left-3 right-3 bg-gradient-to-b from-orange-400 to-orange-600 rounded-t-lg flex flex-col justify-end items-center pb-1"
+                    style={{
+                      height: `${commissionPercent}%`,
+                      boxShadow: '8px 8px 16px rgba(0,0,0,0.35), -2px -2px 8px rgba(255,255,255,0.12) inset, 6px 6px 0px rgba(180,83,9,0.5)',
+                      minHeight: commissionPercent > 0 ? '12px' : '0px'
+                    }}
                   >
-                    {grossPercent > 12 && <span className="text-[8px] font-bold drop-shadow-sm text-center px-1">${data.gross > 999 ? `${(data.gross/1000).toFixed(1)}k` : data.gross.toFixed(0)}</span>}
+                    {/* Green Bar Inside (Net Earnings) - Final Innermost Level */}
+                    <div
+                      className="absolute bottom-0 left-2 right-2 bg-gradient-to-b from-green-400 to-green-600 rounded-t-lg flex items-center justify-center"
+                      style={{
+                        height: `${netPercent}%`,
+                        boxShadow: '6px 6px 12px rgba(0,0,0,0.3), -1px -1px 6px rgba(255,255,255,0.15) inset, 4px 4px 0px rgba(22,163,74,0.4)',
+                        minHeight: netPercent > 0 ? '8px' : '0px'
+                      }}
+                    >
+                      {netPercent > 25 && <span className="text-[6px] font-bold text-white drop-shadow-lg">${data.net.toFixed(0)}</span>}
+                    </div>
+                    
+                    {/* Commission Label */}
+                    {commissionPercent > 18 && (
+                      <span className="text-[6px] font-bold text-white drop-shadow-lg mb-0.5">
+                        ${data.commission > 99 ? (data.commission/100).toFixed(1) + 'c' : data.commission.toFixed(0)}
+                      </span>
+                    )}
                   </div>
-                )}
-                {/* Commission - Orange (top) */}
-                {commPercent > 0 && (
-                  <div 
-                    className="w-full bg-orange-500 flex items-center justify-center text-white"
-                    style={{ height: `${commPercent}%` }}
-                  >
-                    {commPercent > 12 && <span className="text-[8px] font-bold drop-shadow-sm text-center px-1">${data.commission > 99 ? `${(data.commission/100).toFixed(1)}c` : data.commission.toFixed(0)}</span>}
-                  </div>
-                )}
+                </div>
               </div>
               
               {/* Month label */}
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mt-2">{month}</span>
-              {/* Net value */}
-              <span className="text-[10px] font-bold text-green-500">
-                ${data.net.toFixed(0)}
-              </span>
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mt-3">{month}</span>
             </div>
           );
         })}
