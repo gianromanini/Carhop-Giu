@@ -467,6 +467,92 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
   );
 };
 
+const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicles: Vehicle[] }) => {
+  const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v]));
+  
+  // Group bookings by month
+  const monthlyData: Record<string, { gross: number; commission: number; net: number }> = {};
+  bookings.forEach(b => {
+    const date = new Date(b.startDate);
+    const monthLabel = monthOrder[date.getMonth()];
+    if (!monthlyData[monthLabel]) {
+      monthlyData[monthLabel] = { gross: 0, commission: 0, net: 0 };
+    }
+    const vehicle = vehicleMap[b.vehicleId as unknown as number];
+    const commission = b.total * ((vehicle?.commission || 10) / 100);
+    monthlyData[monthLabel].gross += b.total;
+    monthlyData[monthLabel].commission += commission;
+    monthlyData[monthLabel].net += b.total - commission;
+  });
+
+  const activeMonths = monthOrder.filter(m => monthlyData[m] && monthlyData[m].gross > 0);
+  
+  if (activeMonths.length === 0) {
+    return <div className="w-full flex items-center justify-center text-zinc-400 py-12">No completed bookings yet</div>;
+  }
+
+  const maxValue = Math.max(...activeMonths.map(m => monthlyData[m].gross + monthlyData[m].commission), 1);
+
+  return (
+    <div className="w-full mt-6 select-none">
+      <div className="flex items-end justify-center gap-3 h-80">
+        {activeMonths.map((month) => {
+          const data = monthlyData[month];
+          const total = data.gross + data.commission;
+          const barHeight = (total / maxValue) * 100;
+          const grossPercent = total > 0 ? (data.gross / total) * 100 : 0;
+          const commPercent = total > 0 ? (data.commission / total) * 100 : 0;
+          
+          return (
+            <div key={month} className="flex flex-col items-center group flex-1 max-w-16">
+              {/* Tooltip on hover */}
+              <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col gap-1 bg-white dark:bg-zinc-900/95 text-zinc-900 dark:text-white text-[10px] p-3 rounded-lg shadow-xl z-20 w-40 backdrop-blur-sm border border-zinc-200 dark:border-zinc-700">
+                <div className="font-bold text-sm border-b border-zinc-700 pb-1 mb-1 text-center">{month}</div>
+                <div className="flex justify-between"><span className="text-blue-600 dark:text-blue-400">Gross Earnings:</span> <span className="font-bold">${data.gross.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-orange-600 dark:text-orange-400">Commission:</span> <span className="font-bold">${data.commission.toFixed(2)}</span></div>
+                <div className="flex justify-between font-bold border-t border-zinc-200 dark:border-zinc-700 pt-1 mt-1"><span className="text-green-600 dark:text-green-400">Net Earnings:</span> <span>${data.net.toFixed(2)}</span></div>
+              </div>
+              
+              {/* Vertical stacked bar */}
+              <div 
+                className="w-full rounded-t-lg overflow-hidden flex flex-col-reverse transition-all hover:brightness-110 cursor-pointer relative"
+                style={{ height: `${Math.max(barHeight, 5)}%` }}
+              >
+                {/* Gross - Blue (bottom) */}
+                {grossPercent > 0 && (
+                  <div 
+                    className="w-full bg-blue-500 flex items-center justify-center text-white"
+                    style={{ height: `${grossPercent}%` }}
+                  >
+                    {grossPercent > 12 && <span className="text-[8px] font-bold drop-shadow-sm text-center px-1">${data.gross > 999 ? `${(data.gross/1000).toFixed(1)}k` : data.gross.toFixed(0)}</span>}
+                  </div>
+                )}
+                {/* Commission - Orange (top) */}
+                {commPercent > 0 && (
+                  <div 
+                    className="w-full bg-orange-500 flex items-center justify-center text-white"
+                    style={{ height: `${commPercent}%` }}
+                  >
+                    {commPercent > 12 && <span className="text-[8px] font-bold drop-shadow-sm text-center px-1">${data.commission > 99 ? `${(data.commission/100).toFixed(1)}c` : data.commission.toFixed(0)}</span>}
+                  </div>
+                )}
+              </div>
+              
+              {/* Month label */}
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mt-2">{month}</span>
+              {/* Net value */}
+              <span className="text-[10px] font-bold text-green-500">
+                ${data.net.toFixed(0)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const initialFormState = { model: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
@@ -5248,39 +5334,37 @@ export default function CarHopApp() {
             
             let totalGross = 0;
             let totalCommission = 0;
-            let totalDeductible = 0;
             
             hostBookings.forEach(b => {
               const vehicle = hostVehicleMap[b.vehicleId as unknown as number];
               const commission = vehicle ? (b.total * (vehicle.commission || 10) / 100) : (b.total * 0.10);
-              const deductible = vehicle?.deductible || 1000;
               totalGross += b.total;
               totalCommission += commission;
-              totalDeductible += deductible;
             });
             
-            const netEarnings = totalGross - totalCommission - totalDeductible;
+            const netEarnings = totalGross - totalCommission;
             return (
-              <div className="grid md:grid-cols-4 gap-6">
-                <Card className="p-6 text-center">
-                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Gross Earnings</h4>
-                  <p className="text-3xl font-bold text-zinc-900 dark:text-white">${totalGross.toFixed(2)}</p>
-                  <p className="text-xs text-zinc-500 mt-1">Total before deductions</p>
-                </Card>
-                <Card className="p-6 text-center">
-                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Commission</h4>
-                  <p className="text-3xl font-bold text-orange-500">-${totalCommission.toFixed(2)}</p>
-                  <p className="text-xs text-zinc-500 mt-1">Platform fee</p>
-                </Card>
-                <Card className="p-6 text-center">
-                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Deductible</h4>
-                  <p className="text-3xl font-bold text-red-500">-${totalDeductible.toFixed(2)}</p>
-                  <p className="text-xs text-zinc-500 mt-1">Insurance deductible</p>
-                </Card>
-                <Card className="p-6 text-center">
-                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Net Earnings</h4>
-                  <p className="text-3xl font-bold text-green-500">${Math.max(0, netEarnings).toFixed(2)}</p>
-                  <p className="text-xs text-zinc-500 mt-1">Your profit</p>
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-3 gap-6">
+                  <Card className="p-6 text-center">
+                    <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Gross Earnings</h4>
+                    <p className="text-3xl font-bold text-blue-500">${totalGross.toFixed(2)}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Total earnings</p>
+                  </Card>
+                  <Card className="p-6 text-center">
+                    <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Commission</h4>
+                    <p className="text-3xl font-bold text-orange-500">-${totalCommission.toFixed(2)}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Platform fee</p>
+                  </Card>
+                  <Card className="p-6 text-center">
+                    <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Net Earnings</h4>
+                    <p className="text-3xl font-bold text-green-500">${netEarnings.toFixed(2)}</p>
+                    <p className="text-xs text-zinc-500 mt-1">Your profit</p>
+                  </Card>
+                </div>
+                <Card className="p-6">
+                  <h4 className="text-sm font-bold uppercase text-zinc-400 mb-4">Monthly Breakdown</h4>
+                  <HostEarningsChart bookings={hostBookings} vehicles={vehicles.filter(v => v.hostId === String(currentHost.id))} />
                 </Card>
               </div>
             );
