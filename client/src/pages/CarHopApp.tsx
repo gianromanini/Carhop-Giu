@@ -500,6 +500,7 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
         {activeMonths.map((month) => {
           const data = monthlyData[month];
           const grossHeight = (data.gross / maxGross) * 100;
+          const grossPercent = 100;
           const commissionPercent = (data.commission / data.gross) * 100;
           const netPercent = (data.net / data.gross) * 100;
           
@@ -516,67 +517,68 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-sm flex-shrink-0"></div>
-                  <div className="flex-1 flex justify-between gap-2">
-                    <span>Commission:</span>
-                    <span className="font-bold">${data.commission.toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 border-t border-zinc-300 dark:border-zinc-600 pt-2 mt-1">
                   <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
                   <div className="flex-1 flex justify-between gap-2">
                     <span>Net Earnings:</span>
                     <span className="font-bold">${data.net.toFixed(2)}</span>
                   </div>
                 </div>
+                <div className="flex items-center gap-2 border-t border-zinc-300 dark:border-zinc-600 pt-2 mt-1">
+                  <div className="w-3 h-3 bg-orange-500 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 flex justify-between gap-2">
+                    <span>Commission Fee:</span>
+                    <span className="font-bold">${data.commission.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
               
-              {/* 3D Nested Bar Container */}
+              {/* Single 3D Bar with 3 colored sections */}
               <div 
-                className="relative w-14 rounded-t-2xl overflow-visible transition-all hover:scale-105 cursor-pointer"
-                style={{ height: `${Math.max(grossHeight, 5)}%` }}
+                className="relative w-16 rounded-t-3xl overflow-hidden transition-all hover:scale-105 cursor-pointer"
+                style={{ 
+                  height: `${Math.max(grossHeight, 5)}%`,
+                  boxShadow: '12px 12px 30px rgba(0,0,0,0.5), -4px -4px 15px rgba(255,255,255,0.08) inset'
+                }}
               >
-                {/* Main Blue Bar (Gross Revenue) - with 3D effect */}
+                {/* Blue Section - Gross Revenue (Top) */}
                 <div
-                  className="w-full h-full bg-gradient-to-b from-blue-400 to-blue-700 rounded-t-2xl relative flex flex-col justify-start items-center pt-2"
-                  style={{
-                    boxShadow: '10px 10px 20px rgba(0,0,0,0.4), -3px -3px 10px rgba(255,255,255,0.1) inset, 8px 8px 0px rgba(30,58,138,0.6)',
+                  className="w-full bg-gradient-to-b from-blue-300 via-blue-500 to-blue-700 flex items-center justify-center text-white font-bold drop-shadow-lg"
+                  style={{ 
+                    height: `${grossPercent}%`,
+                    boxShadow: 'inset 2px 2px 8px rgba(255,255,255,0.3), inset -2px -2px 8px rgba(0,0,0,0.3)'
                   }}
                 >
-                  {/* Gross Label */}
-                  {grossHeight > 30 && (
-                    <span className="text-[7px] font-bold text-white drop-shadow-lg text-center px-1">
-                      ${data.gross > 999 ? (data.gross/1000).toFixed(1) + 'k' : data.gross.toFixed(0)}
-                    </span>
-                  )}
-                  
-                  {/* Orange Bar Inside (Commission) - Nested Level */}
-                  <div 
-                    className="absolute bottom-0 left-3 right-3 bg-gradient-to-b from-orange-400 to-orange-600 rounded-t-lg flex flex-col justify-end items-center pb-1"
-                    style={{
-                      height: `${commissionPercent}%`,
-                      boxShadow: '8px 8px 16px rgba(0,0,0,0.35), -2px -2px 8px rgba(255,255,255,0.12) inset, 6px 6px 0px rgba(180,83,9,0.5)',
-                      minHeight: commissionPercent > 0 ? '12px' : '0px'
-                    }}
-                  >
-                    {/* Green Bar Inside (Net Earnings) - Final Innermost Level */}
-                    <div
-                      className="absolute bottom-0 left-2 right-2 bg-gradient-to-b from-green-400 to-green-600 rounded-t-lg flex items-center justify-center"
-                      style={{
-                        height: `${netPercent}%`,
-                        boxShadow: '6px 6px 12px rgba(0,0,0,0.3), -1px -1px 6px rgba(255,255,255,0.15) inset, 4px 4px 0px rgba(22,163,74,0.4)',
-                        minHeight: netPercent > 0 ? '8px' : '0px'
-                      }}
-                    >
-                      {netPercent > 25 && <span className="text-[6px] font-bold text-white drop-shadow-lg">${data.net.toFixed(0)}</span>}
-                    </div>
-                    
-                    {/* Commission Label */}
-                    {commissionPercent > 18 && (
-                      <span className="text-[6px] font-bold text-white drop-shadow-lg mb-0.5">
-                        ${data.commission > 99 ? (data.commission/100).toFixed(1) + 'c' : data.commission.toFixed(0)}
-                      </span>
-                    )}
+                  <div className="text-center">
+                    <div className="text-[10px] font-bold">GROSS REVENUE</div>
+                    <div className="text-[11px] font-bold">${data.gross > 999 ? (data.gross/1000).toFixed(1) + 'k' : data.gross.toFixed(0)}</div>
+                  </div>
+                </div>
+
+                {/* Green Section - Net Earnings (Middle) */}
+                <div
+                  className="w-full bg-gradient-to-b from-green-300 via-green-500 to-green-700 flex items-center justify-center text-white font-bold drop-shadow-lg"
+                  style={{ 
+                    height: `${netPercent}%`,
+                    boxShadow: 'inset 2px 2px 8px rgba(255,255,255,0.3), inset -2px -2px 8px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  <div className="text-center">
+                    <div className="text-[9px] font-bold">NET EARNINGS</div>
+                    <div className="text-[10px] font-bold">${data.net.toFixed(0)}</div>
+                  </div>
+                </div>
+
+                {/* Orange Section - Commission Fee (Bottom) */}
+                <div
+                  className="w-full bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 flex items-center justify-center text-white font-bold drop-shadow-lg"
+                  style={{ 
+                    height: `${commissionPercent}%`,
+                    boxShadow: 'inset 2px 2px 8px rgba(255,255,255,0.3), inset -2px -2px 8px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  <div className="text-center">
+                    <div className="text-[9px] font-bold">COMMISSION FEE</div>
+                    <div className="text-[10px] font-bold">${data.commission.toFixed(0)}</div>
                   </div>
                 </div>
               </div>
