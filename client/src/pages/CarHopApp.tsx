@@ -669,6 +669,7 @@ export default function CarHopApp() {
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [expandedBenefit, setExpandedBenefit] = useState<string | null>(null);
   const [showHostRegisterModal, setShowHostRegisterModal] = useState(false);
   const [showHostLoginModal, setShowHostLoginModal] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
@@ -5829,48 +5830,108 @@ export default function CarHopApp() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {/* Benefit 1: Best Prices */}
-                <Card className="p-5 sm:p-6 hover-elevate">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <DollarSign size={24} className="text-green-600" />
+                <div className="cursor-pointer" onClick={() => setExpandedBenefit(expandedBenefit === 'prices' ? null : 'prices')}>
+                  <Card className="p-5 sm:p-6 hover-elevate h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <DollarSign size={24} className="text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Best Market Prices</h3>
+                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-500">{expandedBenefit === 'prices' ? 'Click to collapse' : 'Click to expand'}</p>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Best Market Prices</h3>
-                  </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Unbeatable rates compared to traditional rental agencies. Save up to 40% on daily rentals.</p>
-                </Card>
+                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Unbeatable rates compared to traditional rental agencies. Save up to 40% on daily rentals.</p>
+                  </Card>
+                  {expandedBenefit === 'prices' && (
+                    <div className="mt-4 space-y-2 bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200 dark:border-green-900/30">
+                      {['Up to 40% savings vs traditional agencies', 'Price match guarantee', 'No hidden fees', 'Weekly discount specials', 'Loyalty rewards program', 'Transparent pricing upfront', 'Seasonal promotions', 'Group discount options', 'Long-term rental discounts', 'Fuel-saver car collection'].map((benefit, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+                          <Check size={16} className="text-green-600 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                {/* Benefit 2: Lower Fees */}
-                <Card className="p-5 sm:p-6 hover-elevate">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <TrendingUp size={24} className="text-blue-600" />
+                {/* Benefit 2: Fewer Fees */}
+                <div className="cursor-pointer" onClick={() => setExpandedBenefit(expandedBenefit === 'fees' ? null : 'fees')}>
+                  <Card className="p-5 sm:p-6 hover-elevate h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <TrendingUp size={24} className="text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Fewer Fees</h3>
+                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-500">{expandedBenefit === 'fees' ? 'Click to collapse' : 'Click to expand'}</p>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Fewer Fees</h3>
-                  </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Transparent pricing with minimal hidden charges. Only pay for what you use.</p>
-                </Card>
+                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Transparent pricing with minimal hidden charges. Only pay for what you use.</p>
+                  </Card>
+                  {expandedBenefit === 'fees' && (
+                    <div className="mt-4 space-y-2 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200 dark:border-blue-900/30">
+                      {['No booking fees', 'No cancellation charges', 'Free damage waiver (basic)', 'No airport surcharges', 'Free roadside assistance', 'No mileage overage penalties', 'Flexible payment options', 'No hidden admin costs', 'Free GPS device rental', 'Transparent tax breakdown'].map((benefit, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+                          <Check size={16} className="text-blue-600 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Benefit 3: Easy Booking */}
-                <Card className="p-5 sm:p-6 hover-elevate">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                      <Smartphone size={24} className="text-purple-600" />
+                <div className="cursor-pointer" onClick={() => setExpandedBenefit(expandedBenefit === 'booking' ? null : 'booking')}>
+                  <Card className="p-5 sm:p-6 hover-elevate h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                        <Smartphone size={24} className="text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Easy Booking</h3>
+                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-500">{expandedBenefit === 'booking' ? 'Click to collapse' : 'Click to expand'}</p>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Easy Booking</h3>
-                  </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Simple 3-step booking process. Rent your perfect car in minutes, not hours.</p>
-                </Card>
+                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Simple 3-step booking process. Rent your perfect car in minutes, not hours.</p>
+                  </Card>
+                  {expandedBenefit === 'booking' && (
+                    <div className="mt-4 space-y-2 bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-200 dark:border-purple-900/30">
+                      {['Book in under 2 minutes', 'Mobile-friendly interface', 'One-page checkout process', 'Instant confirmation email', 'No credit card required upfront', 'Multiple payment methods', 'Flexible date selection', 'Real-time availability', 'Automatic receipt generation', '24/7 customer support'].map((benefit, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+                          <Check size={16} className="text-purple-600 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Benefit 4: Best Host Program */}
-                <Card className="p-5 sm:p-6 hover-elevate">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                      <Building2 size={24} className="text-orange-600" />
+                <div className="cursor-pointer" onClick={() => setExpandedBenefit(expandedBenefit === 'host' ? null : 'host')}>
+                  <Card className="p-5 sm:p-6 hover-elevate h-full">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                        <Building2 size={24} className="text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Best Host Program 2026</h3>
+                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-500">{expandedBenefit === 'host' ? 'Click to collapse' : 'Click to expand'}</p>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Best Host Program 2026</h3>
-                  </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Most profitable hosting program with complete management tools and support.</p>
-                </Card>
+                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-3">Most profitable hosting program with complete management tools and support.</p>
+                  </Card>
+                  {expandedBenefit === 'host' && (
+                    <div className="mt-4 space-y-2 bg-orange-50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-900/30">
+                      {['Earn up to $5,000/month passive income', 'Automated booking management', 'Professional insurance coverage included', '24/7 dedicated host support team', 'Marketing & promotion included', 'Analytics dashboard included', 'Maintenance coordination service', 'Guest screening & verification', 'Monthly payouts guaranteed', 'Host community & networking'].map((benefit, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+                          <Check size={16} className="text-orange-600 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
