@@ -470,6 +470,7 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
 const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicles: Vehicle[] }) => {
   const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v]));
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   
   // Group bookings by month
   const monthlyData: Record<string, { gross: number; commission: number; net: number }> = {};
@@ -500,86 +501,60 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
         {activeMonths.map((month) => {
           const data = monthlyData[month];
           const grossHeight = (data.gross / maxGross) * 100;
-          const grossPercent = 100;
           const commissionPercent = (data.commission / data.gross) * 100;
           const netPercent = (data.net / data.gross) * 100;
+          const isExpanded = expandedMonth === month;
           
           return (
-            <div key={month} className="flex flex-col items-center group flex-1 max-w-20">
-              {/* Tooltip on hover */}
-              <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col gap-2 bg-white dark:bg-zinc-900/95 text-zinc-900 dark:text-white text-[9px] p-3 rounded-lg shadow-xl z-20 w-52 backdrop-blur-sm border border-zinc-200 dark:border-zinc-700">
-                <div className="font-bold text-sm border-b border-zinc-300 dark:border-zinc-600 pb-1 mb-1 text-center">{month}</div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
-                  <div className="flex-1 flex justify-between gap-2">
-                    <span>Gross Revenue:</span>
-                    <span className="font-bold">${data.gross.toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-sm flex-shrink-0"></div>
-                  <div className="flex-1 flex justify-between gap-2">
-                    <span>Net Earnings:</span>
-                    <span className="font-bold">${data.net.toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 border-t border-zinc-300 dark:border-zinc-600 pt-2 mt-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-sm flex-shrink-0"></div>
-                  <div className="flex-1 flex justify-between gap-2">
-                    <span>Commission Fee:</span>
-                    <span className="font-bold">${data.commission.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Single 3D Bar with 3 colored sections */}
+            <div 
+              key={month} 
+              className="flex flex-col items-center flex-1 max-w-24"
+              onMouseEnter={() => setExpandedMonth(month)}
+              onMouseLeave={() => setExpandedMonth(null)}
+              onTouchStart={() => setExpandedMonth(month)}
+            >
+              {/* Bar container */}
               <div 
-                className="relative w-16 rounded-t-3xl overflow-hidden transition-all hover:scale-105 cursor-pointer"
+                className="relative flex flex-col items-stretch rounded-lg overflow-hidden transition-all cursor-pointer"
                 style={{ 
                   height: `${Math.max(grossHeight, 5)}%`,
-                  boxShadow: '12px 12px 30px rgba(0,0,0,0.5), -4px -4px 15px rgba(255,255,255,0.08) inset'
+                  width: isExpanded ? '80px' : '40px'
                 }}
               >
                 {/* Blue Section - Gross Revenue (Top) */}
                 <div
-                  className="w-full bg-gradient-to-b from-blue-300 via-blue-500 to-blue-700 flex items-center justify-center text-white font-bold drop-shadow-lg"
-                  style={{ 
-                    height: `${grossPercent}%`,
-                    boxShadow: 'inset 2px 2px 8px rgba(255,255,255,0.3), inset -2px -2px 8px rgba(0,0,0,0.3)'
-                  }}
+                  className="flex-1 bg-blue-500 flex items-center justify-end pr-2 relative group"
+                  style={{ flex: `${100}%` }}
                 >
-                  <div className="text-center">
-                    <div className="text-[10px] font-bold">GROSS REVENUE</div>
-                    <div className="text-[11px] font-bold">${data.gross > 999 ? (data.gross/1000).toFixed(1) + 'k' : data.gross.toFixed(0)}</div>
-                  </div>
+                  {isExpanded && (
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-300 whitespace-nowrap pr-2">
+                      ${data.gross > 999 ? (data.gross/1000).toFixed(1) + 'k' : data.gross.toFixed(0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Green Section - Net Earnings (Middle) */}
                 <div
-                  className="w-full bg-gradient-to-b from-green-300 via-green-500 to-green-700 flex items-center justify-center text-white font-bold drop-shadow-lg"
-                  style={{ 
-                    height: `${netPercent}%`,
-                    boxShadow: 'inset 2px 2px 8px rgba(255,255,255,0.3), inset -2px -2px 8px rgba(0,0,0,0.3)'
-                  }}
+                  className="bg-green-500 flex items-center justify-end pr-2 relative group"
+                  style={{ flex: `${netPercent}%`, minHeight: netPercent > 0 ? '20px' : '0px' }}
                 >
-                  <div className="text-center">
-                    <div className="text-[9px] font-bold">NET EARNINGS</div>
-                    <div className="text-[10px] font-bold">${data.net.toFixed(0)}</div>
-                  </div>
+                  {isExpanded && netPercent > 0 && (
+                    <span className="text-[10px] font-bold text-green-700 dark:text-green-300 whitespace-nowrap pr-2">
+                      ${data.net > 999 ? (data.net/1000).toFixed(1) + 'k' : data.net.toFixed(0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Orange Section - Commission Fee (Bottom) */}
                 <div
-                  className="w-full bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 flex items-center justify-center text-white font-bold drop-shadow-lg"
-                  style={{ 
-                    height: `${commissionPercent}%`,
-                    boxShadow: 'inset 2px 2px 8px rgba(255,255,255,0.3), inset -2px -2px 8px rgba(0,0,0,0.3)'
-                  }}
+                  className="bg-orange-500 flex items-center justify-end pr-2 relative group"
+                  style={{ flex: `${commissionPercent}%`, minHeight: commissionPercent > 0 ? '20px' : '0px' }}
                 >
-                  <div className="text-center">
-                    <div className="text-[9px] font-bold">COMMISSION FEE</div>
-                    <div className="text-[10px] font-bold">${data.commission.toFixed(0)}</div>
-                  </div>
+                  {isExpanded && commissionPercent > 0 && (
+                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-300 whitespace-nowrap pr-2">
+                      ${data.commission > 99 ? (data.commission/100).toFixed(1) + 'c' : data.commission.toFixed(0)}
+                    </span>
+                  )}
                 </div>
               </div>
               
