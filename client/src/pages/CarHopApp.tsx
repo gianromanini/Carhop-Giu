@@ -5345,21 +5345,21 @@ export default function CarHopApp() {
             const netEarnings = totalGross - totalCommission;
             return (
               <div className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-6">
-                  <Card className="p-6 text-center">
-                    <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Gross Earnings</h4>
-                    <p className="text-3xl font-bold text-blue-500">${totalGross.toFixed(2)}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Total earnings</p>
+                <div className="grid grid-cols-3 gap-2 sm:gap-6">
+                  <Card className="p-2 sm:p-6 text-center">
+                    <h4 className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1 sm:mb-2">Gross Earnings</h4>
+                    <p className="text-lg sm:text-3xl font-bold text-blue-500">${totalGross.toFixed(2)}</p>
+                    <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5 sm:mt-1">Total earnings</p>
                   </Card>
-                  <Card className="p-6 text-center">
-                    <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Commission</h4>
-                    <p className="text-3xl font-bold text-orange-500">-${totalCommission.toFixed(2)}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Platform fee</p>
+                  <Card className="p-2 sm:p-6 text-center">
+                    <h4 className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1 sm:mb-2">Commission</h4>
+                    <p className="text-lg sm:text-3xl font-bold text-orange-500">-${totalCommission.toFixed(2)}</p>
+                    <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5 sm:mt-1">Platform fee</p>
                   </Card>
-                  <Card className="p-6 text-center">
-                    <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Net Earnings</h4>
-                    <p className="text-3xl font-bold text-green-500">${netEarnings.toFixed(2)}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Your profit</p>
+                  <Card className="p-2 sm:p-6 text-center">
+                    <h4 className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1 sm:mb-2">Net Earnings</h4>
+                    <p className="text-lg sm:text-3xl font-bold text-green-500">${netEarnings.toFixed(2)}</p>
+                    <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5 sm:mt-1">Your profit</p>
                   </Card>
                 </div>
                 <Card className="p-6">
