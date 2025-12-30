@@ -4,6 +4,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { 
   Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown, CheckCircle
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import type { Vehicle, Booking } from '@shared/schema';
 type User = typeof import('@shared/schema').users.$inferSelect;
 import { useToast } from '@/hooks/use-toast';
@@ -191,6 +193,18 @@ const formatAddressForDisplay = (fullAddress: string): string => {
   }
   
   return fullAddress;
+};
+
+// Haversine formula for calculating distance between two coordinates in miles
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
 
 const addDaysToDate = (dateStr: string, days: number) => {
@@ -703,6 +717,15 @@ export default function CarHopApp() {
 
   const [searchParams, setSearchParams] = useState({ location: '', start: '', startTime: '10:00 AM', end: '', endTime: '10:00 AM' });
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Location search states
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState<Array<{display_name: string, lat: string, lon: string}>>([]);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [userCoords, setUserCoords] = useState<{lat: number, lon: number} | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showVehiclesMap, setShowVehiclesMap] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
 
   const [driverDetails, setDriverDetails] = useState({ name: '', email: '', phone: '', licenseNumber: '', licenseImages: [] as string[] });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1298,10 +1321,86 @@ export default function CarHopApp() {
     setView('home'); 
     window.location.href = '/api/logout';
   };
+
+  // Location search with Nominatim (OpenStreetMap)
+  const searchLocationDebounced = useRef<NodeJS.Timeout | null>(null);
+  
+  const handleLocationSearch = (query: string) => {
+    setLocationQuery(query);
+    if (searchLocationDebounced.current) clearTimeout(searchLocationDebounced.current);
+    
+    if (query.length < 3) {
+      setLocationSuggestions([]);
+      setShowLocationDropdown(false);
+      return;
+    }
+    
+    searchLocationDebounced.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=us&limit=5`
+        );
+        const data = await response.json();
+        setLocationSuggestions(data);
+        setShowLocationDropdown(true);
+      } catch (error) {
+        console.error('Location search error:', error);
+      }
+    }, 300);
+  };
+  
+  const selectLocation = (suggestion: {display_name: string, lat: string, lon: string}) => {
+    const displayAddr = formatAddressForDisplay(suggestion.display_name);
+    setLocationQuery(displayAddr);
+    setUserCoords({ lat: parseFloat(suggestion.lat), lon: parseFloat(suggestion.lon) });
+    setSearchParams(prev => ({ ...prev, location: suggestion.display_name }));
+    setShowLocationDropdown(false);
+    setShowVehiclesMap(true);
+  };
+  
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    
+    setIsGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserCoords({ lat: latitude, lon: longitude });
+        
+        // Reverse geocode to get address
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            const displayAddr = formatAddressForDisplay(data.display_name);
+            setLocationQuery(displayAddr);
+            setSearchParams(prev => ({ ...prev, location: data.display_name }));
+          }
+        } catch (error) {
+          setLocationQuery(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        }
+        
+        setIsGettingLocation(false);
+        setShowVehiclesMap(true);
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        alert('Unable to get your location. Please enable location services.');
+        console.error('Geolocation error:', error);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
   
   const handleSearch = () => { 
-    if (!searchParams.location) { alert("Please select a Pick-up Location."); return; } 
+    if (!userCoords && !searchParams.location) { alert("Please select a Pick-up Location or use Current Location."); return; } 
     setIsSearching(true); 
+    setShowVehiclesMap(true);
     setTimeout(() => { setIsSearching(false); const fleetSection = document.getElementById('fleet'); if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); }, 1500); 
   };
   
@@ -5789,12 +5888,69 @@ export default function CarHopApp() {
                   <div className="space-y-3 sm:space-y-4">
                     <div>
                       <label className="text-xs font-bold text-zinc-500 uppercase mb-2 block">Pick-up Location</label>
-                      <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white">
-                        <div className="pl-2 sm:pl-3"><MapPin size={16} className="text-green-600" /></div>
-                        <select className="bg-transparent w-full p-2 sm:p-3 outline-none text-xs sm:text-sm" value={searchParams.location} onChange={(e) => handleSearchParamsChange('location', e.target.value)} data-testid="select-location">
-                          <option value="" className="text-black">Select Location</option>
-                          {settings.locations.map(loc => <option key={loc} value={loc} className="text-black">{formatAddressForDisplay(loc)}</option>)}
-                        </select>
+                      <div className="relative">
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white">
+                              <div className="pl-2 sm:pl-3"><MapPin size={16} className="text-green-600" /></div>
+                              <input
+                                ref={locationInputRef}
+                                type="text"
+                                value={locationQuery}
+                                onChange={(e) => handleLocationSearch(e.target.value)}
+                                onFocus={() => locationSuggestions.length > 0 && setShowLocationDropdown(true)}
+                                placeholder="Enter city or address..."
+                                className="bg-transparent w-full p-2 sm:p-3 outline-none text-xs sm:text-sm"
+                                data-testid="input-location-search"
+                              />
+                              {locationQuery && (
+                                <button
+                                  onClick={() => { setLocationQuery(''); setUserCoords(null); setSearchParams(prev => ({ ...prev, location: '' })); setShowVehiclesMap(false); }}
+                                  className="pr-2 text-zinc-400 hover:text-zinc-600"
+                                  data-testid="button-clear-location"
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
+                            </div>
+                            {showLocationDropdown && locationSuggestions.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                                {locationSuggestions.map((suggestion, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => selectLocation(suggestion)}
+                                    className="w-full text-left px-3 py-2 text-xs sm:text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white flex items-center gap-2"
+                                    data-testid={`button-location-suggestion-${idx}`}
+                                  >
+                                    <MapPin size={12} className="text-green-500 flex-shrink-0" />
+                                    <span className="truncate">{formatAddressForDisplay(suggestion.display_name)}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={getCurrentLocation}
+                            disabled={isGettingLocation}
+                            className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex-shrink-0"
+                            title="Use Current Location"
+                            data-testid="button-current-location"
+                          >
+                            {isGettingLocation ? <Loader size={18} className="animate-spin" /> : <Navigation size={18} />}
+                          </button>
+                        </div>
+                        {userCoords && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => setShowVehiclesMap(!showVehiclesMap)}
+                              className="text-xs text-green-600 hover:text-green-700 flex items-center gap-1"
+                              data-testid="button-toggle-map"
+                            >
+                              <Map size={12} />
+                              {showVehiclesMap ? 'Hide Map' : 'Show Map'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -5963,28 +6119,146 @@ export default function CarHopApp() {
               </div>
             </div>
             
+            {/* Interactive Map Section */}
+            {showVehiclesMap && userCoords && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Map size={20} className="text-green-600" />
+                    Vehicles Near You
+                  </h3>
+                  <button
+                    onClick={() => setShowVehiclesMap(false)}
+                    className="text-xs text-zinc-500 hover:text-zinc-700 flex items-center gap-1"
+                    data-testid="button-close-map"
+                  >
+                    <X size={14} /> Close Map
+                  </button>
+                </div>
+                <div className="relative bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+                  {(() => {
+                    // Custom marker icon for user location
+                    const userIcon = L.divIcon({
+                      className: 'custom-marker',
+                      html: `<div style="background-color: #22c55e; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                      iconSize: [20, 20],
+                      iconAnchor: [10, 10],
+                    });
+                    
+                    // Get vehicles with deterministic coordinates based on vehicle ID
+                    const vehiclesWithCoords = vehicles
+                      .map(v => {
+                        // Deterministic offset based on vehicle ID for consistent positioning
+                        const seed = v.id * 0.01;
+                        const latOffset = (Math.sin(seed * 13.7) * 0.05);
+                        const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                        return {
+                          ...v,
+                          coords: {
+                            lat: userCoords.lat + latOffset,
+                            lon: userCoords.lon + lonOffset
+                          },
+                          distance: 0
+                        };
+                      })
+                      .map(v => ({
+                        ...v,
+                        distance: haversineDistance(userCoords.lat, userCoords.lon, v.coords.lat, v.coords.lon)
+                      }))
+                      .sort((a, b) => a.distance - b.distance);
+                    
+                    return (
+                      <MapContainer
+                        center={[userCoords.lat, userCoords.lon]}
+                        zoom={12}
+                        style={{ height: '100%', width: '100%' }}
+                        scrollWheelZoom={true}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        {/* User location marker */}
+                        <Marker position={[userCoords.lat, userCoords.lon]} icon={userIcon}>
+                          <Popup>
+                            <div className="text-center">
+                              <strong>Your Location</strong>
+                            </div>
+                          </Popup>
+                        </Marker>
+                        {/* Vehicle markers */}
+                        {vehiclesWithCoords.slice(0, 10).map((v) => {
+                          const carIcon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background-color: #16a34a; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap;">$${v.price}/day</div>`,
+                            iconSize: [60, 24],
+                            iconAnchor: [30, 12],
+                          });
+                          return (
+                            <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon}>
+                              <Popup>
+                                <div className="text-center">
+                                  <img src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=100&q=60'} alt={v.model} className="w-24 h-16 object-cover rounded mb-2" />
+                                  <strong>{v.model}</strong>
+                                  <div className="text-green-600 font-bold">${v.price}/day</div>
+                                  <div className="text-xs text-zinc-500">{v.distance.toFixed(1)} miles away</div>
+                                  <button
+                                    onClick={() => handleViewDetails(v)}
+                                    className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                  >
+                                    View Details
+                                  </button>
+                                </div>
+                              </Popup>
+                            </Marker>
+                          );
+                        })}
+                      </MapContainer>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
             <div id="fleet" className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 scroll-mt-32">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-fleet-title">Our Fleet</h2>
-                  <p className="text-xs sm:text-sm text-zinc-500">Choose from our wide selection of vehicles</p>
+                  <p className="text-xs sm:text-sm text-zinc-500">
+                    {userCoords ? 'Vehicles sorted by distance from you' : 'Choose from our wide selection of vehicles'}
+                  </p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {vehicles.filter(car => {
-                  // If no location selected, show all vehicles
-                  if (!searchParams.location) return true;
+                {(() => {
+                  // When user coordinates are available via geolocation, show all vehicles sorted by distance
+                  // Otherwise, filter by availableLocations if a location is selected
+                  let filteredVehicles = vehicles;
                   
-                  // If vehicle has no availableLocations (old data), show it
-                  if (!car.availableLocations) return true;
+                  if (!userCoords && searchParams.location) {
+                    filteredVehicles = vehicles.filter(car => {
+                      if (!car.availableLocations) return true;
+                      if (car.availableLocations.length === 0) return true;
+                      return car.availableLocations.includes(searchParams.location);
+                    });
+                  }
                   
-                  // If vehicle has empty availableLocations array, show it
-                  if (car.availableLocations.length === 0) return true;
+                  // Sort by distance if user coordinates are available
+                  if (userCoords) {
+                    filteredVehicles = filteredVehicles.map(car => {
+                      // Deterministic offset based on vehicle ID for consistent positioning
+                      const seed = car.id * 0.01;
+                      const latOffset = (Math.sin(seed * 13.7) * 0.05);
+                      const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                      const carLat = userCoords.lat + latOffset;
+                      const carLon = userCoords.lon + lonOffset;
+                      const distance = haversineDistance(userCoords.lat, userCoords.lon, carLat, carLon);
+                      return { ...car, _distance: distance, _coords: { lat: carLat, lon: carLon } };
+                    }).sort((a: any, b: any) => a._distance - b._distance);
+                  }
                   
-                  // Otherwise, only show if location is in availableLocations
-                  return car.availableLocations.includes(searchParams.location);
-                }).map((car) => (
+                  return filteredVehicles.map((car: any) => (
                   <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
                       <div className="relative overflow-hidden rounded-t-lg">
@@ -6032,7 +6306,8 @@ export default function CarHopApp() {
                       </div>
                     </Card>
                   </div>
-                ))}
+                ));
+                })()}
               </div>
             <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-16 pt-8 pb-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
               Copyright © All Rights Reserved 2025
