@@ -805,6 +805,7 @@ export default function CarHopApp() {
   const [checkingOutByAdminBookingId, setCheckingOutByAdminBookingId] = useState<number | null>(null);
 
   const [newLocation, setNewLocation] = useState('');
+  const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lon: number } | null>(null);
   
   const [carRentalAgreementAccepted, setCarRentalAgreementAccepted] = useState(false);
   const [showCarRentalModal, setShowCarRentalModal] = useState(false);
@@ -866,6 +867,7 @@ export default function CarHopApp() {
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
   const [hostVehicleImages, setHostVehicleImages] = useState<string[]>([]);
   const [hostNewLocation, setHostNewLocation] = useState('');
+  const [hostNewLocationCoords, setHostNewLocationCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
   const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -2236,7 +2238,7 @@ export default function CarHopApp() {
     setNewLocation(''); 
   };
 
-  const addLocation = () => { 
+  const addLocation = async () => { 
     if (!newLocation.trim()) {
       toast({ title: "Erro", description: "Por favor, digite um endereço", variant: "destructive" });
       return;
@@ -2246,9 +2248,26 @@ export default function CarHopApp() {
       toast({ title: "Aviso", description: "Este endereço já foi adicionado", variant: "default" });
       return;
     }
+    
+    let coords = newLocationCoords;
+    if (!coords) {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(newLocation.trim())}&countrycodes=us&limit=1`);
+        const data = await response.json();
+        if (data && data[0]) {
+          coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        }
+      } catch (e) { console.error('Geocoding error:', e); }
+    }
+    
+    if (coords && (!formData.locationLat || !formData.locationLon)) {
+      setFormData({...formData, locationLat: coords.lat, locationLon: coords.lon});
+    }
+    
     updateSettingMutation.mutate({ key: 'locations', value: [...current, newLocation.trim()] });
     toast({ title: "Sucesso", description: "Endereço adicionado com sucesso!", });
-    setNewLocation(''); 
+    setNewLocation('');
+    setNewLocationCoords(null);
   };
 
   const removeLocation = (locToRemove: string) => { 
@@ -4511,14 +4530,36 @@ export default function CarHopApp() {
                                 value={hostNewLocation} 
                                 onChange={(value, coords) => {
                                   setHostNewLocation(value);
-                                  if (coords && (!formData.locationLat || !formData.locationLon)) {
-                                    setFormData({...formData, locationLat: parseFloat(coords.lat), locationLon: parseFloat(coords.lon)});
+                                  if (coords && coords.lat !== '0' && coords.lon !== '0') {
+                                    setHostNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) });
                                   }
                                 }}
                                 placeholder="Add location..."
                               />
                             </div>
-                            <Button variant="primary" size="sm" onClick={() => { if(!hostNewLocation.trim()) { toast({ title: 'Error', description: 'Please enter a location' }); return; } if(!currentHost?.id) { toast({ title: 'Error', description: 'Please log in as host first' }); return; } addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: String(currentHost.id) }); setHostNewLocation(''); }} data-testid="button-add-location">
+                            <Button variant="primary" size="sm" onClick={async () => { 
+                              if(!hostNewLocation.trim()) { toast({ title: 'Error', description: 'Please enter a location' }); return; } 
+                              if(!currentHost?.id) { toast({ title: 'Error', description: 'Please log in as host first' }); return; }
+                              
+                              let coords = hostNewLocationCoords;
+                              if (!coords) {
+                                try {
+                                  const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(hostNewLocation.trim())}&countrycodes=us&limit=1`);
+                                  const data = await response.json();
+                                  if (data && data[0]) {
+                                    coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+                                  }
+                                } catch (e) { console.error('Geocoding error:', e); }
+                              }
+                              
+                              if (coords && (!formData.locationLat || !formData.locationLon)) {
+                                setFormData({...formData, locationLat: coords.lat, locationLon: coords.lon});
+                              }
+                              
+                              addHostPickupLocationMutation.mutate({ location: hostNewLocation.trim(), userId: String(currentHost.id) }); 
+                              setHostNewLocation(''); 
+                              setHostNewLocationCoords(null);
+                            }} data-testid="button-add-location">
                               <Plus size={14}/> <span className="hidden sm:inline">Add</span>
                             </Button>
                           </div>
@@ -6506,7 +6547,7 @@ export default function CarHopApp() {
                       Pickup Locations
                     </h3>
                     <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                      <LocationAutocomplete value={newLocation} onChange={(val) => setNewLocation(val)} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                      <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
                       <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
