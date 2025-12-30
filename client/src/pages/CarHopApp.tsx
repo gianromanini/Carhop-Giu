@@ -6004,19 +6004,25 @@ export default function CarHopApp() {
                       iconAnchor: [10, 10],
                     });
                     
-                    // Get vehicles with deterministic coordinates based on vehicle ID
+                    // Get vehicles with coordinates from database or deterministic fallback
                     const vehiclesWithCoords = vehicles
                       .map(v => {
-                        // Deterministic offset based on vehicle ID for consistent positioning
-                        const seed = v.id * 0.01;
-                        const latOffset = (Math.sin(seed * 13.7) * 0.05);
-                        const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                        let lat, lon;
+                        // Use real coordinates from database if available
+                        if (v.locationLat !== null && v.locationLat !== undefined && v.locationLon !== null && v.locationLon !== undefined) {
+                          lat = v.locationLat;
+                          lon = v.locationLon;
+                        } else {
+                          // Fallback to deterministic offset based on vehicle ID
+                          const seed = v.id * 0.01;
+                          const latOffset = (Math.sin(seed * 13.7) * 0.05);
+                          const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                          lat = userCoords.lat + latOffset;
+                          lon = userCoords.lon + lonOffset;
+                        }
                         return {
                           ...v,
-                          coords: {
-                            lat: userCoords.lat + latOffset,
-                            lon: userCoords.lon + lonOffset
-                          },
+                          coords: { lat, lon },
                           distance: 0
                         };
                       })
