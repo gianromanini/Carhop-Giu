@@ -6048,9 +6048,9 @@ export default function CarHopApp() {
                         {vehiclesWithCoords.slice(0, 10).map((v) => {
                           const carIcon = L.divIcon({
                             className: 'custom-marker',
-                            html: `<div style="background-color: #000000; color: white; padding: 4px 8px; border: 2px solid white; border-radius: 4px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap;">$${v.price}</div>`,
-                            iconSize: [50, 24],
-                            iconAnchor: [25, 12],
+                            html: `<div style="background-color: #000000; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap; display: flex; align-items: center; justify-content: center; height: 28px; width: 38px;">$${v.price}</div>`,
+                            iconSize: [38, 28],
+                            iconAnchor: [19, 14],
                           });
                           return (
                             <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon}>
