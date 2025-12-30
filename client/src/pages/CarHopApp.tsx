@@ -5977,6 +5977,107 @@ export default function CarHopApp() {
               </div>
             </div>
 
+            {/* Interactive Map Section */}
+            {showVehiclesMap && userCoords && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Map size={20} className="text-green-600" />
+                    Vehicles Near You
+                  </h3>
+                  <button
+                    onClick={() => setShowVehiclesMap(false)}
+                    className="text-xs text-zinc-500 hover:text-zinc-700 flex items-center gap-1"
+                    data-testid="button-close-map"
+                  >
+                    <X size={14} /> Close Map
+                  </button>
+                </div>
+                <div className="relative bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+                  {(() => {
+                    // Custom marker icon for user location
+                    const userIcon = L.divIcon({
+                      className: 'custom-marker',
+                      html: `<div style="background-color: #22c55e; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                      iconSize: [20, 20],
+                      iconAnchor: [10, 10],
+                    });
+                    
+                    // Get vehicles with deterministic coordinates based on vehicle ID
+                    const vehiclesWithCoords = vehicles
+                      .map(v => {
+                        // Deterministic offset based on vehicle ID for consistent positioning
+                        const seed = v.id * 0.01;
+                        const latOffset = (Math.sin(seed * 13.7) * 0.05);
+                        const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                        return {
+                          ...v,
+                          coords: {
+                            lat: userCoords.lat + latOffset,
+                            lon: userCoords.lon + lonOffset
+                          },
+                          distance: 0
+                        };
+                      })
+                      .map(v => ({
+                        ...v,
+                        distance: haversineDistance(userCoords.lat, userCoords.lon, v.coords.lat, v.coords.lon)
+                      }))
+                      .sort((a, b) => a.distance - b.distance);
+                    
+                    return (
+                      <MapContainer
+                        center={[userCoords.lat, userCoords.lon]}
+                        zoom={12}
+                        style={{ height: '100%', width: '100%' }}
+                        scrollWheelZoom={true}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        {/* User location marker */}
+                        <Marker position={[userCoords.lat, userCoords.lon]} icon={userIcon}>
+                          <Popup>
+                            <div className="text-center">
+                              <strong>Your Location</strong>
+                            </div>
+                          </Popup>
+                        </Marker>
+                        {/* Vehicle markers */}
+                        {vehiclesWithCoords.slice(0, 10).map((v) => {
+                          const carIcon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background-color: #000000; color: white; padding: 4px 8px; border: 2px solid white; border-radius: 4px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap;">$${v.price}</div>`,
+                            iconSize: [50, 24],
+                            iconAnchor: [25, 12],
+                          });
+                          return (
+                            <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon}>
+                              <Popup>
+                                <div className="text-center">
+                                  <img src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=100&q=60'} alt={v.model} className="w-24 h-16 object-cover rounded mb-2" />
+                                  <strong>{v.model}</strong>
+                                  <div className="text-green-600 font-bold">${v.price}/day</div>
+                                  <div className="text-xs text-zinc-500">{v.distance.toFixed(1)} miles away</div>
+                                  <button
+                                    onClick={() => handleViewDetails(v)}
+                                    className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                  >
+                                    View Details
+                                  </button>
+                                </div>
+                              </Popup>
+                            </Marker>
+                          );
+                        })}
+                      </MapContainer>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
             {/* Benefits Section */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-16 sm:mt-20 scroll-mt-32">
               <div className="text-center mb-12 sm:mb-16">
@@ -6119,107 +6220,6 @@ export default function CarHopApp() {
               </div>
             </div>
             
-            {/* Interactive Map Section */}
-            {showVehiclesMap && userCoords && (
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                    <Map size={20} className="text-green-600" />
-                    Vehicles Near You
-                  </h3>
-                  <button
-                    onClick={() => setShowVehiclesMap(false)}
-                    className="text-xs text-zinc-500 hover:text-zinc-700 flex items-center gap-1"
-                    data-testid="button-close-map"
-                  >
-                    <X size={14} /> Close Map
-                  </button>
-                </div>
-                <div className="relative bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden" style={{ height: '400px' }}>
-                  {(() => {
-                    // Custom marker icon for user location
-                    const userIcon = L.divIcon({
-                      className: 'custom-marker',
-                      html: `<div style="background-color: #22c55e; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-                      iconSize: [20, 20],
-                      iconAnchor: [10, 10],
-                    });
-                    
-                    // Get vehicles with deterministic coordinates based on vehicle ID
-                    const vehiclesWithCoords = vehicles
-                      .map(v => {
-                        // Deterministic offset based on vehicle ID for consistent positioning
-                        const seed = v.id * 0.01;
-                        const latOffset = (Math.sin(seed * 13.7) * 0.05);
-                        const lonOffset = (Math.cos(seed * 17.3) * 0.05);
-                        return {
-                          ...v,
-                          coords: {
-                            lat: userCoords.lat + latOffset,
-                            lon: userCoords.lon + lonOffset
-                          },
-                          distance: 0
-                        };
-                      })
-                      .map(v => ({
-                        ...v,
-                        distance: haversineDistance(userCoords.lat, userCoords.lon, v.coords.lat, v.coords.lon)
-                      }))
-                      .sort((a, b) => a.distance - b.distance);
-                    
-                    return (
-                      <MapContainer
-                        center={[userCoords.lat, userCoords.lon]}
-                        zoom={12}
-                        style={{ height: '100%', width: '100%' }}
-                        scrollWheelZoom={true}
-                      >
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        {/* User location marker */}
-                        <Marker position={[userCoords.lat, userCoords.lon]} icon={userIcon}>
-                          <Popup>
-                            <div className="text-center">
-                              <strong>Your Location</strong>
-                            </div>
-                          </Popup>
-                        </Marker>
-                        {/* Vehicle markers */}
-                        {vehiclesWithCoords.slice(0, 10).map((v) => {
-                          const carIcon = L.divIcon({
-                            className: 'custom-marker',
-                            html: `<div style="background-color: #16a34a; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap;">$${v.price}/day</div>`,
-                            iconSize: [60, 24],
-                            iconAnchor: [30, 12],
-                          });
-                          return (
-                            <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon}>
-                              <Popup>
-                                <div className="text-center">
-                                  <img src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=100&q=60'} alt={v.model} className="w-24 h-16 object-cover rounded mb-2" />
-                                  <strong>{v.model}</strong>
-                                  <div className="text-green-600 font-bold">${v.price}/day</div>
-                                  <div className="text-xs text-zinc-500">{v.distance.toFixed(1)} miles away</div>
-                                  <button
-                                    onClick={() => handleViewDetails(v)}
-                                    className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                                  >
-                                    View Details
-                                  </button>
-                                </div>
-                              </Popup>
-                            </Marker>
-                          );
-                        })}
-                      </MapContainer>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
             <div id="fleet" className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 scroll-mt-32">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
                 <div>
