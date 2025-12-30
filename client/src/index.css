@@ -373,15 +373,24 @@
   font-weight: 500;
 }
 
+.airbnb-calendar-day.in-range {
+  color: rgb(34, 197, 94);
+  font-weight: bold;
+}
+
 .airbnb-calendar-day.in-range::after {
   content: '';
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
+  right: -20px;
+  width: 16px;
   height: 2px;
   background-color: rgb(34, 197, 94);
   transform: translateY(-50%);
+}
+
+.airbnb-calendar-day.end-date::after {
+  display: none;
 }
 
 .airbnb-calendar-day.start-date {
