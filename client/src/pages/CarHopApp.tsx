@@ -871,6 +871,7 @@ export default function CarHopApp() {
   const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
   const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [editForm, setEditForm] = useState<Partial<User> | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showClientPassword, setShowClientPassword] = useState(false);

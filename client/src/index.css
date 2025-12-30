@@ -339,3 +339,24 @@
 .blink-button {
   animation: blink-orange 1.5s infinite;
 }
+
+/* Airbnb-style calendar date range */
+.calendar-range-start {
+  border-radius: 50%;
+  border: 2px solid rgb(34, 197, 94) !important;
+  background-color: rgb(34, 197, 94) !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
+.calendar-range-middle {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+.calendar-range-end {
+  border-radius: 50%;
+  border: 2px solid rgb(34, 197, 94) !important;
+  background-color: rgb(34, 197, 94) !important;
+  color: white !important;
+  font-weight: bold !important;
+}
