@@ -219,6 +219,16 @@ Preferred communication style: Simple, everyday language.
     - Host Subject indicator: pulsing orange dot appears next to subject when unread admin reply
     - Finish Chat endpoint now receives `subject` parameter to properly finish entire conversation group
     - Admin can expand finished conversations to review history
+24. **OpenStreetMap Location Search (Dec 30):**
+    - Replaced dropdown location selector with searchable input using Nominatim API
+    - Autocomplete suggestions appear after 3+ characters with 300ms debounce
+    - "Current Location" button uses browser Geolocation API with reverse geocoding
+    - Haversine formula calculates distance between user and vehicles
+    - Vehicles sorted by distance when user coordinates are available
+    - Interactive Leaflet map with vehicle markers showing prices
+    - Deterministic vehicle coordinates based on vehicle ID (sine/cosine offsets)
+    - ESM imports for react-leaflet (MapContainer, TileLayer, Marker, Popup)
+    - Two modes: geolocation mode (shows all vehicles sorted by distance) and manual mode (filters by availableLocations)
 
 ## Important Price Configuration Requirement
 **CRITICAL FOR FUTURE IMPLEMENTATION:**
