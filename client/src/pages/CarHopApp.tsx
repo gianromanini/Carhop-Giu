@@ -632,6 +632,8 @@ interface FormDataType {
   commission: number;
   deductible: number;
   availableLocations: string[];
+  locationLat: number | null;
+  locationLon: number | null;
   isDeliveryEnabled: boolean;
   maxDeliveryDistance: number | undefined;
   minDeliveryFeeMiles: number | undefined;
@@ -2143,6 +2145,8 @@ export default function CarHopApp() {
       hasDriveAssist: formData.hasDriveAssist,
       hasUSBCharger: formData.hasUSBCharger,
       availableLocations: formData.availableLocations || [],
+      locationLat: formData.locationLat || null,
+      locationLon: formData.locationLon || null,
       isDeliveryEnabled: formData.isDeliveryEnabled || false,
       maxDeliveryDistance: formData.maxDeliveryDistance || 50,
       minDeliveryFeeMiles: formData.minDeliveryFeeMiles || 5,
@@ -2187,6 +2191,8 @@ export default function CarHopApp() {
       commission: car.commission || 10,
       deductible: car.deductible || 1000,
       availableLocations: car.availableLocations || [],
+      locationLat: car.locationLat || null,
+      locationLon: car.locationLon || null,
       isDeliveryEnabled: car.isDeliveryEnabled || false,
       maxDeliveryDistance: car.maxDeliveryDistance || 50,
       minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
@@ -4343,7 +4349,9 @@ export default function CarHopApp() {
                           price: parseFloat(formData.price) || 0,
                           hostId: String(currentHost.id),
                           commission: formData.commission || 10,
-                          deductible: formData.deductible || 1000
+                          deductible: formData.deductible || 1000,
+                          locationLat: formData.locationLat || null,
+                          locationLon: formData.locationLon || null
                         };
                         if (editingHostVehicle) {
                           updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
@@ -4501,7 +4509,12 @@ export default function CarHopApp() {
                             <div className="flex-1">
                               <LocationAutocomplete 
                                 value={hostNewLocation} 
-                                onChange={(value) => setHostNewLocation(value)}
+                                onChange={(value, coords) => {
+                                  setHostNewLocation(value);
+                                  if (coords && (!formData.locationLat || !formData.locationLon)) {
+                                    setFormData({...formData, locationLat: parseFloat(coords.lat), locationLon: parseFloat(coords.lon)});
+                                  }
+                                }}
                                 placeholder="Add location..."
                               />
                             </div>
