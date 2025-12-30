@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { LocationAutocomplete } from '@/components/LocationAutocomplete';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 const generateTimeOptions = () => {
   const options = [];
@@ -11337,20 +11338,33 @@ export default function CarHopApp() {
                   {/* Booking Dates and Times */}
                   <div className="space-y-4 mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
                     <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-3">Select Your Rental Dates</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Pickup Date</label>
-                        <input type="date" min={getTodayString()} value={carDetailsBooking.startDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startDate: e.target.value})} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="input-cardetail-startdate" />
-                      </div>
+                    
+                    {/* Airbnb-style Calendar */}
+                    <div className="mb-4 flex justify-center">
+                      <CalendarComponent
+                        mode="range"
+                        selected={{from: new Date(carDetailsBooking.startDate), to: new Date(carDetailsBooking.endDate)}}
+                        onSelect={(range: any) => {
+                          if (range?.from) setCarDetailsBooking({...carDetailsBooking, startDate: range.from.toISOString().split('T')[0]});
+                          if (range?.to) setCarDetailsBooking({...carDetailsBooking, endDate: range.to.toISOString().split('T')[0]});
+                        }}
+                        disabled={(date) => date < new Date(getTodayString())}
+                        classNames={{
+                          day_range_start: "airbnb-calendar-day start-date",
+                          day_range_end: "airbnb-calendar-day end-date",
+                          day_range_middle: "airbnb-calendar-day in-range",
+                          day_selected: "airbnb-calendar-day start-date",
+                        }}
+                      />
+                    </div>
+
+                    {/* Time Selectors */}
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Pickup Time</label>
                         <select value={carDetailsBooking.startTime} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, startTime: e.target.value})} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="select-cardetail-starttime">
                           {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Return Date</label>
-                        <input type="date" value={carDetailsBooking.endDate} onChange={(e) => setCarDetailsBooking({...carDetailsBooking, endDate: e.target.value})} min={carDetailsBooking.startDate} className="w-full px-2 py-1 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-white text-xs" data-testid="input-cardetail-enddate" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Return Time</label>
