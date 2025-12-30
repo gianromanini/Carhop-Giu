@@ -376,11 +376,12 @@
 .airbnb-calendar-day.in-range::after {
   content: '';
   position: absolute;
-  bottom: 15px;
+  top: 50%;
   left: 0;
   right: 0;
   height: 2px;
   background-color: rgb(34, 197, 94);
+  transform: translateY(-50%);
 }
 
 .airbnb-calendar-day.start-date {
