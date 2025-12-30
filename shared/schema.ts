@@ -70,6 +70,8 @@ export const vehicles = pgTable("vehicles", {
   minDeliveryFee: real("min_delivery_fee").default(15),
   deliveryPricePerMile: real("delivery_price_per_mile").default(2.50),
   minDeliveryHours: integer("min_delivery_hours").default(6),
+  locationLat: real("location_lat"),
+  locationLon: real("location_lon"),
   pricing: jsonb("pricing").$type<{
     taxes: number;
     cleaningFee: number;

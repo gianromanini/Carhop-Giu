@@ -725,6 +725,7 @@ export default function CarHopApp() {
   const [userCoords, setUserCoords] = useState<{lat: number, lon: number} | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showVehiclesMap, setShowVehiclesMap] = useState(false);
+  const [selectedMapVehicle, setSelectedMapVehicle] = useState<number | null>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
 
   const [driverDetails, setDriverDetails] = useState({ name: '', email: '', phone: '', licenseNumber: '', licenseImages: [] as string[] });
@@ -6003,19 +6004,25 @@ export default function CarHopApp() {
                       iconAnchor: [10, 10],
                     });
                     
-                    // Get vehicles with deterministic coordinates based on vehicle ID
+                    // Get vehicles with coordinates from database or deterministic fallback
                     const vehiclesWithCoords = vehicles
                       .map(v => {
-                        // Deterministic offset based on vehicle ID for consistent positioning
-                        const seed = v.id * 0.01;
-                        const latOffset = (Math.sin(seed * 13.7) * 0.05);
-                        const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                        let lat, lon;
+                        // Use real coordinates from database if available
+                        if (v.locationLat && v.locationLon) {
+                          lat = v.locationLat;
+                          lon = v.locationLon;
+                        } else {
+                          // Fallback to deterministic offset based on vehicle ID
+                          const seed = v.id * 0.01;
+                          const latOffset = (Math.sin(seed * 13.7) * 0.05);
+                          const lonOffset = (Math.cos(seed * 17.3) * 0.05);
+                          lat = userCoords.lat + latOffset;
+                          lon = userCoords.lon + lonOffset;
+                        }
                         return {
                           ...v,
-                          coords: {
-                            lat: userCoords.lat + latOffset,
-                            lon: userCoords.lon + lonOffset
-                          },
+                          coords: { lat, lon },
                           distance: 0
                         };
                       })
@@ -6046,14 +6053,15 @@ export default function CarHopApp() {
                         </Marker>
                         {/* Vehicle markers */}
                         {vehiclesWithCoords.slice(0, 10).map((v) => {
+                          const isSelected = selectedMapVehicle === v.id;
                           const carIcon = L.divIcon({
                             className: 'custom-marker',
-                            html: `<div style="background-color: #000000; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap; display: flex; align-items: center; justify-content: center; height: 28px; width: 38px;">$${v.price}</div>`,
+                            html: `<div style="background-color: #000000; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap; display: flex; align-items: center; justify-content: center; height: 28px; width: 38px; ${isSelected ? 'border: 3px solid #22c55e;' : ''}">$ ${v.price}</div>`,
                             iconSize: [38, 28],
                             iconAnchor: [19, 14],
                           });
                           return (
-                            <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon}>
+                            <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon} eventHandlers={{ click: () => setSelectedMapVehicle(isSelected ? null : v.id) }}>
                               <Popup>
                                 <div className="text-center">
                                   <img src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=100&q=60'} alt={v.model} className="w-24 h-16 object-cover rounded mb-2" />
