@@ -6750,7 +6750,7 @@ export default function CarHopApp() {
                                 </div>
 
                                 <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
-                                  Save Update Vehicle
+                                  Update Configuration
                                 </Button>
                                 <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }} className="w-full">Cancel</Button>
                               </div>
