@@ -583,7 +583,7 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
   );
 };
 
-const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -612,6 +612,7 @@ interface FormDataType {
   year: number;
   vinNumber: string;
   licensePlate: string;
+  hostName: string;
   category: string;
   price: string;
   fuel: string;
@@ -2151,6 +2152,7 @@ export default function CarHopApp() {
       year: formData.year,
       vinNumber: formData.vinNumber,
       licensePlate: formData.licensePlate,
+      hostName: formData.hostName,
       category: formData.category,
       price: parseFloat(formData.price) || 0,
       fuel: formData.fuel,
@@ -6531,6 +6533,7 @@ export default function CarHopApp() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <Input label="Car Model" placeholder="e.g. Toyota Camry" value={formData.model} onChange={(e: any) => setFormData({...formData, model: e.target.value})} required />
                         <Input label="Year" type="number" placeholder="e.g. 2024" value={formData.year} onChange={(e: any) => setFormData({...formData, year: parseInt(e.target.value)})} required />
+                        <Input label="Host Name" placeholder="e.g. John Doe" value={formData.hostName} onChange={(e: any) => setFormData({...formData, hostName: e.target.value})} />
                         <Input label="Category" placeholder="e.g. Sedan, SUV" value={formData.category} onChange={(e: any) => setFormData({...formData, category: e.target.value})} required />
                         <Input label="Daily Rate ($)" type="number" placeholder="0.00" value={formData.price} onChange={(e: any) => setFormData({...formData, price: e.target.value})} required />
                         <Input label="Fuel Type" placeholder="Gasoline, Electric, Hybrid" value={formData.fuel} onChange={(e: any) => setFormData({...formData, fuel: e.target.value})} required />
@@ -6873,6 +6876,10 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-2 gap-2 sm:gap-4">
                       <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-vehicle-model" />
                       <Input label="Year" name="year" type="number" value={formData.year} onChange={handleInputChange} placeholder="2024" required data-testid="input-vehicle-year" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                      <Input label="VIN Number" name="vinNumber" value={formData.vinNumber} onChange={handleInputChange} placeholder="VIN Number" data-testid="input-vehicle-vin" />
+                      <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-vehicle-plate" />
                     </div>
                     <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-vehicle-host-name" />
                     
