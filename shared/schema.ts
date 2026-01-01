@@ -149,6 +149,9 @@ export const bookings = pgTable("bookings", {
     deliveryType?: 'delivery' | 'pickup';
     deliveryApprovalStatus?: 'pending' | 'approved' | 'rejected';
     deliveryApprovalMessage?: string;
+    deliveryAddress?: string;
+    pickupAddress?: string;
+    hostEmail?: string;
   }>().notNull(),
   carRentalAgreement: jsonb("car_rental_agreement").$type<{
     accepted: boolean;
