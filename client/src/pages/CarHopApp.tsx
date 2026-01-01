@@ -6688,7 +6688,7 @@ export default function CarHopApp() {
                               <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
                               <p className="text-xs text-zinc-500">
                                 {car.year} · {car.fuel} · {car.category}
-                                {hostOwner && <span className="text-blue-400 font-semibold ml-1">@{hostOwner.firstName} {hostOwner.lastName}</span>}
+                                {car.hostName && <span className="text-blue-400 font-semibold ml-1">@{car.hostName}</span>}
                               </p>
                               <div className="flex gap-2 mt-1">
                                 {car.licensePlate && (
