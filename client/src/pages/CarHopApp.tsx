@@ -583,7 +583,7 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
   );
 };
 
-const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -612,6 +612,7 @@ interface FormDataType {
   year: number;
   vinNumber: string;
   licensePlate: string;
+  hostName: string;
   category: string;
   price: string;
   fuel: string;
@@ -2151,6 +2152,7 @@ export default function CarHopApp() {
       year: formData.year,
       vinNumber: formData.vinNumber,
       licensePlate: formData.licensePlate,
+      hostName: formData.hostName,
       category: formData.category,
       price: parseFloat(formData.price) || 0,
       fuel: formData.fuel,
@@ -2199,6 +2201,7 @@ export default function CarHopApp() {
       year: (car as any).year || new Date().getFullYear(),
       vinNumber: (car as any).vinNumber || '',
       licensePlate: (car as any).licensePlate || '',
+      hostName: (car as any).hostName || '',
       price: car.price ? car.price.toString() : '',
     } as any);
     setPricingStrings({
@@ -2214,7 +2217,11 @@ export default function CarHopApp() {
       insurance1000: String(pricing.prices?.insurance1000 || '15'),
     });
     setEditingId(car.id);
-    window.scrollTo(0, 0);
+    setShowAddVehicleForm(true); // Open the form section
+    // Scroll to the form
+    setTimeout(() => {
+      document.getElementById('vehicle-form-top')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const addLocationToVehicle = () => { 
@@ -6504,145 +6511,164 @@ export default function CarHopApp() {
 
             {adminTab === 'fleet' && (
               <div className="space-y-4 sm:space-y-6">
-                {/* Add New Vehicle Button */}
-                <div className="flex justify-start">
-                  <Button 
-                    onClick={() => { setShowAddVehicleForm(!showAddVehicleForm); setEditingId(null); setFormData(initialFormState); setPricingStrings(defaultPricingStrings); }}
-                    variant={showAddVehicleForm ? "secondary" : "primary"}
-                    className="flex items-center gap-2"
-                    data-testid="button-toggle-add-vehicle"
-                  >
-                    {showAddVehicleForm ? <X size={16}/> : <Plus size={16}/>}
-                    {showAddVehicleForm ? 'Cancel' : 'Add New Vehicle'}
-                  </Button>
-                </div>
-
-                {/* Add/Edit Vehicle Form Section */}
-                {showAddVehicleForm && (
-                  <div className="mb-8">
-                    <Card className="p-6 border-green-500/30 bg-green-50/10 dark:bg-green-900/5">
-                      <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                          {editingId ? <><Edit size={20} className="text-green-600" /> Edit Vehicle</> : <><Plus size={20} className="text-green-600" /> Add New Vehicle</>}
-                        </h3>
-                        <button onClick={() => { setShowAddVehicleForm(false); setEditingId(null); setFormData(initialFormState as FormDataType); }} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <Input label="Car Model" placeholder="e.g. Toyota Camry" value={formData.model} onChange={(e: any) => setFormData({...formData, model: e.target.value})} required />
-                        <Input label="Year" type="number" placeholder="e.g. 2024" value={formData.year} onChange={(e: any) => setFormData({...formData, year: parseInt(e.target.value)})} required />
-                        <Input label="Category" placeholder="e.g. Sedan, SUV" value={formData.category} onChange={(e: any) => setFormData({...formData, category: e.target.value})} required />
-                        <Input label="Daily Rate ($)" type="number" placeholder="0.00" value={formData.price} onChange={(e: any) => setFormData({...formData, price: e.target.value})} required />
-                        <Input label="Fuel Type" placeholder="Gasoline, Electric, Hybrid" value={formData.fuel} onChange={(e: any) => setFormData({...formData, fuel: e.target.value})} required />
-                        <Input label="Consumption" placeholder="e.g. 30 MPG" value={formData.consumption} onChange={(e: any) => setFormData({...formData, consumption: e.target.value})} />
-                        <Input label="Seats" type="number" value={formData.seats} onChange={(e: any) => setFormData({...formData, seats: parseInt(e.target.value)})} required />
-                        <Input label="Transmission" placeholder="Automatic / Manual" value={formData.transmission} onChange={(e: any) => setFormData({...formData, transmission: e.target.value})} required />
-                        <Input label="Drive Type" placeholder="AWD, FWD, RWD" value={formData.driveType} onChange={(e: any) => setFormData({...formData, driveType: e.target.value})} />
-                        <Input label="VIN Number" placeholder="Vehicle Identification Number" value={formData.vinNumber} onChange={(e: any) => setFormData({...formData, vinNumber: e.target.value})} />
-                        <Input label="License Plate" placeholder="e.g. ABC-1234" value={formData.licensePlate} onChange={(e: any) => setFormData({...formData, licensePlate: e.target.value})} />
-                      </div>
-
-                      <div className="mt-6">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Vehicle Images (URLs)</label>
-                        {formData.images.map((img, index) => (
-                          <div key={index} className="flex gap-2 mb-2">
-                            <Input placeholder="https://..." value={img} onChange={(e: any) => {
-                              const newImages = [...formData.images];
-                              newImages[index] = e.target.value;
-                              setFormData({...formData, images: newImages});
-                            }} className="mb-0" />
-                            {formData.images.length > 1 && (
-                              <button onClick={() => setFormData({...formData, images: formData.images.filter((_, i) => i !== index)})} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={20}/></button>
-                            )}
-                          </div>
-                        ))}
-                        <button onClick={() => setFormData({...formData, images: [...formData.images, '']})} className="text-sm text-green-600 font-bold flex items-center gap-1 mt-1 hover:text-green-500"><Plus size={16}/> Add another image</button>
-                      </div>
-
-                      <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-                        <h4 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white uppercase tracking-widest">Features & Options</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-1">
-                          <Checkbox label="AWD" checked={formData.isAWD} onChange={(e: any) => setFormData({...formData, isAWD: e.target.checked})} name="isAWD" />
-                          <Checkbox label="CarPlay" checked={formData.hasCarPlay} onChange={(e: any) => setFormData({...formData, hasCarPlay: e.target.checked})} name="hasCarPlay" />
-                          <Checkbox label="Bluetooth" checked={formData.hasBluetooth} onChange={(e: any) => setFormData({...formData, hasBluetooth: e.target.checked})} name="hasBluetooth" />
-                          <Checkbox label="Reverse Camera" checked={formData.hasReverseCamera} onChange={(e: any) => setFormData({...formData, hasReverseCamera: e.target.checked})} name="hasReverseCamera" />
-                          <Checkbox label="Heated Seats" checked={formData.hasHeatedSeats} onChange={(e: any) => setFormData({...formData, hasHeatedSeats: e.target.checked})} name="hasHeatedSeats" />
-                          <Checkbox label="Heated Steering" checked={formData.hasHeatedSteering} onChange={(e: any) => setFormData({...formData, hasHeatedSteering: e.target.checked})} name="hasHeatedSteering" />
-                          <Checkbox label="Electric Seats" checked={formData.hasElectricSeats} onChange={(e: any) => setFormData({...formData, hasElectricSeats: e.target.checked})} name="hasElectricSeats" />
-                          <Checkbox label="Paddle Shifters" checked={formData.hasPaddleShifters} onChange={(e: any) => setFormData({...formData, hasPaddleShifters: e.target.checked})} name="hasPaddleShifters" />
-                          <Checkbox label="Keyless Entry" checked={formData.hasKeylessEntry} onChange={(e: any) => setFormData({...formData, hasKeylessEntry: e.target.checked})} name="hasKeylessEntry" />
-                          <Checkbox label="Blind Spot" checked={formData.hasBlindSpotWarning} onChange={(e: any) => setFormData({...formData, hasBlindSpotWarning: e.target.checked})} name="hasBlindSpotWarning" />
-                          <Checkbox label="Drive Assist" checked={formData.hasDriveAssist} onChange={(e: any) => setFormData({...formData, hasDriveAssist: e.target.checked})} name="hasDriveAssist" />
-                          <Checkbox label="USB Charger" checked={formData.hasUSBCharger} onChange={(e: any) => setFormData({...formData, hasUSBCharger: e.target.checked})} name="hasUSBCharger" />
-                        </div>
-                      </div>
-
-                      <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-                        <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Pricing Configuration</h4>
-                          <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 px-2 py-0.5 rounded-full font-bold">Per-Vehicle Settings</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <Input label="Sales Tax (%)" type="number" step="0.01" value={formData.pricing.taxes} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, taxes: parseFloat(e.target.value)}})} />
-                          <Input label="Cleaning Fee ($)" type="number" value={formData.pricing.cleaningFee} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, cleaningFee: parseFloat(e.target.value)}})} />
-                          <Input label="Included Miles" type="number" value={formData.pricing.includedMiles} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, includedMiles: parseInt(e.target.value)}})} />
-                          <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={formData.pricing.extraMileRate} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, extraMileRate: parseFloat(e.target.value)}})} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                            <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Insurance Options</label>
-                            <div className="space-y-3">
-                              <Input label="Standard ($500 Ded.)" type="number" value={formData.pricing.prices.insurance500} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: parseFloat(e.target.value)}}})} className="mb-0" />
-                              <Input label="Basic ($1000 Ded.)" type="number" value={formData.pricing.prices.insurance1000} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: parseFloat(e.target.value)}}})} className="mb-0" />
-                            </div>
-                          </div>
-                          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                            <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Child Seat</label>
-                            <div className="space-y-3">
-                              <Input label="Daily Rate ($)" type="number" value={formData.pricing.prices.childSeat} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeat: parseFloat(e.target.value)}}})} className="mb-0" />
-                              <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.childSeatPerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeatPerTrip: e.target.checked}}})} name="childSeatPerTrip" />
-                            </div>
-                          </div>
-                          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                            <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Prepaid Fuel</label>
-                            <div className="space-y-3">
-                              <Input label="Flat Fee ($)" type="number" value={formData.pricing.prices.prepaidFuel} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuel: parseFloat(e.target.value)}}})} className="mb-0" />
-                              <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.prepaidFuelPerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuelPerTrip: e.target.checked}}})} name="prepaidFuelPerTrip" />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                            <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Late Return Grace</label>
-                            <div className="space-y-3">
-                              <Input label="Fee ($)" type="number" value={formData.pricing.prices.lateReturnGrace} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGrace: parseFloat(e.target.value)}}})} className="mb-0" />
-                              <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.lateReturnGracePerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGracePerTrip: e.target.checked}}})} name="lateReturnGracePerTrip" />
-                            </div>
-                          </div>
-                          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                            <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Stress Free Package</label>
-                            <div className="space-y-3">
-                              <Input label="Fee ($)" type="number" value={formData.pricing.prices.stressFreePackage} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackage: parseFloat(e.target.value)}}})} className="mb-0" />
-                              <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.stressFreePackagePerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackagePerTrip: e.target.checked}}})} name="stressFreePackagePerTrip" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 mt-8">
-                        <Button onClick={handleSaveVehicle} className="flex-1 py-4 text-base" data-testid="button-save-vehicle">
-                          {editingId ? 'Update Configuration' : 'Add Vehicle to Fleet'}
-                        </Button>
-                        <Button variant="secondary" onClick={() => { setShowAddVehicleForm(false); setEditingId(null); setFormData(initialFormState as FormDataType); }} className="px-8">Cancel</Button>
-                      </div>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Inventory - Vehicle Cards with Inline Edit */}
+                {/* Inventory - Vehicle Cards */}
                 <Card className="p-3 sm:p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">Inventory ({(vehicles || []).length})</h3>
+                    <div className="flex items-center gap-3">
+                      <Button 
+                        onClick={() => { setShowAddVehicleForm(!showAddVehicleForm); setEditingId(null); setFormData(initialFormState); setPricingStrings(defaultPricingStrings); }}
+                        variant={showAddVehicleForm ? "secondary" : "primary"}
+                        size="sm"
+                        className="flex items-center gap-2"
+                        data-testid="button-toggle-add-vehicle"
+                      >
+                        {showAddVehicleForm ? <X size={16}/> : <Plus size={16}/>}
+                        {showAddVehicleForm ? 'Cancel' : 'Add Vehicle'}
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase">Sort by:</span>
+                        <select 
+                          value={fleetSort} 
+                          onChange={(e) => setFleetSort(e.target.value)}
+                          className="p-1.5 sm:p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs font-bold rounded-lg outline-none"
+                        >
+                          <option value="brand-asc">Brand (A-Z)</option>
+                          <option value="brand-desc">Brand (Z-A)</option>
+                          <option value="year-desc">Year (Newest)</option>
+                          <option value="year-asc">Year (Oldest)</option>
+                          <option value="host-asc">Host (A-Z)</option>
+                          <option value="host-desc">Host (Z-A)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Add/Edit Vehicle Form Section - NOW BELOW THE BUTTONS IN THE INVENTORY SECTION */}
+                  {showAddVehicleForm && (
+                    <div className="mb-8" id="vehicle-form-top">
+                      <Card className="p-6 border-green-500/30 bg-green-50/10 dark:bg-green-900/5">
+                        <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                            {editingId ? <><Edit size={20} className="text-green-600" /> Edit Vehicle</> : <><Plus size={20} className="text-green-600" /> Add New Vehicle</>}
+                          </h3>
+                          <button onClick={() => { setShowAddVehicleForm(false); setEditingId(null); setFormData(initialFormState as FormDataType); }} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <Input label="Car Model" placeholder="e.g. Toyota Camry" value={formData.model} onChange={(e: any) => setFormData({...formData, model: e.target.value})} required />
+                          <Input label="Year" type="number" placeholder="e.g. 2024" value={formData.year} onChange={(e: any) => setFormData({...formData, year: parseInt(e.target.value)})} required />
+                          <Input label="Category" placeholder="e.g. Sedan, SUV" value={formData.category} onChange={(e: any) => setFormData({...formData, category: e.target.value})} required />
+                          <Input label="Daily Rate ($)" type="number" placeholder="0.00" value={formData.price} onChange={(e: any) => setFormData({...formData, price: e.target.value})} required />
+                          <Input label="Fuel Type" placeholder="Gasoline, Electric, Hybrid" value={formData.fuel} onChange={(e: any) => setFormData({...formData, fuel: e.target.value})} required />
+                          <Input label="Consumption" placeholder="e.g. 30 MPG" value={formData.consumption} onChange={(e: any) => setFormData({...formData, consumption: e.target.value})} />
+                          <Input label="Seats" type="number" value={formData.seats} onChange={(e: any) => setFormData({...formData, seats: parseInt(e.target.value)})} required />
+                          <Input label="Transmission" placeholder="Automatic / Manual" value={formData.transmission} onChange={(e: any) => setFormData({...formData, transmission: e.target.value})} required />
+                          <Input label="Drive Type" placeholder="AWD, FWD, RWD" value={formData.driveType} onChange={(e: any) => setFormData({...formData, driveType: e.target.value})} />
+                          <Input label="VIN Number" placeholder="Vehicle Identification Number" value={formData.vinNumber} onChange={(e: any) => setFormData({...formData, vinNumber: e.target.value})} />
+                          <Input label="License Plate" placeholder="e.g. ABC-1234" value={formData.licensePlate} onChange={(e: any) => setFormData({...formData, licensePlate: e.target.value})} />
+                          <Input label="Host Name" placeholder="e.g. John Doe" value={formData.hostName} onChange={(e: any) => setFormData({...formData, hostName: e.target.value})} />
+                        </div>
+
+                        <div className="mt-6">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Vehicle Images (URLs)</label>
+                          {formData.images.map((img, index) => (
+                            <div key={index} className="flex gap-2 mb-2">
+                              <Input placeholder="https://..." value={img} onChange={(e: any) => {
+                                const newImages = [...formData.images];
+                                newImages[index] = e.target.value;
+                                setFormData({...formData, images: newImages});
+                              }} className="mb-0" />
+                              {formData.images.length > 1 && (
+                                <button onClick={() => setFormData({...formData, images: formData.images.filter((_, i) => i !== index)})} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={20}/></button>
+                              )}
+                            </div>
+                          ))}
+                          <button onClick={() => setFormData({...formData, images: [...formData.images, '']})} className="text-sm text-green-600 font-bold flex items-center gap-1 mt-1 hover:text-green-500"><Plus size={16}/> Add another image</button>
+                        </div>
+
+                        <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                          <h4 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white uppercase tracking-widest">Features & Options</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-1">
+                            <Checkbox label="AWD" checked={formData.isAWD} onChange={(e: any) => setFormData({...formData, isAWD: e.target.checked})} name="isAWD" />
+                            <Checkbox label="CarPlay" checked={formData.hasCarPlay} onChange={(e: any) => setFormData({...formData, hasCarPlay: e.target.checked})} name="hasCarPlay" />
+                            <Checkbox label="Bluetooth" checked={formData.hasBluetooth} onChange={(e: any) => setFormData({...formData, hasBluetooth: e.target.checked})} name="hasBluetooth" />
+                            <Checkbox label="Reverse Camera" checked={formData.hasReverseCamera} onChange={(e: any) => setFormData({...formData, hasReverseCamera: e.target.checked})} name="hasReverseCamera" />
+                            <Checkbox label="Heated Seats" checked={formData.hasHeatedSeats} onChange={(e: any) => setFormData({...formData, hasHeatedSeats: e.target.checked})} name="hasHeatedSeats" />
+                            <Checkbox label="Heated Steering" checked={formData.hasHeatedSteering} onChange={(e: any) => setFormData({...formData, hasHeatedSteering: e.target.checked})} name="hasHeatedSteering" />
+                            <Checkbox label="Electric Seats" checked={formData.hasElectricSeats} onChange={(e: any) => setFormData({...formData, hasElectricSeats: e.target.checked})} name="hasElectricSeats" />
+                            <Checkbox label="Paddle Shifters" checked={formData.hasPaddleShifters} onChange={(e: any) => setFormData({...formData, hasPaddleShifters: e.target.checked})} name="hasPaddleShifters" />
+                            <Checkbox label="Keyless Entry" checked={formData.hasKeylessEntry} onChange={(e: any) => setFormData({...formData, hasKeylessEntry: e.target.checked})} name="hasKeylessEntry" />
+                            <Checkbox label="Blind Spot" checked={formData.hasBlindSpotWarning} onChange={(e: any) => setFormData({...formData, hasBlindSpotWarning: e.target.checked})} name="hasBlindSpotWarning" />
+                            <Checkbox label="Drive Assist" checked={formData.hasDriveAssist} onChange={(e: any) => setFormData({...formData, hasDriveAssist: e.target.checked})} name="hasDriveAssist" />
+                            <Checkbox label="USB Charger" checked={formData.hasUSBCharger} onChange={(e: any) => setFormData({...formData, hasUSBCharger: e.target.checked})} name="hasUSBCharger" />
+                          </div>
+                        </div>
+
+                        <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Pricing Configuration</h4>
+                            <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 px-2 py-0.5 rounded-full font-bold">Per-Vehicle Settings</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <Input label="Sales Tax (%)" type="number" step="0.01" value={formData.pricing.taxes} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, taxes: parseFloat(e.target.value)}})} />
+                            <Input label="Cleaning Fee ($)" type="number" value={formData.pricing.cleaningFee} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, cleaningFee: parseFloat(e.target.value)}})} />
+                            <Input label="Included Miles" type="number" value={formData.pricing.includedMiles} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, includedMiles: parseInt(e.target.value)}})} />
+                            <Input label="Extra Mile Rate ($)" type="number" step="0.01" value={formData.pricing.extraMileRate} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, extraMileRate: parseFloat(e.target.value)}})} />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                              <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Insurance Options</label>
+                              <div className="space-y-3">
+                                <Input label="Standard ($500 Ded.)" type="number" value={formData.pricing.prices.insurance500} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: parseFloat(e.target.value)}}})} className="mb-0" />
+                                <Input label="Basic ($1000 Ded.)" type="number" value={formData.pricing.prices.insurance1000} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: parseFloat(e.target.value)}}})} className="mb-0" />
+                              </div>
+                            </div>
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                              <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Child Seat</label>
+                              <div className="space-y-3">
+                                <Input label="Daily Rate ($)" type="number" value={formData.pricing.prices.childSeat} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeat: parseFloat(e.target.value)}}})} className="mb-0" />
+                                <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.childSeatPerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeatPerTrip: e.target.checked}}})} name="childSeatPerTrip" />
+                              </div>
+                            </div>
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                              <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Prepaid Fuel</label>
+                              <div className="space-y-3">
+                                <Input label="Flat Fee ($)" type="number" value={formData.pricing.prices.prepaidFuel} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuel: parseFloat(e.target.value)}}})} className="mb-0" />
+                                <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.prepaidFuelPerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuelPerTrip: e.target.checked}}})} name="prepaidFuelPerTrip" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                              <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Late Return Grace</label>
+                              <div className="space-y-3">
+                                <Input label="Fee ($)" type="number" value={formData.pricing.prices.lateReturnGrace} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGrace: parseFloat(e.target.value)}}})} className="mb-0" />
+                                <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.lateReturnGracePerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGracePerTrip: e.target.checked}}})} name="lateReturnGracePerTrip" />
+                              </div>
+                            </div>
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                              <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Stress Free Package</label>
+                              <div className="space-y-3">
+                                <Input label="Fee ($)" type="number" value={formData.pricing.prices.stressFreePackage} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackage: parseFloat(e.target.value)}}})} className="mb-0" />
+                                <Checkbox label="Charge Per Trip (Flat)" checked={formData.pricing.prices.stressFreePackagePerTrip} onChange={(e: any) => setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackagePerTrip: e.target.checked}}})} name="stressFreePackagePerTrip" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-8">
+                          <Button onClick={handleSaveVehicle} className="flex-1 py-4 text-base" data-testid="button-save-vehicle">
+                            {editingId ? 'Update Configuration' : 'Add Vehicle to Fleet'}
+                          </Button>
+                          <Button variant="secondary" onClick={() => { setShowAddVehicleForm(false); setEditingId(null); setFormData(initialFormState as FormDataType); }} className="px-8">Cancel</Button>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+
+                  <div className="space-y-2 sm:space-y-3 max-h-full overflow-y-auto">
+                    {(filteredAndSortedFleet || []).map((car: any) => {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase">Sort by:</span>
                       <select 
