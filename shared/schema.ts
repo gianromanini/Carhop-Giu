@@ -44,6 +44,8 @@ export const vehicles = pgTable("vehicles", {
   seats: integer("seats").notNull().default(5),
   transmission: text("transmission").notNull().default('Automatic'),
   driveType: text("drive_type").notNull().default('AWD'),
+  year: integer("year"),
+  hostName: text("host_name"),
   images: text("images").array().notNull().default([]),
   consumption: text("consumption"),
   isPriceMatch: boolean("is_price_match").default(false),
