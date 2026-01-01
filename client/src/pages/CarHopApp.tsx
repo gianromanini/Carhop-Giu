@@ -6811,70 +6811,15 @@ export default function CarHopApp() {
                       );
                     })}
                   </div>
-                </Card>
-
-                {/* Add New Vehicle Form - only shown when button is clicked */}
-                {showAddVehicleForm && (
-                  <Card className="p-3 sm:p-6 border-2 border-green-500">
-                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
-                      <Plus size={16} className="text-green-500"/>
-                      Add New Vehicle
-                    </h3>
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                      <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-vehicle-model" />
-                      <Input label="Year" name="year" type="number" value={formData.year} onChange={handleInputChange} placeholder="2024" required data-testid="input-vehicle-year" />
-                    </div>
-                    <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-vehicle-host-name" />
-                    
-                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                      <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="e.g. 45" required data-testid="input-vehicle-price" />
-                      <div className="mb-2 sm:mb-3">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
-                        <select name="fuel" value={formData.fuel} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-fuel">
-                          <option value="Gasoline">Gasoline</option>
-                          <option value="Hybrid">Hybrid</option>
-                          <option value="Electric">Electric</option>
-                          <option value="Diesel">Diesel</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                      <Input label="Seats" name="seats" type="number" value={formData.seats} onChange={handleInputChange} placeholder="5" data-testid="input-vehicle-seats" />
-                      <div className="mb-2 sm:mb-3">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
-                        <select name="transmission" value={formData.transmission} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-transmission">
-                          <option value="Automatic">Automatic</option>
-                          <option value="Manual">Manual</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
-                      <select name="driveType" value={formData.driveType} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-drive-type">
-                        <option value="AWD">AWD (All-Wheel Drive)</option>
-                        <option value="FWD">FWD (Front-Wheel Drive)</option>
-                        <option value="RWD">RWD (Rear-Wheel Drive)</option>
-                      </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                      <Input label="Consumption / Range" name="consumption" value={formData.consumption} onChange={handleInputChange} placeholder="e.g. 300mi range" data-testid="input-vehicle-consumption" />
-                      <div className="mb-2 sm:mb-3">
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
-                        <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-category">
-                          <option value="">Select Category</option>
-                          <option value="SEDAN">SEDAN</option>
-                          <option value="SUV">SUV</option>
-                          <option value="HATCHBACK">HATCHBACK</option>
-                          <option value="MINIVAN">MINIVAN</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
                       <div className="space-y-1">
                         {settings.locations.map(loc => (
