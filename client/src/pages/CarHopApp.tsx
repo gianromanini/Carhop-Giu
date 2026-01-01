@@ -858,7 +858,7 @@ export default function CarHopApp() {
     let result = [...vehicles];
     
     // Sort logic
-    result.sort((a, b) => {
+    result.sort((a: any, b: any) => {
       if (fleetSort === 'brand-asc') return a.model.localeCompare(b.model);
       if (fleetSort === 'brand-desc') return b.model.localeCompare(a.model);
       if (fleetSort === 'year-asc') return (a.year || 0) - (b.year || 0);
@@ -4331,7 +4331,7 @@ export default function CarHopApp() {
                   </div>
                   <div className="space-y-4">
                     {(() => {
-                      const sortedHostVehicles = [...hostVehicles].sort((a, b) => {
+                      const sortedHostVehicles = [...hostVehicles].sort((a: any, b: any) => {
                         if (fleetSort === 'brand-asc') return a.model.localeCompare(b.model);
                         if (fleetSort === 'brand-desc') return b.model.localeCompare(a.model);
                         if (fleetSort === 'year-asc') return (a.year || 0) - (b.year || 0);
@@ -4341,73 +4341,75 @@ export default function CarHopApp() {
                         return 0;
                       });
                       
-                      return sortedHostVehicles.length > 0 ? sortedHostVehicles.map((car: any) => (
-                      <div key={car.id} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden" data-testid={`card-host-vehicle-${car.id}`}>
-                        <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
-                          <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                            <p className="text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
-                            <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
+                      return sortedHostVehicles.length > 0 ? (
+                        sortedHostVehicles.map((car: any) => (
+                          <div key={car.id} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden" data-testid={`card-host-vehicle-${car.id}`}>
+                            <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
+                              <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                                <p className="text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
+                                <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
+                              </div>
+                              <div className="flex gap-2 flex-shrink-0">
+                                <button onClick={() => { 
+                                  if (editingHostVehicle?.id === car.id) {
+                                    setEditingHostVehicle(null);
+                                    setFormData(initialFormState);
+                                  } else {
+                                    setShowHostAddVehicleForm(false);
+                                    setEditingHostVehicle(car); 
+                                    setFormData({
+                                      model: car.model || '',
+                                      price: String(car.price || ''),
+                                      fuel: car.fuel || 'Gasoline',
+                                      seats: car.seats || 5,
+                                      transmission: car.transmission || 'Automatic',
+                                      category: car.category || '',
+                                      consumption: car.consumption || '',
+                                      driveType: car.driveType || 'AWD',
+                                      isAWD: car.isAWD || false,
+                                      hasCarPlay: car.hasCarPlay || false,
+                                      hasBluetooth: car.hasBluetooth || false,
+                                      hasReverseCamera: car.hasReverseCamera || false,
+                                      hasHeatedSeats: car.hasHeatedSeats || false,
+                                      hasHeatedSteering: car.hasHeatedSteering || false,
+                                      hasElectricSeats: car.hasElectricSeats || false,
+                                      hasPaddleShifters: car.hasPaddleShifters || false,
+                                      hasKeylessEntry: car.hasKeylessEntry || false,
+                                      hasBlindSpotWarning: car.hasBlindSpotWarning || false,
+                                      hasDriveAssist: car.hasDriveAssist || false,
+                                      hasUSBCharger: car.hasUSBCharger || false,
+                                      isPriceMatch: car.isPriceMatch || false,
+                                      images: car.images || [],
+                                      commission: car.commission || 10,
+                                      deductible: car.deductible || 1000,
+                                      availableLocations: car.availableLocations || [],
+                                      isDeliveryEnabled: car.isDeliveryEnabled || false,
+                                      maxDeliveryDistance: car.maxDeliveryDistance || 50,
+                                      minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
+                                      minDeliveryFee: car.minDeliveryFee || 15,
+                                      deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
+                                      minDeliveryHours: car.minDeliveryHours || 6,
+                                      locationLat: car.locationLat || null,
+                                      locationLon: car.locationLon || null,
+                                      pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
+                                    });
+                                    setHostVehicleImages(car.images || []);
+                                  }
+                                }} className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all" data-testid={`button-edit-vehicle-${car.id}`}>
+                                  <Edit size={20} className="sm:w-6 sm:h-6" />
+                                </button>
+                                <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                                  <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { 
-                              if (editingHostVehicle?.id === car.id) {
-                                setEditingHostVehicle(null);
-                                setFormData(initialFormState);
-                              } else {
-                                setShowHostAddVehicleForm(false);
-                                setEditingHostVehicle(car); 
-                                setFormData({
-                                  model: car.model || '',
-                                  price: String(car.price || ''),
-                                  fuel: car.fuel || 'Gasoline',
-                                  seats: car.seats || 5,
-                                  transmission: car.transmission || 'Automatic',
-                                  category: car.category || '',
-                                  consumption: car.consumption || '',
-                                  driveType: car.driveType || 'AWD',
-                                  isAWD: car.isAWD || false,
-                                  hasCarPlay: car.hasCarPlay || false,
-                                  hasBluetooth: car.hasBluetooth || false,
-                                  hasReverseCamera: car.hasReverseCamera || false,
-                                  hasHeatedSeats: car.hasHeatedSeats || false,
-                                  hasHeatedSteering: car.hasHeatedSteering || false,
-                                  hasElectricSeats: car.hasElectricSeats || false,
-                                  hasPaddleShifters: car.hasPaddleShifters || false,
-                                  hasKeylessEntry: car.hasKeylessEntry || false,
-                                  hasBlindSpotWarning: car.hasBlindSpotWarning || false,
-                                  hasDriveAssist: car.hasDriveAssist || false,
-                                  hasUSBCharger: car.hasUSBCharger || false,
-                                  isPriceMatch: car.isPriceMatch || false,
-                                  images: car.images || [],
-                                  commission: car.commission || 10,
-                                  deductible: car.deductible || 1000,
-                                  availableLocations: car.availableLocations || [],
-                                  isDeliveryEnabled: car.isDeliveryEnabled || false,
-                                  maxDeliveryDistance: car.maxDeliveryDistance || 50,
-                                  minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
-                                  minDeliveryFee: car.minDeliveryFee || 15,
-                                  deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
-                                  minDeliveryHours: car.minDeliveryHours || 6,
-                                  locationLat: car.locationLat || null,
-                                  locationLon: car.locationLon || null,
-                                  pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
-                                });
-                                setHostVehicleImages(car.images || []);
-                              }
-                            }} className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all" data-testid={`button-edit-vehicle-${car.id}`}>
-                              <Edit size={20} className="sm:w-6 sm:h-6" />
-                            </button>
-                            <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
-                              <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )) : (
-                      <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
-                    )}
+                        ))
+                      ) : (
+                        <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
+                      );
                   </div>
                 </Card>
 
@@ -4482,6 +4484,37 @@ export default function CarHopApp() {
                           </div>
                         </div>
                         
+                        {/* Add-on Rates section - Restore missing pricing options */}
+                        <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                          <h4 className="text-xs font-bold mb-3 text-zinc-500 uppercase tracking-wider">Daily Add-on Rates</h4>
+                          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">INS. $500</label>
+                              <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">INS. $1000</label>
+                              <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Child Seat</label>
+                              <input type="text" inputMode="decimal" value={pricingStrings.childSeat} onChange={(e: any) => setPricingStrings({...pricingStrings, childSeat: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeat: val}}}); setPricingStrings({...pricingStrings, childSeat: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Prepaid Fuel</label>
+                              <input type="text" inputMode="decimal" value={pricingStrings.prepaidFuel} onChange={(e: any) => setPricingStrings({...pricingStrings, prepaidFuel: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuel: val}}}); setPricingStrings({...pricingStrings, prepaidFuel: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Late Return Grace</label>
+                              <input type="text" inputMode="decimal" value={pricingStrings.lateReturnGrace} onChange={(e: any) => setPricingStrings({...pricingStrings, lateReturnGrace: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGrace: val}}}); setPricingStrings({...pricingStrings, lateReturnGrace: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Stress-Free Pkg</label>
+                              <input type="text" inputMode="decimal" value={pricingStrings.stressFreePackage} onChange={(e: any) => setPricingStrings({...pricingStrings, stressFreePackage: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackage: val}}}); setPricingStrings({...pricingStrings, stressFreePackage: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                           <div>
                             <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Seats</label>
@@ -6525,7 +6558,7 @@ export default function CarHopApp() {
                     </div>
                   </div>
                   <div className="space-y-2 sm:space-y-3 max-h-full overflow-y-auto">
-                    {filteredAndSortedFleet.map((car) => {
+                    {filteredAndSortedFleet.map((car: any) => {
                       const hostOwner = hostsData.find(h => String(h.id) === car.hostId);
                       const isEditing = editingId === car.id;
                       return (
