@@ -8675,7 +8675,15 @@ export default function CarHopApp() {
                                 <div className="flex justify-between items-start gap-1">
                                   <div>
                                     <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model} <span className="text-blue-400 text-[10px] sm:text-xs">@{hostAlias}</span></h4>
-                                    <p className="text-[8px] sm:text-[10px] text-zinc-500">{vehicle.category}</p>
+                                    <div className="flex gap-2 items-center">
+                                      <p className="text-[8px] sm:text-[10px] text-zinc-500">{vehicle.category}</p>
+                                      {vehicle.licensePlate && (
+                                        <span className="text-[8px] font-mono bg-zinc-800 px-1 rounded text-zinc-300 border border-zinc-700">{vehicle.licensePlate}</span>
+                                      )}
+                                      {vehicle.vinNumber && (
+                                        <span className="text-[7px] text-zinc-500 font-mono">VIN: {vehicle.vinNumber.slice(-6)}</span>
+                                      )}
+                                    </div>
                                   </div>
                                   <button 
                                     className="text-[10px] sm:text-xs text-zinc-400 hover:text-white border border-zinc-700 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 shrink-0"
