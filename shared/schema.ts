@@ -76,6 +76,10 @@ export const vehicles = pgTable("vehicles", {
   minDeliveryHours: integer("min_delivery_hours").default(6),
   locationLat: real("location_lat"),
   locationLon: real("location_lon"),
+  vinNumber: text("vin_number"),
+  licensePlate: text("license_plate"),
+  year: integer("year"),
+  hostName: text("host_name"),
   pricing: jsonb("pricing").$type<{
     taxes: number;
     cleaningFee: number;
