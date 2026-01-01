@@ -835,6 +835,23 @@ export default function CarHopApp() {
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
+  // Load vehicles with availability filter based on search dates
+  const vehicleQueryKey = searchParams.start && searchParams.end 
+    ? ['/api/vehicles', searchParams.start, searchParams.end]
+    : ['/api/vehicles'];
+
+  const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ 
+    queryKey: vehicleQueryKey,
+    queryFn: async () => {
+      if (searchParams.start && searchParams.end) {
+        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}`);
+        return response.json();
+      }
+      const response = await fetch('/api/vehicles');
+      return response.json();
+    }
+  });
+
   const [fleetSort, setFleetSort] = useState('brand-asc');
 
   const filteredAndSortedFleet = useMemo(() => {
@@ -853,28 +870,6 @@ export default function CarHopApp() {
 
     return result;
   }, [vehicles, fleetSort]);
-
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [adminEditingVehicleId, setAdminEditingVehicleId] = useState<number | null>(null);
-  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
-  const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
-
-  // Load vehicles with availability filter based on search dates
-  const vehicleQueryKey = searchParams.start && searchParams.end 
-    ? ['/api/vehicles', searchParams.start, searchParams.end]
-    : ['/api/vehicles'];
-  
-  const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ 
-    queryKey: vehicleQueryKey,
-    queryFn: async () => {
-      if (searchParams.start && searchParams.end) {
-        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}`);
-        return response.json();
-      }
-      const response = await fetch('/api/vehicles');
-      return response.json();
-    }
-  });
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
@@ -2190,14 +2185,16 @@ export default function CarHopApp() {
   const handleEditVehicle = (car: Vehicle) => {
     const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}};
     setFormData({
-      model: car.model,
-      category: car.category,
-      price: String(car.price),
-      fuel: car.fuel,
-      seats: car.seats,
-      transmission: car.transmission,
+      model: car.model || '',
+      year: car.year || new Date().getFullYear(),
+      hostName: car.hostName || '',
+      category: car.category || '',
+      price: String(car.price || ''),
+      fuel: car.fuel || 'Gasoline',
+      seats: car.seats || 5,
+      transmission: car.transmission || 'Automatic',
       driveType: car.driveType || 'AWD',
-      images: car.images.length > 0 ? car.images : [''],
+      images: car.images?.length > 0 ? car.images : [''],
       consumption: car.consumption || '',
       isPriceMatch: car.isPriceMatch || false,
       isAWD: car.isAWD || false,
@@ -2226,16 +2223,16 @@ export default function CarHopApp() {
       pricing: pricing,
     });
     setPricingStrings({
-      taxes: String(pricing.taxes || ''),
-      extraMileRate: String(pricing.extraMileRate || ''),
-      childSeat: String(pricing.prices?.childSeat || ''),
+      taxes: String(pricing.taxes || '8.5'),
+      extraMileRate: String(pricing.extraMileRate || '0.45'),
+      childSeat: String(pricing.prices?.childSeat || '8'),
       prepaidFuel: String(pricing.prices?.prepaidFuel || '35'),
       lateReturnGrace: String(pricing.prices?.lateReturnGrace || '25'),
       stressFreePackage: String(pricing.prices?.stressFreePackage || '50'),
-      cleaningFee: String(pricing.cleaningFee || ''),
-      includedMiles: String(pricing.includedMiles || ''),
-      insurance500: String(pricing.prices?.insurance500 || ''),
-      insurance1000: String(pricing.prices?.insurance1000 || ''),
+      cleaningFee: String(pricing.cleaningFee || '25'),
+      includedMiles: String(pricing.includedMiles || '200'),
+      insurance500: String(pricing.prices?.insurance500 || '25'),
+      insurance1000: String(pricing.prices?.insurance1000 || '15'),
     });
     setEditingId(car.id);
     window.scrollTo(0, 0);
@@ -4314,9 +4311,37 @@ export default function CarHopApp() {
 
                 {/* Inventory */}
                 <Card className="p-3 sm:p-6">
-                  <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Inventory ({hostVehicles.length})</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+                    <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white">Inventory ({hostVehicles.length})</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase">Sort by:</span>
+                      <select 
+                        value={fleetSort} 
+                        onChange={(e) => setFleetSort(e.target.value)}
+                        className="p-1.5 sm:p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs font-bold rounded-lg outline-none"
+                      >
+                        <option value="brand-asc">Brand (A-Z)</option>
+                        <option value="brand-desc">Brand (Z-A)</option>
+                        <option value="year-desc">Year (Newest)</option>
+                        <option value="year-asc">Year (Oldest)</option>
+                        <option value="host-asc">Host (A-Z)</option>
+                        <option value="host-desc">Host (Z-A)</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="space-y-4">
-                    {hostVehicles.length > 0 ? hostVehicles.map((car) => (
+                    {(() => {
+                      const sortedHostVehicles = [...hostVehicles].sort((a, b) => {
+                        if (fleetSort === 'brand-asc') return a.model.localeCompare(b.model);
+                        if (fleetSort === 'brand-desc') return b.model.localeCompare(a.model);
+                        if (fleetSort === 'year-asc') return (a.year || 0) - (b.year || 0);
+                        if (fleetSort === 'year-desc') return (b.year || 0) - (a.year || 0);
+                        if (fleetSort === 'host-asc') return (a.hostName || '').localeCompare(b.hostName || '');
+                        if (fleetSort === 'host-desc') return (b.hostName || '').localeCompare(a.hostName || '');
+                        return 0;
+                      });
+                      
+                      return sortedHostVehicles.length > 0 ? sortedHostVehicles.map((car: any) => (
                       <div key={car.id} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden" data-testid={`card-host-vehicle-${car.id}`}>
                         <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
                           <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
@@ -6481,9 +6506,26 @@ export default function CarHopApp() {
 
                 {/* Inventory - Vehicle Cards with Inline Edit */}
                 <Card className="p-3 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase">Sort by:</span>
+                      <select 
+                        value={fleetSort} 
+                        onChange={(e) => setFleetSort(e.target.value)}
+                        className="p-1.5 sm:p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs font-bold rounded-lg outline-none"
+                      >
+                        <option value="brand-asc">Brand (A-Z)</option>
+                        <option value="brand-desc">Brand (Z-A)</option>
+                        <option value="year-desc">Year (Newest)</option>
+                        <option value="year-asc">Year (Oldest)</option>
+                        <option value="host-asc">Host (A-Z)</option>
+                        <option value="host-desc">Host (Z-A)</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="space-y-2 sm:space-y-3 max-h-full overflow-y-auto">
-                    {vehicles.map((car) => {
+                    {filteredAndSortedFleet.map((car) => {
                       const hostOwner = hostsData.find(h => String(h.id) === car.hostId);
                       const isEditing = editingId === car.id;
                       return (
@@ -6638,6 +6680,36 @@ export default function CarHopApp() {
                                     <div className="mb-3 w-full">
                                       <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
                                       <input type="text" inputMode="decimal" placeholder="e.g., 0.45" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate" />
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                    <h4 className="text-xs font-bold mb-3 text-zinc-500 uppercase tracking-wider">Daily Add-on Rates</h4>
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                      <div className="mb-3">
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">INS. $500</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div className="mb-3">
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">INS. $1000</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div className="mb-3">
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Child Seat</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.childSeat} onChange={(e: any) => setPricingStrings({...pricingStrings, childSeat: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeat: val}}}); setPricingStrings({...pricingStrings, childSeat: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div className="mb-3">
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Prepaid Fuel</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.prepaidFuel} onChange={(e: any) => setPricingStrings({...pricingStrings, prepaidFuel: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuel: val}}}); setPricingStrings({...pricingStrings, prepaidFuel: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div className="mb-3">
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Late Return Grace</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.lateReturnGrace} onChange={(e: any) => setPricingStrings({...pricingStrings, lateReturnGrace: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGrace: val}}}); setPricingStrings({...pricingStrings, lateReturnGrace: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div className="mb-3">
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Stress-Free Pkg</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.stressFreePackage} onChange={(e: any) => setPricingStrings({...pricingStrings, stressFreePackage: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackage: val}}}); setPricingStrings({...pricingStrings, stressFreePackage: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
