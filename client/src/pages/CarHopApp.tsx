@@ -852,7 +852,8 @@ export default function CarHopApp() {
     }
   });
 
-  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
+  const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
+  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState<number | null>(null);
   const [fleetSort, setFleetSort] = useState('brand-asc');
 
   const filteredAndSortedFleet = useMemo(() => {
@@ -888,6 +889,7 @@ export default function CarHopApp() {
   const [priceConfigForm, setPriceConfigForm] = useState<SettingsType | null>(null);
   const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [editForm, setEditForm] = useState<Partial<User> | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -2186,43 +2188,12 @@ export default function CarHopApp() {
   const handleEditVehicle = (car: Vehicle) => {
     const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}};
     setFormData({
-      model: car.model || '',
-      year: car.year || new Date().getFullYear(),
-      hostName: car.hostName || '',
-      category: car.category || '',
-      price: String(car.price || ''),
-      fuel: car.fuel || 'Gasoline',
-      seats: car.seats || 5,
-      transmission: car.transmission || 'Automatic',
-      driveType: car.driveType || 'AWD',
-      images: car.images?.length > 0 ? car.images : [''],
-      consumption: car.consumption || '',
-      isPriceMatch: car.isPriceMatch || false,
-      isAWD: car.isAWD || false,
-      hasCarPlay: car.hasCarPlay || false,
-      hasBluetooth: car.hasBluetooth || false,
-      hasReverseCamera: car.hasReverseCamera || false,
-      hasHeatedSeats: car.hasHeatedSeats || false,
-      hasHeatedSteering: car.hasHeatedSteering || false,
-      hasElectricSeats: car.hasElectricSeats || false,
-      hasPaddleShifters: car.hasPaddleShifters || false,
-      hasKeylessEntry: car.hasKeylessEntry || false,
-      hasBlindSpotWarning: car.hasBlindSpotWarning || false,
-      hasDriveAssist: car.hasDriveAssist || false,
-      hasUSBCharger: car.hasUSBCharger || false,
-      commission: car.commission || 10,
-      deductible: car.deductible || 1000,
-      availableLocations: car.availableLocations || [],
-      locationLat: car.locationLat || null,
-      locationLon: car.locationLon || null,
-      isDeliveryEnabled: car.isDeliveryEnabled || false,
-      maxDeliveryDistance: car.maxDeliveryDistance || 50,
-      minDeliveryFeeMiles: car.minDeliveryFeeMiles || 5,
-      minDeliveryFee: car.minDeliveryFee || 15,
-      deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
-      minDeliveryHours: car.minDeliveryHours || 6,
-      pricing: pricing,
-    });
+      ...initialFormState,
+      ...car,
+      year: (car as any).year || new Date().getFullYear(),
+      hostName: (car as any).hostName || '',
+      price: car.price ? car.price.toString() : '',
+    } as any);
     setPricingStrings({
       taxes: String(pricing.taxes || '8.5'),
       extraMileRate: String(pricing.extraMileRate || '0.45'),
