@@ -651,7 +651,7 @@ export default function CarHopApp() {
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
-  const [adminTab, setAdminTab] = useState('fleet');
+  const [adminTab, setAdminTab] = useState(null);
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [expandedSupportGroup, setExpandedSupportGroup] = useState<string | null>(null);
@@ -863,7 +863,7 @@ export default function CarHopApp() {
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'] });
-  const [hostTab, setHostTab] = useState('fleet');
+  const [hostTab, setHostTab] = useState(null);
   const [editingHost, setEditingHost] = useState<any>(null);
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
   const [hostVehicleImages, setHostVehicleImages] = useState<string[]>([]);
