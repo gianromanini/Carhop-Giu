@@ -4410,6 +4410,7 @@ export default function CarHopApp() {
                       ) : (
                         <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
                       );
+                    })()}
                   </div>
                 </Card>
 
@@ -4459,7 +4460,7 @@ export default function CarHopApp() {
                         <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
                           <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => { setEditingHostVehicle(null); setShowHostAddVehicleForm(false); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
                           <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
-                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Save Update Vehicle' : 'Add Vehicle'}
+                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update Configuration' : 'Add Vehicle'}
                           </Button>
                         </div>
                         
