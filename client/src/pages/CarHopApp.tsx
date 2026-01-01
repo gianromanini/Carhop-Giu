@@ -2148,6 +2148,9 @@ export default function CarHopApp() {
 
     const vehicleData = {
       model: formData.model,
+      year: formData.year,
+      vinNumber: formData.vinNumber,
+      licensePlate: formData.licensePlate,
       category: formData.category,
       price: parseFloat(formData.price) || 0,
       fuel: formData.fuel,
@@ -2194,7 +2197,8 @@ export default function CarHopApp() {
       ...initialFormState,
       ...car,
       year: (car as any).year || new Date().getFullYear(),
-      hostName: (car as any).hostName || '',
+      vinNumber: (car as any).vinNumber || '',
+      licensePlate: (car as any).licensePlate || '',
       price: car.price ? car.price.toString() : '',
     } as any);
     setPricingStrings({
