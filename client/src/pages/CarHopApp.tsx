@@ -651,7 +651,8 @@ export default function CarHopApp() {
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
-  const [adminTab, setAdminTab] = useState(null);
+  const [adminTab, setAdminTab] = useState<string | null>(null);
+  const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
   const [expandedSupportGroup, setExpandedSupportGroup] = useState<string | null>(null);
@@ -863,7 +864,8 @@ export default function CarHopApp() {
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'] });
-  const [hostTab, setHostTab] = useState(null);
+  const [hostTab, setHostTab] = useState<string | null>(null);
+  const [showHostAddVehicleForm, setShowHostAddVehicleForm] = useState(false);
   const [editingHost, setEditingHost] = useState<any>(null);
   const [editingHostVehicle, setEditingHostVehicle] = useState<Vehicle | null>(null);
   const [hostVehicleImages, setHostVehicleImages] = useState<string[]>([]);
@@ -4276,22 +4278,42 @@ export default function CarHopApp() {
             const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
             return (
               <div className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                  <div className="lg:col-span-1">
-                    {/* My Vehicles - Moved above Add New Vehicle */}
-                    <Card className="p-3 sm:p-6 mb-4 sm:mb-6">
-                      <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">My Vehicles ({hostVehicles.length})</h3>
-                      <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
-                        {hostVehicles.length > 0 ? hostVehicles.map((car) => (
-                          <div key={car.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" data-testid={`card-host-vehicle-${car.id}`}>
-                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                              <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
-                              <p className="text-[10px] sm:text-xs font-bold text-green-600 mt-0.5 sm:mt-1">${car.price}/d | {car.commission || 10}%</p>
-                            </div>
-                            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                              <button onClick={() => { 
+                {/* Add New Vehicle Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={() => {
+                      setShowHostAddVehicleForm(!showHostAddVehicleForm);
+                      setEditingHostVehicle(null);
+                      setFormData(initialFormState);
+                    }}
+                    className={`flex items-center gap-2 ${showHostAddVehicleForm ? 'bg-zinc-600 hover:bg-zinc-700' : 'bg-green-600 hover:bg-green-700'} text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all`}
+                    data-testid="button-add-new-vehicle"
+                  >
+                    {showHostAddVehicleForm ? <X size={20} /> : <Plus size={20} />}
+                    {showHostAddVehicleForm ? 'Close Form' : 'Add New Vehicle'}
+                  </Button>
+                </div>
+
+                {/* Inventory */}
+                <Card className="p-3 sm:p-6">
+                  <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Inventory ({hostVehicles.length})</h3>
+                  <div className="space-y-4">
+                    {hostVehicles.length > 0 ? hostVehicles.map((car) => (
+                      <div key={car.id} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden" data-testid={`card-host-vehicle-${car.id}`}>
+                        <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
+                          <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                            <p className="text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
+                            <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button onClick={() => { 
+                              if (editingHostVehicle?.id === car.id) {
+                                setEditingHostVehicle(null);
+                                setFormData(initialFormState);
+                              } else {
+                                setShowHostAddVehicleForm(false);
                                 setEditingHostVehicle(car); 
                                 setFormData({
                                   model: car.model || '',
@@ -4325,44 +4347,48 @@ export default function CarHopApp() {
                                   minDeliveryFee: car.minDeliveryFee || 15,
                                   deliveryPricePerMile: car.deliveryPricePerMile || 2.50,
                                   minDeliveryHours: car.minDeliveryHours || 6,
+                                  locationLat: car.locationLat || null,
+                                  locationLon: car.locationLon || null,
                                   pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
                                 });
                                 setHostVehicleImages(car.images || []);
-                                window.scrollTo(0, 0);
-                              }} className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50" data-testid={`button-edit-vehicle-${car.id}`}>
-                                <Edit size={14} className="sm:w-4 sm:h-4" />
-                              </button>
-                              <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
-                                <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                              </button>
-                            </div>
+                              }
+                            }} className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all" data-testid={`button-edit-vehicle-${car.id}`}>
+                              <Edit size={20} className="sm:w-6 sm:h-6" />
+                            </button>
+                            <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                              <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                            </button>
                           </div>
-                        )) : (
-                          <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
-                        )}
+                        </div>
                       </div>
-                    </Card>
+                    )) : (
+                      <p className="text-xs sm:text-sm text-zinc-500 text-center py-6 sm:py-8">No vehicles added yet</p>
+                    )}
+                  </div>
+                </Card>
 
-                    {/* Add New Vehicle */}
-                    <Card className="p-3 sm:p-6">
-                      <div className="flex items-center justify-between mb-3 sm:mb-4">
-                        <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white">
-                          {editingHostVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
-                        </h3>
-                        {editingHostVehicle && (
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setEditingHostVehicle(null);
-                              setFormData(initialFormState);
-                            }}
-                            className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
-                            data-testid="button-cancel-edit"
-                          >
-                            <X size={14}/> Cancel
-                          </button>
-                        )}
-                      </div>
+                {/* Add/Edit Vehicle Form - Only shown when button clicked or editing */}
+                {(showHostAddVehicleForm || editingHostVehicle) && (
+                  <Card className="p-3 sm:p-6">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        {editingHostVehicle ? <Edit size={16} className="text-blue-500" /> : <Plus size={16} className="text-green-500" />}
+                        {editingHostVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
+                      </h3>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingHostVehicle(null);
+                          setShowHostAddVehicleForm(false);
+                          setFormData(initialFormState);
+                        }}
+                        className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
+                        data-testid="button-cancel-edit"
+                      >
+                        <X size={14}/> Cancel
+                      </button>
+                    </div>
                       <form onSubmit={(e) => {
                         e.preventDefault();
                         const vehicleData = {
@@ -4380,13 +4406,15 @@ export default function CarHopApp() {
                           setFormData(initialFormState);
                         } else {
                           createVehicleMutation.mutate(vehicleData);
+                          setShowHostAddVehicleForm(false);
+                          setFormData(initialFormState);
                         }
                       }} className="space-y-3 sm:space-y-4">
                         {/* Action Buttons - Moved to top */}
                         <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
-                          <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => { setEditingHostVehicle(null); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
+                          <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => { setEditingHostVehicle(null); setShowHostAddVehicleForm(false); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
                           <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
-                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update' : 'Add'} Vehicle
+                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Save Update Vehicle' : 'Add Vehicle'}
                           </Button>
                         </div>
                         
@@ -4690,9 +4718,10 @@ export default function CarHopApp() {
                         </div>
                       </form>
                     </Card>
-                  </div>
-                  <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                    {/* Price Configuration Section */}
+                )}
+
+                {/* Price Configuration Section */}
+                {(showHostAddVehicleForm || editingHostVehicle) && (
                     <Card className="p-3 sm:p-6">
                       <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
                         <DollarSign size={14} className="sm:w-[18px] sm:h-[18px] text-green-500"/>
@@ -4811,9 +4840,7 @@ export default function CarHopApp() {
                         </Button>
                       </div>
                     </Card>
-
-                  </div>
-                </div>
+                )}
               </div>
             );
           })()}
@@ -6420,13 +6447,199 @@ export default function CarHopApp() {
             </div>
 
             {adminTab === 'fleet' && (
-              <div className="grid md:grid-cols-2 gap-3 sm:gap-6">
-                {/* Left Column - Add New Vehicle Form */}
+              <div className="space-y-4 sm:space-y-6">
+                {/* Add New Vehicle Button */}
+                <div className="flex justify-start">
+                  <Button 
+                    onClick={() => { setShowAddVehicleForm(!showAddVehicleForm); setEditingId(null); setFormData(initialFormState); setPricingStrings(defaultPricingStrings); }}
+                    variant={showAddVehicleForm ? "secondary" : "primary"}
+                    className="flex items-center gap-2"
+                    data-testid="button-toggle-add-vehicle"
+                  >
+                    {showAddVehicleForm ? <X size={16}/> : <Plus size={16}/>}
+                    {showAddVehicleForm ? 'Cancel' : 'Add New Vehicle'}
+                  </Button>
+                </div>
+
+                {/* Inventory - Vehicle Cards with Inline Edit */}
                 <Card className="p-3 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <Plus size={16} className="text-green-500"/>
-                    {editingId ? 'Edit Vehicle' : 'Add New Vehicle'}
-                  </h3>
+                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
+                  <div className="space-y-2 sm:space-y-3 max-h-full overflow-y-auto">
+                    {vehicles.map((car) => {
+                      const hostOwner = hostsData.find(h => String(h.id) === car.hostId);
+                      const isEditing = editingId === car.id;
+                      return (
+                        <div key={car.id}>
+                          <div className={`flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border ${isEditing ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`} data-testid={`card-admin-vehicle-${car.id}`}>
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-400 font-semibold">@{hostOwner.firstName} {hostOwner.lastName}</span>}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button onClick={() => { if (isEditing) { setEditingId(null); setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setShowAddVehicleForm(false); } else { handleEditVehicle(car); setShowAddVehicleForm(false); } }} className={`p-2 sm:p-3 rounded transition-colors ${isEditing ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`} data-testid={`button-edit-${car.id}`} title={isEditing ? 'Cancel edit' : 'Edit vehicle'}><Edit size={16}/></button>
+                              <button onClick={() => setDeletingVehicleId(car.id)} className="p-2 sm:p-3 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors" data-testid={`button-delete-${car.id}`} title="Delete vehicle"><Trash2 size={16}/></button>
+                            </div>
+                          </div>
+                          
+                          {/* Inline Edit Form for this vehicle */}
+                          {isEditing && (
+                            <Card className="p-3 sm:p-6 mt-2 border-2 border-blue-500">
+                              <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+                                <Edit size={16} className="text-blue-500"/>
+                                Edit Vehicle: {car.model}
+                              </h3>
+                              <div className="space-y-3 sm:space-y-4">
+                                <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-vehicle-model" />
+                                
+                                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                  <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="e.g. 45" required data-testid="input-vehicle-price" />
+                                  <div className="mb-2 sm:mb-3">
+                                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
+                                    <select name="fuel" value={formData.fuel} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-fuel">
+                                      <option value="Gasoline">Gasoline</option>
+                                      <option value="Hybrid">Hybrid</option>
+                                      <option value="Electric">Electric</option>
+                                      <option value="Diesel">Diesel</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                  <Input label="Seats" name="seats" type="number" value={formData.seats} onChange={handleInputChange} placeholder="5" data-testid="input-vehicle-seats" />
+                                  <div className="mb-2 sm:mb-3">
+                                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Transmission</label>
+                                    <select name="transmission" value={formData.transmission} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-transmission">
+                                      <option value="Automatic">Automatic</option>
+                                      <option value="Manual">Manual</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div className="mb-3">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Drive Type</label>
+                                  <select name="driveType" value={formData.driveType} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-drive-type">
+                                    <option value="AWD">AWD (All-Wheel Drive)</option>
+                                    <option value="FWD">FWD (Front-Wheel Drive)</option>
+                                    <option value="RWD">RWD (Rear-Wheel Drive)</option>
+                                  </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                  <Input label="Consumption / Range" name="consumption" value={formData.consumption} onChange={handleInputChange} placeholder="e.g. 300mi range" data-testid="input-vehicle-consumption" />
+                                  <div className="mb-2 sm:mb-3">
+                                    <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Category *</label>
+                                    <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-category">
+                                      <option value="">Select Category</option>
+                                      <option value="SEDAN">SEDAN</option>
+                                      <option value="SUV">SUV</option>
+                                      <option value="HATCHBACK">HATCHBACK</option>
+                                      <option value="MINIVAN">MINIVAN</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div className="pt-2">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Available Locations</label>
+                                  <div className="space-y-1">
+                                    {settings.locations.map(loc => (
+                                      <Checkbox key={loc} label={formatAddressForDisplay(loc)} checked={formData.availableLocations?.includes(loc) || false} onChange={(e: any) => {
+                                        const current = formData.availableLocations || [];
+                                        setFormData({...formData, availableLocations: e.target.checked ? [...current, loc] : current.filter(l => l !== loc)});
+                                      }} />
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="pt-2">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Features</label>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 sm:gap-x-4 gap-y-1">
+                                    <Checkbox label="AWD / 4x4" name="isAWD" checked={formData.isAWD} onChange={handleInputChange} />
+                                    <Checkbox label="CarPlay / Auto" name="hasCarPlay" checked={formData.hasCarPlay} onChange={handleInputChange} />
+                                    <Checkbox label="Bluetooth" name="hasBluetooth" checked={formData.hasBluetooth} onChange={handleInputChange} />
+                                    <Checkbox label="Reverse Camera" name="hasReverseCamera" checked={formData.hasReverseCamera} onChange={handleInputChange} />
+                                    <Checkbox label="Heated Seats" name="hasHeatedSeats" checked={formData.hasHeatedSeats} onChange={handleInputChange} />
+                                    <Checkbox label="Heated Steering" name="hasHeatedSteering" checked={formData.hasHeatedSteering} onChange={handleInputChange} />
+                                    <Checkbox label="Electric Seats" name="hasElectricSeats" checked={formData.hasElectricSeats} onChange={handleInputChange} />
+                                    <Checkbox label="Paddle Shifters" name="hasPaddleShifters" checked={formData.hasPaddleShifters} onChange={handleInputChange} />
+                                    <Checkbox label="Keyless Entry" name="hasKeylessEntry" checked={formData.hasKeylessEntry} onChange={handleInputChange} />
+                                    <Checkbox label="Blind Spot Warning" name="hasBlindSpotWarning" checked={formData.hasBlindSpotWarning} onChange={handleInputChange} />
+                                    <Checkbox label="Drive Assist" name="hasDriveAssist" checked={formData.hasDriveAssist} onChange={handleInputChange} />
+                                    <Checkbox label="USB Charger" name="hasUSBCharger" checked={formData.hasUSBCharger} onChange={handleInputChange} />
+                                  </div>
+                                </div>
+
+                                <div className="pt-2">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vehicle Photos <span className="text-zinc-400 font-normal normal-case">{formData.images.filter(i => i).length} photos</span></label>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {formData.images.filter(i => i).map((img, i) => (
+                                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500">
+                                        <img src={img} className="w-full h-full object-cover"/>
+                                        <button onClick={() => setFormData({...formData, images: formData.images.filter((_, idx) => idx !== i)})} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl"><X size={10}/></button>
+                                      </div>
+                                    ))}
+                                    <button onClick={() => carImageInputRef.current?.click()} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all" data-testid="button-upload-car-photo">
+                                      <Upload size={16}/>
+                                      <span className="text-[8px] mt-1 uppercase">Upload</span>
+                                    </button>
+                                  </div>
+                                  <input type="file" ref={carImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => setFormData(prev => ({...prev, images: [...prev.images.filter(i => i), reader.result as string]}));
+                                      reader.readAsDataURL(file);
+                                    }
+                                    if (carImageInputRef.current) carImageInputRef.current.value = '';
+                                  }} />
+                                  <Input className="mt-3" placeholder="Or paste image URL..." value="" onChange={(e: any) => { if (e.target.value) setFormData({...formData, images: [...formData.images.filter(i => i), e.target.value]}); }} data-testid="input-vehicle-image-url" />
+                                </div>
+
+                                {/* Pricing Configuration for this vehicle */}
+                                <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                                  <h4 className="text-sm font-bold mb-3 text-zinc-900 dark:text-white">Pricing Configuration</h4>
+                                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                    <div className="mb-3 w-full">
+                                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
+                                      <input type="text" inputMode="decimal" placeholder="e.g., 8.5" value={pricingStrings.taxes} onChange={(e: any) => setPricingStrings({...pricingStrings, taxes: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, taxes: val}}); setPricingStrings({...pricingStrings, taxes: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-taxes" />
+                                    </div>
+                                    <div className="mb-3 w-full">
+                                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
+                                      <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.cleaningFee} onChange={(e: any) => setPricingStrings({...pricingStrings, cleaningFee: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, cleaningFee: val}}); setPricingStrings({...pricingStrings, cleaningFee: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-cleaning" />
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                    <div className="mb-3 w-full">
+                                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles / Day</label>
+                                      <input type="text" inputMode="numeric" placeholder="e.g., 200" value={pricingStrings.includedMiles} onChange={(e: any) => setPricingStrings({...pricingStrings, includedMiles: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, includedMiles: val}}); setPricingStrings({...pricingStrings, includedMiles: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-miles" />
+                                    </div>
+                                    <div className="mb-3 w-full">
+                                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
+                                      <input type="text" inputMode="decimal" placeholder="e.g., 0.45" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate" />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
+                                  Save Update Vehicle
+                                </Button>
+                                <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }} className="w-full">Cancel</Button>
+                              </div>
+                            </Card>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                {/* Add New Vehicle Form - only shown when button is clicked */}
+                {showAddVehicleForm && (
+                  <Card className="p-3 sm:p-6 border-2 border-green-500">
+                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+                      <Plus size={16} className="text-green-500"/>
+                      Add New Vehicle
+                    </h3>
                   <div className="space-y-3 sm:space-y-4">
                     <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-vehicle-model" />
                     
@@ -6534,167 +6747,32 @@ export default function CarHopApp() {
                     </div>
 
                     <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
-                      {editingId ? 'Update Vehicle' : 'Add Vehicle'}
+                      Add Vehicle
                     </Button>
-                    {editingId && <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }} className="w-full">Cancel</Button>}
                   </div>
                 </Card>
+                )}
 
-                {/* Right Column - Locations, Pricing, Inventory */}
-                <div className="space-y-4 sm:space-y-6">
-                  {/* Pickup Locations */}
-                  <Card className="p-3 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                      <MapPin size={16} className="text-green-500"/>
-                      Pickup Locations
-                    </h3>
-                    <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                      <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
-                      <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-                      {settings.locations.map(loc => (
-                        <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
-                          {formatAddressForDisplay(loc)}
-                          <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
-                        </span>
-                      ))}
-                    </div>
-                    <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
-                  </Card>
-
-                  {/* Delivery to Guest */}
-                  <Card className="p-3 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                      <Route size={16} className="text-blue-500"/>
-                      Delivery to Guest
-                    </h3>
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="flex items-center gap-3">
-                        <input 
-                          type="checkbox" 
-                          id="delivery-toggle"
-                          checked={formData.isDeliveryEnabled || false}
-                          onChange={(e) => setFormData({...formData, isDeliveryEnabled: e.target.checked})}
-                          className="w-5 h-5 rounded cursor-pointer"
-                          data-testid="checkbox-delivery-enabled"
-                        />
-                        <label htmlFor="delivery-toggle" className="text-sm font-bold text-zinc-900 dark:text-white cursor-pointer">
-                          Allow Delivery to Customers?
-                        </label>
-                      </div>
-                      
-                      {formData.isDeliveryEnabled && (
-                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-4 space-y-3">
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Fee Distance (miles)</label>
-                            <input type="number" value={formData.minDeliveryFeeMiles ?? ''} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: e.target.value === '' ? undefined : parseInt(e.target.value)})} placeholder="e.g., 5" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee-miles" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Fee Amount ($)</label>
-                            <input type="number" step="0.01" value={formData.minDeliveryFee ?? ''} onChange={(e) => setFormData({...formData, minDeliveryFee: e.target.value === '' ? undefined : parseFloat(e.target.value)})} placeholder="e.g., 15" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-min-delivery-fee" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Max Distance (miles)</label>
-                            <input type="number" value={formData.maxDeliveryDistance ?? ''} onChange={(e) => setFormData({...formData, maxDeliveryDistance: e.target.value === '' ? undefined : parseInt(e.target.value)})} placeholder="e.g., 50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-max-delivery-distance" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Price per Mile ($)</label>
-                            <input type="number" step="0.01" value={formData.deliveryPricePerMile ?? ''} onChange={(e) => setFormData({...formData, deliveryPricePerMile: e.target.value === '' ? undefined : parseFloat(e.target.value)})} placeholder="e.g., 2.50" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-delivery-price-per-mile" />
-                          </div>
-                          <div className="mb-3 w-full col-span-2">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Min Hours Advance for Delivery</label>
-                            <input type="number" value={formData.minDeliveryHours ?? 6} onChange={(e) => setFormData({...formData, minDeliveryHours: e.target.value === '' ? undefined : parseInt(e.target.value)})} placeholder="e.g., 6" className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-admin-min-delivery-hours" />
-                            <p className="text-xs text-zinc-500 mt-1">Minimum hours in advance required for delivery approval</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-
-                  {/* Pricing Configuration */}
-                  <Card className="p-3 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Pricing Configuration {editingId && `(${formData.model})`}</h3>
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                        <div className="mb-3 w-full">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
-                          <input type="text" inputMode="decimal" placeholder="e.g., 8.5" value={pricingStrings.taxes} onChange={(e: any) => setPricingStrings({...pricingStrings, taxes: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, taxes: val}}); setPricingStrings({...pricingStrings, taxes: String(val)})}} onFocus={() => { if (!pricingStrings.taxes) setPricingStrings({...pricingStrings, taxes: String(formData.pricing?.taxes || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-taxes" />
-                        </div>
-                        <div className="mb-3 w-full">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
-                          <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.cleaningFee} onChange={(e: any) => setPricingStrings({...pricingStrings, cleaningFee: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, cleaningFee: val}}); setPricingStrings({...pricingStrings, cleaningFee: String(val)})}} onFocus={() => { if (!pricingStrings.cleaningFee) setPricingStrings({...pricingStrings, cleaningFee: String(formData.pricing?.cleaningFee || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-cleaning" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                        <div className="mb-3 w-full">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles / Day</label>
-                          <input type="text" inputMode="numeric" placeholder="e.g., 200" value={pricingStrings.includedMiles} onChange={(e: any) => setPricingStrings({...pricingStrings, includedMiles: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, includedMiles: val}}); setPricingStrings({...pricingStrings, includedMiles: String(val)})}} onFocus={() => { if (!pricingStrings.includedMiles) setPricingStrings({...pricingStrings, includedMiles: String(formData.pricing?.includedMiles || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-miles" />
-                        </div>
-                        <div className="mb-3 w-full">
-                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                          <input type="text" inputMode="decimal" placeholder="e.g., 0.45" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} onFocus={() => { if (!pricingStrings.extraMileRate) setPricingStrings({...pricingStrings, extraMileRate: String(formData.pricing?.extraMileRate || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Daily Add-on Rates</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Ins. $500</label>
-                            <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} onFocus={() => { if (!pricingStrings.insurance500) setPricingStrings({...pricingStrings, insurance500: String(formData.pricing?.prices?.insurance500 || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-ins500" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Ins. $1000</label>
-                            <input type="text" inputMode="decimal" placeholder="e.g., 15" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} onFocus={() => { if (!pricingStrings.insurance1000) setPricingStrings({...pricingStrings, insurance1000: String(formData.pricing?.prices?.insurance1000 || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-ins1000" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Child Seat</label>
-                            <input type="text" inputMode="decimal" placeholder="e.g., 8.50" value={pricingStrings.childSeat} onChange={(e: any) => setPricingStrings({...pricingStrings, childSeat: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, childSeat: val}}}); setPricingStrings({...pricingStrings, childSeat: String(val)})}} onFocus={() => { if (!pricingStrings.childSeat) setPricingStrings({...pricingStrings, childSeat: String(formData.pricing?.prices?.childSeat || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-child-seat" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Prepaid Fuel</label>
-                            <input type="text" inputMode="decimal" placeholder="e.g., 35" value={pricingStrings.prepaidFuel} onChange={(e: any) => setPricingStrings({...pricingStrings, prepaidFuel: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, prepaidFuel: val}}}); setPricingStrings({...pricingStrings, prepaidFuel: String(val)})}} onFocus={() => { if (!pricingStrings.prepaidFuel) setPricingStrings({...pricingStrings, prepaidFuel: String(formData.pricing?.prices?.prepaidFuel || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-prepaid-fuel" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Late Return Grace</label>
-                            <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.lateReturnGrace} onChange={(e: any) => setPricingStrings({...pricingStrings, lateReturnGrace: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, lateReturnGrace: val}}}); setPricingStrings({...pricingStrings, lateReturnGrace: String(val)})}} onFocus={() => { if (!pricingStrings.lateReturnGrace) setPricingStrings({...pricingStrings, lateReturnGrace: String(formData.pricing?.prices?.lateReturnGrace || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-late-return" />
-                          </div>
-                          <div className="mb-3 w-full">
-                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Stress-Free Pkg</label>
-                            <input type="text" inputMode="decimal" placeholder="e.g., 50" value={pricingStrings.stressFreePackage} onChange={(e: any) => setPricingStrings({...pricingStrings, stressFreePackage: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing?.prices, stressFreePackage: val}}}); setPricingStrings({...pricingStrings, stressFreePackage: String(val)})}} onFocus={() => { if (!pricingStrings.stressFreePackage) setPricingStrings({...pricingStrings, stressFreePackage: String(formData.pricing?.prices?.stressFreePackage || '')}) }} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-stress-free" />
-                          </div>
-                        </div>
-                      </div>
-                      <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-update-configuration">
-                        Update Configuration
-                      </Button>
-                    </div>
-                  </Card>
-
-                  {/* Inventory - Collapsed List */}
-                  <Card className="p-3 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
-                    <div className="space-y-2 sm:space-y-3 max-h-full overflow-y-auto">
-                      {vehicles.map((car) => {
-                        const hostOwner = hostsData.find(h => String(h.id) === car.hostId);
-                        return (
-                          <div key={car.id} className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" data-testid={`card-admin-vehicle-${car.id}`}>
-                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-400 font-semibold">@{hostOwner.firstName} {hostOwner.lastName}</span>}</p>
-                            </div>
-                            <div className="flex gap-1">
-                              <button onClick={() => handleEditVehicle(car)} className="p-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors" data-testid={`button-edit-${car.id}`} title="Edit vehicle"><Edit size={14}/></button>
-                              <button onClick={() => setDeletingVehicleId(car.id)} className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors" data-testid={`button-delete-${car.id}`} title="Delete vehicle"><Trash2 size={14}/></button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-
-                </div>
+                {/* Pickup Locations - Admin Fleet */}
+                <Card className="p-3 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <MapPin size={16} className="text-green-500"/>
+                    Pickup Locations
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
+                    <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                    <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+                    {settings.locations.map(loc => (
+                      <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
+                        {formatAddressForDisplay(loc)}
+                        <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
+                      </span>
+                    ))}
+                  </div>
+                  <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
+                </Card>
               </div>
             )}
 
