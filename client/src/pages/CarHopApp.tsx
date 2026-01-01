@@ -852,6 +852,7 @@ export default function CarHopApp() {
     }
   });
 
+  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState(false);
   const [fleetSort, setFleetSort] = useState('brand-asc');
 
   const filteredAndSortedFleet = useMemo(() => {
