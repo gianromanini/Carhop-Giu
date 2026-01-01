@@ -857,7 +857,7 @@ export default function CarHopApp() {
   });
 
   const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
-  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState<number | null>(null);
+  const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState<boolean>(false);
   const [fleetSort, setFleetSort] = useState('brand-asc');
 
   const filteredAndSortedFleet = useMemo(() => {
@@ -4354,6 +4354,10 @@ export default function CarHopApp() {
                                     setEditingHostVehicle(car); 
                                     setFormData({
                                       model: car.model || '',
+                                      year: car.year || new Date().getFullYear(),
+                                      vinNumber: car.vinNumber || '',
+                                      licensePlate: car.licensePlate || '',
+                                      hostName: car.hostName || '',
                                       price: String(car.price || ''),
                                       fuel: car.fuel || 'Gasoline',
                                       seats: car.seats || 5,
