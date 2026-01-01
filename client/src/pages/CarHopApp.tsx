@@ -4329,7 +4329,19 @@ export default function CarHopApp() {
                               <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                                <p className="text-xs text-zinc-500 truncate">{car.fuel} · {car.category} · {car.seats}p</p>
+                                <div className="flex gap-2 mt-1">
+                                  {car.licensePlate && (
+                                    <span className="text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800">
+                                      {car.licensePlate}
+                                    </span>
+                                  )}
+                                  {car.vinNumber && (
+                                    <span className="text-[10px] text-zinc-400 font-mono flex items-center">
+                                      VIN: {car.vinNumber.slice(-6)}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-zinc-500 truncate mt-1">{car.fuel} · {car.category} · {car.seats}p</p>
                                 <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
@@ -6530,20 +6542,22 @@ export default function CarHopApp() {
                         <button onClick={() => { setShowAddVehicleForm(false); setEditingId(null); setFormData(initialFormState as FormDataType); }} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <Input label="Car Model" placeholder="e.g. Toyota Camry" value={formData.model} onChange={(e: any) => setFormData({...formData, model: e.target.value})} required />
-                        <Input label="Year" type="number" placeholder="e.g. 2024" value={formData.year} onChange={(e: any) => setFormData({...formData, year: parseInt(e.target.value)})} required />
-                        <Input label="Host Name" placeholder="e.g. John Doe" value={formData.hostName} onChange={(e: any) => setFormData({...formData, hostName: e.target.value})} />
-                        <Input label="Category" placeholder="e.g. Sedan, SUV" value={formData.category} onChange={(e: any) => setFormData({...formData, category: e.target.value})} required />
-                        <Input label="Daily Rate ($)" type="number" placeholder="0.00" value={formData.price} onChange={(e: any) => setFormData({...formData, price: e.target.value})} required />
-                        <Input label="Fuel Type" placeholder="Gasoline, Electric, Hybrid" value={formData.fuel} onChange={(e: any) => setFormData({...formData, fuel: e.target.value})} required />
-                        <Input label="Consumption" placeholder="e.g. 30 MPG" value={formData.consumption} onChange={(e: any) => setFormData({...formData, consumption: e.target.value})} />
-                        <Input label="Seats" type="number" value={formData.seats} onChange={(e: any) => setFormData({...formData, seats: parseInt(e.target.value)})} required />
-                        <Input label="Transmission" placeholder="Automatic / Manual" value={formData.transmission} onChange={(e: any) => setFormData({...formData, transmission: e.target.value})} required />
-                        <Input label="Drive Type" placeholder="AWD, FWD, RWD" value={formData.driveType} onChange={(e: any) => setFormData({...formData, driveType: e.target.value})} />
-                        <Input label="VIN Number" placeholder="Vehicle Identification Number" value={formData.vinNumber} onChange={(e: any) => setFormData({...formData, vinNumber: e.target.value})} />
-                        <Input label="License Plate" placeholder="e.g. ABC-1234" value={formData.licensePlate} onChange={(e: any) => setFormData({...formData, licensePlate: e.target.value})} />
-                      </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <Input label="Car Model" placeholder="e.g. Toyota Camry" value={formData.model} onChange={(e: any) => setFormData({...formData, model: e.target.value})} required />
+                          <Input label="Year" type="number" placeholder="e.g. 2024" value={formData.year} onChange={(e: any) => setFormData({...formData, year: parseInt(e.target.value)})} required />
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input label="License Plate" placeholder="e.g. ABC-1234" value={formData.licensePlate} onChange={(e: any) => setFormData({...formData, licensePlate: e.target.value})} />
+                            <Input label="Daily Rate ($)" type="number" placeholder="0.00" value={formData.price} onChange={(e: any) => setFormData({...formData, price: e.target.value})} required />
+                          </div>
+                          <Input label="VIN Number" placeholder="Vehicle Identification Number" value={formData.vinNumber} onChange={(e: any) => setFormData({...formData, vinNumber: e.target.value})} />
+                          <Input label="Host Name" placeholder="e.g. John Doe" value={formData.hostName} onChange={(e: any) => setFormData({...formData, hostName: e.target.value})} />
+                          <Input label="Category" placeholder="e.g. Sedan, SUV" value={formData.category} onChange={(e: any) => setFormData({...formData, category: e.target.value})} required />
+                          <Input label="Fuel Type" placeholder="Gasoline, Electric, Hybrid" value={formData.fuel} onChange={(e: any) => setFormData({...formData, fuel: e.target.value})} required />
+                          <Input label="Consumption" placeholder="e.g. 30 MPG" value={formData.consumption} onChange={(e: any) => setFormData({...formData, consumption: e.target.value})} />
+                          <Input label="Seats" type="number" value={formData.seats} onChange={(e: any) => setFormData({...formData, seats: parseInt(e.target.value)})} required />
+                          <Input label="Transmission" placeholder="Automatic / Manual" value={formData.transmission} onChange={(e: any) => setFormData({...formData, transmission: e.target.value})} required />
+                          <Input label="Drive Type" placeholder="AWD, FWD, RWD" value={formData.driveType} onChange={(e: any) => setFormData({...formData, driveType: e.target.value})} />
+                        </div>
 
                       <div className="mt-6">
                         <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wider">Vehicle Images (URLs)</label>
@@ -6672,7 +6686,22 @@ export default function CarHopApp() {
                             <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                              <p className="text-xs text-zinc-500">{car.fuel} · {car.category} {hostOwner && <span className="text-blue-400 font-semibold">@{hostOwner.firstName} {hostOwner.lastName}</span>}</p>
+                              <p className="text-xs text-zinc-500">
+                                {car.year} · {car.fuel} · {car.category}
+                                {hostOwner && <span className="text-blue-400 font-semibold ml-1">@{hostOwner.firstName} {hostOwner.lastName}</span>}
+                              </p>
+                              <div className="flex gap-2 mt-1">
+                                {car.licensePlate && (
+                                  <span className="text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800">
+                                    {car.licensePlate}
+                                  </span>
+                                )}
+                                {car.vinNumber && (
+                                  <span className="text-[10px] text-zinc-400 font-mono flex items-center">
+                                    VIN: {car.vinNumber.slice(-6)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex gap-1">
                               <button onClick={() => { if (isEditing) { setEditingId(null); setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setShowAddVehicleForm(false); } else { handleEditVehicle(car); setShowAddVehicleForm(false); } }} className={`p-2 sm:p-3 rounded transition-colors ${isEditing ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`} data-testid={`button-edit-${car.id}`} title={isEditing ? 'Cancel edit' : 'Edit vehicle'}><Edit size={16}/></button>
@@ -6692,7 +6721,11 @@ export default function CarHopApp() {
                                   <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-vehicle-model" />
                                   <Input label="Year" name="year" type="number" value={formData.year} onChange={handleInputChange} placeholder="2024" required data-testid="input-vehicle-year" />
                                 </div>
-                                <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-vehicle-host-name" />
+                                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                  <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-vehicle-host-name" />
+                                  <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="e.g. ABC-1234" data-testid="input-vehicle-license-plate" />
+                                </div>
+                                <Input label="VIN Number" name="vinNumber" value={formData.vinNumber} onChange={handleInputChange} placeholder="Vehicle Identification Number" data-testid="input-vehicle-vin" />
                                 
                                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
                                   <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="e.g. 45" required data-testid="input-vehicle-price" />
@@ -8674,7 +8707,7 @@ export default function CarHopApp() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start gap-1">
                                   <div>
-                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model} <span className="text-blue-400 text-[10px] sm:text-xs">@{hostAlias}</span></h4>
+                                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{vehicle.model} {vehicle.hostName && <span className="text-blue-400 text-[10px] sm:text-xs">@{vehicle.hostName}</span>}</h4>
                                     <div className="flex gap-2 items-center">
                                       <p className="text-[8px] sm:text-[10px] text-zinc-500">{vehicle.category}</p>
                                       {vehicle.licensePlate && (
