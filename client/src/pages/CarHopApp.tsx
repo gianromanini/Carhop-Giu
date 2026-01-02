@@ -6936,13 +6936,14 @@ export default function CarHopApp() {
                           <div className={`flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border ${isEditing ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`} data-testid={`card-admin-vehicle-${car.id}`}>
                             <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">
-                                {car.year} {car.model} {car.hostName && <span className="text-zinc-500 font-medium ml-1"> - {car.hostName}</span>}
+                              <h4 className="text-sm truncate">
+                                <span className="text-zinc-600 dark:text-zinc-300 font-medium">{car.model} {car.year}</span>
+                                {car.hostName && <span className="text-blue-500 font-semibold ml-1"> - {car.hostName}</span>}
                               </h4>
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                 {car.fuel} · {car.category}
                               </p>
-                              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 font-mono">
+                              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 font-mono">
                                 {car.vinNumber && <span>VIN: {car.vinNumber}</span>}
                                 {car.vinNumber && car.licensePlate && <span className="mx-1">·</span>}
                                 {car.licensePlate && <span>Plate: {car.licensePlate}</span>}
