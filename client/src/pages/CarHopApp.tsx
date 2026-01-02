@@ -613,6 +613,7 @@ interface FormDataType {
   vinNumber: string;
   licensePlate: string;
   hostName: string;
+  hostId?: string;
   category: string;
   price: string;
   fuel: string;
@@ -646,6 +647,7 @@ interface FormDataType {
   deliveryPricePerMile: number | undefined;
   minDeliveryHours: number | undefined;
   pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean } };
+  [key: string]: any;
 }
 
 export default function CarHopApp() {
@@ -2372,17 +2374,26 @@ export default function CarHopApp() {
               </div>
             )}
             <button onClick={() => setDarkMode(!darkMode)} className="hover:text-green-600 dark:hover:text-white transition-colors" title="Toggle Theme" data-testid="button-theme-toggle">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-            <button onClick={() => {
-              if (clientUser) {
-                setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
-              }
-              setShowClientChatModal(true);
-            }} className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
-              <MessageCircle size={18} className={getClientUnreadAdminRepliesCount() > 0 ? "text-red-500 animate-pulse" : ""}/>
-              {getClientUnreadAdminRepliesCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadAdminRepliesCount() > 9 ? '9+' : getClientUnreadAdminRepliesCount()}</span>
-              )}
-            </button>
+            {/* Desktop Contact Support Button (only when NOT logged in as host) */}
+            {!(view === 'host-dashboard' && currentHost) && (
+              <button 
+                onClick={() => {
+                  if (clientUser) {
+                    setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
+                  }
+                  setShowClientChatModal(true);
+                }}
+                className="hidden sm:flex p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors relative"
+                data-testid="button-desktop-chat"
+              >
+                <MessageCircle size={20} className={getClientUnreadAdminRepliesCount() > 0 ? "text-red-500 animate-pulse" : "text-zinc-600 dark:text-zinc-400"} />
+                {getClientUnreadAdminRepliesCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                    {getClientUnreadAdminRepliesCount()}
+                  </span>
+                )}
+              </button>
+            )}
             <button onClick={() => {
               if (adminAuthenticated) {
                 setView('admin');
@@ -2449,7 +2460,26 @@ export default function CarHopApp() {
                 </div>
               </>
             )}
-            {/* Client Menu - Small hamburger (only when NOT logged in as host) */}
+            {/* Desktop Contact Support Button (only when NOT logged in as host) */}
+            {!(view === 'host-dashboard' && currentHost) && (
+              <button 
+                onClick={() => {
+                  if (clientUser) {
+                    setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
+                  }
+                  setShowClientChatModal(true);
+                }}
+                className="hidden sm:flex p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors relative"
+                data-testid="button-desktop-chat"
+              >
+                <MessageCircle size={20} className={getClientUnreadAdminRepliesCount() > 0 ? "text-red-500 animate-pulse" : "text-zinc-600 dark:text-zinc-400"} />
+                {getClientUnreadAdminRepliesCount() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                    {getClientUnreadAdminRepliesCount()}
+                  </span>
+                )}
+              </button>
+            )}
             {!(view === 'host-dashboard' && currentHost) && (
             <div className="relative sm:hidden" ref={mobileActionsMenuRef}>
               <button onClick={() => setMobileActionsMenuOpen(!mobileActionsMenuOpen)} className="p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-actions-menu">
@@ -4287,14 +4317,32 @@ export default function CarHopApp() {
                 m.adminReply && !m.read
               ).length : 0;
               return (
-              <button key={tab} onClick={() => setHostTab(tab)} className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
+              <button key={tab} 
+                onClick={() => {
+                  setHostTab(tab);
+                  if (tab === 'chat') {
+                    // Mark messages as read when entering the chat tab
+                    const unreadMsgs = supportMessagesData.filter((m: any) => 
+                      m.senderType === 'host' && 
+                      (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
+                      m.adminReply && !m.read
+                    );
+                    unreadMsgs.forEach((msg: any) => {
+                      apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true }).catch(err => console.error('Error marking as read:', err));
+                    });
+                    setTimeout(() => queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] }), 500);
+                  }
+                }} 
+                className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
                 <div className="flex items-center gap-1">
                   {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'chat' && hostUnreadCount > 0 && (
-                    <span className="w-5 h-5 flex items-center justify-center rounded border-2 border-orange-500 bg-orange-500 text-white text-[12px] font-bold">!</span>
+                    <span className="w-5 h-5 flex items-center justify-center rounded bg-orange-500 text-white text-[10px] font-bold animate-bounce">
+                      {hostUnreadCount}
+                    </span>
                   )}
                 </div>
                 <span>{tab === 'chat' ? 'Support' : tab}</span>
@@ -4489,7 +4537,7 @@ export default function CarHopApp() {
                         <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
                           <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => { setEditingHostVehicle(null); setShowHostAddVehicleForm(false); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
                           <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
-                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update Configuration' : 'Add Vehicle'}
+                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update Configuration' : 'Update Configuration'}
                           </Button>
                         </div>
                         
