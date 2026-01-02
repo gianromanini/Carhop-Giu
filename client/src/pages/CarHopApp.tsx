@@ -2187,9 +2187,29 @@ export default function CarHopApp() {
     };
 
     if (editingId) {
-      updateVehicleMutation.mutate({ id: editingId, data: vehicleData });
+      updateVehicleMutation.mutate({ id: editingId, data: vehicleData }, {
+        onSuccess: () => {
+          setEditingId(null);
+          setFormData(initialFormState);
+          setPricingStrings(defaultPricingStrings);
+          toast({ description: "Vehicle updated successfully!" });
+        },
+        onError: () => {
+          toast({ description: "Failed to update vehicle", variant: "destructive" });
+        }
+      });
     } else {
-      createVehicleMutation.mutate(vehicleData);
+      createVehicleMutation.mutate(vehicleData, {
+        onSuccess: () => {
+          setShowAddVehicleForm(false);
+          setFormData(initialFormState);
+          setPricingStrings(defaultPricingStrings);
+          toast({ description: "Vehicle created successfully!" });
+        },
+        onError: () => {
+          toast({ description: "Failed to create vehicle", variant: "destructive" });
+        }
+      });
     }
   };
 
@@ -7103,8 +7123,8 @@ export default function CarHopApp() {
                                 </div>
 
                                 <div className="flex gap-2 pt-2">
-                                  <Button onClick={handleSaveVehicle} className="flex-1" data-testid="button-save-vehicle">
-                                    Update Configuration
+                                  <Button onClick={handleSaveVehicle} className="flex-1" data-testid="button-update-vehicle">
+                                    Update Car and Save
                                   </Button>
                                   <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }}>Cancel</Button>
                                 </div>
