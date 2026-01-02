@@ -6832,13 +6832,29 @@ export default function CarHopApp() {
                           </div>
 
                           {isEditing && (
-                            <Card className="mt-2 p-4 border-blue-500 bg-blue-50/10">
+                            <Card className="mt-2 p-4 sm:p-6 border-2 border-blue-500 bg-white dark:bg-zinc-900">
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                                  <Edit className="text-blue-500" size={18} /> 
+                                  Edit Vehicle
+                                </h3>
+                              </div>
                               <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3">
-                                  <Input label="Price/Day" value={formData.price} type="number" onChange={(e: any) => setFormData({...formData, price: parseFloat(e.target.value) || 0})} />
+                                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                  <Input label="Car Model" name="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Tesla Model 3" required data-testid="input-edit-vehicle-model" />
+                                  <Input label="Year" name="year" type="number" value={formData.year} onChange={handleInputChange} placeholder="2024" required data-testid="input-edit-vehicle-year" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                  <Input label="VIN Number" name="vinNumber" value={formData.vinNumber} onChange={handleInputChange} placeholder="VIN Number" data-testid="input-edit-vehicle-vin" />
+                                  <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-edit-vehicle-plate" />
+                                </div>
+                                <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-edit-vehicle-host-name" />
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                  <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="45" required data-testid="input-edit-vehicle-price" />
                                   <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-zinc-400 uppercase">Category</label>
-                                    <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded">
+                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category</label>
+                                    <select name="category" value={formData.category} onChange={handleInputChange} className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm">
                                       <option value="Economy">Economy</option>
                                       <option value="Standard">Standard</option>
                                       <option value="SUV">SUV</option>
@@ -6849,26 +6865,179 @@ export default function CarHopApp() {
                                       <option value="Van">Van</option>
                                     </select>
                                   </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Fuel Type</label>
+                                    <select name="fuel" value={formData.fuel} onChange={handleInputChange} className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm">
+                                      <option value="Gasoline">Gasoline</option>
+                                      <option value="Hybrid">Hybrid</option>
+                                      <option value="Electric">Electric</option>
+                                      <option value="Diesel">Diesel</option>
+                                    </select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Seats</label>
+                                    <input type="number" name="seats" value={formData.seats} onChange={handleInputChange} className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm" />
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Transmission</label>
+                                    <select name="transmission" value={formData.transmission} onChange={handleInputChange} className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm">
+                                      <option value="Automatic">Automatic</option>
+                                      <option value="Manual">Manual</option>
+                                    </select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Drive Type</label>
+                                    <select name="driveType" value={formData.driveType || 'FWD'} onChange={handleInputChange} className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm">
+                                      <option value="FWD">FWD</option>
+                                      <option value="RWD">RWD</option>
+                                      <option value="AWD">AWD</option>
+                                      <option value="4WD">4WD</option>
+                                    </select>
+                                  </div>
                                 </div>
 
-                                <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                                  <h5 className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Pricing Details</h5>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div className="mb-3 w-full">
-                                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles / Day</label>
-                                      <input type="text" inputMode="numeric" placeholder="e.g., 200" value={pricingStrings.includedMiles} onChange={(e: any) => setPricingStrings({...pricingStrings, includedMiles: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, includedMiles: val}}); setPricingStrings({...pricingStrings, includedMiles: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-miles" />
+                                <div className="space-y-2">
+                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Available Locations</label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {settings.locations.map(loc => (
+                                      <button
+                                        key={loc}
+                                        onClick={() => {
+                                          const current = formData.availableLocations || [];
+                                          const next = current.includes(loc) ? current.filter(l => l !== loc) : [...current, loc];
+                                          setFormData({...formData, availableLocations: next});
+                                        }}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                          (formData.availableLocations || []).includes(loc) 
+                                            ? 'bg-green-600 border-green-600 text-white' 
+                                            : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:border-green-500'
+                                        }`}
+                                        title={loc}
+                                      >
+                                        {formatAddressForDisplay(loc)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                                      <Truck size={14} /> Delivery to Guest
+                                    </h4>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                      <input 
+                                        type="checkbox" 
+                                        checked={formData.isDeliveryEnabled || false} 
+                                        onChange={() => setFormData({...formData, isDeliveryEnabled: !formData.isDeliveryEnabled})} 
+                                        className="sr-only peer" 
+                                      />
+                                      <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                                    </label>
+                                  </div>
+                                  {formData.isDeliveryEnabled && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Max Dist (mi)</label>
+                                        <input type="number" value={formData.maxDeliveryDistance || 20} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Fee ($)</label>
+                                        <input type="number" value={formData.minDeliveryFee || 30} onChange={(e) => setFormData({...formData, minDeliveryFee: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">$/Mile</label>
+                                        <input type="number" step="0.1" value={formData.deliveryPricePerMile || 3.5} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Hours</label>
+                                        <input type="number" value={formData.minDeliveryHours || 6} onChange={(e) => setFormData({...formData, minDeliveryHours: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
                                     </div>
-                                    <div className="mb-3 w-full">
-                                      <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
-                                      <input type="text" inputMode="decimal" placeholder="e.g., 0.45" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate" />
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                  {[
+                                    { key: 'isAWD', label: 'AWD' },
+                                    { key: 'hasCarPlay', label: 'CarPlay' },
+                                    { key: 'hasBluetooth', label: 'Bluetooth' },
+                                    { key: 'hasReverseCamera', label: 'Reverse Cam' },
+                                    { key: 'hasHeatedSeats', label: 'Heated Seats' },
+                                    { key: 'hasHeatedSteering', label: 'Heated Wheel' },
+                                    { key: 'hasKeylessEntry', label: 'Keyless' },
+                                    { key: 'hasDriveAssist', label: 'Drive Assist' }
+                                  ].map(feature => (
+                                    <label key={feature.key} className="flex items-center gap-2 cursor-pointer group">
+                                      <input type="checkbox" checked={formData[feature.key]} onChange={() => setFormData({...formData, [feature.key]: !formData[feature.key]})} className="w-4 h-4 rounded border-zinc-300 text-green-600 focus:ring-green-500" />
+                                      <span className="text-xs text-zinc-600 dark:text-zinc-400">{feature.label}</span>
+                                    </label>
+                                  ))}
+                                </div>
+
+                                <div className="pt-2">
+                                  <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vehicle Photos <span className="text-zinc-400 font-normal normal-case">{formData.images?.filter(i => i).length || 0} photos</span></label>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {(formData.images || []).filter(i => i).map((img, i) => (
+                                      <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden border border-green-500">
+                                        <img src={img} className="w-full h-full object-cover"/>
+                                        <button onClick={() => setFormData({...formData, images: formData.images.filter((_, idx) => idx !== i)})} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl"><X size={10}/></button>
+                                      </div>
+                                    ))}
+                                    <button onClick={() => carImageInputRef.current?.click()} className="w-14 h-14 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all">
+                                      <Upload size={14}/>
+                                      <span className="text-[8px] mt-1 uppercase">Add</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                                    <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">Vehicle Pricing</h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Taxes (%)</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.taxes} onChange={(e: any) => setPricingStrings({...pricingStrings, taxes: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, taxes: val}}); setPricingStrings({...pricingStrings, taxes: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Cleaning ($)</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.cleaningFee} onChange={(e: any) => setPricingStrings({...pricingStrings, cleaningFee: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, cleaningFee: val}}); setPricingStrings({...pricingStrings, cleaningFee: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Inc. Miles</label>
+                                        <input type="text" inputMode="numeric" value={pricingStrings.includedMiles} onChange={(e: any) => setPricingStrings({...pricingStrings, includedMiles: e.target.value})} onBlur={(e: any) => {const val = parseInt(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, includedMiles: val}}); setPricingStrings({...pricingStrings, includedMiles: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Extra $/mi</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Extras & Protection</h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">INS. $500</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">INS. $1000</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
 
-                                <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
-                                  Update Configuration
-                                </Button>
-                                <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }} className="w-full">Cancel</Button>
+                                <div className="flex gap-2 pt-2">
+                                  <Button onClick={handleSaveVehicle} className="flex-1" data-testid="button-save-vehicle">
+                                    Update Configuration
+                                  </Button>
+                                  <Button variant="ghost" onClick={() => { setFormData(initialFormState); setPricingStrings(defaultPricingStrings); setEditingId(null); }}>Cancel</Button>
+                                </div>
                               </div>
                             </Card>
                           )}
