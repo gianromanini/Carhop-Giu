@@ -56,7 +56,7 @@
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">Year</label>
-                          <input type="number" value={formData.year} onChange={(e) => setFormData({...formData, year: parseInt(e.target.value) || 0})} placeholder="2024" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-vehicle-year" />
+                          <input type="text" value={String(formData.year)} onChange={(e) => setFormData({...formData, year: parseInt(e.target.value) || 0})} placeholder="2024" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-vehicle-year" />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">Daily Price ($)</label>
