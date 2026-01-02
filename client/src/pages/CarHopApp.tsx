@@ -4514,6 +4514,17 @@ export default function CarHopApp() {
                     </div>
                       <form onSubmit={(e) => {
                         e.preventDefault();
+                        if (formData.vinNumber.length !== 17) {
+                          toast({ title: 'Error', description: 'VIN Number must be exactly 17 characters', variant: 'destructive' });
+                          return;
+                        }
+                        const vehiclePricing = priceConfigForm ? {
+                          taxes: priceConfigForm.taxes,
+                          cleaningFee: priceConfigForm.cleaningFee,
+                          includedMiles: priceConfigForm.includedMiles,
+                          extraMileRate: priceConfigForm.extraMileRate,
+                          prices: priceConfigForm.prices
+                        } : formData.pricing;
                         const vehicleData = {
                           ...formData,
                           price: parseFloat(formData.price) || 0,
@@ -4521,7 +4532,8 @@ export default function CarHopApp() {
                           commission: formData.commission || 10,
                           deductible: formData.deductible || 1000,
                           locationLat: formData.locationLat || null,
-                          locationLon: formData.locationLon || null
+                          locationLon: formData.locationLon || null,
+                          pricing: vehiclePricing
                         };
                         if (editingHostVehicle) {
                           updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
@@ -4544,8 +4556,11 @@ export default function CarHopApp() {
                             <input type="number" value={formData.year} onChange={(e) => setFormData({...formData, year: parseInt(e.target.value) || new Date().getFullYear()})} placeholder="e.g. 2024" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-year" />
                           </div>
                           <div>
-                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">VIN Number</label>
-                            <input type="text" value={formData.vinNumber} onChange={(e) => setFormData({...formData, vinNumber: e.target.value})} placeholder="e.g. 1HGBH41JXMN109186" className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-vin" />
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">VIN Number * (17 chars)</label>
+                            <input type="text" value={formData.vinNumber} onChange={(e) => setFormData({...formData, vinNumber: e.target.value.toUpperCase().slice(0, 17)})} placeholder="e.g. 1HGBH41JXMN109186" required minLength={17} maxLength={17} pattern="[A-HJ-NPR-Z0-9]{17}" title="VIN must be exactly 17 characters (letters A-Z except I, O, Q and numbers 0-9)" className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 border rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm font-mono ${formData.vinNumber.length === 17 ? 'border-green-500' : formData.vinNumber.length > 0 ? 'border-orange-500' : 'border-zinc-300 dark:border-zinc-700'}`} data-testid="input-host-vehicle-vin" />
+                            {formData.vinNumber.length > 0 && formData.vinNumber.length !== 17 && (
+                              <p className="text-[9px] text-orange-500 mt-0.5">{formData.vinNumber.length}/17 characters</p>
+                            )}
                           </div>
                           <div>
                             <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">License Plate</label>
@@ -4963,20 +4978,6 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 sm:gap-3">
-                        <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => setPriceConfigForm(settings)} data-testid="button-cancel-price-config">Cancel</Button>
-                        <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => {
-                          if (priceConfigForm) {
-                            updateSettingMutation.mutate({ key: 'taxes', value: priceConfigForm.taxes });
-                            updateSettingMutation.mutate({ key: 'cleaningFee', value: priceConfigForm.cleaningFee });
-                            updateSettingMutation.mutate({ key: 'includedMiles', value: priceConfigForm.includedMiles });
-                            updateSettingMutation.mutate({ key: 'extraMileRate', value: priceConfigForm.extraMileRate });
-                            updateSettingMutation.mutate({ key: 'prices', value: priceConfigForm.prices });
-                          }
-                        }} data-testid="button-save-price-config">
-                          <Check size={12} className="sm:w-4 sm:h-4"/> Save Price config
-                        </Button>
-                      </div>
                     </Card>
                 )}
               </div>
