@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown, CheckCircle
+  Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown, CheckCircle, PlusCircle
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -6555,6 +6555,43 @@ export default function CarHopApp() {
                   </div>
                   <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
                 </Card>
+
+                {/* Add New Vehicle Form - relocated here */}
+                {showAddVehicleForm && !editingId && (
+                  <Card className="p-4 sm:p-6 border-2 border-green-500/50 shadow-xl bg-white dark:bg-zinc-900">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <PlusCircle className="text-green-500" size={24} /> 
+                        Add New Vehicle
+                      </h3>
+                      <button onClick={() => { setShowAddVehicleForm(false); setEditingId(null); setFormData(initialFormState); }} className="text-zinc-500 hover:text-red-500 transition-colors">
+                        <X size={24} />
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {/* Basic Info */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">Vehicle Model</label>
+                          <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="Toyota Corolla" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-vehicle-model" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">Year</label>
+                          <input type="text" value={String(formData.year)} onChange={(e) => setFormData({...formData, year: parseInt(e.target.value) || 0})} placeholder="2024" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-vehicle-year" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">Daily Price ($)</label>
+                          <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})} placeholder="45" className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" data-testid="input-vehicle-price" />
+                        </div>
+                      </div>
+
+                      <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
+                        Add Vehicle
+                      </Button>
+                    </div>
+                  </Card>
+                )}
               </div>
             )}
 
