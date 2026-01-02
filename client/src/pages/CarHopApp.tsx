@@ -6937,12 +6937,12 @@ export default function CarHopApp() {
                             <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">
-                                {car.year} {car.model} {car.hostName && <span className="text-blue-500 font-bold ml-1"> - {car.hostName}</span>}
+                                {car.year} {car.model} {car.hostName && <span className="text-zinc-500 font-medium ml-1"> - {car.hostName}</span>}
                               </h4>
-                              <p className="text-xs font-bold text-zinc-900 dark:text-white">
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                 {car.fuel} · {car.category}
                               </p>
-                              <p className="text-sm font-bold text-zinc-900 dark:text-white mt-0.5">
+                              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 font-mono">
                                 {car.vinNumber && <span>VIN: {car.vinNumber}</span>}
                                 {car.vinNumber && car.licensePlate && <span className="mx-1">·</span>}
                                 {car.licensePlate && <span>Plate: {car.licensePlate}</span>}
