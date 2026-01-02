@@ -6535,6 +6535,29 @@ export default function CarHopApp() {
                   </Button>
                 </div>
 
+                {/* Pickup Locations - Admin Fleet */}
+                <Card className="p-3 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
+                    <MapPin size={16} className="text-green-500"/>
+                    Pickup Locations
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
+                    <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                    <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+                    {settings.locations.map(loc => (
+                      <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
+                        {formatAddressForDisplay(loc)}
+                        <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
+                      </span>
+                    ))}
+                  </div>
+                  <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
+                </Card>
+              </div>
+            )}
+
                 {/* Inventory - Vehicle Cards with Inline Edit */}
                 <Card className="p-3 sm:p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
@@ -6898,36 +6921,67 @@ export default function CarHopApp() {
                       <Input className="mt-3" placeholder="Or paste image URL..." value="" onChange={(e: any) => { if (e.target.value) setFormData({...formData, images: [...formData.images.filter(i => i), e.target.value]}); }} data-testid="input-vehicle-image-url" />
                     </div>
 
+                    {/* Pricing Configuration for new vehicle */}
+                    <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                      <h4 className="text-sm font-bold mb-3 text-zinc-900 dark:text-white">Pricing Configuration</h4>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Sales Tax (%)</label>
+                          <input type="text" inputMode="decimal" placeholder="e.g., 8.5" value={pricingStrings.taxes} onChange={(e: any) => setPricingStrings({...pricingStrings, taxes: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, taxes: val}}); setPricingStrings({...pricingStrings, taxes: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-taxes-add" />
+                        </div>
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Cleaning Fee ($)</label>
+                          <input type="text" inputMode="decimal" placeholder="e.g., 25" value={pricingStrings.cleaningFee} onChange={(e: any) => setPricingStrings({...pricingStrings, cleaningFee: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, cleaningFee: val}}); setPricingStrings({...pricingStrings, cleaningFee: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-cleaning-add" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Included Miles / Day</label>
+                          <input type="text" inputMode="numeric" placeholder="e.g., 200" value={pricingStrings.includedMiles} onChange={(e: any) => setPricingStrings({...pricingStrings, includedMiles: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, includedMiles: val}}); setPricingStrings({...pricingStrings, includedMiles: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-miles-add" />
+                        </div>
+                        <div className="mb-3 w-full">
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Extra Mile Rate ($)</label>
+                          <input type="text" inputMode="decimal" placeholder="e.g., 0.45" value={pricingStrings.extraMileRate} onChange={(e: any) => setPricingStrings({...pricingStrings, extraMileRate: e.target.value})} onBlur={(e: any) => {const val = e.target.value === '' ? 0 : parseFloat(e.target.value.replace(',', '.')) || 0; setFormData({...formData, pricing: {...formData.pricing, extraMileRate: val}}); setPricingStrings({...pricingStrings, extraMileRate: String(val)})}} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="input-pricing-extra-rate-add" />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                        <h4 className="text-xs font-bold mb-3 text-zinc-500 uppercase tracking-wider">Daily Add-on Rates</h4>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                          <div className="mb-3">
+                            <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">INS. $500</label>
+                            <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                          </div>
+                          <div className="mb-3">
+                            <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">INS. $1000</label>
+                            <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                          </div>
+                          <div className="mb-3">
+                            <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Child Seat</label>
+                            <input type="text" inputMode="decimal" value={pricingStrings.childSeat} onChange={(e: any) => setPricingStrings({...pricingStrings, childSeat: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, childSeat: val}}}); setPricingStrings({...pricingStrings, childSeat: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                          </div>
+                          <div className="mb-3">
+                            <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Prepaid Fuel</label>
+                            <input type="text" inputMode="decimal" value={pricingStrings.prepaidFuel} onChange={(e: any) => setPricingStrings({...pricingStrings, prepaidFuel: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, prepaidFuel: val}}}); setPricingStrings({...pricingStrings, prepaidFuel: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                          </div>
+                          <div className="mb-3">
+                            <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Late Return Grace</label>
+                            <input type="text" inputMode="decimal" value={pricingStrings.lateReturnGrace} onChange={(e: any) => setPricingStrings({...pricingStrings, lateReturnGrace: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, lateReturnGrace: val}}}); setPricingStrings({...pricingStrings, lateReturnGrace: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                          </div>
+                          <div className="mb-3">
+                            <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-wider">Stress-Free Pkg</label>
+                            <input type="text" inputMode="decimal" value={pricingStrings.stressFreePackage} onChange={(e: any) => setPricingStrings({...pricingStrings, stressFreePackage: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, stressFreePackage: val}}}); setPricingStrings({...pricingStrings, stressFreePackage: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
                       Add Vehicle
                     </Button>
                   </div>
                 </Card>
                 )}
-
-                {/* Pickup Locations - Admin Fleet */}
-                <Card className="p-3 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <MapPin size={16} className="text-green-500"/>
-                    Pickup Locations
-                  </h3>
-                  <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                    <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
-                    <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-                    {settings.locations.map(loc => (
-                      <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
-                        {formatAddressForDisplay(loc)}
-                        <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
-                      </span>
-                    ))}
-                  </div>
-                  <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
-                </Card>
-              </div>
-            )}
-
             {/* Delete Vehicle Confirmation Modal */}
             {deletingVehicleId !== null && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
