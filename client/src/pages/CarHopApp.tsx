@@ -4385,8 +4385,6 @@ export default function CarHopApp() {
                         <option value="brand-desc">Brand (Z-A)</option>
                         <option value="year-desc">Year (Newest)</option>
                         <option value="year-asc">Year (Oldest)</option>
-                        <option value="host-asc">Host (A-Z)</option>
-                        <option value="host-desc">Host (Z-A)</option>
                       </select>
                     </div>
                   </div>
@@ -4397,8 +4395,6 @@ export default function CarHopApp() {
                         if (fleetSort === 'brand-desc') return b.model.localeCompare(a.model);
                         if (fleetSort === 'year-asc') return (a.year || 0) - (b.year || 0);
                         if (fleetSort === 'year-desc') return (b.year || 0) - (a.year || 0);
-                        if (fleetSort === 'host-asc') return (a.hostName || '').localeCompare(b.hostName || '');
-                        if (fleetSort === 'host-desc') return (b.hostName || '').localeCompare(a.hostName || '');
                         return 0;
                       });
                       
@@ -4408,7 +4404,7 @@ export default function CarHopApp() {
                             <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
                               <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model}</h4>
+                                <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model} {car.year}</h4>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {car.licensePlate && (
                                     <span className="text-[10px] font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-white border border-zinc-700 font-bold uppercase">
