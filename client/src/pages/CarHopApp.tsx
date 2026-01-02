@@ -4409,15 +4409,15 @@ export default function CarHopApp() {
                               <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model}</h4>
-                                <div className="flex gap-2 mt-1">
+                                <div className="flex flex-wrap gap-2 mt-1">
                                   {car.licensePlate && (
-                                    <span className="text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800">
-                                      {car.licensePlate}
+                                    <span className="text-[10px] font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-white border border-zinc-700 font-bold uppercase">
+                                      PLATE: {car.licensePlate}
                                     </span>
                                   )}
                                   {car.vinNumber && (
-                                    <span className="text-[10px] text-zinc-400 font-mono flex items-center">
-                                      VIN: {car.vinNumber.slice(-6)}
+                                    <span className="text-[10px] text-zinc-400 font-mono flex items-center bg-zinc-100 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800">
+                                      VIN: {car.vinNumber}
                                     </span>
                                   )}
                                 </div>
