@@ -2149,7 +2149,7 @@ export default function CarHopApp() {
 
     const vehicleData = {
       model: formData.model,
-      year: formData.year,
+      year: parseInt(formData.year.toString()) || new Date().getFullYear(),
       vinNumber: formData.vinNumber,
       licensePlate: formData.licensePlate,
       hostName: formData.hostName,
