@@ -4489,58 +4489,60 @@ export default function CarHopApp() {
 
                 {/* Add/Edit Vehicle Form - Only shown when button clicked or editing */}
                 {(showHostAddVehicleForm || editingHostVehicle) && (
-                  <Card className="p-3 sm:p-6">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4">
-                      <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                        {editingHostVehicle ? <Edit size={16} className="text-blue-500" /> : <Plus size={16} className="text-green-500" />}
-                        {editingHostVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
-                      </h3>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setEditingHostVehicle(null);
-                          setShowHostAddVehicleForm(false);
-                          setFormData(initialFormState);
-                        }}
-                        className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
-                        data-testid="button-cancel-edit"
-                      >
-                        <X size={14}/> Cancel
-                      </button>
-                    </div>
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        if (formData.vinNumber.length !== 17) {
-                          toast({ title: 'Error', description: 'VIN Number must be exactly 17 characters', variant: 'destructive' });
-                          return;
-                        }
-                        const vehiclePricing = priceConfigForm ? {
-                          taxes: priceConfigForm.taxes,
-                          cleaningFee: priceConfigForm.cleaningFee,
-                          includedMiles: priceConfigForm.includedMiles,
-                          extraMileRate: priceConfigForm.extraMileRate,
-                          prices: priceConfigForm.prices
-                        } : formData.pricing;
-                        const vehicleData = {
-                          ...formData,
-                          price: parseFloat(formData.price) || 0,
-                          hostId: String(currentHost.id),
-                          commission: formData.commission || 10,
-                          deductible: formData.deductible || 1000,
-                          locationLat: formData.locationLat || null,
-                          locationLon: formData.locationLon || null,
-                          pricing: vehiclePricing
-                        };
-                        if (editingHostVehicle) {
-                          updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
-                          setEditingHostVehicle(null);
-                          setFormData(initialFormState);
-                        } else {
-                          createVehicleMutation.mutate(vehicleData);
-                          setShowHostAddVehicleForm(false);
-                          setFormData(initialFormState);
-                        }
-                      }} className="space-y-3 sm:space-y-4">
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (formData.vinNumber.length !== 17) {
+                      toast({ title: 'Error', description: 'VIN Number must be exactly 17 characters', variant: 'destructive' });
+                      return;
+                    }
+                    const vehiclePricing = priceConfigForm ? {
+                      taxes: priceConfigForm.taxes,
+                      cleaningFee: priceConfigForm.cleaningFee,
+                      includedMiles: priceConfigForm.includedMiles,
+                      extraMileRate: priceConfigForm.extraMileRate,
+                      prices: priceConfigForm.prices
+                    } : formData.pricing;
+                    const vehicleData = {
+                      ...formData,
+                      price: parseFloat(formData.price) || 0,
+                      hostId: String(currentHost.id),
+                      commission: formData.commission || 10,
+                      deductible: formData.deductible || 1000,
+                      locationLat: formData.locationLat || null,
+                      locationLon: formData.locationLon || null,
+                      pricing: vehiclePricing
+                    };
+                    if (editingHostVehicle) {
+                      updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
+                      setEditingHostVehicle(null);
+                      setFormData(initialFormState);
+                    } else {
+                      createVehicleMutation.mutate(vehicleData);
+                      setShowHostAddVehicleForm(false);
+                      setFormData(initialFormState);
+                    }
+                  }} className="space-y-4 sm:space-y-6">
+                    <Card className="p-3 sm:p-6">
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <h3 className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                          {editingHostVehicle ? <Edit size={16} className="text-blue-500" /> : <Plus size={16} className="text-green-500" />}
+                          {editingHostVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
+                        </h3>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setEditingHostVehicle(null);
+                            setShowHostAddVehicleForm(false);
+                            setFormData(initialFormState);
+                          }}
+                          className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 flex items-center gap-1"
+                          data-testid="button-cancel-edit"
+                        >
+                          <X size={14}/> Cancel
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-3 sm:space-y-4">
                         <div>
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Car Model *</label>
                           <input type="text" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. Tesla Model 3" required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-model" />
@@ -4857,20 +4859,10 @@ export default function CarHopApp() {
                             }
                           }} data-testid="input-host-vehicle-image-url" />
                         </div>
-                        
-                        {/* Action Buttons - At the bottom */}
-                        <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                          <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" onClick={() => { setEditingHostVehicle(null); setShowHostAddVehicleForm(false); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
-                          <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
-                            <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update and Save' : 'Add Vehicle and Save'}
-                          </Button>
-                        </div>
-                      </form>
+                      </div>
                     </Card>
-                )}
 
-                {/* Price Configuration Section */}
-                {(showHostAddVehicleForm || editingHostVehicle) && (
+                    {/* Price Configuration Section */}
                     <Card className="p-3 sm:p-6">
                       <h3 className="text-sm sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-1.5 sm:gap-2">
                         <DollarSign size={14} className="sm:w-[18px] sm:h-[18px] text-green-500"/>
@@ -4974,7 +4966,15 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
+                      {/* Action Buttons - At the very bottom */}
+                      <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                        <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="button" onClick={() => { setEditingHostVehicle(null); setShowHostAddVehicleForm(false); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
+                        <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
+                          <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update and Save' : 'Add Vehicle and Save'}
+                        </Button>
+                      </div>
                     </Card>
+                  </form>
                 )}
               </div>
             );
