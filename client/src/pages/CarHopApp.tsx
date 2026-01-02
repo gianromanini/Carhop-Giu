@@ -6696,14 +6696,17 @@ export default function CarHopApp() {
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {[
-                          { key: 'isAWD', label: 'AWD' },
-                          { key: 'hasCarPlay', label: 'CarPlay' },
-                          { key: 'hasBluetooth', label: 'Bluetooth' },
-                          { key: 'hasReverseCamera', label: 'Reverse Cam' },
+                          { key: 'hasReverseCamera', label: 'Reverse Camera' },
+                          { key: 'hasElectricSeats', label: 'Electric Seats' },
+                          { key: 'hasBlindSpotWarning', label: 'Blind Spot Warning' },
+                          { key: 'hasCarPlay', label: 'CarPlay / Auto' },
                           { key: 'hasHeatedSeats', label: 'Heated Seats' },
-                          { key: 'hasHeatedSteering', label: 'Heated Wheel' },
-                          { key: 'hasKeylessEntry', label: 'Keyless' },
-                          { key: 'hasDriveAssist', label: 'Drive Assist' }
+                          { key: 'hasPaddleShifters', label: 'Paddle Shifters' },
+                          { key: 'hasBluetooth', label: 'Bluetooth' },
+                          { key: 'hasHeatedSteering', label: 'Heated Steering' },
+                          { key: 'hasKeylessEntry', label: 'Keyless Entry' },
+                          { key: 'hasDriveAssist', label: 'Drive Assist' },
+                          { key: 'hasUSBCharger', label: 'USB Charger' }
                         ].map(feature => (
                           <label key={feature.key} className="flex items-center gap-2 cursor-pointer group">
                             <input type="checkbox" checked={formData[feature.key]} onChange={() => setFormData({...formData, [feature.key]: !formData[feature.key]})} className="w-4 h-4 rounded border-zinc-300 text-green-600 focus:ring-green-500" />
@@ -6962,14 +6965,17 @@ export default function CarHopApp() {
 
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                   {[
-                                    { key: 'isAWD', label: 'AWD' },
-                                    { key: 'hasCarPlay', label: 'CarPlay' },
-                                    { key: 'hasBluetooth', label: 'Bluetooth' },
-                                    { key: 'hasReverseCamera', label: 'Reverse Cam' },
+                                    { key: 'hasReverseCamera', label: 'Reverse Camera' },
+                                    { key: 'hasElectricSeats', label: 'Electric Seats' },
+                                    { key: 'hasBlindSpotWarning', label: 'Blind Spot Warning' },
+                                    { key: 'hasCarPlay', label: 'CarPlay / Auto' },
                                     { key: 'hasHeatedSeats', label: 'Heated Seats' },
-                                    { key: 'hasHeatedSteering', label: 'Heated Wheel' },
-                                    { key: 'hasKeylessEntry', label: 'Keyless' },
-                                    { key: 'hasDriveAssist', label: 'Drive Assist' }
+                                    { key: 'hasPaddleShifters', label: 'Paddle Shifters' },
+                                    { key: 'hasBluetooth', label: 'Bluetooth' },
+                                    { key: 'hasHeatedSteering', label: 'Heated Steering' },
+                                    { key: 'hasKeylessEntry', label: 'Keyless Entry' },
+                                    { key: 'hasDriveAssist', label: 'Drive Assist' },
+                                    { key: 'hasUSBCharger', label: 'USB Charger' }
                                   ].map(feature => (
                                     <label key={feature.key} className="flex items-center gap-2 cursor-pointer group">
                                       <input type="checkbox" checked={formData[feature.key]} onChange={() => setFormData({...formData, [feature.key]: !formData[feature.key]})} className="w-4 h-4 rounded border-zinc-300 text-green-600 focus:ring-green-500" />
