@@ -2358,9 +2358,9 @@ export default function CarHopApp() {
               }
               setShowClientChatModal(true);
             }} className="relative p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors" data-testid="button-chat-support" title="Chat Support">
-              <MessageCircle size={18}/>
+              <MessageCircle size={18} className={getClientUnreadAdminRepliesCount() > 0 ? "text-red-500 animate-pulse" : ""}/>
               {getClientUnreadAdminRepliesCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadAdminRepliesCount() > 9 ? '9+' : getClientUnreadAdminRepliesCount()}</span>
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadAdminRepliesCount() > 9 ? '9+' : getClientUnreadAdminRepliesCount()}</span>
               )}
             </button>
             <button onClick={() => {
@@ -2447,7 +2447,13 @@ export default function CarHopApp() {
                         }
                         setShowClientChatModal(true);
                         setMobileActionsMenuOpen(false); 
-                      }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat-logged"><MessageCircle className="h-4 w-4" />Chat</button>
+                      }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-chat-logged">
+                        <MessageCircle className={`h-4 w-4 ${getClientUnreadAdminRepliesCount() > 0 ? "text-red-500 animate-pulse" : ""}`} />
+                        <span>Chat</span>
+                        {getClientUnreadAdminRepliesCount() > 0 && (
+                          <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientUnreadAdminRepliesCount()}</span>
+                        )}
+                      </button>
                       <button onClick={() => { setShowProfileModal(true); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-profile"><User className="h-4 w-4" />Edit Profile</button>
                       <button onClick={() => { setDarkMode(!darkMode); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800" data-testid="button-menu-theme">{darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{darkMode ? 'Light Mode' : 'Dark Mode'}</button>
                       <button onClick={() => { handleSignOut(); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-950 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 text-red-600 dark:text-red-400" data-testid="button-menu-logout"><LogOut className="h-4 w-4" />Logout</button>
@@ -2734,7 +2740,7 @@ export default function CarHopApp() {
                   }
                   
                   return (
-                    <div key={groupKey} className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
+                    <div key={groupKey} className={`border rounded-lg overflow-hidden ${hasUnread ? 'border-orange-500 shadow-sm' : 'border-zinc-200 dark:border-zinc-700'}`}>
                       <button 
                         onClick={async () => {
                           const newSet = new Set(expandedClientChatGroups);
@@ -2752,14 +2758,19 @@ export default function CarHopApp() {
                           else newSet.add(groupKey);
                           setExpandedClientChatGroups(newSet);
                         }}
-                        className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnread ? 'bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800/40' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                        className={`w-full px-3 py-2 flex items-center justify-between transition-colors ${hasUnread ? 'bg-orange-50 dark:bg-orange-950/20 hover:bg-orange-100 dark:hover:bg-orange-900/30' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                       >
                         <div className="flex items-center gap-2">
                           <ChevronRight size={16} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          <span className={`text-xs font-bold ${hasUnread ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
+                          <span className={`text-xs font-bold ${hasUnread ? 'text-orange-600 dark:text-orange-400 animate-pulse' : 'text-zinc-900 dark:text-white'}`}>{subject}</span>
                           <span className="text-xs text-zinc-500">• {dateTime}</span>
-                          {hasUnread && <span className="text-xs font-bold px-1.5 py-0.5 bg-red-500 text-white rounded">{groupMsgs.filter((m: any) => m.adminReply && !m.read).length}</span>}
+                          {hasUnread && <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />}
                         </div>
+                        {hasUnread && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-500 text-white rounded shadow-sm">
+                            {groupMsgs.filter((m: any) => m.adminReply && !m.read).length}
+                          </span>
+                        )}
                       </button>
                       
                       {isExpanded && (
@@ -2787,8 +2798,9 @@ export default function CarHopApp() {
                                   )}
                                   <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap line-clamp-2">{cleanText}</p>
                                   {msg.adminReply && (
-                                    <div className="mt-1 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-xs text-green-700 dark:text-green-300">
+                                    <div className={`mt-1 p-2 border rounded text-xs ${!msg.read ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-400 font-medium' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300'}`}>
                                       <span className="font-bold">Admin: </span>{msg.adminReply.substring(0, 60)}...
+                                      {!msg.read && <span className="ml-2 inline-block w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />}
                                     </div>
                                   )}
                                 </div>
