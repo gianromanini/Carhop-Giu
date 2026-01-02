@@ -6578,7 +6578,24 @@ export default function CarHopApp() {
                         <Input label="VIN Number" name="vinNumber" value={formData.vinNumber} onChange={handleInputChange} placeholder="VIN Number" data-testid="input-vehicle-vin" />
                         <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-vehicle-plate" />
                       </div>
-                      <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-vehicle-host-name" />
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
+                        <select 
+                          name="hostId" 
+                          value={formData.hostId || ''} 
+                          onChange={(e) => {
+                            const selectedHost = hostsData.find((h: any) => h.id === parseInt(e.target.value));
+                            setFormData({...formData, hostId: e.target.value, hostName: selectedHost ? `${selectedHost.firstName} ${selectedHost.lastName}` : ''});
+                          }} 
+                          className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                          data-testid="select-vehicle-host"
+                        >
+                          <option value="">Select a Host</option>
+                          {hostsData.map((host: any) => (
+                            <option key={host.id} value={host.id}>{host.firstName} {host.lastName}</option>
+                          ))}
+                        </select>
+                      </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="45" required data-testid="input-vehicle-price" />
@@ -6673,7 +6690,7 @@ export default function CarHopApp() {
                           </label>
                         </div>
                         {formData.isDeliveryEnabled && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-3">
                             <div>
                               <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Max Distance (mi)</label>
                               <input type="number" value={formData.maxDeliveryDistance || 20} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-max-delivery-distance" />
@@ -6681,6 +6698,10 @@ export default function CarHopApp() {
                             <div>
                               <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Fee ($)</label>
                               <input type="number" value={formData.minDeliveryFee || 30} onChange={(e) => setFormData({...formData, minDeliveryFee: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-min-delivery-fee" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Fee Dist (mi)</label>
+                              <input type="number" value={formData.minDeliveryFeeMiles || 5} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-min-delivery-fee-miles" />
                             </div>
                             <div>
                               <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Price/Mile ($)</label>
@@ -6851,7 +6872,24 @@ export default function CarHopApp() {
                                   <Input label="VIN Number" name="vinNumber" value={formData.vinNumber} onChange={handleInputChange} placeholder="VIN Number" data-testid="input-edit-vehicle-vin" />
                                   <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-edit-vehicle-plate" />
                                 </div>
-                                <Input label="Host Name" name="hostName" value={formData.hostName} onChange={handleInputChange} placeholder="e.g. John Doe" data-testid="input-edit-vehicle-host-name" />
+                                <div className="space-y-1">
+                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
+                                  <select 
+                                    name="hostId" 
+                                    value={formData.hostId || ''} 
+                                    onChange={(e) => {
+                                      const selectedHost = hostsData.find((h: any) => h.id === parseInt(e.target.value));
+                                      setFormData({...formData, hostId: e.target.value, hostName: selectedHost ? `${selectedHost.firstName} ${selectedHost.lastName}` : ''});
+                                    }} 
+                                    className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm"
+                                    data-testid="select-edit-vehicle-host"
+                                  >
+                                    <option value="">Select a Host</option>
+                                    {hostsData.map((host: any) => (
+                                      <option key={host.id} value={host.id}>{host.firstName} {host.lastName}</option>
+                                    ))}
+                                  </select>
+                                </div>
                                 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                   <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="45" required data-testid="input-edit-vehicle-price" />
@@ -6942,7 +6980,7 @@ export default function CarHopApp() {
                                     </label>
                                   </div>
                                   {formData.isDeliveryEnabled && (
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
                                       <div>
                                         <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Max Dist (mi)</label>
                                         <input type="number" value={formData.maxDeliveryDistance || 20} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
@@ -6950,6 +6988,10 @@ export default function CarHopApp() {
                                       <div>
                                         <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Fee ($)</label>
                                         <input type="number" value={formData.minDeliveryFee || 30} onChange={(e) => setFormData({...formData, minDeliveryFee: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Fee Dist (mi)</label>
+                                        <input type="number" value={formData.minDeliveryFeeMiles || 5} onChange={(e) => setFormData({...formData, minDeliveryFeeMiles: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
                                       </div>
                                       <div>
                                         <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">$/Mile</label>
