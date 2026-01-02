@@ -239,6 +239,14 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
+  // Always allow the auth status check to pass so the app can load
+  if (req.path === '/api/auth/user') {
+    if (req.isAuthenticated() && req.user) {
+      return next();
+    }
+    return res.json(null);
+  }
+
   if (req.isAuthenticated() && req.user) {
     return next();
   }
