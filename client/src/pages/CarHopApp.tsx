@@ -10160,9 +10160,11 @@ export default function CarHopApp() {
                           })()}
                         </div>
                       )}
-                    </div>
-                  </Card>
-                ))}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
                 </>
               )}
             </div>
