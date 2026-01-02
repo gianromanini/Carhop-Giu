@@ -1879,6 +1879,39 @@ export default function CarHopApp() {
     return supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).length;
   };
 
+  // Mark support messages as read
+  const markSupportMessagesAsRead = async () => {
+    if (!clientUser) return;
+    const unreadMessages = supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read);
+    for (const msg of unreadMessages) {
+      await apiRequest('PUT', `/api/support-messages/${msg.id}`, { read: true });
+    }
+    if (unreadMessages.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
+    }
+  };
+
+  // Effect to show toast when new admin reply arrives
+  useEffect(() => {
+    if (!clientUser || view === 'support') return;
+    const unread = supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read);
+    if (unread.length > 0) {
+      const lastReply = unread[unread.length - 1];
+      toast({
+        title: "Nova mensagem do Suporte",
+        description: `Resposta sobre: ${lastReply.subject}`,
+        onClick: () => setView('support')
+      });
+    }
+  }, [supportMessagesData.length, view]);
+
+  // Effect to mark as read when entering support view
+  useEffect(() => {
+    if (view === 'support') {
+      markSupportMessagesAsRead();
+    }
+  }, [view]);
+
   // Generate notifications for client based on Host/Admin actions
   const getClientNotifications = () => {
     if (!clientUser) return [];
@@ -1887,14 +1920,12 @@ export default function CarHopApp() {
     
     // Add admin reply notifications from support messages
     supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read).forEach(msg => {
-      const subjectMatch = msg.text?.match(/\[(.*?)\]/);
-      const subject = subjectMatch ? subjectMatch[1] : 'Support';
       notifications.push({
         id: `admin-reply-${msg.id}`,
         type: 'admin-reply',
-        message: `Admin responded: "${msg.adminReply.substring(0, 50)}..."`,
+        message: `Suporte: Nova resposta sobre "${msg.subject}"`,
         timestamp: msg.createdAt,
-        bookingCode: subject
+        bookingCode: msg.subject
       });
     });
     

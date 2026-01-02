@@ -1961,17 +1961,31 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
             await transporter.sendMail({
               from: process.env.EMAIL_FROM || 'noreply@carhop.com',
               to: clientEmail,
-              subject: 'CarHop Support - New Reply to Your Message',
+              subject: 'CarHop Support - Nova Resposta ao seu chamado',
               html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #16a34a;">CarHop Support</h2>
-                  <p>Hello ${originalMessage.senderName},</p>
-                  <p>You have received a new reply from CarHop Support:</p>
-                  <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <p style="margin: 0; white-space: pre-wrap;">${adminReply}</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                  <div style="background: #16a34a; padding: 24px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">CarHop Support</h1>
                   </div>
-                  <p>Thank you for contacting CarHop Support.</p>
-                  <p style="color: #666; font-size: 12px;">This is an automated message from CarHop.</p>
+                  <div style="padding: 32px; background: white;">
+                    <p style="font-size: 16px; color: #374151; margin-top: 0;">Olá ${originalMessage.senderName},</p>
+                    <p style="font-size: 16px; color: #374151;">Você recebeu uma nova resposta do nosso suporte sobre o assunto: <strong>"${originalMessage.subject}"</strong></p>
+                    
+                    <div style="background: #f9fafb; border-left: 4px solid #16a34a; padding: 20px; border-radius: 4px; margin: 24px 0;">
+                      <p style="margin: 0; white-space: pre-wrap; color: #1f2937; font-size: 15px; line-height: 1.6;">${adminReply}</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 32px;">
+                      <a href="${process.env.APP_URL || 'https://carhop.replit.app'}" style="background: #16a34a; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Ver no Chat</a>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #6b7280; margin-top: 32px; border-top: 1px solid #f3f4f6; padding-top: 20px;">
+                      Obrigado por escolher CarHop. Se tiver mais dúvidas, sinta-se à vontade para responder diretamente no chat em nossa plataforma.
+                    </p>
+                  </div>
+                  <div style="background: #f9fafb; padding: 16px; text-align: center;">
+                    <p style="color: #9ca3af; font-size: 12px; margin: 0;">Esta é uma mensagem automática do CarHop. Por favor, não responda a este e-mail.</p>
+                  </div>
                 </div>
               `
             });
