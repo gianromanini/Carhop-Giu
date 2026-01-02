@@ -61,6 +61,19 @@
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="45" required data-testid="input-vehicle-price" />
                         <div className="space-y-1">
+                          <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category</label>
+                          <select name="category" value={formData.category} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-category">
+                            <option value="Economy">Economy</option>
+                            <option value="Standard">Standard</option>
+                            <option value="SUV">SUV</option>
+                            <option value="Luxury">Luxury</option>
+                            <option value="Hatchback">Hatchback</option>
+                            <option value="Sedan">Sedan</option>
+                            <option value="Truck">Truck</option>
+                            <option value="Van">Van</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
                           <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Fuel Type</label>
                           <select name="fuel" value={formData.fuel} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
                             <option value="Gasoline">Gasoline</option>
@@ -73,6 +86,9 @@
                           <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Seats</label>
                           <input type="number" name="seats" value={formData.seats} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
                         </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Transmission</label>
                           <select name="transmission" value={formData.transmission} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
@@ -80,8 +96,18 @@
                             <option value="Manual">Manual</option>
                           </select>
                         </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Drive Type</label>
+                          <select name="driveType" value={formData.driveType || 'FWD'} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                            <option value="FWD">FWD</option>
+                            <option value="RWD">RWD</option>
+                            <option value="AWD">AWD</option>
+                            <option value="4WD">4WD</option>
+                          </select>
+                        </div>
                       </div>
 
+                      {/* Available Locations with summarized addresses */}
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Available Locations</label>
                         <div className="flex flex-wrap gap-2">
@@ -98,11 +124,52 @@
                                   ? 'bg-green-600 border-green-600 text-white' 
                                   : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:border-green-500'
                               }`}
+                              title={loc}
+                              data-testid={`button-toggle-location-${loc}`}
                             >
-                              {loc}
+                              {formatAddressForDisplay(loc)}
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      {/* Delivery to Guest Option */}
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                            <Truck size={16} /> Delivery to Guest
+                          </h4>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={formData.isDeliveryEnabled || false} 
+                              onChange={() => setFormData({...formData, isDeliveryEnabled: !formData.isDeliveryEnabled})} 
+                              className="sr-only peer" 
+                              data-testid="toggle-delivery-enabled"
+                            />
+                            <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                        {formData.isDeliveryEnabled && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Max Distance (mi)</label>
+                              <input type="number" value={formData.maxDeliveryDistance || 20} onChange={(e) => setFormData({...formData, maxDeliveryDistance: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-max-delivery-distance" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Fee ($)</label>
+                              <input type="number" value={formData.minDeliveryFee || 30} onChange={(e) => setFormData({...formData, minDeliveryFee: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-min-delivery-fee" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Price/Mile ($)</label>
+                              <input type="number" step="0.1" value={formData.deliveryPricePerMile || 3.5} onChange={(e) => setFormData({...formData, deliveryPricePerMile: parseFloat(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-delivery-price-per-mile" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Min Hours Notice</label>
+                              <input type="number" value={formData.minDeliveryHours || 6} onChange={(e) => setFormData({...formData, minDeliveryHours: parseInt(e.target.value) || 0})} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" data-testid="input-min-delivery-hours" />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -243,12 +310,16 @@
                                 <div className="grid grid-cols-2 gap-3">
                                   <Input label="Price/Day" value={formData.price} type="number" onChange={(e: any) => setFormData({...formData, price: parseFloat(e.target.value) || 0})} />
                                   <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-zinc-400 uppercase">Status</label>
+                                    <label className="text-[10px] font-bold text-zinc-400 uppercase">Category</label>
                                     <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded">
                                       <option value="Economy">Economy</option>
                                       <option value="Standard">Standard</option>
                                       <option value="SUV">SUV</option>
                                       <option value="Luxury">Luxury</option>
+                                      <option value="Hatchback">Hatchback</option>
+                                      <option value="Sedan">Sedan</option>
+                                      <option value="Truck">Truck</option>
+                                      <option value="Van">Van</option>
                                     </select>
                                   </div>
                                 </div>
