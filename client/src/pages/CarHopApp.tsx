@@ -6815,6 +6815,11 @@ export default function CarHopApp() {
                                 {car.year} · {car.fuel} · {car.category}
                                 {car.hostName && <span className="text-blue-400 font-semibold ml-1">@{car.hostName}</span>}
                               </p>
+                              <p className="text-[10px] text-zinc-400 mt-0.5">
+                                {car.vinNumber && <span>VIN: {car.vinNumber}</span>}
+                                {car.vinNumber && car.licensePlate && <span className="mx-1">·</span>}
+                                {car.licensePlate && <span>Plate: {car.licensePlate}</span>}
+                              </p>
                             </div>
                             <div className="flex gap-1">
                               <Button variant="outline" size="sm" onClick={() => { setEditingId(isEditing ? null : car.id); if (!isEditing) { setFormData(car); setPricingStrings({taxes: String(car.pricing?.taxes || 8.5), cleaningFee: String(car.pricing?.cleaningFee || 25), includedMiles: String(car.pricing?.includedMiles || 200), extraMileRate: String(car.pricing?.extraMileRate || 0.45), insurance500: String(car.pricing?.prices?.insurance500 || 25), insurance1000: String(car.pricing?.prices?.insurance1000 || 15), childSeat: String(car.pricing?.prices?.childSeat || 8), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || 45)}); } }} data-testid={`button-edit-vehicle-${car.id}`}>
