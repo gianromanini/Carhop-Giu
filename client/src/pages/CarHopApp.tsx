@@ -829,6 +829,7 @@ export default function CarHopApp() {
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
+  const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
 
@@ -9787,7 +9788,14 @@ export default function CarHopApp() {
                     </select>
                   </div>
                   {[...bookings].sort((a, b) => {
-                    // Always sort by date newest first within each filter
+                    // Always put Active and Extended at the top
+                    const aIsActive = a.status === 'Active' || a.status === 'Extended';
+                    const bIsActive = b.status === 'Active' || b.status === 'Extended';
+                    
+                    if (aIsActive && !bIsActive) return -1;
+                    if (!aIsActive && bIsActive) return 1;
+
+                    // Within the same group, sort by date newest first
                     const aDate = new Date(`${a.startDate}T${convertTo24Hour(a.startTime)}:00`).getTime();
                     const bDate = new Date(`${b.startDate}T${convertTo24Hour(b.startTime)}:00`).getTime();
                     
@@ -9812,21 +9820,49 @@ export default function CarHopApp() {
                       return bDate - aDate;
                     }
                     return bDate - aDate;
-                  }).map((b) => (
-                  <Card key={b.id} className="p-3 md:p-6" data-testid={`card-my-booking-${b.id}`}>
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${b.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : b.status === 'Extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : b.status === 'Cancelled' ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-400'}`}>{b.status === 'Cancelled' ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
-                        <div>
-                          <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${b.status === 'Completed' ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : b.status === 'Cancelled' ? 'text-red-600' : 'text-blue-400'}`}>{b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
-                          {b.status === 'Active' && b.checkInStatus !== 'completed' && (
-                            <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
+                  }).map((b) => {
+                    const isCompleted = b.status === 'Completed';
+                    const isCancelled = b.status === 'Cancelled';
+                    const isActive = b.status === 'Active' || b.status === 'Extended';
+                    const isCollapsed = (isCompleted || isCancelled) && expandedBookingId !== b.id;
+
+                    return (
+                    <Card 
+                      key={b.id} 
+                      className={`p-3 md:p-6 transition-all duration-300 ${
+                        isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 
+                        isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
+                        'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
+                      }`} 
+                      data-testid={`card-my-booking-${b.id}`}
+                    >
+                      <div 
+                        className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
+                        onClick={() => {
+                          if (isCompleted || isCancelled) {
+                            setExpandedBookingId(expandedBookingId === b.id ? null : b.id);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : b.status === 'Extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
+                          <div>
+                            <div className={`text-xs md:text-sm font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-600'}`}>{b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
+                            {!isCollapsed && b.status === 'Active' && b.checkInStatus !== 'completed' && (
+                              <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
+                          {(isCompleted || isCancelled) && (
+                            <ChevronDown size={18} className={`text-zinc-400 transition-transform ${expandedBookingId === b.id ? 'rotate-180' : ''} md:hidden`} />
                           )}
                         </div>
                       </div>
-                      <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
-                    </div>
-                    <div className="flex-1 w-full">
+
+                      <div className={`${isCollapsed ? 'hidden md:block' : 'block'}`}>
+                        <div className="flex-1 w-full mt-3 md:mt-0">
                       {(b.details as any)?.deliveryType === 'delivery' ? (
                         <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
