@@ -6941,7 +6941,7 @@ export default function CarHopApp() {
                                 {car.hostName && <span className="text-blue-500 font-semibold ml-1"> - {car.hostName}</span>}
                               </h4>
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {car.fuel} · {car.category}
+                                {car.fuel} · {car.driveType || 'FWD'} · {car.transmission} · {car.category}
                               </p>
                               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 font-mono">
                                 {car.vinNumber && <span>VIN: {car.vinNumber}</span>}
