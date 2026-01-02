@@ -6547,26 +6547,36 @@ export default function CarHopApp() {
                   </Button>
                 </div>
 
-                {/* Pickup Locations - Admin Fleet */}
-                <Card className="p-3 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center gap-2">
-                    <MapPin size={16} className="text-green-500"/>
-                    Pickup Locations
-                  </h3>
-                  <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
-                    <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
-                    <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-                    {settings.locations.map(loc => (
-                      <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
-                        {formatAddressForDisplay(loc)}
-                        <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
-                      </span>
-                    ))}
-                  </div>
-                  <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
-                </Card>
+                {/* Pickup Locations - Admin Fleet - Only show when adding/editing */}
+                {(showAddVehicleForm || editingId) && (
+                  <Card className="p-3 sm:p-6 border-2 border-green-500/30">
+                    <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-zinc-900 dark:text-white flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={16} className="text-green-500"/>
+                        Pickup Locations
+                      </div>
+                      <button 
+                        onClick={() => { setShowAddVehicleForm(false); setEditingId(null); }}
+                        className="text-zinc-500 hover:text-red-500 transition-colors"
+                      >
+                        <X size={20} />
+                      </button>
+                    </h3>
+                    <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
+                      <LocationAutocomplete value={newLocation} onChange={(val, coords) => { setNewLocation(val); if (coords && coords.lat !== '0' && coords.lon !== '0') { setNewLocationCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) }); } }} placeholder="Enter pickup address (e.g. JFK Airport)" />
+                      <Button onClick={addLocation} variant="secondary" className="w-full sm:w-auto" data-testid="button-add-location">Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+                      {settings.locations.map(loc => (
+                        <span key={loc} className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 rounded-full text-sm" title={loc}>
+                          {formatAddressForDisplay(loc)}
+                          <button onClick={() => removeLocation(loc)} className="text-zinc-400 hover:text-red-500 ml-1" data-testid={`button-remove-location-${loc}`}><X size={14}/></button>
+                        </span>
+                      ))}
+                    </div>
+                    <Button variant="primary" className="w-full" onClick={() => {}}>Save Locations</Button>
+                  </Card>
+                )}
 
                 {/* Add New Vehicle Form - Located here ABOVE inventory */}
                 {showAddVehicleForm && !editingId && (
