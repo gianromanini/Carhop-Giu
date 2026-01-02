@@ -4970,7 +4970,7 @@ export default function CarHopApp() {
                       <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
                         <Button variant="secondary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="button" onClick={() => { setEditingHostVehicle(null); setShowHostAddVehicleForm(false); setFormData(initialFormState); }} data-testid="button-cancel-vehicle">Cancel</Button>
                         <Button variant="primary" size="sm" className="flex-1 text-[10px] sm:text-sm" type="submit" data-testid="button-save-vehicle">
-                          <Check size={12} className="sm:w-4 sm:h-4"/> {editingHostVehicle ? 'Update and Save' : 'Add Vehicle and Save'}
+                          <Check size={12} className="sm:w-4 sm:h-4"/> Save Update
                         </Button>
                       </div>
                     </Card>
