@@ -6945,9 +6945,9 @@ export default function CarHopApp() {
                                 {car.fuel} · {car.driveType || 'FWD'} · {car.transmission} · {car.category}
                               </p>
                               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 font-mono">
-                                {car.vinNumber && <span>VIN: {car.vinNumber}</span>}
+                                {car.vinNumber && <span>VIN:{car.vinNumber}</span>}
                                 {car.vinNumber && car.licensePlate && <span className="mx-1">·</span>}
-                                {car.licensePlate && <span>Plate: {car.licensePlate}</span>}
+                                {car.licensePlate && <span>Plate:{car.licensePlate}</span>}
                               </p>
                             </div>
                             <div className="flex gap-1">
