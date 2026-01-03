@@ -6957,15 +6957,15 @@ export default function CarHopApp() {
                                 onClick={() => { setEditingId(isEditing ? null : car.id); if (!isEditing) { setFormData(car); setPricingStrings({taxes: String(car.pricing?.taxes || 8.5), cleaningFee: String(car.pricing?.cleaningFee || 25), includedMiles: String(car.pricing?.includedMiles || 200), extraMileRate: String(car.pricing?.extraMileRate || 0.45), insurance500: String(car.pricing?.prices?.insurance500 || 25), insurance1000: String(car.pricing?.prices?.insurance1000 || 15), childSeat: String(car.pricing?.prices?.childSeat || 8), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || 45)}); } }} 
                                 data-testid={`button-edit-vehicle-${car.id}`}
                               >
-                                {isEditing ? <X className="w-3.5 h-3.5" /> : <Edit className="w-3.5 h-3.5" />}
+                                {isEditing ? <X className="w-4 h-4 text-blue-500" /> : <Edit className="w-4 h-4 text-blue-500" />}
                               </Button>
                               <Button 
                                 variant="outline" 
-                                className="h-7 w-7 p-0 text-zinc-500 border-zinc-200 dark:border-zinc-800 hover:text-red-500 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950" 
+                                className="h-7 w-7 p-0 border-zinc-200 dark:border-zinc-800 hover:bg-red-50 dark:hover:bg-red-950 group" 
                                 onClick={() => setDeletingVehicleId(car.id)} 
                                 data-testid={`button-delete-vehicle-${car.id}`}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4 text-zinc-500 group-hover:text-red-500 transition-colors" />
                               </Button>
                             </div>
                           </div>
