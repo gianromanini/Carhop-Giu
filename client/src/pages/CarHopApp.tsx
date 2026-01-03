@@ -6951,11 +6951,21 @@ export default function CarHopApp() {
                               </p>
                             </div>
                             <div className="flex gap-1">
-                              <Button variant="outline" size="sm" onClick={() => { setEditingId(isEditing ? null : car.id); if (!isEditing) { setFormData(car); setPricingStrings({taxes: String(car.pricing?.taxes || 8.5), cleaningFee: String(car.pricing?.cleaningFee || 25), includedMiles: String(car.pricing?.includedMiles || 200), extraMileRate: String(car.pricing?.extraMileRate || 0.45), insurance500: String(car.pricing?.prices?.insurance500 || 25), insurance1000: String(car.pricing?.prices?.insurance1000 || 15), childSeat: String(car.pricing?.prices?.childSeat || 8), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || 45)}); } }} data-testid={`button-edit-vehicle-${car.id}`}>
-                                {isEditing ? <X size={14}/> : <Edit size={14}/>}
+                              <Button 
+                                variant="outline" 
+                                className="h-7 w-7 p-0 text-blue-500 border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950" 
+                                onClick={() => { setEditingId(isEditing ? null : car.id); if (!isEditing) { setFormData(car); setPricingStrings({taxes: String(car.pricing?.taxes || 8.5), cleaningFee: String(car.pricing?.cleaningFee || 25), includedMiles: String(car.pricing?.includedMiles || 200), extraMileRate: String(car.pricing?.extraMileRate || 0.45), insurance500: String(car.pricing?.prices?.insurance500 || 25), insurance1000: String(car.pricing?.prices?.insurance1000 || 15), childSeat: String(car.pricing?.prices?.childSeat || 8), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || 45)}); } }} 
+                                data-testid={`button-edit-vehicle-${car.id}`}
+                              >
+                                {isEditing ? <X size={12}/> : <Edit size={12}/>}
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-500 border-red-500 hover:bg-red-950" onClick={() => setDeletingVehicleId(car.id)} data-testid={`button-delete-vehicle-${car.id}`}>
-                                <Trash2 size={14}/>
+                              <Button 
+                                variant="outline" 
+                                className="h-7 w-7 p-0 text-red-500 border-red-500 hover:bg-red-50 dark:hover:bg-red-950" 
+                                onClick={() => setDeletingVehicleId(car.id)} 
+                                data-testid={`button-delete-vehicle-${car.id}`}
+                              >
+                                <Trash2 size={12}/>
                               </Button>
                             </div>
                           </div>
