@@ -1077,6 +1077,26 @@ export default function CarHopApp() {
     }
   });
 
+  const markBookingAsReadMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('PATCH', `/api/bookings/${id}/read`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['/api/bookings'] });
+      const previousBookings = queryClient.getQueryData<Booking[]>(['/api/bookings']);
+      queryClient.setQueryData<Booking[]>(['/api/bookings'], (old) => 
+        old?.map(b => b.id === id ? { ...b, unread: false } : b) || []
+      );
+      return { previousBookings };
+    },
+    onError: (err, id, context) => {
+      if (context?.previousBookings) {
+        queryClient.setQueryData(['/api/bookings'], context.previousBookings);
+      }
+    },
+    onSettled: () => { 
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
+    }
+  });
+
   const updateSettingMutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: any }) => apiRequest('PUT', `/api/settings/${key}`, { value }),
     onSuccess: () => {
@@ -5085,7 +5105,8 @@ export default function CarHopApp() {
                         const returnIsTomorrow = returnDate === tomorrow;
                         
                         return (
-                          <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
+                          <div key={b.id} onClick={() => { setHostManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-host-booking-${b.id}`}>
+                            {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
                             <div className="flex justify-between items-start gap-3 mb-2">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
@@ -8004,7 +8025,8 @@ export default function CarHopApp() {
                         const hasRated = bookingRating?.hostStarsToClient;
                         
                         return (
-                          <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
+                          <div key={b.id} onClick={() => { setManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-booking-${b.id}`}>
+                            {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
                             {/* Header: Code + Status Badge */}
                             <div className="flex justify-between items-center gap-2 mb-2">
                               <div className="flex items-center gap-1 flex-1">
@@ -9843,18 +9865,24 @@ export default function CarHopApp() {
                     return (
                     <Card 
                       key={b.id} 
-                      className={`p-3 md:p-6 transition-all duration-300 ${
+                      className={`p-3 md:p-6 transition-all duration-300 relative ${
                         isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 
                         isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
                         'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
-                      }`} 
+                      } ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} 
                       data-testid={`card-my-booking-${b.id}`}
                     >
+                      {b.unread && (
+                        <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full animate-pulse" title="New booking" />
+                      )}
                       <div 
                         className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
                         onClick={() => {
                           if (isCompleted || isCancelled) {
                             setExpandedBookingId(expandedBookingId === b.id ? null : b.id);
+                          }
+                          if (b.unread) {
+                            markBookingAsReadMutation.mutate(b.id);
                           }
                         }}
                       >
