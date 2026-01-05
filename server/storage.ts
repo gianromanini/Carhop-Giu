@@ -307,6 +307,7 @@ export class MemStorage implements IStorage {
         agreementAccepted: h.agreementAccepted ?? false,
         agreementAcceptedAt: h.agreementAcceptedAt ?? null,
         status: h.status ?? 'active',
+        pickupLocations: h.pickupLocations ?? [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -589,8 +590,11 @@ export class MemStorage implements IStorage {
       seats: vehicle.seats ?? 5,
       transmission: vehicle.transmission ?? 'Automatic',
       driveType: vehicle.driveType ?? 'AWD',
+      year: vehicle.year ?? null,
+      vinNumber: vehicle.vinNumber ?? null,
+      licensePlate: vehicle.licensePlate ?? null,
+      hostName: vehicle.hostName ?? null,
       images: vehicle.images ?? [],
-      createdAt: new Date(),
       consumption: vehicle.consumption ?? null,
       isPriceMatch: vehicle.isPriceMatch ?? false,
       isAWD: vehicle.isAWD ?? false,
@@ -605,12 +609,22 @@ export class MemStorage implements IStorage {
       hasBlindSpotWarning: vehicle.hasBlindSpotWarning ?? false,
       hasDriveAssist: vehicle.hasDriveAssist ?? false,
       hasUSBCharger: vehicle.hasUSBCharger ?? false,
-      expenses: vehicle.expenses ?? null,
       hostId: vehicle.hostId ?? null,
       commission: vehicle.commission ?? 10,
       deductible: vehicle.deductible ?? 1000,
       availableLocations: vehicle.availableLocations ?? [],
+      deliveryAddress: vehicle.deliveryAddress ?? '',
+      isDeliveryEnabled: vehicle.isDeliveryEnabled ?? false,
+      maxDeliveryDistance: vehicle.maxDeliveryDistance ?? 50,
+      minDeliveryFeeMiles: vehicle.minDeliveryFeeMiles ?? 5,
+      minDeliveryFee: vehicle.minDeliveryFee ?? 15,
+      deliveryPricePerMile: vehicle.deliveryPricePerMile ?? 2.50,
+      minDeliveryHours: vehicle.minDeliveryHours ?? 6,
+      locationLat: vehicle.locationLat ?? null,
+      locationLon: vehicle.locationLon ?? null,
       pricing: vehicle.pricing ?? null,
+      expenses: vehicle.expenses ?? null,
+      createdAt: new Date(),
     };
     this.vehicles.set(id, newVehicle);
     return newVehicle;
@@ -678,6 +692,7 @@ export class MemStorage implements IStorage {
       details,
       checkInStatus: booking.checkInStatus ?? 'pending',
       checkOutStatus: booking.checkOutStatus ?? 'pending',
+      unread: true,
       createdAt: new Date(),
       vehicleId: booking.vehicleId ?? null,
       image: booking.image ?? null,
@@ -701,6 +716,7 @@ export class MemStorage implements IStorage {
         acceptedAt: booking.carRentalAgreement.acceptedAt,
       } : null,
       extraPayments: (booking.extraPayments || []) as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[],
+      unread: true,
       extensionRequests: [],
       messages: [],
     };
@@ -757,6 +773,7 @@ export class MemStorage implements IStorage {
       extensionRequests: booking.extensionRequests ? [...booking.extensionRequests] as { id: string; type: 'extension' | 'reduction'; requestedReturnDate: string; requestedReturnTime: string; reason: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; respondedAt?: string; }[] : existing.extensionRequests,
       extraPayments: booking.extraPayments ? [...booking.extraPayments] as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[] : existing.extraPayments,
       messages: booking.messages ? [...booking.messages] as { id: string; sender: 'client' | 'admin'; text: string; createdAt: string; read: boolean; }[] : existing.messages,
+      unread: booking.unread !== undefined ? booking.unread : existing.unread,
     };
     this.bookings.set(id, updated);
     return updated;

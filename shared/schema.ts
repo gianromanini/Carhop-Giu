@@ -198,6 +198,7 @@ export const bookings = pgTable("bookings", {
     processedAt: string;
     status: 'pending' | 'completed' | 'failed';
   }[]>().default([]),
+  unread: boolean("unread").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
