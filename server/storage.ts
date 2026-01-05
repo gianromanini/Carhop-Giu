@@ -716,7 +716,6 @@ export class MemStorage implements IStorage {
         acceptedAt: booking.carRentalAgreement.acceptedAt,
       } : null,
       extraPayments: (booking.extraPayments || []) as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[],
-      unread: true,
       extensionRequests: [],
       messages: [],
     };
@@ -853,6 +852,7 @@ export class MemStorage implements IStorage {
       socialSecurityNumber: hostData.socialSecurityNumber ?? null,
       username: hostData.username,
       passwordHash: hostData.passwordHash,
+      pickupLocations: hostData.pickupLocations ?? [],
       agreementAccepted: hostData.agreementAccepted ?? false,
       agreementAcceptedAt: hostData.agreementAcceptedAt ?? null,
       status: hostData.status ?? 'active',
@@ -883,6 +883,7 @@ export class MemStorage implements IStorage {
       socialSecurityNumber: hostData.socialSecurityNumber ?? existing.socialSecurityNumber,
       username: hostData.username ?? existing.username,
       passwordHash: hostData.passwordHash ?? existing.passwordHash,
+      pickupLocations: hostData.pickupLocations ?? existing.pickupLocations,
       agreementAccepted: hostData.agreementAccepted ?? existing.agreementAccepted,
       agreementAcceptedAt: hostData.agreementAcceptedAt ?? existing.agreementAcceptedAt,
       status: hostData.status ?? existing.status,
