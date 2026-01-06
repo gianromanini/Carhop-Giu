@@ -825,7 +825,7 @@ export default function CarHopApp() {
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first' | 'newest'>('newest');
-  const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
+  const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'active' | 'completed' | 'cancelled' | 'pending-approval'>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
@@ -8147,7 +8147,7 @@ export default function CarHopApp() {
 
                                     <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
                                       <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Rental Location & Service</h4>
-                                      <div className="space-y-2">
+                                      <div className="space-y-4">
                                         <div className="flex items-center gap-2">
                                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(b.details as any)?.deliveryType === 'delivery' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
                                             {(b.details as any)?.deliveryType === 'delivery' ? 'DELIVERY SERVICE' : 'PICKUP AT LOCATION'}
@@ -8157,6 +8157,42 @@ export default function CarHopApp() {
                                           <MapPin size={14} className="text-zinc-400 mt-1 shrink-0" />
                                           <span className="text-sm text-zinc-700 dark:text-zinc-300">{formatAddressForDisplay(b.location)}</span>
                                         </div>
+
+                                        {/* Check-in Photos */}
+                                        {b.checkInData?.photosOutside && (b.checkInData.photosOutside.length > 0 || b.checkInData.photosInside?.length > 0) && (
+                                          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                                            <h5 className="text-[9px] font-bold text-zinc-400 uppercase mb-2">Check-in Photos</h5>
+                                            <div className="grid grid-cols-4 gap-2">
+                                              {[...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].map((photo, idx) => (
+                                                <img 
+                                                  key={idx} 
+                                                  src={photo} 
+                                                  alt="Check-in" 
+                                                  className="w-full h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                                  onClick={(e) => { e.stopPropagation(); setExpandedImage(photo); }}
+                                                />
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Check-out Photos */}
+                                        {b.checkOutData?.photosOutside && (b.checkOutData.photosOutside.length > 0 || b.checkOutData.photosInside?.length > 0) && (
+                                          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                                            <h5 className="text-[9px] font-bold text-zinc-400 uppercase mb-2">Check-out Photos</h5>
+                                            <div className="grid grid-cols-4 gap-2">
+                                              {[...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].map((photo, idx) => (
+                                                <img 
+                                                  key={idx} 
+                                                  src={photo} 
+                                                  alt="Check-out" 
+                                                  className="w-full h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                                  onClick={(e) => { e.stopPropagation(); setExpandedImage(photo); }}
+                                                />
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
