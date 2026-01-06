@@ -7935,23 +7935,24 @@ export default function CarHopApp() {
             )}
 
             {adminTab === 'bookings' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Left Column - All Bookings List */}
-                <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
-                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">All Bookings</h3>
+              <div className="space-y-4">
+                <Card className="p-3 sm:p-4 max-h-[85vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">All Bookings</h3>
+                  </div>
                   
-                  {/* Filters */}
-                  <div className="space-y-2 mb-4">
+                  {/* Filters - Horizontal Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
-                      <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
+                      <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="select-booking-filter">
                         <option value="end-soon">End Soon (Next 3 Days)</option>
                         <option value="start-first">Start First (Oldest First)</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
-                      <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-status">
+                      <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="select-admin-booking-status">
                         <option value="">All Status</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
@@ -7960,7 +7961,7 @@ export default function CarHopApp() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Car Model</label>
-                      <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value as string)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-carmodel">
+                      <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value as string)} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="select-admin-booking-carmodel">
                         <option value="">All Models</option>
                         {Array.from(new Set(vehicles.map(v => v.model))).sort().map(model => (
                           <option key={model} value={model}>{model}</option>
@@ -7968,8 +7969,8 @@ export default function CarHopApp() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number or Name</label>
-                      <input type="text" placeholder="Search number or name..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Search</label>
+                      <input type="text" placeholder="Number or name..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="input-admin-booking-number" />
                     </div>
                   </div>
                   
@@ -8004,6 +8005,7 @@ export default function CarHopApp() {
                         return matches;
                       })
                       .map(b => {
+                        const isExpanded = manageBookingId === b.id;
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
@@ -8025,689 +8027,273 @@ export default function CarHopApp() {
                         const hasRated = bookingRating?.hostStarsToClient;
                         
                         return (
-                          <div key={b.id} onClick={() => { setManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-booking-${b.id}`}>
-                            {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
-                            {/* Header: Code + Status Badge */}
-                            <div className="flex justify-between items-center gap-2 mb-2">
-                              <div className="flex items-center gap-1 flex-1">
-                                {b.status === 'Completed' && !hasRated && (<span className="text-red-500 text-lg">!</span>)}
-                                {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
-                                  <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`}><AlertTriangle size={12}/></span>
-                                )}
-                                {hasNotifications && (<span className="text-yellow-500 animate-pulse"><AlertCircle size={12}/></span>)}
-                                <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                          <div key={b.id} className="space-y-0">
+                            {/* Collapsed Card Header */}
+                            <div 
+                              onClick={() => { 
+                                if (manageBookingId === b.id) {
+                                  setManageBookingId(null);
+                                } else {
+                                  setManageBookingId(b.id); 
+                                  if (b.unread) markBookingAsReadMutation.mutate(b.id); 
+                                }
+                              }} 
+                              className={`p-4 rounded-xl border cursor-pointer transition-all relative ${isExpanded ? 'border-blue-400 bg-blue-950/20 rounded-b-none' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} 
+                              data-testid={`card-booking-${b.id}`}
+                            >
+                              {b.unread && <div className="absolute top-4 right-12 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
+                              
+                              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                      {b.status === 'Completed' && !hasRated && (<span className="text-red-500 font-bold" title="Action required: Rate guest">!</span>)}
+                                      <span className="font-bold text-base text-zinc-900 dark:text-white">{b.bookingCode}</span>
+                                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${statusColor}`}>{statusText}</span>
+                                    </div>
+                                    <div className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">{b.carName}</div>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] text-zinc-400 uppercase font-bold">Driver</span>
+                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.driver.name}</span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] text-zinc-400 uppercase font-bold">Pickup</span>
+                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.startDate} <span className="text-zinc-500">@{b.startTime}</span></span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] text-zinc-400 uppercase font-bold">Return</span>
+                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.returnDate} <span className="text-zinc-500">@{b.returnTime}</span></span>
+                                  </div>
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-[10px] text-zinc-400 uppercase font-bold">Total</span>
+                                    <span className="text-sm font-bold text-green-600 dark:text-green-400">${b.total.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {hasNotifications && (<Bell size={14} className="text-yellow-500 animate-pulse" />)}
+                                    <ChevronDown size={20} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-blue-400' : ''}`} />
+                                  </div>
+                                </div>
                               </div>
-                              <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
-                            </div>
-                            
-                            {/* Car Name + Guest Label */}
-                            <div className="flex justify-between items-start gap-2 mb-0.5">
-                              <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName}</div>
-                              {b.status === 'Completed' && (() => {
-                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                                return bookingRating?.stars ? (
-                                  <div className="text-right">
-                                    <div className="text-xs font-bold text-zinc-300 leading-tight">Guest</div>
-                                  </div>
-                                ) : null;
-                              })()}
-                            </div>
-                            
-                            {/* Driver Name + Guest Stars */}
-                            <div className="flex justify-between items-start gap-2 mb-1">
-                              <div className="text-xs text-zinc-500 leading-tight">{b.driver.name}</div>
-                              {b.status === 'Completed' && (() => {
-                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                                return bookingRating?.stars ? (
-                                  <div className="flex gap-0">{[1,2,3,4,5].map(star => (<span key={star} className={`text-xs ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
-                                ) : null;
-                              })()}
-                            </div>
-                            
-                            {/* Pickup + Host Label */}
-                            <div className="flex justify-between items-start gap-2 mb-0.5">
-                              <div className="text-[10px] text-zinc-400 leading-tight">Pickup: {b.startDate} at {b.startTime}</div>
-                              {b.status === 'Completed' && (() => {
-                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                                return bookingRating?.hostStarsToClient ? (
-                                  <div className="text-right">
-                                    <div className="text-xs font-bold text-zinc-300 leading-tight">Host</div>
-                                  </div>
-                                ) : null;
-                              })()}
-                            </div>
-                            
-                            {/* Return + Host Stars */}
-                            <div className="flex justify-between items-start gap-2">
-                              <div className="text-[10px] text-zinc-400 leading-tight">Return: {b.returnDate} at {b.returnTime}</div>
-                              {b.status === 'Completed' && (() => {
-                                const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                                return bookingRating?.hostStarsToClient ? (
-                                  <div className="flex gap-0">{[1,2,3,4,5].map(star => (<span key={star} className={`text-xs ${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}</div>
-                                ) : null;
-                              })()}
-                            </div>
-                            
-                            {/* Return Status Alerts */}
-                            <div className="text-[10px] text-zinc-400 mt-1 leading-tight space-y-0.5">
-                              {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
-                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}</div>
+
+                              {/* Quick alerts in collapsed state */}
+                              {!isExpanded && (b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow)) && (
+                                <div className="mt-2 flex gap-2">
+                                  {pickupIsToday && <span className="text-[9px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">Pickup Today</span>}
+                                  {pickupIsTomorrow && <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full font-bold">Pickup Tomorrow</span>}
+                                  {returnIsToday && <span className="text-[9px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">Return Today</span>}
+                                  {returnIsTomorrow && <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full font-bold">Return Tomorrow</span>}
+                                </div>
                               )}
                             </div>
-                            {hasNotifications && (
-                              <div className="mt-1 text-[9px] text-yellow-400 flex items-center gap-1"><Bell size={9}/>{pendingRequests > 0 && <span>{pendingRequests} req</span>}{pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}{unreadMessages > 0 && <span>{unreadMessages} msg</span>}</div>
-                            )}
-                            {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                              <div className="mt-1 text-[9px] text-orange-400 flex items-center gap-1 font-bold"><Route size={9}/> Delivery Pending</div>
+
+                            {/* Expanded Details Section - Accordion Style */}
+                            {isExpanded && (
+                              <div className="bg-zinc-50 dark:bg-zinc-900/50 border-x border-b border-blue-400/30 rounded-b-xl p-4 sm:p-6 space-y-6 shadow-inner">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Left side details */}
+                                  <div className="space-y-4">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-2">Booking Info</h4>
+                                        <p className="text-sm text-zinc-700 dark:text-zinc-300">Booked on: {b.date}</p>
+                                        <p className="text-sm text-zinc-700 dark:text-zinc-300">Method: {b.paymentMethod || 'Credit Card'}</p>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button onClick={(e) => { e.stopPropagation(); setDeletingBookingId(b.id.toString()); }} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1" data-testid="button-delete-booking">
+                                          <Trash2 size={12}/> Delete
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                      <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Customer Details</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <span className="text-[10px] text-zinc-500 block uppercase">Name</span>
+                                          <span className="text-sm font-bold text-zinc-900 dark:text-white">{b.driver.name}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-[10px] text-zinc-500 block uppercase">Phone</span>
+                                          <span className="text-sm text-zinc-900 dark:text-white">{b.driver.phone}</span>
+                                        </div>
+                                        <div className="col-span-2">
+                                          <span className="text-[10px] text-zinc-500 block uppercase">Email</span>
+                                          <span className="text-sm text-zinc-900 dark:text-white">{b.driver.email}</span>
+                                        </div>
+                                        {b.driver.licenseNumber && (
+                                          <div className="col-span-2">
+                                            <span className="text-[10px] text-zinc-500 block uppercase">License</span>
+                                            <span className="text-sm text-zinc-900 dark:text-white">{b.driver.licenseNumber}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                      <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Rental Location & Service</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(b.details as any)?.deliveryType === 'delivery' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
+                                            {(b.details as any)?.deliveryType === 'delivery' ? 'DELIVERY SERVICE' : 'PICKUP AT LOCATION'}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                          <MapPin size={14} className="text-zinc-400 mt-1 shrink-0" />
+                                          <span className="text-sm text-zinc-700 dark:text-zinc-300">{formatAddressForDisplay(b.location)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Right side details */}
+                                  <div className="space-y-4">
+                                    {/* Delivery Approval */}
+                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                                      <div className="p-4 rounded-xl border bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
+                                        <h4 className="text-[10px] font-bold uppercase flex items-center gap-2 mb-3 text-orange-600 dark:text-orange-400">
+                                          <Route size={14}/> Delivery Approval Required
+                                        </h4>
+                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4">Customer requested delivery. Please approve or decline.</p>
+                                        <div className="flex gap-2">
+                                          <button onClick={(e) => { e.stopPropagation(); handleDeliveryApproval(b.id, 'approved'); }} className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold rounded-lg transition-colors" data-testid={`button-admin-approve-delivery-${b.id}`}>Approve</button>
+                                          <button onClick={(e) => { e.stopPropagation(); handleDeliveryApproval(b.id, 'rejected'); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition-colors" data-testid={`button-admin-reject-delivery-${b.id}`}>Decline</button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Financial Summary */}
+                                    <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                      <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Financial Details</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-zinc-500">Rental Rate</span>
+                                          <span className="text-zinc-900 dark:text-white font-medium">${(b.details?.rate || 0).toFixed(2)}</span>
+                                        </div>
+                                        {(b.details?.protection || 0) > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-500">Protection</span>
+                                            <span className="text-zinc-900 dark:text-white font-medium">+${(b.details?.protection || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between text-sm border-t border-zinc-100 dark:border-zinc-800 pt-2 mt-2">
+                                          <span className="font-bold text-zinc-900 dark:text-white">Total Charged</span>
+                                          <span className="font-bold text-green-600 dark:text-green-400">${b.total.toFixed(2)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Chat Section */}
+                                    <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                      <h4 className="text-[10px] font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                        <MessageCircle size={14}/> Communication
+                                      </h4>
+                                      <div className="max-h-40 overflow-y-auto space-y-2 mb-4">
+                                        {(b.messages || []).length === 0 ? (
+                                          <p className="text-xs text-zinc-500 text-center py-4 italic">No messages yet</p>
+                                        ) : (
+                                          (b.messages || []).map(msg => (
+                                            <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.sender === 'admin' ? 'bg-green-50 dark:bg-green-900/20 border-l-2 border-green-500 ml-4' : 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500 mr-4'}`}>
+                                              <div className="flex justify-between items-start mb-0.5">
+                                                <span className={`font-bold uppercase ${msg.sender === 'admin' ? 'text-green-600' : 'text-blue-600'}`}>{msg.sender}</span>
+                                                <span className="text-[9px] text-zinc-400">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                              </div>
+                                              <p className="text-zinc-700 dark:text-zinc-300">{msg.text}</p>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <input
+                                          type="text"
+                                          value={chatMessage}
+                                          onChange={(e) => setChatMessage(e.target.value)}
+                                          placeholder="Quick reply..."
+                                          className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
+                                          onClick={(e) => e.stopPropagation()}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.stopPropagation();
+                                              sendChatMessage(b.id, 'admin');
+                                            }
+                                          }}
+                                          data-testid="input-admin-message"
+                                        />
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); sendChatMessage(b.id, 'admin'); }}
+                                          className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                          data-testid="button-send-admin-message"
+                                        >
+                                          <Send size={14}/>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Ratings Section - Full Width */}
+                                {b.status === 'Completed' && (() => {
+                                  const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                  return (
+                                    <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                                      <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Ratings</h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {bookingRating?.stars ? (
+                                          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                            <span className="text-[10px] font-bold text-yellow-700 dark:text-yellow-400 uppercase">Guest Rating of Host</span>
+                                            <div className="flex items-center gap-2 mt-2">
+                                              {[1,2,3,4,5].map(star => (<span key={star} className={`text-lg ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-400'}`}>★</span>))}
+                                              <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400 ml-1">{bookingRating.stars}/5</span>
+                                            </div>
+                                            {bookingRating.comment && <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-2 italic">"{bookingRating.comment}"</p>}
+                                          </div>
+                                        ) : (
+                                          <div className="p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-500">
+                                            Guest has not rated yet
+                                          </div>
+                                        )}
+                                        
+                                        {bookingRating?.hostStarsToClient ? (
+                                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                            <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase">Host Rating of Guest</span>
+                                            <div className="flex items-center gap-2 mt-2">
+                                              {[1,2,3,4,5].map(star => (<span key={star} className={`text-lg ${star <= (bookingRating.hostStarsToClient || 0) ? 'text-blue-400' : 'text-zinc-400'}`}>★</span>))}
+                                              <span className="text-xs font-bold text-blue-700 dark:text-blue-400 ml-1">{bookingRating.hostStarsToClient}/5</span>
+                                            </div>
+                                            {bookingRating.hostCommentToClient && <p className="text-xs text-blue-700 dark:text-blue-400 mt-2 italic">"{bookingRating.hostCommentToClient}"</p>}
+                                          </div>
+                                        ) : (
+                                          <div className="p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-500 flex flex-col items-center justify-center gap-2">
+                                            <p>Host has not rated this guest yet</p>
+                                            <Button size="sm" onClick={(e) => { e.stopPropagation(); setRatingTarget({ bookingId: b.id, clientEmail: b.driver.email, clientName: b.driver.name }); setShowHostRatingModal(true); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px]" data-testid="button-admin-rate-guest">Rate Guest Now</Button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* Manage Charges */}
+                                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                                  <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Manage Charges & Adjustments</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBooking(b); setAdjustmentType('manual-charge'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-charge">Add Charge</button>
+                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBooking(b); setAdjustmentType('discount'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-discount">Add Discount</button>
+                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBooking(b); setAdjustmentType('refund'); }} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 text-[10px] font-bold rounded transition-colors" data-testid="button-process-refund">Process Refund</button>
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
                         );
                       })}
                   </div>
                 </Card>
-
-                {/* Right Column - Booking Details */}
-                <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
-                  {manageBookingId ? (
-                    (() => {
-                      const b = bookings.find(bk => bk.id === manageBookingId);
-                      if (!b) return null;
-                      return (
-                        <div className="space-y-4 sm:space-y-6">
-                          {/* Header */}
-                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
-                            <div>
-                              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
-                              <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                              <div className="text-left sm:text-right text-[10px] sm:text-xs text-zinc-500">
-                                <div>{b.date}</div>
-                                <div>{b.paymentMethod || 'Credit Card (Visa **** 4242)'}</div>
-                              </div>
-                              <div className="flex gap-2 w-full sm:w-auto">
-                                <button onClick={() => setManageBookingId(null)} className="flex-1 sm:flex-none px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-1" data-testid="button-close-booking">
-                                  <ChevronLeft size={14}/>
-                                  Close
-                                </button>
-                                <button onClick={() => setDeletingBookingId(b.id.toString())} className="flex-1 sm:flex-none px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-delete-booking">Delete Booking</button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Customer & Rental Info */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
-                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
-                                <p className="font-medium">{b.driver.name}</p>
-                                <p className="text-zinc-500">{b.driver.phone}</p>
-                                <p className="text-zinc-500">{b.driver.email}</p>
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
-                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
-                                <p className="font-medium">{b.carName}</p>
-                                <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500 font-bold">{(b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
-                                <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
-                                {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                                  <p className="text-orange-500 font-bold text-xs">Pending Approval</p>
-                                )}
-                                {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
-                                  <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
-                                )}
-                                {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
-                                  <p className="text-red-500 font-bold text-xs">Delivery Declined</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Delivery Approval Section */}
-                          {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
-                                <Route size={14}/> Delivery Approval Required
-                              </h4>
-                              <p className="text-sm text-zinc-300 mb-3">
-                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay(b.location)}</span>
-                              </p>
-                              <p className="text-xs text-zinc-500 mb-4">
-                                Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
-                              </p>
-                              <div className="flex gap-2">
-                                <button 
-                                  onClick={() => handleDeliveryApproval(b.id, 'approved')}
-                                  className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                  data-testid={`button-admin-approve-delivery-${b.id}`}
-                                >
-                                  Approve Delivery
-                                </button>
-                                <button 
-                                  onClick={() => handleDeliveryApproval(b.id, 'rejected')}
-                                  className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                  data-testid={`button-admin-reject-delivery-${b.id}`}
-                                >
-                                  Decline (Pickup Only)
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Chat Messages */}
-                          {(b.messages || []).length > 0 && (
-                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                <MessageCircle size={14}/> Customer Messages
-                              </h4>
-                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
-                                {(b.messages || []).map(msg => (
-                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
-                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-zinc-300">{msg.text}</p>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={chatMessage}
-                                  onChange={(e) => setChatMessage(e.target.value)}
-                                  placeholder="Type a message..."
-                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                  data-testid="input-admin-message"
-                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
-                                />
-                                <button 
-                                  onClick={() => sendChatMessage(b.id, 'admin')}
-                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                  data-testid="button-send-admin-message"
-                                >
-                                  <Send size={16}/>
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Client Requests (Priority Section) */}
-                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
-                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
-                                <AlertCircle size={14}/> Client Requests
-                              </h4>
-                              <div className="space-y-3">
-                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
-                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
-                                          {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
-                                        </span>
-                                        <div className="text-sm text-zinc-300 mt-1">
-                                          New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
-                                        </div>
-                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
-                                      </div>
-                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
-                                    </div>
-                                    <div className="flex gap-2 mt-3">
-                                      <button 
-                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
-                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                        data-testid={`button-approve-${req.id}`}
-                                      >
-                                        Approve
-                                      </button>
-                                      <button 
-                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
-                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                        data-testid={`button-reject-${req.id}`}
-                                      >
-                                        Reject
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Payment Details (Sensitive) */}
-                          <div className={`p-4 rounded-lg border ${b.paymentRaw?.type === 'paypal' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-red-950/30 border-red-900/50'}`}>
-                            <div className="flex justify-between items-center mb-3">
-                              <h4 className={`text-xs font-bold uppercase flex items-center gap-2 ${b.paymentRaw?.type === 'paypal' ? 'text-blue-400' : 'text-red-400'}`}>
-                                {b.paymentRaw?.type === 'paypal' ? <Wallet size={14}/> : <CreditCard size={14}/>} Payment Details {b.paymentRaw?.type !== 'paypal' && '(Sensitive)'}
-                              </h4>
-                              {b.paymentRaw?.type !== 'paypal' && (
-                                <button onClick={() => setShowSensitiveData(!showSensitiveData)} className="text-red-400 hover:text-red-300 transition-colors">
-                                  {showSensitiveData ? <EyeOff size={16}/> : <Eye size={16}/>}
-                                </button>
-                              )}
-                            </div>
-                            {b.paymentRaw?.type === 'paypal' ? (
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                                    <Wallet size={24} className="text-white"/>
-                                  </div>
-                                  <div>
-                                    <p className="font-bold text-white">PayPal</p>
-                                    <p className="text-xs text-blue-400">Payment will be processed via PayPal at End Trip</p>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 text-sm mt-3 pt-3 border-t border-blue-800/50">
-                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Payment Method</span><span className="font-mono text-zinc-300">PayPal</span></div>
-                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Status</span><span className="font-mono text-green-400">Pending End Trip</span></div>
-                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Customer Email</span><span className="font-mono text-zinc-300">{b.driver.email}</span></div>
-                                  <div><span className="block text-[10px] text-blue-400/70 uppercase">Total Amount</span><span className="font-mono text-zinc-300">${b.total.toFixed(2)}</span></div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className={`grid grid-cols-2 gap-4 text-sm ${showSensitiveData ? '' : 'blur-sm select-none'}`}>
-                                <div><span className="block text-[10px] text-red-400/70 uppercase">Card Name</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardName || 'N/A'}</span></div>
-                                <div><span className="block text-[10px] text-red-400/70 uppercase">Card Number</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cardNumber || '**** **** **** ****'}</span></div>
-                                <div><span className="block text-[10px] text-red-400/70 uppercase">Expiry</span><span className="font-mono text-zinc-300">{b.paymentRaw?.expiry || '**/**'}</span></div>
-                                <div><span className="block text-[10px] text-red-400/70 uppercase">CVC</span><span className="font-mono text-zinc-300">{b.paymentRaw?.cvc || '***'}</span></div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Guest Ratings Section */}
-                          {b.status === 'Completed' && (() => {
-                            const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
-                            return (
-                              <div className="space-y-4">
-                                {/* Guest's Rating of Host */}
-                                {bookingRating?.stars && (
-                                  <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-700/30">
-                                    <div className="text-xs font-bold uppercase text-blue-400 mb-2">Guest's Rating of You</div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <div className="flex gap-1">
-                                        {[1,2,3,4,5].map(star => (
-                                          <span key={star} className={`text-sm ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                        ))}
-                                      </div>
-                                      <span className="text-sm font-bold text-white">{bookingRating.stars}/5</span>
-                                    </div>
-                                    {bookingRating.comment && (
-                                      <p className="text-xs text-zinc-300 italic">"{bookingRating.comment}"</p>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Rate Your Guest Button */}
-                                {!bookingRating?.hostStarsToClient && (
-                                  <button 
-                                    onClick={() => { setSelectedBookingForRating(b.id); setShowRateGuestModal(true); setHostRatingStars(5); setHostRatingComment(''); }}
-                                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
-                                    data-testid={`button-rate-guest-${b.id}`}
-                                  >
-                                    Rate your Guest
-                                  </button>
-                                )}
-
-                                {/* Your Rating of Guest */}
-                                {bookingRating?.hostStarsToClient && (
-                                  <div className="bg-green-900/20 rounded-lg p-4 border border-green-700/30">
-                                    <div className="text-xs font-bold uppercase text-green-400 mb-2">✓ Rated</div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <div className="flex gap-1">
-                                        {[1,2,3,4,5].map(star => (
-                                          <span key={star} className={`text-sm ${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>
-                                        ))}
-                                      </div>
-                                      <span className="text-sm font-bold text-white">{bookingRating.hostStarsToClient}/5</span>
-                                    </div>
-                                    {bookingRating?.hostCommentToClient && (
-                                      <p className="text-xs text-zinc-300 italic">"{bookingRating.hostCommentToClient}"</p>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-
-                          {/* Manage Charges & Adjustments */}
-                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
-                            
-                            {/* Apply Discount */}
-                            <div className="mb-4">
-                              <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <select 
-                                  value={adjustment.type} 
-                                  onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                  data-testid="select-discount-type"
-                                >
-                                  <option value="fixed">Fixed Value ($)</option>
-                                  <option value="percent">Percentage (%)</option>
-                                </select>
-                                <Input 
-                                  placeholder="Value" 
-                                  type="number"
-                                  value={adjustment.value}
-                                  onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs" 
-                                  data-testid="input-discount-value" 
-                                />
-                                <button 
-                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleApplyDiscount(b)}
-                                  data-testid="button-apply-discount"
-                                >
-                                  Apply
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Charge Archived Card */}
-                            <div>
-                              <label className="text-xs text-zinc-500 mb-2 block">Charge Archived Card</label>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <select 
-                                  value={extraCharge.type}
-                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                  data-testid="select-charge-type"
-                                >
-                                  <option value="refuel">Refuel</option>
-                                  <option value="mileage">Extra Mileage</option>
-                                  <option value="damage">Damage</option>
-                                  <option value="cleaning">Extra Cleaning</option>
-                                  <option value="other">Other</option>
-                                </select>
-                                <Input 
-                                  placeholder="Value ($)" 
-                                  type="number"
-                                  value={extraCharge.amount}
-                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs" 
-                                  data-testid="input-charge-value" 
-                                />
-                                <button 
-                                  className="px-3 h-[38px] bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleAddCharge(b)}
-                                  data-testid="button-charge"
-                                >
-                                  Charge
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Financial Details */}
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Financial Details</h4>
-                            <div className="space-y-4 text-sm">
-                              {(() => {
-                                const rate = b.details.rate || 0;
-                                const extras = b.details.extras || 0;
-                                const protection = b.details.protection || 0;
-                                const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                const deliveryFee = (b.details as any).deliveryFee || 0;
-                                const discount = b.details.discount || 0;
-                                const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
-                                const carForTax = vehicles.find(v => v.id === b.vehicleId);
-                                const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
-                                const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * (taxRate / 100) : 0;
-                                const originalBookingAmount = subtotalBeforeTax + originalTax;
-                                
-                                const extendedRate = b.details.extendedRate || 0;
-                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
-                                const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                                const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal;
-                                const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * (taxRate / 100) : 0;
-                                const additionalCharges = additionalChargesBeforeTax + additionalTax;
-                                
-                                return (
-                                  <>
-                                    {/* Original Booking Amount */}
-                                    <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
-                                      <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
-                                      <div className="space-y-1 mb-2">
-                                        <div className="flex justify-between text-zinc-300 text-xs">
-                                          <span>Base Rate - {b.days} Days</span>
-                                          <span>${rate.toFixed(2)}</span>
-                                        </div>
-                                        {extras > 0 && (
-                                          <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Extras</span>
-                                            <span>+${extras.toFixed(2)}</span>
-                                          </div>
-                                        )}
-                                        {protection > 0 && (
-                                          <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Protection - {b.details?.protectionType || 'Standard'}</span>
-                                            <span>+${protection.toFixed(2)}</span>
-                                          </div>
-                                        )}
-                                        <div className="flex justify-between text-zinc-300 text-xs">
-                                          <span>Cleaning Fee</span>
-                                          <span>+${cleaningFee.toFixed(2)}</span>
-                                        </div>
-                                        {deliveryFee > 0 && (
-                                          <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Delivery Fee Service</span>
-                                            <span>+${deliveryFee.toFixed(2)}</span>
-                                          </div>
-                                        )}
-                                        {discount > 0 && (
-                                          <div className="flex justify-between text-green-400 text-xs">
-                                            <span>Discount Applied</span>
-                                            <span>-${discount.toFixed(2)}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="flex justify-between text-zinc-400 text-xs border-t border-zinc-600 pt-2 mb-2">
-                                        <span>Subtotal</span>
-                                        <span>${subtotalBeforeTax.toFixed(2)}</span>
-                                      </div>
-                                      {originalTax > 0 && (
-                                        <div className="flex justify-between text-purple-300 text-xs mb-2">
-                                          <span>Tax</span>
-                                          <span>+${originalTax.toFixed(2)}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2">
-                                        <span>Initial Payment</span>
-                                        <span>${originalBookingAmount.toFixed(2)}</span>
-                                      </div>
-                                    </div>
-
-                                    {/* Additional Charges */}
-                                    {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
-                                      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
-                                        <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
-                                        <div className="space-y-1 mb-2">
-                                          {extendedRate > 0 && (
-                                            <div className="flex justify-between text-blue-300 text-xs">
-                                              <span>Extended Days - {Math.round(extendedRate / (vehicles.find(v => v.id === b.vehicleId)?.price || 1))} Days</span>
-                                              <span>+${extendedRate.toFixed(2)}</span>
-                                            </div>
-                                          )}
-                                          {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
-                                            <div key={i} className="flex justify-between text-orange-300 text-xs">
-                                              <span className="flex items-center gap-1">
-                                                {c.type}
-                                                <button 
-                                                  onClick={() => handleRemoveCharge(b, i)} 
-                                                  className="text-red-400 hover:text-red-300"
-                                                  data-testid={`button-remove-charge-${i}`}
-                                                >
-                                                  <X size={10}/>
-                                                </button>
-                                              </span>
-                                              <span>+${c.amount.toFixed(2)}</span>
-                                            </div>
-                                          ))}
-                                          {b.extraPayments && b.extraPayments.map((p, i) => (
-                                            <div key={`ep-${i}`} className="flex justify-between text-green-300 text-xs">
-                                              <span className="flex items-center gap-1">
-                                                <Check size={10}/> {p.type}
-                                              </span>
-                                              <span>+${p.amount.toFixed(2)}</span>
-                                            </div>
-                                          ))}
-                                          {additionalTax > 0 && (
-                                            <div className="flex justify-between text-purple-300 text-xs">
-                                              <span>Tax on Additional Charges</span>
-                                              <span>+${additionalTax.toFixed(2)}</span>
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2 text-xs">
-                                          <span>Additional Charges Total</span>
-                                          <span>${additionalCharges.toFixed(2)}</span>
-                                        </div>
-
-                                        {/* Total Billed */}
-                                        <div className="mt-4 pt-4 border-t border-zinc-700 bg-green-950/30 rounded-lg p-3 border border-green-700">
-                                          <div className="flex justify-between text-green-200 font-bold text-sm">
-                                            <span>TOTAL BILLED</span>
-                                            <span>${b.total.toFixed(2)}</span>
-                                          </div>
-                                        </div>
-
-                                        {/* Charge Extras by Original Payment Method */}
-                                        <div className="mt-4 pt-4 border-t border-zinc-600">
-                                          <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
-                                          <div className="flex gap-2">
-                                            <div className="relative flex-1">
-                                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
-                                              <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount"/>
-                                            </div>
-                                            <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment">Charge Extra Payment Trip</button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div>
-
-                          {/* Vehicle & License Evidence */}
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
-                            <div className="grid grid-cols-3 gap-4">
-                              {/* Driver's License */}
-                              <div>
-                                <label className="text-xs text-zinc-500 mb-2 block">Driver's License</label>
-                                <div className="flex gap-2">
-                                  {b.driver.licenseImages && b.driver.licenseImages.length > 0 ? (
-                                    b.driver.licenseImages.map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(b.driver.licenseImages || [], i)}>
-                                        <img src={img} alt={`License ${i+1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-xs text-zinc-600">No images</div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {/* Check-in Photos */}
-                              <div>
-                                <label className="text-xs text-green-500 mb-2 block">Check-in (Start)</label>
-                                <div className="flex gap-2 flex-wrap">
-                                  {b.checkInData?.photosOutside && b.checkInData.photosOutside.length > 0 ? (
-                                    [...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].slice(0, 4).map((img, i, allPhotos) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-green-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox([...(b.checkInData?.photosOutside || []), ...(b.checkInData?.photosInside || [])], i)}>
-                                        <img src={img} alt={`Check-in ${i+1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-xs text-zinc-600">No images</div>
-                                  )}
-                                  {b.checkInData?.photosOutside && ([...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].length > 4) && (
-                                    <div className="w-16 h-12 rounded overflow-hidden border border-green-700 bg-green-900/50 flex items-center justify-center cursor-pointer hover:bg-green-900 transition-colors" onClick={() => openLightbox([...(b.checkInData?.photosOutside || []), ...(b.checkInData?.photosInside || [])], 4)}>
-                                      <span className="text-xs text-green-400 font-bold">+{[...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].length - 4}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {/* Check-out Photos */}
-                              <div>
-                                <label className="text-xs text-orange-500 mb-2 block">Check-out (End)</label>
-                                <div className="flex gap-2 flex-wrap">
-                                  {b.checkOutData?.photosOutside && b.checkOutData.photosOutside.length > 0 ? (
-                                    [...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].slice(0, 4).map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-orange-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox([...(b.checkOutData?.photosOutside || []), ...(b.checkOutData?.photosInside || [])], i)}>
-                                        <img src={img} alt={`Check-out ${i+1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-xs text-zinc-600">No images</div>
-                                  )}
-                                  {b.checkOutData?.photosOutside && ([...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].length > 4) && (
-                                    <div className="w-16 h-12 rounded overflow-hidden border border-orange-700 bg-orange-900/50 flex items-center justify-center cursor-pointer hover:bg-orange-900 transition-colors" onClick={() => openLightbox([...(b.checkOutData?.photosOutside || []), ...(b.checkOutData?.photosInside || [])], 4)}>
-                                      <span className="text-xs text-orange-400 font-bold">+{[...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].length - 4}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Car Rental Agreement Section */}
-                          <div className={`p-4 rounded-lg border ${b.carRentalAgreement?.accepted ? 'bg-blue-950/30 border-blue-900/50' : 'bg-yellow-950/30 border-yellow-900/50'}`}>
-                            <h4 className={`text-xs font-bold uppercase flex items-center gap-2 mb-2 ${b.carRentalAgreement?.accepted ? 'text-blue-400' : 'text-yellow-400'}`}>
-                              <FileText size={14}/> Car Rental Agreement Status
-                            </h4>
-                            <div className="text-sm">
-                              {b.carRentalAgreement?.accepted ? (
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-2 text-blue-400">
-                                    <Check size={16} className="text-blue-500"/>
-                                    <span className="font-bold">ACCEPTED</span>
-                                  </div>
-                                  <span className="text-xs text-zinc-500">By: {b.carRentalAgreement.clientName}</span>
-                                  <span className="text-xs text-zinc-500">Date: {new Date(b.carRentalAgreement.acceptedAt).toLocaleDateString()}</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 text-yellow-400">
-                                  <AlertCircle size={16} className="text-yellow-500"/>
-                                  <span>Car Rental Agreement <strong>NOT SIGNED</strong></span>
-                                </div>
-                              )}
-                            </div>
-                            {b.carRentalAgreement?.accepted && (
-                              <button 
-                                onClick={() => {
-                                  setDriverDetails(prev => ({ ...prev, name: b.carRentalAgreement?.clientName || b.driver.name }));
-                                  setViewingCarRentalOnly(true);
-                                  setShowCarRentalModal(true);
-                                }}
-                                className="mt-3 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1"
-                                data-testid="button-view-car-rental-agreement"
-                              >
-                                <FileText size={12}/> View & Print Agreement
-                              </button>
-                            )}
-                          </div>
-
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-zinc-500 py-20">
-                      <List size={48} className="mb-4 opacity-30"/>
-                      <p>Select a booking from the list to manage details.</p>
-                    </div>
-                  )}
-                </Card>
               </div>
             )}
-
             {adminTab === 'earnings' && (
               <div className="space-y-6">
                 {/* Top Section - Revenue & Finance Overview */}
