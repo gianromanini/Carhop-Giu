@@ -8380,11 +8380,79 @@ export default function CarHopApp() {
                                 {/* Manage Charges */}
                                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
                                   <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Manage Charges & Adjustments</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('manual-charge'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-charge">Add Charge</button>
-                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('discount'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-discount">Add Discount</button>
-                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('refund'); }} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 text-[10px] font-bold rounded transition-colors" data-testid="button-process-refund">Process Refund</button>
+                                  
+                                  {/* Action Buttons */}
+                                  <div className="flex flex-wrap gap-2 mb-4">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('manual-charge'); }} 
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment === 'manual-charge' && adjustingBookingId === b.id ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
+                                      data-testid="button-add-charge"
+                                    >
+                                      Add Charge
+                                    </button>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('discount'); }} 
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment === 'discount' && adjustingBookingId === b.id ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
+                                      data-testid="button-add-discount"
+                                    >
+                                      Add Discount
+                                    </button>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('refund'); }} 
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment === 'refund' && adjustingBookingId === b.id ? 'bg-red-600 text-white' : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600'}`}
+                                      data-testid="button-process-refund"
+                                    >
+                                      Process Refund
+                                    </button>
                                   </div>
+
+                                  {/* Adjustment Form */}
+                                  {adjustingBookingId === b.id && adjustment && (
+                                    <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 animate-in fade-in slide-in-from-top-2">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <h5 className="text-xs font-bold text-zinc-900 dark:text-white uppercase">
+                                          {adjustment === 'manual-charge' ? 'Add Additional Charge' : adjustment === 'discount' ? 'Apply Discount' : 'Process Refund'}
+                                        </h5>
+                                        <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(null); setAdjustment(null); }} className="text-zinc-400 hover:text-zinc-600"><X size={14}/></button>
+                                      </div>
+                                      
+                                      <div className="space-y-3">
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Reason / Description</label>
+                                          <input 
+                                            type="text" 
+                                            placeholder={adjustment === 'manual-charge' ? "e.g., Cleaning fee, Smoking, etc." : adjustment === 'discount' ? "e.g., Early return, Promo, etc." : "Reason for refund"}
+                                            className="w-full p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-900 dark:text-white"
+                                            value={adjustmentReason}
+                                            onChange={(e) => setAdjustmentReason(e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Amount ($)</label>
+                                          <input 
+                                            type="number" 
+                                            placeholder="0.00"
+                                            className="w-full p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-900 dark:text-white"
+                                            value={adjustmentAmount || ''}
+                                            onChange={(e) => setAdjustmentAmount(parseFloat(e.target.value) || 0)}
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        </div>
+                                        <Button 
+                                          className="w-full" 
+                                          size="sm"
+                                          disabled={!adjustmentAmount || !adjustmentReason}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleApplyAdjustment(b.id);
+                                          }}
+                                        >
+                                          Apply {adjustment === 'manual-charge' ? 'Charge' : adjustment === 'discount' ? 'Discount' : 'Refund'}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
