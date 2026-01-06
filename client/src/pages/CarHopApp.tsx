@@ -8177,7 +8177,7 @@ export default function CarHopApp() {
                                       </div>
                                     )}
 
-                                    {/* Financial Summary */}
+                                    {/* Financial Details */}
                                     <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
                                       <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Financial Details</h4>
                                       <div className="space-y-2">
@@ -8191,9 +8191,62 @@ export default function CarHopApp() {
                                             <span className="text-zinc-900 dark:text-white font-medium">+${(b.details?.protection || 0).toFixed(2)}</span>
                                           </div>
                                         )}
+                                        {((b.details as any)?.extras || 0) > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-500">Extras</span>
+                                            <span className="text-zinc-900 dark:text-white font-medium">+${((b.details as any)?.extras || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {((b.details as any)?.fees || 0) > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-500">Service Fees</span>
+                                            <span className="text-zinc-900 dark:text-white font-medium">+${((b.details as any)?.fees || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {((b.details as any)?.tax || 0) > 0 && (
+                                          <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-500">Taxes</span>
+                                            <span className="text-zinc-900 dark:text-white font-medium">+${((b.details as any)?.tax || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {((b.details as any)?.extended || 0) > 0 && (
+                                          <div className="flex justify-between text-sm text-blue-600 dark:text-blue-400 font-bold">
+                                            <span className="uppercase text-[10px]">Extension</span>
+                                            <span>+${((b.details as any)?.extended || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {((b.details as any)?.manualCharges || 0) > 0 && (
+                                          <div className="flex justify-between text-sm text-red-600 dark:text-red-400 font-bold">
+                                            <span className="uppercase text-[10px]">Additional Charges</span>
+                                            <span>+${((b.details as any)?.manualCharges || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        {((b.details as any)?.discount || 0) > 0 && (
+                                          <div className="flex justify-between text-sm text-green-600 dark:text-green-400 font-bold">
+                                            <span className="uppercase text-[10px]">Discount Applied</span>
+                                            <span>-${((b.details as any)?.discount || 0).toFixed(2)}</span>
+                                          </div>
+                                        )}
                                         <div className="flex justify-between text-sm border-t border-zinc-100 dark:border-zinc-800 pt-2 mt-2">
                                           <span className="font-bold text-zinc-900 dark:text-white">Total Charged</span>
                                           <span className="font-bold text-green-600 dark:text-green-400">${b.total.toFixed(2)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Payment Info */}
+                                    <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                      <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Payment Information</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <span className="text-[10px] text-zinc-500 block uppercase">Card Holder</span>
+                                          <span className="text-xs font-medium text-zinc-900 dark:text-white">{b.paymentRaw?.cardName || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-[10px] text-zinc-500 block uppercase">Card Number</span>
+                                          <span className="text-xs font-medium text-zinc-900 dark:text-white">
+                                            {b.paymentRaw?.cardNumber ? `**** **** **** ${b.paymentRaw.cardNumber.slice(-4)}` : 'N/A'}
+                                          </span>
                                         </div>
                                       </div>
                                     </div>
@@ -8280,7 +8333,7 @@ export default function CarHopApp() {
                                         ) : (
                                           <div className="p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-500 flex flex-col items-center justify-center gap-2">
                                             <p>Host has not rated this guest yet</p>
-                                            <Button size="sm" onClick={(e) => { e.stopPropagation(); setRatingTarget({ bookingId: b.id, clientEmail: b.driver.email, clientName: b.driver.name }); setShowHostRatingModal(true); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px]" data-testid="button-admin-rate-guest">Rate Guest Now</Button>
+                                            <Button size="sm" onClick={(e) => { e.stopPropagation(); setRatingStars(0); setRatingComment(''); setRatingTarget({ bookingId: b.id, clientEmail: b.driver.email, clientName: b.driver.name }); setShowHostRatingModal(true); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px]" data-testid="button-admin-rate-guest">Rate Guest Now</Button>
                                           </div>
                                         )}
                                       </div>
@@ -8292,9 +8345,9 @@ export default function CarHopApp() {
                                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
                                   <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Manage Charges & Adjustments</h4>
                                   <div className="flex flex-wrap gap-2">
-                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBooking(b); setAdjustmentType('manual-charge'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-charge">Add Charge</button>
-                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBooking(b); setAdjustmentType('discount'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-discount">Add Discount</button>
-                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBooking(b); setAdjustmentType('refund'); }} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 text-[10px] font-bold rounded transition-colors" data-testid="button-process-refund">Process Refund</button>
+                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('manual-charge'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-charge">Add Charge</button>
+                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('discount'); }} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[10px] font-bold rounded transition-colors" data-testid="button-add-discount">Add Discount</button>
+                                    <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('refund'); }} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 text-[10px] font-bold rounded transition-colors" data-testid="button-process-refund">Process Refund</button>
                                   </div>
                                 </div>
                               </div>
