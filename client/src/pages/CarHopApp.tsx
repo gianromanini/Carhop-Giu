@@ -807,10 +807,46 @@ export default function CarHopApp() {
   const [isCheckOutMode, setIsCheckOutMode] = useState(false);
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
 
-  const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
-  const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
-  const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
-  const [checkingOutByAdminBookingId, setCheckingOutByAdminBookingId] = useState<number | null>(null);
+  const [adjustingBookingId, setAdjustingBookingId] = useState<number | null>(null);
+  const [adjustment, setAdjustment] = useState<'manual-charge' | 'discount' | 'refund' | null>(null);
+  const [adjustmentReason, setAdjustmentReason] = useState('');
+  const [adjustmentAmount, setAdjustmentAmount] = useState(0);
+
+  const handleApplyAdjustment = (bookingId: number) => {
+    if (!adjustment || !adjustmentAmount || !adjustmentReason) return;
+    
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const currentDetails = { ...booking.details } as any;
+    let newTotal = booking.total;
+
+    if (adjustment === 'manual-charge') {
+      currentDetails.manualCharges = (currentDetails.manualCharges || 0) + adjustmentAmount;
+      newTotal += adjustmentAmount;
+    } else if (adjustment === 'discount') {
+      currentDetails.discount = (currentDetails.discount || 0) + adjustmentAmount;
+      newTotal -= adjustmentAmount;
+    } else if (adjustment === 'refund') {
+      // For refund, we just add it to manualCharges as a negative value or handle specifically
+      currentDetails.manualCharges = (currentDetails.manualCharges || 0) - adjustmentAmount;
+      newTotal -= adjustmentAmount;
+    }
+
+    updateBookingMutation.mutate({
+      id: bookingId,
+      data: {
+        details: currentDetails,
+        total: newTotal
+      }
+    });
+
+    setAdjustingBookingId(null);
+    setAdjustment(null);
+    setAdjustmentReason('');
+    setAdjustmentAmount(0);
+    toast({ title: 'Adjustment applied successfully' });
+  };
 
   const [newLocation, setNewLocation] = useState('');
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lon: number } | null>(null);
@@ -829,9 +865,9 @@ export default function CarHopApp() {
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
-  const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
-  const [showRateGuestModal, setShowRateGuestModal] = useState(false);
-  const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [ratingTarget, setRatingTarget] = useState<{ bookingId: number; clientEmail: string; clientName: string } | null>(null);
+  const [showHostRatingModal, setShowHostRatingModal] = useState(false);
 
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
