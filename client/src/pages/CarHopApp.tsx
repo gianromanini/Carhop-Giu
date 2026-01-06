@@ -824,7 +824,7 @@ export default function CarHopApp() {
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
-  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
+  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first' | 'newest'>('newest');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
@@ -7945,7 +7945,8 @@ export default function CarHopApp() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
-                      <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="select-booking-filter">
+                      <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first' | 'newest')} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="select-booking-filter">
+                        <option value="newest">Newest First (Default)</option>
                         <option value="end-soon">End Soon (Next 3 Days)</option>
                         <option value="start-first">Start First (Oldest First)</option>
                       </select>
@@ -7954,6 +7955,7 @@ export default function CarHopApp() {
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
                       <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-white" data-testid="select-admin-booking-status">
                         <option value="">All Status</option>
+                        <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="pending-approval">Pending Approval</option>
@@ -7981,16 +7983,26 @@ export default function CarHopApp() {
                           const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
                           const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
                           return aDateTime - bDateTime;
-                        } else {
+                        } else if (bookingFilterType === 'start-first') {
                           const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
                           const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
-                          return bDateTime - aDateTime;
+                          return aDateTime - bDateTime;
+                        } else {
+                          // Default: Newest First (by creation date or start date as fallback)
+                          const aDate = new Date(a.date).getTime();
+                          const bDate = new Date(b.date).getTime();
+                          if (aDate !== bDate) return bDate - aDate;
+                          
+                          const aStart = new Date(`${a.startDate}T${a.startTime}`).getTime();
+                          const bStart = new Date(`${b.startDate}T${b.startTime}`).getTime();
+                          return bStart - aStart;
                         }
                       })
                       .filter(b => {
                         let matches = true;
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
+                          if (bookingFilterStatus === 'active') matches = b.status === 'Active' || b.status === 'Extended';
+                          else if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
                           else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
                           else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
