@@ -8418,78 +8418,72 @@ export default function CarHopApp() {
                                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
                                   <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Manage Charges & Adjustments</h4>
                                   
-                                  {/* Action Buttons */}
-                                  <div className="flex flex-wrap gap-2 mb-4">
-                                    <button 
-                                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment({ type: 'manual-charge', value: '' }); }} 
-                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment?.type === 'manual-charge' && adjustingBookingId === b.id ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
-                                      data-testid="button-add-charge"
-                                    >
-                                      Add Charge
-                                    </button>
-                                    <button 
-                                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment({ type: 'discount', value: '' }); }} 
-                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment?.type === 'discount' && adjustingBookingId === b.id ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
-                                      data-testid="button-add-discount"
-                                    >
-                                      Add Discount
-                                    </button>
-                                    <button 
-                                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment({ type: 'refund', value: '' }); }} 
-                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment?.type === 'refund' && adjustingBookingId === b.id ? 'bg-red-600 text-white' : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600'}`}
-                                      data-testid="button-process-refund"
-                                    >
-                                      Process Refund
-                                    </button>
-                                  </div>
-
-                                  {/* Adjustment Form */}
-                                  {adjustingBookingId === b.id && adjustment && (
-                                    <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 animate-in fade-in slide-in-from-top-2">
-                                      <div className="flex justify-between items-center mb-3">
-                                        <h5 className="text-xs font-bold text-zinc-900 dark:text-white uppercase">
-                                          {adjustment.type === 'manual-charge' ? 'Add Additional Charge' : adjustment.type === 'discount' ? 'Apply Discount' : 'Process Refund'}
-                                        </h5>
-                                        <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(null); setAdjustment(null); }} className="text-zinc-400 hover:text-zinc-600"><X size={14}/></button>
-                                      </div>
-                                      
-                                      <div className="space-y-3">
-                                        <div>
-                                          <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Reason / Description</label>
-                                          <input 
-                                            type="text" 
-                                            placeholder={adjustment.type === 'manual-charge' ? "e.g., Cleaning fee, Smoking, etc." : adjustment.type === 'discount' ? "e.g., Early return, Promo, etc." : "Reason for refund"}
-                                            className="w-full p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-900 dark:text-white"
-                                            value={adjustmentReason}
-                                            onChange={(e) => setAdjustmentReason(e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                          />
-                                        </div>
-                                        <div>
-                                          <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Amount ($)</label>
-                                          <input 
-                                            type="number" 
-                                            placeholder="0.00"
-                                            className="w-full p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-900 dark:text-white"
-                                            value={adjustmentAmount || ''}
-                                            onChange={(e) => setAdjustmentAmount(parseFloat(e.target.value) || 0)}
-                                            onClick={(e) => e.stopPropagation()}
-                                          />
-                                        </div>
-                                        <Button 
-                                          className="w-full" 
-                                          size="sm"
-                                          disabled={!adjustmentAmount || !adjustmentReason}
-                                          onClick={(e: React.MouseEvent) => {
-                                            e.stopPropagation();
-                                            handleApplyAdjustment(b.id);
-                                          }}
+                                  <div className="space-y-4">
+                                    {/* Apply Discount Form - Always Visible */}
+                                    <div>
+                                      <p className="text-[10px] font-bold text-zinc-500 mb-1 uppercase">Apply Discount</p>
+                                      <div className="flex gap-2">
+                                        <select 
+                                          value={adjustment?.type || 'fixed'} 
+                                          onChange={(e) => setAdjustment({ type: e.target.value, value: adjustment?.value || '' })}
+                                          className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white w-32"
                                         >
-                                          Apply {adjustment.type === 'manual-charge' ? 'Charge' : adjustment.type === 'discount' ? 'Discount' : 'Refund'}
+                                          <option value="fixed">Fixed Value ($)</option>
+                                          <option value="percent">Percentage (%)</option>
+                                        </select>
+                                        <Input 
+                                          placeholder="Value" 
+                                          type="number"
+                                          value={adjustment?.value || ''}
+                                          onChange={(e: any) => setAdjustment({ type: adjustment?.type || 'fixed', value: e.target.value })}
+                                          className="flex-1 mb-0 text-xs" 
+                                        />
+                                        <Button 
+                                          variant="primary" 
+                                          size="sm" 
+                                          className="bg-green-600 hover:bg-green-700"
+                                          onClick={() => handleApplyDiscount(b)}
+                                        >
+                                          Apply
                                         </Button>
                                       </div>
                                     </div>
-                                  )}
+
+                                    {/* Charge Extra Payment Form - Always Visible */}
+                                    <div>
+                                      <p className="text-[10px] font-bold text-zinc-500 mb-1 uppercase">Charge Extra Payment Trip</p>
+                                      <div className="flex gap-2">
+                                        <select 
+                                          value={extraCharge.type}
+                                          onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                          className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white w-32"
+                                        >
+                                          <option value="Refuel">Refuel</option>
+                                          <option value="Tolls">Tolls</option>
+                                          <option value="Extra Cleaning Violation">Extra Cleaning Violation</option>
+                                          <option value="Smoke Violation">Smoke Violation</option>
+                                          <option value="Damage">Damage</option>
+                                          <option value="Other">Other</option>
+                                        </select>
+                                        <Input 
+                                          placeholder="Value ($)" 
+                                          type="number"
+                                          value={extraCharge.amount}
+                                          onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                          className="flex-1 mb-0 text-xs" 
+                                        />
+                                        <Button 
+                                          variant="primary" 
+                                          size="sm" 
+                                          className="bg-orange-600 hover:bg-orange-700"
+                                          onClick={() => handleAddCharge(b)}
+                                        >
+                                          Charge Extra Payment Trip
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                                 </div>
                               </div>
                             )}
