@@ -808,9 +808,11 @@ export default function CarHopApp() {
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
 
   const [adjustingBookingId, setAdjustingBookingId] = useState<number | null>(null);
-  const [adjustment, setAdjustment] = useState<'manual-charge' | 'discount' | 'refund' | null>(null);
+  const [adjustment, setAdjustment] = useState<{ type: string; value: string } | null>(null);
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [adjustmentAmount, setAdjustmentAmount] = useState(0);
+  const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
+  const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
 
   const handleApplyAdjustment = (bookingId: number) => {
     if (!adjustment || !adjustmentAmount || !adjustmentReason) return;
@@ -821,14 +823,13 @@ export default function CarHopApp() {
     const currentDetails = { ...booking.details } as any;
     let newTotal = booking.total;
 
-    if (adjustment === 'manual-charge') {
+    if (adjustment.type === 'manual-charge') {
       currentDetails.manualCharges = (currentDetails.manualCharges || 0) + adjustmentAmount;
       newTotal += adjustmentAmount;
-    } else if (adjustment === 'discount') {
+    } else if (adjustment.type === 'discount') {
       currentDetails.discount = (currentDetails.discount || 0) + adjustmentAmount;
       newTotal -= adjustmentAmount;
-    } else if (adjustment === 'refund') {
-      // For refund, we just add it to manualCharges as a negative value or handle specifically
+    } else if (adjustment.type === 'refund') {
       currentDetails.manualCharges = (currentDetails.manualCharges || 0) - adjustmentAmount;
       newTotal -= adjustmentAmount;
     }
@@ -866,8 +867,11 @@ export default function CarHopApp() {
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{ bookingId: number; clientEmail: string; clientName: string } | null>(null);
   const [showHostRatingModal, setShowHostRatingModal] = useState(false);
+  const [showRateGuestModal, setShowRateGuestModal] = useState(false);
+  const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
 
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
@@ -5455,8 +5459,8 @@ export default function CarHopApp() {
                               <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <select 
-                                  value={adjustment.type} 
-                                  onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
+                                  value={adjustment?.type || 'fixed'} 
+                                  onChange={(e) => setAdjustment({ type: e.target.value, value: e.target.value === 'fixed' ? 'Fixed Value ($)' : 'Percentage (%)' })}
                                   className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
                                   data-testid="select-host-discount-type"
                                 >
@@ -5466,14 +5470,14 @@ export default function CarHopApp() {
                                 <Input 
                                   placeholder="Value" 
                                   type="number"
-                                  value={adjustment.value}
-                                  onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
+                                  value={adjustmentAmount}
+                                  onChange={(e: any) => setAdjustmentAmount(parseFloat(e.target.value))}
                                   className="flex-1 mb-0 text-xs" 
                                   data-testid="input-host-discount-value" 
                                 />
                                 <button 
                                   className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleApplyDiscount(b)}
+                                  onClick={() => handleApplyAdjustment(b.id)}
                                   data-testid="button-host-apply-discount"
                                 >
                                   Apply
@@ -5486,6 +5490,30 @@ export default function CarHopApp() {
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <select 
                                   value={extraCharge.type}
+                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40"
+                                >
+                                  <option value="Refuel">Refuel Fee</option>
+                                  <option value="Cleaning">Cleaning Fee</option>
+                                  <option value="Miles">Extra Miles</option>
+                                  <option value="Toll">Toll / Ticket</option>
+                                  <option value="Other">Other</option>
+                                </select>
+                                <Input 
+                                  placeholder="Amount ($)" 
+                                  type="number"
+                                  value={extraCharge.amount}
+                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                  className="flex-1 mb-0 text-xs"
+                                />
+                                <button 
+                                  className="px-3 h-[38px] bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                                  onClick={() => handleApplyAdjustment(b.id)}
+                                >
+                                  Add Charge
+                                </button>
+                              </div>
+                            </div>
                                   onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
                                   className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
                                   data-testid="select-host-charge-type"
