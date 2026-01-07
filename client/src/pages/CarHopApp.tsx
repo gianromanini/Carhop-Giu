@@ -8484,7 +8484,6 @@ export default function CarHopApp() {
                                     </div>
                                   </div>
                                 </div>
-                                </div>
                               </div>
                             )}
                           </div>
