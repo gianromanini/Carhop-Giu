@@ -5162,34 +5162,44 @@ export default function CarHopApp() {
                                   )}
                                   <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                                 </div>
-                                <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
-                                <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
-                              </div>
-                              <div className="text-right">
-                                <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
-                                {b.status === 'Completed' && (() => {
+                                <div className="text-xs text-zinc-400 font-medium">
+                                  {b.carName} 
+                                  {(() => {
+                                    const vehicle = vehicles.find(v => v.id === b.vehicleId);
+                                    if (vehicle?.hostName) {
+                                      return <span className="text-[10px] text-zinc-500 ml-1">@{vehicle.hostName}</span>;
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+                                {(() => {
                                   const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
+                                  if (!bookingRating?.stars && !bookingRating?.hostStarsToClient) return <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>;
                                   return (
-                                    <div className="text-[8px] text-zinc-400 space-y-1">
+                                    <div className="mt-1 space-y-1">
                                       {bookingRating?.stars && (
-                                        <div className="cursor-pointer" onClick={(e) => { e.stopPropagation(); alert(bookingRating.comment ? `"${bookingRating.comment}"` : 'No comment provided'); }}>
-                                          <div className="font-bold text-zinc-300">Guest</div>
-                                          <div className="flex items-center gap-0.5 justify-end">
-                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[8px] font-bold text-zinc-500 uppercase">Guest</span>
+                                          <div className="flex items-center gap-0.5">
+                                            {[1,2,3,4,5].map(star => (<span key={star} className={`text-[10px] ${star <= (bookingRating.stars || 0) ? 'text-yellow-400' : 'text-zinc-700'}`}>★</span>))}
                                           </div>
                                         </div>
                                       )}
                                       {bookingRating?.hostStarsToClient && (
-                                        <div>
-                                          <div className="font-bold text-zinc-300">Host</div>
-                                          <div className="flex items-center gap-0.5 justify-end">
-                                            {[1,2,3,4,5].map(star => (<span key={star} className={`${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-600'}`}>★</span>))}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[8px] font-bold text-zinc-500 uppercase">Host</span>
+                                          <div className="flex items-center gap-0.5">
+                                            {[1,2,3,4,5].map(star => (<span key={star} className={`text-[10px] ${star <= (bookingRating.hostStarsToClient || 0) ? 'text-yellow-400' : 'text-zinc-700'}`}>★</span>))}
                                           </div>
                                         </div>
                                       )}
+                                      <div className="text-xs text-zinc-500">{b.driver.name}</div>
                                     </div>
                                   );
                                 })()}
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
                               </div>
                             </div>
                             <div className="text-[10px] text-zinc-400">
