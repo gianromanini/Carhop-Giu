@@ -5087,7 +5087,7 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'active') matches = b.status === 'Active' || b.status === 'Extended';
+                          if (bookingFilterStatus === ("active" as any)) matches = b.status === 'Active' || b.status === 'Extended';
                           else if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
                           else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
                           else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
@@ -5558,7 +5558,7 @@ export default function CarHopApp() {
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
-                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const manualChargesTotal = Array.isArray(b.details.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 
                                 return (
@@ -8022,7 +8022,7 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'active') matches = b.status === 'Active' || b.status === 'Extended';
+                          if (bookingFilterStatus === ("active" as any)) matches = b.status === 'Active' || b.status === 'Extended';
                           else if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
                           else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
                           else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
@@ -8494,7 +8494,7 @@ export default function CarHopApp() {
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
-                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const manualChargesTotal = Array.isArray(b.details.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal;
                                 const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * (taxRate / 100) : 0;
