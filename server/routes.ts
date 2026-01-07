@@ -451,7 +451,7 @@ async function calculateCorrectTotal(booking: any): Promise<number> {
   
   // Additional Charges = extendedRate + manualCharges + extraPayments - discount
   const extendedRate = booking.details?.extendedRate || 0;
-  const manualChargesTotal = (booking.details?.manualCharges || []).reduce((sum: number, c: any) => sum + c.amount, 0);
+  const manualChargesTotal = Array.isArray(booking.details?.manualCharges) ? (booking.details.manualCharges as any[]).reduce((sum: number, c: any) => sum + (c.amount || 0), 0) : 0;
   const extraPaymentsTotal = (booking.extraPayments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
   const discount = booking.details?.discount || 0;
   const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;

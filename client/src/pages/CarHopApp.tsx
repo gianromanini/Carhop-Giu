@@ -7589,7 +7589,7 @@ export default function CarHopApp() {
                                 
                                 // Calculate additional charges
                                 const extendedRate = selectedTripForView.details?.extendedRate || 0;
-                                const manualChargesTotal = (selectedTripForView.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const manualChargesTotal = Array.isArray(selectedTripForView.details?.manualCharges) ? selectedTripForView.details.manualCharges.reduce((sum, c: any) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (selectedTripForView.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const discount = selectedTripForView.details?.discount || 0;
                                 const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
@@ -9720,7 +9720,7 @@ export default function CarHopApp() {
                       
                       // Calculate additional charges
                       const extendedRate = receiptBooking.details?.extendedRate || 0;
-                      const manualChargesTotal = (receiptBooking.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                      const manualChargesTotal = Array.isArray(receiptBooking.details?.manualCharges) ? receiptBooking.details.manualCharges.reduce((sum, c: any) => sum + (c.amount || 0), 0) : 0;
                       const extraPaymentsTotal = (receiptBooking.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                       const discount = receiptBooking.details?.discount || 0;
                       const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
