@@ -6974,7 +6974,6 @@ export default function CarHopApp() {
                                   {car.model} {car.year}
                                   {car.hostName && <span className="text-zinc-400 font-normal"> - {car.hostName}</span>}
                                 </span>
-                                {car.hostName && <span className="text-blue-500 font-semibold ml-1"> - {car.hostName}</span>}
                               </h4>
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                 {car.fuel} · {car.driveType || 'FWD'} · {car.transmission} · {car.category}
