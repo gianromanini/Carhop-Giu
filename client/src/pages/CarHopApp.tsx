@@ -6717,9 +6717,9 @@ export default function CarHopApp() {
                         <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
                         <select 
                           name="hostId" 
-                          value={formData.hostId || ''} 
+                          value={formData.hostId ? String(formData.hostId) : ''} 
                           onChange={(e) => {
-                            const selectedHost = hostsData.find((h: any) => h.id === parseInt(e.target.value));
+                            const selectedHost = hostsData.find((h: any) => String(h.id) === e.target.value);
                             setFormData({...formData, hostId: e.target.value, hostName: selectedHost ? `${selectedHost.firstName} ${selectedHost.lastName}` : ''});
                           }} 
                           className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
@@ -6972,7 +6972,7 @@ export default function CarHopApp() {
                               <h4 className="text-sm truncate">
                                 <span className="text-zinc-600 dark:text-zinc-300 font-medium">
                                   {car.model} {car.year}
-                                  {car.hostName && <span className="text-zinc-400 font-normal"> - {car.hostName}</span>}
+                                  {car.hostName && <span className="text-blue-500 font-semibold"> - {car.hostName}</span>}
                                 </span>
                               </h4>
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -7029,9 +7029,9 @@ export default function CarHopApp() {
                                   <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
                                   <select 
                                     name="hostId" 
-                                    value={formData.hostId || ''} 
+                                    value={formData.hostId ? String(formData.hostId) : ''} 
                                     onChange={(e) => {
-                                      const selectedHost = hostsData.find((h: any) => h.id === parseInt(e.target.value));
+                                      const selectedHost = hostsData.find((h: any) => String(h.id) === e.target.value);
                                       setFormData({...formData, hostId: e.target.value, hostName: selectedHost ? `${selectedHost.firstName} ${selectedHost.lastName}` : ''});
                                     }} 
                                     className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm"
