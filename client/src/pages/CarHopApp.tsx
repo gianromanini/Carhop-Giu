@@ -2077,7 +2077,7 @@ export default function CarHopApp() {
   };
 
   const handleApplyDiscount = async (booking: Booking) => {
-    if (!adjustment.value || parseFloat(adjustment.value) <= 0) {
+    if (!adjustment || !adjustment.value || parseFloat(adjustment.value) <= 0) {
       alert("Please enter a valid discount value.");
       return;
     }
@@ -5514,33 +5514,6 @@ export default function CarHopApp() {
                                 </button>
                               </div>
                             </div>
-                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                  data-testid="select-host-charge-type"
-                                >
-                                  <option value="refuel">Refuel</option>
-                                  <option value="mileage">Extra Mileage</option>
-                                  <option value="damage">Damage</option>
-                                  <option value="cleaning">Extra Cleaning</option>
-                                  <option value="other">Other</option>
-                                </select>
-                                <Input 
-                                  placeholder="Value ($)" 
-                                  type="number"
-                                  value={extraCharge.amount}
-                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs" 
-                                  data-testid="input-host-charge-value" 
-                                />
-                                <button 
-                                  className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleAddCharge(b)}
-                                  data-testid="button-host-charge"
-                                >
-                                  Add Charge
-                                </button>
-                              </div>
-                            </div>
                           </div>
 
                           {/* Vehicle & License Evidence */}
@@ -8433,7 +8406,7 @@ export default function CarHopApp() {
                                         ) : (
                                           <div className="p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-500 flex flex-col items-center justify-center gap-2">
                                             <p>Host has not rated this guest yet</p>
-                                            <Button size="sm" onClick={(e) => { e.stopPropagation(); setRatingStars(0); setRatingComment(''); setRatingTarget({ bookingId: b.id, clientEmail: b.driver.email, clientName: b.driver.name }); setShowHostRatingModal(true); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px]" data-testid="button-admin-rate-guest">Rate Guest Now</Button>
+                                            <Button size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setRatingStars(0); setRatingComment(''); setRatingTarget({ bookingId: b.id, clientEmail: b.driver.email, clientName: b.driver.name }); setShowHostRatingModal(true); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px]" data-testid="button-admin-rate-guest">Rate Guest Now</Button>
                                           </div>
                                         )}
                                       </div>
@@ -8448,22 +8421,22 @@ export default function CarHopApp() {
                                   {/* Action Buttons */}
                                   <div className="flex flex-wrap gap-2 mb-4">
                                     <button 
-                                      onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('manual-charge'); }} 
-                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment === 'manual-charge' && adjustingBookingId === b.id ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
+                                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment({ type: 'manual-charge', value: '' }); }} 
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment?.type === 'manual-charge' && adjustingBookingId === b.id ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
                                       data-testid="button-add-charge"
                                     >
                                       Add Charge
                                     </button>
                                     <button 
-                                      onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('discount'); }} 
-                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment === 'discount' && adjustingBookingId === b.id ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
+                                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment({ type: 'discount', value: '' }); }} 
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment?.type === 'discount' && adjustingBookingId === b.id ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'}`}
                                       data-testid="button-add-discount"
                                     >
                                       Add Discount
                                     </button>
                                     <button 
-                                      onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment('refund'); }} 
-                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment === 'refund' && adjustingBookingId === b.id ? 'bg-red-600 text-white' : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600'}`}
+                                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(b.id); setAdjustment({ type: 'refund', value: '' }); }} 
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded transition-colors ${adjustment?.type === 'refund' && adjustingBookingId === b.id ? 'bg-red-600 text-white' : 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600'}`}
                                       data-testid="button-process-refund"
                                     >
                                       Process Refund
@@ -8475,9 +8448,9 @@ export default function CarHopApp() {
                                     <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 animate-in fade-in slide-in-from-top-2">
                                       <div className="flex justify-between items-center mb-3">
                                         <h5 className="text-xs font-bold text-zinc-900 dark:text-white uppercase">
-                                          {adjustment === 'manual-charge' ? 'Add Additional Charge' : adjustment === 'discount' ? 'Apply Discount' : 'Process Refund'}
+                                          {adjustment.type === 'manual-charge' ? 'Add Additional Charge' : adjustment.type === 'discount' ? 'Apply Discount' : 'Process Refund'}
                                         </h5>
-                                        <button onClick={(e) => { e.stopPropagation(); setAdjustingBookingId(null); setAdjustment(null); }} className="text-zinc-400 hover:text-zinc-600"><X size={14}/></button>
+                                        <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); setAdjustingBookingId(null); setAdjustment(null); }} className="text-zinc-400 hover:text-zinc-600"><X size={14}/></button>
                                       </div>
                                       
                                       <div className="space-y-3">
@@ -8485,7 +8458,7 @@ export default function CarHopApp() {
                                           <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Reason / Description</label>
                                           <input 
                                             type="text" 
-                                            placeholder={adjustment === 'manual-charge' ? "e.g., Cleaning fee, Smoking, etc." : adjustment === 'discount' ? "e.g., Early return, Promo, etc." : "Reason for refund"}
+                                            placeholder={adjustment.type === 'manual-charge' ? "e.g., Cleaning fee, Smoking, etc." : adjustment.type === 'discount' ? "e.g., Early return, Promo, etc." : "Reason for refund"}
                                             className="w-full p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-900 dark:text-white"
                                             value={adjustmentReason}
                                             onChange={(e) => setAdjustmentReason(e.target.value)}
@@ -8507,12 +8480,12 @@ export default function CarHopApp() {
                                           className="w-full" 
                                           size="sm"
                                           disabled={!adjustmentAmount || !adjustmentReason}
-                                          onClick={(e) => {
+                                          onClick={(e: React.MouseEvent) => {
                                             e.stopPropagation();
                                             handleApplyAdjustment(b.id);
                                           }}
                                         >
-                                          Apply {adjustment === 'manual-charge' ? 'Charge' : adjustment === 'discount' ? 'Discount' : 'Refund'}
+                                          Apply {adjustment.type === 'manual-charge' ? 'Charge' : adjustment.type === 'discount' ? 'Discount' : 'Refund'}
                                         </Button>
                                       </div>
                                     </div>
