@@ -8,13 +8,6 @@
       "when": 1767085489774,
       "tag": "0000_concerned_nightshade",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1767703596307,
-      "tag": "0001_add_unread_column",
-      "breakpoints": true
     }
   ]
 }
