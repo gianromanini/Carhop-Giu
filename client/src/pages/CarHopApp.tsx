@@ -8245,47 +8245,26 @@ export default function CarHopApp() {
 
                                     {/* Communication Section moved here */}
                                     <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                                      <h4 className="text-[10px] font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                      <h4 className="text-[10px] font-bold uppercase flex items-center gap-2 mb-3 text-blue-600 dark:text-blue-400">
                                         <MessageCircle size={14}/> Communication
                                       </h4>
-                                      <div className="max-h-40 overflow-y-auto space-y-2 mb-4">
-                                        {(b.messages || []).length === 0 ? (
-                                          <p className="text-xs text-zinc-500 text-center py-4 italic">No messages yet</p>
-                                        ) : (
-                                          (b.messages || []).map(msg => (
-                                            <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.sender === 'admin' ? 'bg-green-50 dark:bg-green-900/20 border-l-2 border-green-500 ml-4' : 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500 mr-4'}`}>
-                                              <div className="flex justify-between items-start mb-0.5">
-                                                <span className={`font-bold uppercase ${msg.sender === 'admin' ? 'text-green-600' : 'text-blue-600'}`}>{msg.sender}</span>
-                                                <span className="text-[9px] text-zinc-400">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                              </div>
-                                              <p className="text-zinc-700 dark:text-zinc-300">{msg.text}</p>
-                                            </div>
-                                          ))
-                                        )}
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <input
-                                          type="text"
-                                          value={chatMessage}
-                                          onChange={(e) => setChatMessage(e.target.value)}
-                                          placeholder="Quick reply..."
-                                          className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                          onClick={(e) => e.stopPropagation()}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              e.stopPropagation();
-                                              sendChatMessage(b.id, 'admin');
-                                            }
-                                          }}
-                                          data-testid="input-admin-message"
-                                        />
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); sendChatMessage(b.id, 'admin'); }}
-                                          className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                          data-testid="button-send-admin-message"
-                                        >
-                                          <Send size={14}/>
-                                        </button>
+                                      <div className="space-y-3">
+                                        <div className="flex gap-2">
+                                          <button onClick={(e) => { e.stopPropagation(); setChatBookingId(b.id); setShowChatModal(true); }} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid={`button-admin-chat-${b.id}`}>
+                                            <MessageCircle size={14}/> Chat with Driver {unreadMessages > 0 && <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse">{unreadMessages}</span>}
+                                          </button>
+                                          <a href={`tel:${b.driver.phone}`} onClick={(e) => e.stopPropagation()} className="flex-1 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-700">
+                                            <Phone size={14}/> Call Driver
+                                          </a>
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <a href={`mailto:${b.driver.email}`} onClick={(e) => e.stopPropagation()} className="flex-1 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-700">
+                                            <Mail size={14}/> Email Driver
+                                          </a>
+                                          <button onClick={(e) => { e.stopPropagation(); handleExtensionApproval(b.id, 'approved'); }} className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-2" disabled={!b.pendingExtension} data-testid={`button-admin-approve-extension-${b.id}`}>
+                                            <Calendar size={14}/> Appr. Extension
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -8380,7 +8359,7 @@ export default function CarHopApp() {
                                       </div>
                                     </div>
 
-                                    {/* Manage Charges Section moved here */}
+                                    {/* Manage Charges Section */}
                                     <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
                                       <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-2 sm:mb-3">Manage Charges & Adjustments</h4>
                                       <div className="space-y-3">
@@ -8475,8 +8454,6 @@ export default function CarHopApp() {
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </div>
                                   </div>
                                 </div>
 
