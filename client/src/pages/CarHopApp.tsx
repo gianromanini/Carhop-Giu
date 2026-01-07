@@ -5059,6 +5059,7 @@ export default function CarHopApp() {
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
                       <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-status">
                         <option value="">All Status</option>
+                        <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="pending-approval">Pending Approval</option>
@@ -5086,7 +5087,8 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
+                          if (bookingFilterStatus === 'active') matches = b.status === 'Active' || b.status === 'Extended';
+                          else if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
                           else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
                           else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
@@ -7983,6 +7985,7 @@ export default function CarHopApp() {
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
                       <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-status">
                         <option value="">All Status</option>
+                        <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="pending-approval">Pending Approval</option>
@@ -8019,7 +8022,8 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
+                          if (bookingFilterStatus === 'active') matches = b.status === 'Active' || b.status === 'Extended';
+                          else if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
                           else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
                           else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
