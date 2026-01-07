@@ -8425,48 +8425,50 @@ export default function CarHopApp() {
                                 })()}
 
                                 {/* Manage Charges */}
-                                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                                  <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-3">Manage Charges & Adjustments</h4>
+                                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3 sm:pt-4">
+                                  <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-2 sm:mb-3">Manage Charges & Adjustments</h4>
                                   
-                                  <div className="space-y-4">
+                                  <div className="space-y-3 sm:space-y-4">
                                     {/* Apply Discount Form - Always Visible */}
-                                    <div>
-                                      <p className="text-[10px] font-bold text-zinc-500 mb-1 uppercase">Apply Discount</p>
-                                      <div className="flex gap-2">
+                                    <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 sm:p-0 rounded-lg">
+                                      <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 mb-1 sm:mb-1.5 uppercase">Apply Discount</p>
+                                      <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
                                         <select 
                                           value={adjustment?.type || 'fixed'} 
                                           onChange={(e) => setAdjustment({ type: e.target.value, value: adjustment?.value || '' })}
-                                          className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white w-32"
+                                          className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1.5 text-[10px] sm:text-xs text-zinc-900 dark:text-white w-full sm:w-28 h-8"
                                         >
                                           <option value="fixed">Fixed Value ($)</option>
                                           <option value="percent">Percentage (%)</option>
                                         </select>
-                                        <Input 
-                                          placeholder="Value" 
-                                          type="number"
-                                          value={adjustment?.value || ''}
-                                          onChange={(e: any) => setAdjustment({ type: adjustment?.type || 'fixed', value: e.target.value })}
-                                          className="flex-1 mb-0 text-xs" 
-                                        />
-                                        <Button 
-                                          variant="primary" 
-                                          size="sm" 
-                                          className="bg-green-600 hover:bg-green-700"
-                                          onClick={() => handleApplyDiscount(b)}
-                                        >
-                                          Apply
-                                        </Button>
+                                        <div className="flex gap-1.5 sm:gap-2 flex-1">
+                                          <Input 
+                                            placeholder="Value" 
+                                            type="number"
+                                            value={adjustment?.value || ''}
+                                            onChange={(e: any) => setAdjustment({ type: adjustment?.type || 'fixed', value: e.target.value })}
+                                            className="flex-1 mb-0 text-[10px] sm:text-xs h-8 px-2" 
+                                          />
+                                          <Button 
+                                            variant="primary" 
+                                            size="sm" 
+                                            className="bg-green-600 hover:bg-green-700 h-8 text-[10px] sm:text-xs px-3"
+                                            onClick={() => handleApplyDiscount(b)}
+                                          >
+                                            Apply
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
 
                                     {/* Charge Extra Payment Form - Always Visible */}
-                                    <div>
-                                      <p className="text-[10px] font-bold text-zinc-500 mb-1 uppercase">Charge Extra Payment Trip</p>
-                                      <div className="flex gap-2">
+                                    <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 sm:p-0 rounded-lg">
+                                      <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 mb-1 sm:mb-1.5 uppercase">Charge Extra Payment Trip</p>
+                                      <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
                                         <select 
                                           value={extraCharge.type}
                                           onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                          className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white w-32"
+                                          className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1.5 text-[10px] sm:text-xs text-zinc-900 dark:text-white w-full sm:w-28 h-8"
                                         >
                                           <option value="Refuel">Refuel</option>
                                           <option value="Tolls">Tolls</option>
@@ -8475,18 +8477,42 @@ export default function CarHopApp() {
                                           <option value="Damage">Damage</option>
                                           <option value="Other">Other</option>
                                         </select>
-                                        <Input 
-                                          placeholder="Value ($)" 
-                                          type="number"
-                                          value={extraCharge.amount}
-                                          onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                          className="flex-1 mb-0 text-xs" 
-                                        />
+                                        <div className="flex gap-1.5 sm:gap-2 flex-1">
+                                          <Input 
+                                            placeholder="Value ($)" 
+                                            type="number"
+                                            value={extraCharge.amount}
+                                            onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                            className="flex-1 mb-0 text-[10px] sm:text-xs h-8 px-2" 
+                                          />
+                                          <Button 
+                                            variant="primary" 
+                                            size="sm" 
+                                            className="bg-orange-600 hover:bg-orange-700 h-8 text-[10px] sm:text-xs px-3 whitespace-nowrap"
+                                            onClick={() => handleAddCharge(b)}
+                                          >
+                                            Charge
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Final Charge Form - Based on Original Payment */}
+                                    <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 sm:p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                      <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-tight">Charge Extras by Original Payment Method</p>
+                                      <div className="flex flex-col sm:flex-row gap-2">
+                                        <div className="relative flex-1">
+                                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px] sm:text-xs">$</span>
+                                          <Input 
+                                            placeholder="0.00" 
+                                            type="number"
+                                            className="pl-5 mb-0 text-[10px] sm:text-xs h-8 sm:h-9 bg-white dark:bg-zinc-900" 
+                                          />
+                                        </div>
                                         <Button 
                                           variant="primary" 
                                           size="sm" 
-                                          className="bg-orange-600 hover:bg-orange-700"
-                                          onClick={() => handleAddCharge(b)}
+                                          className="bg-orange-600 hover:bg-orange-700 h-8 sm:h-9 text-[10px] sm:text-xs font-bold w-full sm:w-auto px-4"
                                         >
                                           Charge Extra Payment Trip
                                         </Button>
