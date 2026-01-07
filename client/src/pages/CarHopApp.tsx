@@ -4531,7 +4531,7 @@ export default function CarHopApp() {
                                 }} className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all" data-testid={`button-edit-vehicle-${car.id}`}>
                                   <Edit size={20} className="sm:w-6 sm:h-6" />
                                 </button>
-                                <button onClick={() => handleDeleteVehicle(car.id, car.model)} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteVehicle(car.id, car.model); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
                                   <Trash2 size={14} className="sm:w-4 sm:h-4" />
                                 </button>
                               </div>
