@@ -6970,7 +6970,10 @@ export default function CarHopApp() {
                             <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm truncate">
-                                <span className="text-zinc-600 dark:text-zinc-300 font-medium">{car.model} {car.year}</span>
+                                <span className="text-zinc-600 dark:text-zinc-300 font-medium">
+                                  {car.model} {car.year}
+                                  {car.hostName && <span className="text-zinc-400 font-normal"> - {car.hostName}</span>}
+                                </span>
                                 {car.hostName && <span className="text-blue-500 font-semibold ml-1"> - {car.hostName}</span>}
                               </h4>
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">
