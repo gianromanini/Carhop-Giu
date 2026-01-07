@@ -8242,6 +8242,52 @@ export default function CarHopApp() {
                                         )}
                                       </div>
                                     </div>
+
+                                    {/* Communication Section moved here */}
+                                    <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                      <h4 className="text-[10px] font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                        <MessageCircle size={14}/> Communication
+                                      </h4>
+                                      <div className="max-h-40 overflow-y-auto space-y-2 mb-4">
+                                        {(b.messages || []).length === 0 ? (
+                                          <p className="text-xs text-zinc-500 text-center py-4 italic">No messages yet</p>
+                                        ) : (
+                                          (b.messages || []).map(msg => (
+                                            <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.sender === 'admin' ? 'bg-green-50 dark:bg-green-900/20 border-l-2 border-green-500 ml-4' : 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500 mr-4'}`}>
+                                              <div className="flex justify-between items-start mb-0.5">
+                                                <span className={`font-bold uppercase ${msg.sender === 'admin' ? 'text-green-600' : 'text-blue-600'}`}>{msg.sender}</span>
+                                                <span className="text-[9px] text-zinc-400">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                              </div>
+                                              <p className="text-zinc-700 dark:text-zinc-300">{msg.text}</p>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <input
+                                          type="text"
+                                          value={chatMessage}
+                                          onChange={(e) => setChatMessage(e.target.value)}
+                                          placeholder="Quick reply..."
+                                          className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
+                                          onClick={(e) => e.stopPropagation()}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.stopPropagation();
+                                              sendChatMessage(b.id, 'admin');
+                                            }
+                                          }}
+                                          data-testid="input-admin-message"
+                                        />
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); sendChatMessage(b.id, 'admin'); }}
+                                          className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                          data-testid="button-send-admin-message"
+                                        >
+                                          <Send size={14}/>
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
 
                                   {/* Right side details */}
@@ -8334,51 +8380,103 @@ export default function CarHopApp() {
                                       </div>
                                     </div>
 
-                                    {/* Chat Section */}
+                                    {/* Manage Charges Section moved here */}
                                     <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                                      <h4 className="text-[10px] font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                        <MessageCircle size={14}/> Communication
-                                      </h4>
-                                      <div className="max-h-40 overflow-y-auto space-y-2 mb-4">
-                                        {(b.messages || []).length === 0 ? (
-                                          <p className="text-xs text-zinc-500 text-center py-4 italic">No messages yet</p>
-                                        ) : (
-                                          (b.messages || []).map(msg => (
-                                            <div key={msg.id} className={`p-2 rounded-lg text-[11px] ${msg.sender === 'admin' ? 'bg-green-50 dark:bg-green-900/20 border-l-2 border-green-500 ml-4' : 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500 mr-4'}`}>
-                                              <div className="flex justify-between items-start mb-0.5">
-                                                <span className={`font-bold uppercase ${msg.sender === 'admin' ? 'text-green-600' : 'text-blue-600'}`}>{msg.sender}</span>
-                                                <span className="text-[9px] text-zinc-400">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                              </div>
-                                              <p className="text-zinc-700 dark:text-zinc-300">{msg.text}</p>
+                                      <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-2 sm:mb-3">Manage Charges & Adjustments</h4>
+                                      <div className="space-y-3">
+                                        {/* Apply Discount Form */}
+                                        <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 rounded-lg">
+                                          <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 mb-1 uppercase">Apply Discount</p>
+                                          <div className="flex flex-col sm:flex-row gap-1.5">
+                                            <select 
+                                              value={adjustment?.type || 'fixed'} 
+                                              onChange={(e) => setAdjustment({ type: e.target.value, value: adjustment?.value || '' })}
+                                              className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1 text-[10px] text-zinc-900 dark:text-white w-full sm:w-24 h-7"
+                                            >
+                                              <option value="fixed">Fixed ($)</option>
+                                              <option value="percent">Perc (%)</option>
+                                            </select>
+                                            <div className="flex gap-1 flex-1">
+                                              <Input 
+                                                placeholder="Val" 
+                                                type="number"
+                                                value={adjustment?.value || ''}
+                                                onChange={(e: any) => setAdjustment({ type: adjustment?.type || 'fixed', value: e.target.value })}
+                                                className="flex-1 mb-0 text-[10px] h-7 px-2" 
+                                              />
+                                              <Button 
+                                                variant="primary" 
+                                                size="sm" 
+                                                className="bg-green-600 hover:bg-green-700 h-7 text-[10px] px-2"
+                                                onClick={() => handleApplyDiscount(b)}
+                                              >
+                                                Apply
+                                              </Button>
                                             </div>
-                                          ))
-                                        )}
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <input
-                                          type="text"
-                                          value={chatMessage}
-                                          onChange={(e) => setChatMessage(e.target.value)}
-                                          placeholder="Quick reply..."
-                                          className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                          onClick={(e) => e.stopPropagation()}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              e.stopPropagation();
-                                              sendChatMessage(b.id, 'admin');
-                                            }
-                                          }}
-                                          data-testid="input-admin-message"
-                                        />
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); sendChatMessage(b.id, 'admin'); }}
-                                          className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                          data-testid="button-send-admin-message"
-                                        >
-                                          <Send size={14}/>
-                                        </button>
+                                          </div>
+                                        </div>
+
+                                        {/* Charge Extra Form */}
+                                        <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 rounded-lg">
+                                          <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 mb-1 uppercase">Charge Extra Payment Trip</p>
+                                          <div className="flex flex-col sm:flex-row gap-1.5">
+                                            <select 
+                                              value={extraCharge.type}
+                                              onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                              className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1 text-[10px] text-zinc-900 dark:text-white w-full sm:w-24 h-7"
+                                            >
+                                              <option value="Refuel">Refuel</option>
+                                              <option value="Tolls">Tolls</option>
+                                              <option value="Extra Cleaning Violation">Extra Cleaning Violation</option>
+                                              <option value="Smoke Violation">Smoke Violation</option>
+                                              <option value="Damage">Damage</option>
+                                              <option value="Other">Other</option>
+                                            </select>
+                                            <div className="flex gap-1 flex-1">
+                                              <Input 
+                                                placeholder="Val ($)" 
+                                                type="number"
+                                                value={extraCharge.amount}
+                                                onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                                className="flex-1 mb-0 text-[10px] h-7 px-2" 
+                                              />
+                                              <Button 
+                                                variant="primary" 
+                                                size="sm" 
+                                                className="bg-orange-600 hover:bg-orange-700 h-7 text-[10px] px-2 whitespace-nowrap"
+                                                onClick={() => handleAddCharge(b)}
+                                              >
+                                                Charge
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Final Charge Form */}
+                                        <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                          <p className="text-[9px] font-bold text-zinc-500 mb-1 uppercase tracking-tight">Final Charge Extras</p>
+                                          <div className="flex gap-1.5">
+                                            <div className="relative flex-1">
+                                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">$</span>
+                                              <Input 
+                                                placeholder="0.00" 
+                                                type="number"
+                                                className="pl-4 mb-0 text-[10px] h-7 bg-white dark:bg-zinc-900" 
+                                              />
+                                            </div>
+                                            <Button 
+                                              variant="primary" 
+                                              size="sm" 
+                                              className="bg-orange-600 hover:bg-orange-700 h-7 text-[10px] font-bold px-2 whitespace-nowrap"
+                                            >
+                                              Charge Final
+                                            </Button>
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
+                                  </div>
+                                </div>
                                   </div>
                                 </div>
 
