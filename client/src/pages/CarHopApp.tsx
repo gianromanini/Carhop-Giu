@@ -883,7 +883,8 @@ export default function CarHopApp() {
     queryKey: ['/api/bookings'],
     staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000 // Poll every 5 seconds for live updates
+    refetchOnMount: true,
+    refetchInterval: 3000 // Poll every 3 seconds for live updates
   });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
@@ -902,7 +903,8 @@ export default function CarHopApp() {
   const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [bookingResult, setBookingResult] = useState<Booking | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [editForm, setEditForm] = useState<Partial<User> | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showClientPassword, setShowClientPassword] = useState(false);
