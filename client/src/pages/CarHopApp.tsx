@@ -9863,8 +9863,8 @@ export default function CarHopApp() {
                       <option value="pending">Pending</option>
                     </select>
                   </div>
-                  {(() => {
-                    const filteredBookings = [...bookings].filter(b => {
+                  {[...bookings]
+                    .filter(b => {
                       const userEmail = authUser?.email?.toLowerCase().trim();
                       const bookingEmail = b.driver?.email?.toLowerCase().trim();
                       
@@ -9878,45 +9878,8 @@ export default function CarHopApp() {
                       if (clientBookingFilter === 'cancelled') return b.status === 'Cancelled';
                       if (clientBookingFilter === 'pending') return b.status === 'Pending Approval';
                       return true;
-                    });
-
-                    if (filteredBookings.length === 0) {
-                      return <div className="text-center text-zinc-500 py-12">No bookings matching filter.</div>;
-                    }
-
-                    return filteredBookings
-                      .sort((a, b) => {
-                        const aIsActive = a.status === 'Active' || a.status === 'Extended';
-                        const bIsActive = b.status === 'Active' || b.status === 'Extended';
-                        if (aIsActive && !bIsActive) return -1;
-                        if (!aIsActive && bIsActive) return 1;
-                        const aDate = new Date(`${a.startDate}T${convertTo24Hour(a.startTime)}:00`).getTime();
-                        const bDate = new Date(`${b.startDate}T${convertTo24Hour(b.startTime)}:00`).getTime();
-                        return bDate - aDate;
-                      }).map((b) => {
-                        const isCompleted = b.status === 'Completed';
-                        const isCancelled = b.status === 'Cancelled';
-                        const isActive = b.status === 'Active' || b.status === 'Extended';
-                        const isCollapsed = (isCompleted || isCancelled) && expandedBookingId !== b.id;
-
-                        return (
-                          <Card 
-                            key={b.id} 
-                            className={`p-3 md:p-6 transition-all duration-300 relative ${
-                              isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 
-                              isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
-                              'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
-                            } ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} 
-                            data-testid={`card-my-booking-${b.id}`}
-                          >
-                            {/* Card Content ... */}
-                          </Card>
-                        );
-                      });
-                  })()}
-                </>
-              )}
-            </div>
+                    })
+                    .sort((a, b) => {
                       // Always put Active and Extended at the top
                       const aIsActive = a.status === 'Active' || a.status === 'Extended';
                       const bIsActive = b.status === 'Active' || b.status === 'Extended';
@@ -10280,9 +10243,8 @@ export default function CarHopApp() {
                     </Card>
                   );
                 })}
-                  </>
-                );
-              })()}
+                </>
+              )}
             </div>
             <Button variant="ghost" onClick={() => setView('home')} className="mt-8" data-testid="button-back-to-home"><ArrowLeft size={16}/> Back to Home</Button>
           </div>
