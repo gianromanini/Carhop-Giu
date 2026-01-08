@@ -1692,11 +1692,26 @@ export default function CarHopApp() {
       checkOutData: null 
     };
     
-    await createBookingMutation.mutateAsync(newBooking);
-    setIsProcessingPayment(false);
-    setPickupAddress('');
-    setView('confirmation');
-    window.scrollTo(0, 0);
+    console.log('[Frontend] Creating booking with data:', JSON.stringify(newBooking).substring(0, 500));
+    
+    try {
+      const response = await createBookingMutation.mutateAsync(newBooking);
+      console.log('[Frontend] Booking creation response:', response);
+      const createdBooking = await response.json();
+      console.log('[Frontend] Created booking:', createdBooking);
+      setIsProcessingPayment(false);
+      setPickupAddress('');
+      setView('confirmation');
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error('[Frontend] Error creating booking:', error);
+      setIsProcessingPayment(false);
+      toast({ 
+        title: 'Error creating booking', 
+        description: error instanceof Error ? error.message : 'Please try again',
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
