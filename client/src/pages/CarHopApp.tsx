@@ -882,7 +882,8 @@ export default function CarHopApp() {
   const { data: bookings = [], isLoading: bookingsLoading, refetch: refetchBookings } = useQuery<Booking[]>({ 
     queryKey: ['/api/bookings'],
     staleTime: 0,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000 // Poll every 5 seconds for live updates
   });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
@@ -1413,6 +1414,7 @@ export default function CarHopApp() {
     setClientUser(null); 
     setDriverDetails({ name: '', email: '', phone: '', licenseNumber: '', licenseImages: [] }); 
     setView('home'); 
+    queryClient.clear(); // Clear all cache on sign out
     window.location.href = '/api/logout';
   };
 
