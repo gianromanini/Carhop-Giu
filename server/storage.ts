@@ -1250,7 +1250,8 @@ export class DatabaseStorage implements IStorage {
   async getBookings(): Promise<Booking[]> {
     if (!this.initialized) return [];
     try {
-      return await this.db.select().from(bookings).orderBy(sql`${bookings.createdAt} DESC`);
+      // Return sorted by ID as a reliable proxy for creation order if createdAt is null
+      return await this.db.select().from(bookings).orderBy(sql`${bookings.id} DESC`);
     } catch (error) {
       console.error("Error getting bookings:", error);
       return [];
