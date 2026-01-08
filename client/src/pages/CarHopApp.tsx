@@ -9872,6 +9872,14 @@ export default function CarHopApp() {
                       if (!userEmail) return false;
                       const isOwner = userEmail === bookingEmail;
                       
+                      console.log('DEBUG FILTERING:', { 
+                        userEmail, 
+                        bookingEmail, 
+                        bookingCode: b.bookingCode, 
+                        isOwner,
+                        status: b.status
+                      });
+
                       if (!isOwner) return false;
                       
                       if (clientBookingFilter === 'newest') return true;
