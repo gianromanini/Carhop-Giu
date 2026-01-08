@@ -879,7 +879,11 @@ export default function CarHopApp() {
 
     return result;
   }, [vehicles, fleetSort]);
-  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
+  const { data: bookings = [], isLoading: bookingsLoading, refetch: refetchBookings } = useQuery<Booking[]>({ 
+    queryKey: ['/api/bookings'],
+    staleTime: 0,
+    refetchOnWindowFocus: true
+  });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
@@ -1066,9 +1070,12 @@ export default function CarHopApp() {
   });
 
   const createBookingMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('POST', '/api/bookings', data),
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/bookings', data);
+      return res.json();
+    },
     onSuccess: (data) => { 
-      console.log('Booking created successfully, response data:', data);
+      console.log('Booking created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       toast({ title: 'Booking created successfully' });
@@ -1084,7 +1091,10 @@ export default function CarHopApp() {
   });
 
   const updateBookingMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/bookings/${id}`, data),
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await apiRequest('PUT', `/api/bookings/${id}`, data);
+      return res.json();
+    },
     onSuccess: () => { 
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
@@ -1695,22 +1705,17 @@ export default function CarHopApp() {
     console.log('[Frontend] Creating booking with data:', JSON.stringify(newBooking).substring(0, 500));
     
     try {
-      const response = await createBookingMutation.mutateAsync(newBooking);
-      console.log('[Frontend] Booking creation response:', response);
-      const createdBooking = await response.json();
+      const createdBooking = await createBookingMutation.mutateAsync(newBooking);
       console.log('[Frontend] Created booking:', createdBooking);
       setIsProcessingPayment(false);
+      setBookingResult(createdBooking);
       setPickupAddress('');
       setView('confirmation');
       window.scrollTo(0, 0);
     } catch (error) {
       console.error('[Frontend] Error creating booking:', error);
       setIsProcessingPayment(false);
-      toast({ 
-        title: 'Error creating booking', 
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive' 
-      });
+      // toast is already handled by mutation onError
     }
   };
 
