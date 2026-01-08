@@ -9865,6 +9865,10 @@ export default function CarHopApp() {
                   </div>
                   {[...bookings]
                     .filter(b => {
+                      const userEmail = authUser?.email?.toLowerCase().trim();
+                      const bookingEmail = b.driver?.email?.toLowerCase().trim();
+                      if (userEmail && bookingEmail && userEmail !== bookingEmail) return false;
+                      
                       if (clientBookingFilter === 'newest') return true;
                       if (clientBookingFilter === 'active') return b.status === 'Active' || b.status === 'Extended';
                       if (clientBookingFilter === 'completed') return b.status === 'Completed';
