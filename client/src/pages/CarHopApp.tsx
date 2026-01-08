@@ -1192,12 +1192,18 @@ export default function CarHopApp() {
 
   const clientTrips = useMemo(() => {
     if (!selectedClient) return [];
-    return bookings.filter(b => b.driver.email.toLowerCase().trim() === selectedClient.email.toLowerCase().trim());
+    return bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === selectedClient.email.toLowerCase().trim();
+    });
   }, [selectedClient, bookings]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
-    const userBookings = bookings.filter(b => b.driver.email.toLowerCase().trim() === userEmail.toLowerCase().trim());
+    const userBookings = bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === userEmail.toLowerCase().trim();
+    });
     const total = userBookings.reduce((sum, b) => {
       const details = b.details;
       if (!details) return sum;
