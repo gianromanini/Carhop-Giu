@@ -1181,17 +1181,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserTrips(userEmail: string): Promise<Booking[]> {
-    if (!this.initialized) return [];
+    if (!this.initialized) {
+      console.log("[Storage] Database not initialized for user trips, attempting to initialize...");
+      await this.init();
+    }
     try {
       const allBookings = await this.db.select().from(bookings);
       console.log(`[Storage] Filtering ${allBookings.length} bookings for email: ${userEmail}`);
       const filtered = allBookings.filter((b: Booking) => {
-        const driverEmail = b.driver?.email?.toLowerCase();
+        const driverEmail = b.driver?.email?.toLowerCase() || '';
         const matches = driverEmail === userEmail.toLowerCase();
         if (matches) console.log(`[Storage] Found match for booking: ${b.bookingCode}`);
         return matches;
       });
-      return filtered;
+      
+      return filtered.sort((a: Booking, b: Booking) => {
+        const idA = typeof a.id === 'number' ? a.id : parseInt(String(a.id));
+        const idB = typeof b.id === 'number' ? b.id : parseInt(String(b.id));
+        return idB - idA;
+      });
     } catch (error) {
       console.error("Error getting user trips:", error);
       return [];
@@ -1255,11 +1263,21 @@ export class DatabaseStorage implements IStorage {
 
   // Bookings
   async getBookings(): Promise<Booking[]> {
-    if (!this.initialized) return [];
+    if (!this.initialized) {
+      console.log("[Storage] Database not initialized, attempting to initialize...");
+      await this.init();
+    }
     try {
-      const results = await this.db.select().from(bookings).orderBy(sql`${bookings.id} DESC`);
-      console.log(`[Storage] Fetched ${results.length} bookings at ${new Date().toISOString()}`);
-      return results;
+      const results = await this.db.select().from(bookings);
+      console.log(`[Storage] RAW DB FETCH: Found ${results.length} bookings in table at ${new Date().toISOString()}`);
+      if (results.length > 0) {
+        console.log(`[Storage] Sample booking IDs: ${results.slice(0, 3).map(b => b.id).join(', ')}`);
+      }
+      return results.sort((a, b) => {
+        const idA = typeof a.id === 'number' ? a.id : parseInt(String(a.id));
+        const idB = typeof b.id === 'number' ? b.id : parseInt(String(b.id));
+        return idB - idA;
+      });
     } catch (error) {
       console.error("Error getting bookings:", error);
       return [];

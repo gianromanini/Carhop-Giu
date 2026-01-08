@@ -692,11 +692,21 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.status(204).send();
   });
 
-  // ========== BOOKINGS ==========
   app.get("/api/bookings", async (_req, res) => {
     try {
       const bookings = await storage.getBookings();
       console.log(`[API] Returning ${bookings.length} bookings to client at ${new Date().toISOString()}`);
+      
+      // Check for a debug query param to see all raw data
+      if (_req.query.debug === 'true') {
+        return res.json({
+          count: bookings.length,
+          data: bookings,
+          timestamp: new Date().toISOString(),
+          env: process.env.NODE_ENV
+        });
+      }
+      
       res.json(bookings);
     } catch (error) {
       console.error("API error fetching bookings:", error);
