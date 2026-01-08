@@ -1896,7 +1896,12 @@ export default function CarHopApp() {
   };
 
   const getClientUnreadCount = () => {
-    return bookings.filter(b => clientUser && b.driver.email.toLowerCase().trim() === clientUser.email.toLowerCase().trim() && b.status !== 'Cancelled').reduce((acc, b) => {
+    const userEmail = (authUser?.email || clientUser?.email)?.toLowerCase().trim();
+    if (!userEmail) return 0;
+    return bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === userEmail && b.status !== 'Cancelled';
+    }).reduce((acc, b) => {
       const unread = (b.messages || []).filter(m => m.sender === 'admin' && !m.read).length;
       return acc + unread;
     }, 0);
@@ -1956,7 +1961,10 @@ export default function CarHopApp() {
       });
     });
     
-    bookings.filter(b => b.driver.email.toLowerCase().trim() === clientUser.email.toLowerCase().trim() && b.status !== 'Cancelled').forEach(booking => {
+    bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === clientUser.email.toLowerCase().trim() && b.status !== 'Cancelled';
+    }).forEach(booking => {
       const vehicle = vehicles.find(v => v.id === booking.vehicleId);
       const carName = vehicle?.model || 'Your vehicle';
       
@@ -9865,21 +9873,15 @@ export default function CarHopApp() {
                   </div>
                   {[...bookings]
                     .filter(b => {
-                      const userEmail = authUser?.email?.toLowerCase().trim();
+                      // Use authUser email, fallback to clientUser email
+                      const userEmail = (authUser?.email || clientUser?.email)?.toLowerCase().trim();
                       const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
                       
                       // For logged in users, ONLY show their own bookings
                       if (!userEmail) return false;
-                      const isOwner = userEmail === bookingEmail;
+                      if (!bookingEmail) return false;
                       
-                      console.log('DEBUG FILTERING:', { 
-                        userEmail, 
-                        bookingEmail, 
-                        bookingCode: b.bookingCode, 
-                        isOwner,
-                        status: b.status
-                      });
-
+                      const isOwner = userEmail === bookingEmail;
                       if (!isOwner) return false;
                       
                       if (clientBookingFilter === 'newest') return true;
