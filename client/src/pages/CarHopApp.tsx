@@ -1192,17 +1192,19 @@ export default function CarHopApp() {
 
   const clientTrips = useMemo(() => {
     if (!selectedClient) return [];
+    const clientEmail = selectedClient.email.toLowerCase().trim();
     return bookings.filter(b => {
       const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
-      return bookingEmail && bookingEmail === selectedClient.email.toLowerCase().trim();
+      return bookingEmail === clientEmail;
     });
   }, [selectedClient, bookings]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
+    const normalizedUserEmail = userEmail.toLowerCase().trim();
     const userBookings = bookings.filter(b => {
       const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
-      return bookingEmail && bookingEmail === userEmail.toLowerCase().trim();
+      return bookingEmail === normalizedUserEmail;
     });
     const total = userBookings.reduce((sum, b) => {
       const details = b.details;
@@ -9884,8 +9886,7 @@ export default function CarHopApp() {
                       const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
                       
                       // For logged in users, ONLY show their own bookings
-                      if (!userEmail) return false;
-                      if (!bookingEmail) return false;
+                      if (!userEmail || !bookingEmail) return false;
                       
                       const isOwner = userEmail === bookingEmail;
                       if (!isOwner) return false;
