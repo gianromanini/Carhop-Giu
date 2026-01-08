@@ -9,7 +9,7 @@ import {
   type SupportMessage, type InsertSupportMessage
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, ilike, or, and, inArray } from "drizzle-orm";
+import { eq, ilike, or, and, inArray, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 

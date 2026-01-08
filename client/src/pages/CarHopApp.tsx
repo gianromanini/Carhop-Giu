@@ -9867,7 +9867,11 @@ export default function CarHopApp() {
                     .filter(b => {
                       const userEmail = authUser?.email?.toLowerCase().trim();
                       const bookingEmail = b.driver?.email?.toLowerCase().trim();
-                      if (userEmail && bookingEmail && userEmail !== bookingEmail) return false;
+                      
+                      // For logged in users, ONLY show their own bookings
+                      // For guest/not logged in, we shouldn't show anything anyway
+                      if (!userEmail) return false;
+                      if (userEmail !== bookingEmail) return false;
                       
                       if (clientBookingFilter === 'newest') return true;
                       if (clientBookingFilter === 'active') return b.status === 'Active' || b.status === 'Extended';
