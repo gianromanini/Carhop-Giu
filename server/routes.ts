@@ -712,18 +712,27 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   app.post("/api/bookings", async (req, res) => {
+    console.log("[API] Received booking request:", JSON.stringify(req.body).substring(0, 200));
     const result = insertBookingSchema.safeParse(req.body);
     if (!result.success) {
+      console.error("[API] Validation error:", JSON.stringify(result.error.flatten()));
       return res.status(400).json({ error: result.error.flatten() });
     }
-    const booking = await storage.createBooking(result.data);
-    
-    // Send email notifications
-    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
-    sendBookingConfirmationEmail(booking, vehicle);
-    sendNewBookingNotificationToHost(booking, vehicle);
-    
-    res.status(201).json(booking);
+
+    try {
+      const booking = await storage.createBooking(result.data);
+      console.log("[API] Booking created successfully:", booking.id);
+      
+      // Send email notifications in background to avoid blocking response
+      const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
+      sendBookingConfirmationEmail(booking, vehicle).catch(err => console.error("Error sending confirmation email:", err));
+      sendNewBookingNotificationToHost(booking, vehicle).catch(err => console.error("Error sending host notification:", err));
+
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error("[API] Error creating booking:", error);
+      res.status(500).json({ error: "Failed to create booking" });
+    }
   });
 
   app.put("/api/bookings/:id", async (req, res) => {

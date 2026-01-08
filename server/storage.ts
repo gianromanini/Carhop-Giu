@@ -1250,7 +1250,9 @@ export class DatabaseStorage implements IStorage {
   async getBookings(): Promise<Booking[]> {
     if (!this.initialized) return [];
     try {
-      return await this.db.select().from(bookings).orderBy(sql`${bookings.id} DESC`);
+      const results = await this.db.select().from(bookings).orderBy(sql`${bookings.id} DESC`);
+      console.log(`[Storage] Fetched ${results.length} bookings`);
+      return results;
     } catch (error) {
       console.error("Error getting bookings:", error);
       return [];
@@ -1271,7 +1273,7 @@ export class DatabaseStorage implements IStorage {
   async getBookingByCode(code: string): Promise<Booking | undefined> {
     if (!this.initialized) return undefined;
     try {
-      const result = await this.db.select().from(bookings).where(eq(bookings.bookingCode, code)).limit(1);
+      const result = await this.db.select().from(bookings).where(sql`LOWER(${bookings.bookingCode}) = LOWER(${code})`).limit(1);
       return result[0];
     } catch (error) {
       console.error("Error getting booking by code:", error);
@@ -1282,7 +1284,9 @@ export class DatabaseStorage implements IStorage {
   async createBooking(booking: InsertBooking): Promise<Booking> {
     if (!this.initialized) throw new Error("Database not initialized");
     try {
+      console.log("[Storage] Creating booking:", JSON.stringify(booking).substring(0, 200));
       const result = await this.db.insert(bookings).values(booking).returning();
+      console.log("[Storage] Booking created with ID:", result[0].id);
       return result[0];
     } catch (error) {
       console.error("Error creating booking:", error);

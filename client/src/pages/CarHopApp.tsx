@@ -1067,10 +1067,19 @@ export default function CarHopApp() {
 
   const createBookingMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/bookings', data),
-    onSuccess: () => { 
+    onSuccess: (data) => { 
+      console.log('Booking created successfully, response data:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       toast({ title: 'Booking created successfully' });
+    },
+    onError: (error) => {
+      console.error('Error creating booking mutation:', error);
+      toast({ 
+        title: 'Error creating booking', 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive' 
+      });
     }
   });
 
