@@ -5060,7 +5060,13 @@ export default function CarHopApp() {
               const isOwner = b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId));
               const hostEmail = currentHost.email?.toLowerCase().trim();
               const bookingHostEmail = (b.details as any)?.hostEmail?.toLowerCase().trim();
-              return isOwner || (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail);
+              // Adicionamos comparação por nome também caso o email não esteja presente
+              const hostName = `${currentHost.firstName} ${currentHost.lastName}`.toLowerCase().trim();
+              const bookingHostName = (b.details as any)?.hostName?.toLowerCase().trim();
+              
+              return isOwner || 
+                     (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) ||
+                     (hostName && bookingHostName && hostName === bookingHostName);
             });
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -5109,12 +5115,19 @@ export default function CarHopApp() {
                         let matches = true;
                         const normalizedBookingStatus = b.status?.toLowerCase().trim();
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
-                          else if (bookingFilterStatus === 'completed') matches = normalizedBookingStatus === 'completed';
-                          else if (bookingFilterStatus === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
-                          else if (bookingFilterStatus === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          const status = bookingFilterStatus as string;
+                          if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
+                          else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
+                          else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
+                          else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
-                        if (bookingFilterNumber && !b.bookingCode?.toLowerCase().includes(bookingFilterNumber.toLowerCase())) matches = false;
+                        if (bookingFilterNumber) {
+                          const searchTerm = bookingFilterNumber.toLowerCase();
+                          const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
+                          const driverName = (b.driver as any)?.name?.toLowerCase() || "";
+                          const matchesName = driverName.includes(searchTerm);
+                          if (!matchesCode && !matchesName) matches = false;
+                        }
                         return matches;
                       })
                       .map(b => {
@@ -8051,17 +8064,19 @@ export default function CarHopApp() {
                         const normalizedBookingStatus = b.status?.toLowerCase().trim();
                         
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
-                          else if (bookingFilterStatus === 'completed') matches = normalizedBookingStatus === 'completed';
-                          else if (bookingFilterStatus === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
-                          else if (bookingFilterStatus === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          const status = bookingFilterStatus as string;
+                          if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
+                          else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
+                          else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
+                          else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
                         const vehicle = vehicles.find(v => v.id === b.vehicleId);
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
                         if (bookingFilterNumber) {
                           const searchTerm = bookingFilterNumber.toLowerCase();
                           const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
-                          const matchesName = b.driver?.name?.toLowerCase().includes(searchTerm) || false;
+                          const driverName = (b.driver as any)?.name?.toLowerCase() || "";
+                          const matchesName = driverName.includes(searchTerm);
                           if (!matchesCode && !matchesName) matches = false;
                         }
                         return matches;
