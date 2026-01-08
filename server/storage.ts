@@ -1258,7 +1258,7 @@ export class DatabaseStorage implements IStorage {
     if (!this.initialized) return [];
     try {
       const results = await this.db.select().from(bookings).orderBy(sql`${bookings.id} DESC`);
-      console.log(`[Storage] Fetched ${results.length} bookings`);
+      console.log(`[Storage] Fetched ${results.length} bookings at ${new Date().toISOString()}`);
       return results;
     } catch (error) {
       console.error("Error getting bookings:", error);
