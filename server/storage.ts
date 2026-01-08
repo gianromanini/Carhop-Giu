@@ -1184,7 +1184,14 @@ export class DatabaseStorage implements IStorage {
     if (!this.initialized) return [];
     try {
       const allBookings = await this.db.select().from(bookings);
-      return allBookings.filter((b: Booking) => b.driver?.email?.toLowerCase() === userEmail.toLowerCase());
+      console.log(`[Storage] Filtering ${allBookings.length} bookings for email: ${userEmail}`);
+      const filtered = allBookings.filter((b: Booking) => {
+        const driverEmail = b.driver?.email?.toLowerCase();
+        const matches = driverEmail === userEmail.toLowerCase();
+        if (matches) console.log(`[Storage] Found match for booking: ${b.bookingCode}`);
+        return matches;
+      });
+      return filtered;
     } catch (error) {
       console.error("Error getting user trips:", error);
       return [];

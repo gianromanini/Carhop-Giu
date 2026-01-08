@@ -8117,7 +8117,7 @@ export default function CarHopApp() {
                         if (bookingFilterNumber) {
                           const searchTerm = bookingFilterNumber.toLowerCase();
                           const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
-                          const driverName = (b.driver as any)?.name?.toLowerCase() || "";
+                          const driverName = (b.driver as any)?.name?.toLowerCase() || (b.driver as any)?.firstName?.toLowerCase() || "";
                           const matchesName = driverName.includes(searchTerm);
                           if (!matchesCode && !matchesName) matches = false;
                         }
