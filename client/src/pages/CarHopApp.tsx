@@ -9888,14 +9888,15 @@ export default function CarHopApp() {
                       // For logged in users, ONLY show their own bookings
                       if (!userEmail || !bookingEmail) return false;
                       
-                      const isOwner = userEmail === bookingEmail;
+                      const isOwner = userEmail.toLowerCase() === bookingEmail.toLowerCase();
                       if (!isOwner) return false;
                       
+                      const normalizedStatus = b.status?.toLowerCase().trim();
                       if (clientBookingFilter === 'newest') return true;
-                      if (clientBookingFilter === 'active') return b.status === 'Active' || b.status === 'Extended';
-                      if (clientBookingFilter === 'completed') return b.status === 'Completed';
-                      if (clientBookingFilter === 'cancelled') return b.status === 'Cancelled';
-                      if (clientBookingFilter === 'pending') return b.status === 'Pending Approval';
+                      if (clientBookingFilter === 'active') return normalizedStatus === 'active' || normalizedStatus === 'extended';
+                      if (clientBookingFilter === 'completed') return normalizedStatus === 'completed';
+                      if (clientBookingFilter === 'cancelled') return normalizedStatus === 'cancelled';
+                      if (clientBookingFilter === 'pending') return normalizedStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                       return true;
                     })
                     .sort((a, b) => {
@@ -9912,9 +9913,10 @@ export default function CarHopApp() {
                       
                       return bDate - aDate;
                     }).map((b) => {
-                    const isCompleted = b.status === 'Completed';
-                    const isCancelled = b.status === 'Cancelled';
-                    const isActive = b.status === 'Active' || b.status === 'Extended';
+                    const normalizedStatus = b.status?.toLowerCase().trim();
+                    const isCompleted = normalizedStatus === 'completed';
+                    const isCancelled = normalizedStatus === 'cancelled';
+                    const isActive = normalizedStatus === 'active' || normalizedStatus === 'extended';
                     const isCollapsed = (isCompleted || isCancelled) && expandedBookingId !== b.id;
 
                     return (
@@ -9923,6 +9925,7 @@ export default function CarHopApp() {
                       className={`p-3 md:p-6 transition-all duration-300 relative ${
                         isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 
                         isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
+                        normalizedStatus === 'pending approval' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
                         'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
                       } ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} 
                       data-testid={`card-my-booking-${b.id}`}
@@ -9933,7 +9936,7 @@ export default function CarHopApp() {
                       <div 
                         className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
                         onClick={() => {
-                          if (isCompleted || isCancelled) {
+                          if (isCompleted || isCancelled || normalizedStatus === 'pending approval') {
                             setExpandedBookingId(expandedBookingId === b.id ? null : b.id);
                           }
                           if (b.unread) {
@@ -9942,17 +9945,17 @@ export default function CarHopApp() {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : b.status === 'Extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
+                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                           <div>
-                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-600'}`}>{b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
-                            {!isCollapsed && b.status === 'Active' && b.checkInStatus !== 'completed' && (
+                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-600'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
+                            {!isCollapsed && normalizedStatus === 'active' && b.checkInStatus !== 'completed' && (
                               <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
-                          {(isCompleted || isCancelled) && (
+                          {(isCompleted || isCancelled || normalizedStatus === 'pending approval') && (
                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${expandedBookingId === b.id ? 'rotate-180' : ''} md:hidden`} />
                           )}
                         </div>
