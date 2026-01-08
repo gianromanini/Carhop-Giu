@@ -1197,7 +1197,7 @@ export default function CarHopApp() {
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
-    const userBookings = bookings.filter(b => b.driver.email === userEmail);
+    const userBookings = bookings.filter(b => b.driver.email.toLowerCase().trim() === userEmail.toLowerCase().trim());
     const total = userBookings.reduce((sum, b) => {
       const details = b.details;
       if (!details) return sum;
@@ -1896,7 +1896,7 @@ export default function CarHopApp() {
   };
 
   const getClientUnreadCount = () => {
-    return bookings.filter(b => clientUser && b.driver.email === clientUser.email && b.status !== 'Cancelled').reduce((acc, b) => {
+    return bookings.filter(b => clientUser && b.driver.email.toLowerCase().trim() === clientUser.email.toLowerCase().trim() && b.status !== 'Cancelled').reduce((acc, b) => {
       const unread = (b.messages || []).filter(m => m.sender === 'admin' && !m.read).length;
       return acc + unread;
     }, 0);
@@ -1956,7 +1956,7 @@ export default function CarHopApp() {
       });
     });
     
-    bookings.filter(b => b.driver.email === clientUser.email && b.status !== 'Cancelled').forEach(booking => {
+    bookings.filter(b => b.driver.email.toLowerCase().trim() === clientUser.email.toLowerCase().trim() && b.status !== 'Cancelled').forEach(booking => {
       const vehicle = vehicles.find(v => v.id === booking.vehicleId);
       const carName = vehicle?.model || 'Your vehicle';
       
