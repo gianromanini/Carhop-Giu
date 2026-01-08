@@ -828,7 +828,7 @@ export default function CarHopApp() {
   const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
-  const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
+  const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'active' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
@@ -9852,14 +9852,15 @@ export default function CarHopApp() {
                     <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Sort Bookings</label>
                     <select 
                       value={clientBookingFilter} 
-                      onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'completed' | 'cancelled' | 'pending')} 
+                      onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'active' | 'completed' | 'cancelled' | 'pending')} 
                       className="w-full max-w-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
                       data-testid="select-client-booking-filter"
                     >
                       <option value="newest">Newest First</option>
+                      <option value="active">Active</option>
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
-                      <option value="pending">Pending / Active</option>
+                      <option value="pending">Pending</option>
                     </select>
                   </div>
                   {[...bookings].sort((a, b) => {
@@ -9876,6 +9877,13 @@ export default function CarHopApp() {
                     
                     if (clientBookingFilter === 'newest') {
                       return bDate - aDate;
+                    } else if (clientBookingFilter === 'active') {
+                      const aIsReallyActive = a.status === 'Active' || a.status === 'Extended';
+                      const bIsReallyActive = b.status === 'Active' || b.status === 'Extended';
+                      if (aIsReallyActive && bIsReallyActive) return bDate - aDate;
+                      if (aIsReallyActive) return -1;
+                      if (bIsReallyActive) return 1;
+                      return bDate - aDate;
                     } else if (clientBookingFilter === 'completed') {
                       if (a.status === 'Completed' && b.status === 'Completed') return bDate - aDate;
                       if (a.status === 'Completed') return -1;
@@ -9887,11 +9895,11 @@ export default function CarHopApp() {
                       if (b.status === 'Cancelled') return 1;
                       return bDate - aDate;
                     } else if (clientBookingFilter === 'pending') {
-                      const aIsPending = a.status !== 'Completed' && a.status !== 'Cancelled';
-                      const bIsPending = b.status !== 'Completed' && b.status !== 'Cancelled';
-                      if (aIsPending && bIsPending) return bDate - aDate;
-                      if (aIsPending) return -1;
-                      if (bIsPending) return 1;
+                      const aIsPendingApproval = a.status === 'Pending Approval';
+                      const bIsPendingApproval = b.status === 'Pending Approval';
+                      if (aIsPendingApproval && bIsPendingApproval) return bDate - aDate;
+                      if (aIsPendingApproval) return -1;
+                      if (bIsPendingApproval) return 1;
                       return bDate - aDate;
                     }
                     return bDate - aDate;
