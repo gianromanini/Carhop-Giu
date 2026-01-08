@@ -1200,13 +1200,22 @@ export default function CarHopApp() {
   });
 
   const clientTrips = useMemo(() => {
-    if (!selectedClient) return [];
-    const clientEmail = selectedClient.email.toLowerCase().trim();
-    return bookings.filter(b => {
-      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
-      return bookingEmail === clientEmail;
+    if (!selectedClient && !clientUser) return [];
+    const clientEmail = (selectedClient?.email || clientUser?.email || '').toLowerCase().trim();
+    if (!clientEmail) return [];
+    
+    console.log('[MyBookings] Filtering trips for email:', clientEmail);
+    console.log('[MyBookings] Total bookings available:', bookings.length);
+    
+    const trips = bookings.filter(b => {
+      const driverEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      const isMatch = driverEmail === clientEmail;
+      if (isMatch) console.log('[MyBookings] Found matching booking:', b.bookingCode);
+      return isMatch;
     });
-  }, [selectedClient, bookings]);
+    
+    return trips;
+  }, [selectedClient, clientUser, bookings]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
