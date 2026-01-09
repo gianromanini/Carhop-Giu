@@ -10001,7 +10001,11 @@ export default function CarHopApp() {
                       const bookingEmail = (driverObj?.email || '').toLowerCase().trim();
                       const bookingPhone = (driverObj?.phone || '').replace(/\D/g, '');
                       
-                      const emailMatch = userEmail && bookingEmail === userEmail;
+                      // Also check hostEmail in details
+                      const hostEmailInDetails = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
+                      const driverEmailInDetails = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
+
+                      const emailMatch = userEmail && (bookingEmail === userEmail || hostEmailInDetails === userEmail || driverEmailInDetails === userEmail);
                       const phoneMatch = userPhone && bookingPhone && bookingPhone === userPhone;
                       
                       return emailMatch || phoneMatch;
