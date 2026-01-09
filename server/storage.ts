@@ -1191,20 +1191,48 @@ export class DatabaseStorage implements IStorage {
       await this.init();
     }
     try {
+      // First, find all bookings for this driver email
       const allBookings = await this.db.select().from(bookings);
-      console.log(`[Storage] Filtering ${allBookings.length} bookings for email: ${userEmail}`);
+      
       const filtered = allBookings.filter((b: Booking) => {
         const driverEmail = b.driver?.email?.toLowerCase() || '';
         const matches = driverEmail === userEmail.toLowerCase();
-        if (matches) console.log(`[Storage] Found match for booking: ${b.bookingCode}`);
         return matches;
       });
       
-      return filtered.sort((a: Booking, b: Booking) => {
-        const idA = typeof a.id === 'number' ? a.id : parseInt(String(a.id));
-        const idB = typeof b.id === 'number' ? b.id : parseInt(String(b.id));
-        return idB - idA;
-      });
+      console.log(`[Storage] Found ${filtered.length} bookings for user email: ${userEmail}`);
+      
+      // If we found bookings, return them sorted
+      if (filtered.length > 0) {
+        return filtered.sort((a: Booking, b: Booking) => {
+          const idA = Number(a.id);
+          const idB = Number(b.id);
+          return idB - idA;
+        });
+      }
+
+      // If no bookings found by driver email, check if the user is a host
+      // and if they have bookings for their vehicles
+      const host = await this.getHostByEmail(userEmail);
+      if (host) {
+        console.log(`[Storage] User ${userEmail} is a host (ID: ${host.id}), fetching host bookings`);
+        const hostVehicles = await this.db.select().from(vehicles).where(eq(vehicles.hostId, host.id.toString()));
+        const hostVehicleIds = hostVehicles.map((v: any) => v.id);
+        
+        if (hostVehicleIds.length > 0) {
+          const hostBookings = allBookings.filter((b: Booking) => 
+            b.vehicleId && hostVehicleIds.includes(b.vehicleId)
+          );
+          console.log(`[Storage] Found ${hostBookings.length} bookings for host vehicles`);
+          return hostBookings.sort((a: Booking, b: Booking) => {
+            const idA = Number(a.id);
+            const idB = Number(b.id);
+            return idB - idA;
+          });
+        }
+      }
+      
+      return [];
     } catch (error) {
       console.error("Error getting user trips:", error);
       return [];
