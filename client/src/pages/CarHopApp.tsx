@@ -10331,8 +10331,9 @@ export default function CarHopApp() {
                     </Card>
                   );
                 })}
-                </>
-              )}
+                    </>
+                    );
+                  })()}
             </div>
             <Button variant="ghost" onClick={() => setView('home')} className="mt-8" data-testid="button-back-to-home"><ArrowLeft size={16}/> Back to Home</Button>
           </div>
