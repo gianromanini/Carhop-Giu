@@ -10000,15 +10000,19 @@ export default function CarHopApp() {
                       const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
                       const bookingEmail = (driverObj?.email || '').toLowerCase().trim();
                       const bookingPhone = (driverObj?.phone || '').replace(/\D/g, '');
+                      const bookingName = (driverObj?.name || '').toLowerCase().trim();
                       
-                      // Also check hostEmail in details
                       const hostEmailInDetails = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
                       const driverEmailInDetails = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
+                      const driverNameInDetails = ((b.details as any)?.driverName || '').toLowerCase().trim();
+
+                      const userName = (authUser?.firstName && authUser?.lastName ? `${authUser.firstName} ${authUser.lastName}` : authUser?.name || clientUser?.name || '').toLowerCase().trim();
 
                       const emailMatch = userEmail && (bookingEmail === userEmail || hostEmailInDetails === userEmail || driverEmailInDetails === userEmail);
                       const phoneMatch = userPhone && bookingPhone && bookingPhone === userPhone;
+                      const nameMatch = userName && (bookingName === userName || driverNameInDetails === userName);
                       
-                      return emailMatch || phoneMatch;
+                      return emailMatch || phoneMatch || nameMatch;
                     });
                     
                     if (userTrips.length === 0) {
