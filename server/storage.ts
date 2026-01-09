@@ -1081,61 +1081,68 @@ export class MemStorage implements IStorage {
 }
 
 // Database Storage Implementation
+  // Database Storage Implementation
 export class DatabaseStorage implements IStorage {
   private db: any;
   private initialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   async init() {
     if (this.initialized) return;
-    
-    // Try DATABASE_URL first, then construct from individual PG* variables
-    let connectionString = process.env.DATABASE_URL;
-    
-    if (!connectionString) {
-      console.log("[Storage] DATABASE_URL not found, trying to construct from PG* variables...");
-      const pgHost = process.env.PGHOST;
-      const pgUser = process.env.PGUSER;
-      const pgPassword = process.env.PGPASSWORD;
-      const pgDatabase = process.env.PGDATABASE;
-      const pgPort = process.env.PGPORT || "5432";
+    if (this.initPromise) return this.initPromise;
+
+    this.initPromise = (async () => {
+      // Try DATABASE_URL first, then construct from individual PG* variables
+      let connectionString = process.env.DATABASE_URL;
       
-      console.log(`[Storage] PG vars check - PGHOST: ${pgHost ? 'set' : 'missing'}, PGUSER: ${pgUser ? 'set' : 'missing'}, PGPASSWORD: ${pgPassword ? 'set' : 'missing'}, PGDATABASE: ${pgDatabase ? 'set' : 'missing'}`);
-      
-      if (pgHost && pgUser && pgPassword && pgDatabase) {
-        connectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}?sslmode=require`;
-        console.log("[Storage] Successfully constructed connection string from PG* variables");
+      if (!connectionString) {
+        console.log("[Storage] DATABASE_URL not found, trying to construct from PG* variables...");
+        const pgHost = process.env.PGHOST;
+        const pgUser = process.env.PGUSER;
+        const pgPassword = process.env.PGPASSWORD;
+        const pgDatabase = process.env.PGDATABASE;
+        const pgPort = process.env.PGPORT || "5432";
+        
+        console.log(`[Storage] PG vars check - PGHOST: ${pgHost ? 'set' : 'missing'}, PGUSER: ${pgUser ? 'set' : 'missing'}, PGPASSWORD: ${pgPassword ? 'set' : 'missing'}, PGDATABASE: ${pgDatabase ? 'set' : 'missing'}`);
+        
+        if (pgHost && pgUser && pgPassword && pgDatabase) {
+          connectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}?sslmode=require`;
+          console.log("[Storage] Successfully constructed connection string from PG* variables");
+        }
       }
-    }
-    
-    if (!connectionString) {
-      console.error("[Storage] CRITICAL: No database connection available. Using MemStorage (data will not persist!)");
-      console.error("[Storage] Environment check - NODE_ENV:", process.env.NODE_ENV);
-      console.error("[Storage] Environment check - DATABASE_URL exists:", !!process.env.DATABASE_URL);
-      console.error("[Storage] Environment check - PGHOST exists:", !!process.env.PGHOST);
-      return;
-    }
-    
-    try {
-      console.log("[Storage] Attempting to connect to database...");
-      const sqlClient = neon(connectionString);
-      this.db = drizzle(sqlClient);
       
-      // Test connection with a simple raw query
-      await sqlClient`SELECT 1`;
-      
-      this.initialized = true;
-      console.log("[Storage] Database successfully initialized, connected, and verified");
-    } catch (error: any) {
-      console.error("[Storage] Failed to initialize database or verify connection:", error);
-      if (error?.message) {
-        console.error("[Storage] Error detail:", error.message);
+      if (!connectionString) {
+        console.error("[Storage] CRITICAL: No database connection available. Using MemStorage (data will not persist!)");
+        console.error("[Storage] Environment check - NODE_ENV:", process.env.NODE_ENV);
+        console.error("[Storage] Environment check - DATABASE_URL exists:", !!process.env.DATABASE_URL);
+        console.error("[Storage] Environment check - PGHOST exists:", !!process.env.PGHOST);
+        return;
       }
-      this.initialized = false;
-    }
+      
+      try {
+        console.log("[Storage] Attempting to connect to database...");
+        const sqlClient = neon(connectionString);
+        this.db = drizzle(sqlClient);
+        
+        // Test connection with a simple raw query
+        await sqlClient`SELECT 1`;
+        
+        this.initialized = true;
+        console.log("[Storage] Database successfully initialized, connected, and verified");
+      } catch (error: any) {
+        console.error("[Storage] Failed to initialize database or verify connection:", error);
+        if (error?.message) {
+          console.error("[Storage] Error detail:", error.message);
+        }
+        this.initialized = false;
+      }
+    })();
+
+    return this.initPromise;
   }
 
   constructor() {
-    this.init().catch(err => console.error("Error in storage constructor init:", err));
+    // Initialized by initializeStorage() in index.ts or explicitly
   }
 
   // Users
