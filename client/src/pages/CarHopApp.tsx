@@ -2526,17 +2526,6 @@ export default function CarHopApp() {
                     </div>
                   )}
                 </div>
-                <button 
-                  onClick={() => setView('bookings')} 
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                    view === 'bookings' 
-                      ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' 
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-500'
-                  }`}
-                  data-testid="button-desktop-bookings"
-                >
-                  My Bookings
-                </button>
                 <span className="text-green-600 font-bold" data-testid="text-username">Hi, {clientUser.name}</span>
                 <button onClick={handleSignOut} className="text-xs border px-2 py-1 rounded hover:bg-zinc-800" data-testid="button-signout"><LogOut size={12}/></button>
               </div>
