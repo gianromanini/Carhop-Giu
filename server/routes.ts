@@ -468,6 +468,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
+      console.log('[API] /api/auth/user - User data:', JSON.stringify({
+        id: user?.id,
+        email: user?.email,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        role: user?.role,
+        hasEmail: !!user?.email
+      }));
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -717,8 +725,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get("/api/bookings/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Not authenticated");
     try {
-      const userBookings = await storage.getUserTrips(req.user.email);
-      console.log(`[API] Returning ${userBookings.length} user bookings for ${req.user.email} at ${new Date().toISOString()}`);
+      const userEmail = req.user?.email || '';
+      if (!userEmail) {
+        console.log('[API] /api/bookings/user - No email in user session');
+        return res.json([]);
+      }
+      const userBookings = await storage.getUserTrips(userEmail);
+      console.log(`[API] Returning ${userBookings.length} user bookings for ${userEmail} at ${new Date().toISOString()}`);
       res.json(userBookings);
     } catch (error) {
       console.error("API error fetching user bookings:", error);

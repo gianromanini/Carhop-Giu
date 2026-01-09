@@ -1213,29 +1213,45 @@ export default function CarHopApp() {
   });
 
   const clientTrips = useMemo(() => {
-    if (!selectedClient && !clientUser) return [];
-    const clientEmail = (selectedClient?.email || clientUser?.email || '').toLowerCase().trim();
-    if (!clientEmail) return [];
+    console.log('[MyBookings] Computing clientTrips...');
+    console.log('[MyBookings] selectedClient:', selectedClient ? JSON.stringify({ email: selectedClient.email, phone: selectedClient.phone }) : 'null');
+    console.log('[MyBookings] clientUser:', clientUser ? JSON.stringify({ email: clientUser.email, phone: clientUser.phone }) : 'null');
+    console.log('[MyBookings] authUser:', authUser ? JSON.stringify({ email: authUser.email, phone: authUser.phone }) : 'null');
     
-    console.log('[MyBookings] Filtering trips for email:', clientEmail);
+    if (!selectedClient && !clientUser && !authUser) {
+      console.log('[MyBookings] No user context available, returning empty');
+      return [];
+    }
+    
+    // Use authUser as fallback if clientUser doesn't have email
+    const clientEmail = (selectedClient?.email || clientUser?.email || authUser?.email || '').toLowerCase().trim();
+    const userPhone = (selectedClient?.phone || clientUser?.phone || authUser?.phone || '').replace(/\D/g, '');
+    
+    console.log('[MyBookings] Filtering with email:', clientEmail, 'phone:', userPhone);
     console.log('[MyBookings] Total bookings available:', bookings.length);
     
+    if (!clientEmail && !userPhone) {
+      console.log('[MyBookings] No email or phone available, returning empty');
+      return [];
+    }
+    
     const trips = bookings.filter(b => {
-      const driverEmail = (b.driver as any)?.email?.toLowerCase().trim();
-      const driverPhone = (b.driver as any)?.phone?.replace(/\D/g, '');
-      const clientEmailNormalized = clientEmail.toLowerCase().trim();
-      const userPhone = (clientUser?.phone || selectedClient?.phone)?.replace(/\D/g, '');
+      const driverEmail = (b.driver as any)?.email?.toLowerCase().trim() || '';
+      const driverPhone = ((b.driver as any)?.phone || '').replace(/\D/g, '');
       
-      const emailMatch = driverEmail === clientEmailNormalized;
-      const phoneMatch = userPhone && driverPhone === userPhone;
+      const emailMatch = clientEmail && driverEmail === clientEmail;
+      const phoneMatch = userPhone && driverPhone && driverPhone === userPhone;
       
       const isMatch = emailMatch || phoneMatch;
-      if (isMatch) console.log('[MyBookings] Found matching booking:', b.bookingCode);
+      if (isMatch) {
+        console.log('[MyBookings] Match found:', b.bookingCode, '- emailMatch:', emailMatch, 'phoneMatch:', phoneMatch);
+      }
       return isMatch;
     });
     
+    console.log('[MyBookings] Total trips found:', trips.length);
     return trips;
-  }, [selectedClient, clientUser, bookings]);
+  }, [selectedClient, clientUser, authUser, bookings]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
@@ -1289,9 +1305,18 @@ export default function CarHopApp() {
 
   useEffect(() => {
     if (isAuthenticated && authUser) {
+      console.log('[Auth] User authenticated:', JSON.stringify({
+        email: authUser.email,
+        firstName: authUser.firstName,
+        lastName: authUser.lastName,
+        phone: authUser.phone,
+        id: authUser.id
+      }));
       const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
-      setClientUser({ name: fullName, email: authUser.email || '' });
-      setDriverDetails(prev => ({ ...prev, name: fullName, email: authUser.email || '' }));
+      const userEmail = authUser.email || '';
+      console.log('[Auth] Setting clientUser with email:', userEmail);
+      setClientUser({ name: fullName, email: userEmail, phone: authUser.phone || '' });
+      setDriverDetails(prev => ({ ...prev, name: fullName, email: userEmail, phone: authUser.phone || '' }));
       setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '', city: authUser.city || '', state: authUser.state || '' });
       setShowLoginModal(false);
     }
