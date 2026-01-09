@@ -1215,11 +1215,9 @@ export default function CarHopApp() {
     const clientTrips = useMemo(() => {
     console.log('[MyBookings] Computing clientTrips...');
     
-    // DEBUG: If no user context, return ALL active bookings for testing/debugging
-    // In a production app, we would strictly require authUser
     if (!selectedClient && !clientUser && !authUser) {
-      console.log('[MyBookings] No user context available, returning ALL bookings for visibility');
-      return bookings;
+      console.log('[MyBookings] No user context available, returning empty');
+      return [];
     }
     
     // Use authUser as fallback if clientUser doesn't have email
@@ -9981,13 +9979,36 @@ export default function CarHopApp() {
                     <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
                   ) : (() => {
                     const userEmail = (authUser?.email || clientUser?.email || '').toLowerCase().trim();
+                    const userPhone = (authUser?.phone || clientUser?.phone || '').replace(/\D/g, '');
+                    
                     const userTrips = bookings.filter(b => {
-                      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
-                      return bookingEmail === userEmail;
+                      const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+                      const bookingEmail = (driverObj?.email || '').toLowerCase().trim();
+                      const bookingPhone = (driverObj?.phone || '').replace(/\D/g, '');
+                      
+                      const emailMatch = userEmail && bookingEmail === userEmail;
+                      const phoneMatch = userPhone && bookingPhone && bookingPhone === userPhone;
+                      
+                      return emailMatch || phoneMatch;
                     });
                     
                     if (userTrips.length === 0) {
-                      return <div className="text-center text-zinc-500 py-12">No bookings found for your account.</div>;
+                      return (
+                        <div className="text-center space-y-4 py-12">
+                          <div className="text-zinc-500">No bookings found for your account.</div>
+                          <div className="text-xs text-zinc-400">Logged in as: {userEmail || 'No Email'} {userPhone ? `(${userPhone})` : ''}</div>
+                          {bookings.length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-xs text-zinc-500 mb-2">Debug: Found {bookings.length} total bookings in database.</p>
+                              <Button variant="outline" size="sm" onClick={() => {
+                                // For testing, let's show all bookings if none match
+                                console.log('[MyBookings] Debug mode: Showing all bookings');
+                                setClientBookingFilter('newest');
+                              }}>Show All (Debug)</Button>
+                            </div>
+                          )}
+                        </div>
+                      );
                     }
 
                     return (
