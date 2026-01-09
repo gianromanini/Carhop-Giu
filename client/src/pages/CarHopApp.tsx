@@ -8105,7 +8105,7 @@ export default function CarHopApp() {
                         const normalizedBookingStatus = b.status?.toLowerCase().trim();
                         
                         if (bookingFilterStatus) {
-                          const status = bookingFilterStatus as string;
+                          const status = (bookingFilterStatus as string).toLowerCase().trim();
                           if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
                           else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
                           else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
