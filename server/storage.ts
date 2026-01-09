@@ -1087,18 +1087,39 @@ export class DatabaseStorage implements IStorage {
 
   async init() {
     if (this.initialized) return;
-    const connectionString = process.env.DATABASE_URL;
+    
+    // Try DATABASE_URL first, then construct from individual PG* variables
+    let connectionString = process.env.DATABASE_URL;
+    
     if (!connectionString) {
-      console.warn("DATABASE_URL not found, falling back to MemStorage");
+      console.log("[Storage] DATABASE_URL not found, trying to construct from PG* variables...");
+      const pgHost = process.env.PGHOST;
+      const pgUser = process.env.PGUSER;
+      const pgPassword = process.env.PGPASSWORD;
+      const pgDatabase = process.env.PGDATABASE;
+      const pgPort = process.env.PGPORT || "5432";
+      
+      console.log(`[Storage] PG vars check - PGHOST: ${pgHost ? 'set' : 'missing'}, PGUSER: ${pgUser ? 'set' : 'missing'}, PGPASSWORD: ${pgPassword ? 'set' : 'missing'}, PGDATABASE: ${pgDatabase ? 'set' : 'missing'}`);
+      
+      if (pgHost && pgUser && pgPassword && pgDatabase) {
+        connectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}?sslmode=require`;
+        console.log("[Storage] Successfully constructed connection string from PG* variables");
+      }
+    }
+    
+    if (!connectionString) {
+      console.error("[Storage] CRITICAL: No database connection available. Using MemStorage (data will not persist!)");
+      console.error("[Storage] Environment check - NODE_ENV:", process.env.NODE_ENV);
       return;
     }
+    
     try {
       const sql = neon(connectionString);
       this.db = drizzle(sql);
       this.initialized = true;
-      console.log("[Storage] Database successfully initialized");
+      console.log("[Storage] Database successfully initialized and connected");
     } catch (error) {
-      console.error("Failed to initialize database:", error);
+      console.error("[Storage] Failed to initialize database:", error);
       this.initialized = false;
     }
   }
@@ -1801,6 +1822,30 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Initialize storage with DatabaseStorage (tables created in PostgreSQL)
-const storage: IStorage = new DatabaseStorage();
+const storage = new DatabaseStorage();
 
-export { storage };
+// Initialize storage explicitly (call this before starting the server)
+async function initializeStorage(): Promise<boolean> {
+  console.log("[Storage] Starting storage initialization...");
+  console.log("[Storage] Environment check on startup:");
+  console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGHOST: ${process.env.PGHOST ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGUSER: ${process.env.PGUSER ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGPASSWORD: ${process.env.PGPASSWORD ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGDATABASE: ${process.env.PGDATABASE ? 'set' : 'NOT SET'}`);
+  console.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+  
+  await storage.init();
+  
+  const isInitialized = (storage as any).initialized === true;
+  console.log(`[Storage] Initialization complete. Database connected: ${isInitialized}`);
+  
+  if (!isInitialized) {
+    console.error("[Storage] WARNING: Database not connected! Data will NOT persist!");
+    console.error("[Storage] Please ensure DATABASE_URL secret is configured for this deployment.");
+  }
+  
+  return isInitialized;
+}
+
+export { storage, initializeStorage };
