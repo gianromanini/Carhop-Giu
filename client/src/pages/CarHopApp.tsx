@@ -652,7 +652,7 @@ interface FormDataType {
 
 export default function CarHopApp() {
   const queryClient = useQueryClient();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuth();
   const proceedButtonRef = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
@@ -1212,63 +1212,49 @@ export default function CarHopApp() {
     }
   });
 
-    const clientTrips = useMemo(() => {
-    // Determine the effective user email and phone from all available contexts
-    const effectiveEmail = (selectedClient?.email || clientUser?.email || authUser?.email || '').toLowerCase().trim();
-    const effectivePhone = (selectedClient?.phone || clientUser?.phone || authUser?.phone || '').replace(/\D/g, '');
-
-    console.log('[MyBookings] Computing clientTrips...', { 
-      hasSelectedClient: !!selectedClient, 
-      hasClientUser: !!clientUser, 
-      hasAuthUser: !!authUser,
-      effectiveEmail,
-      effectivePhone,
-      bookingsCount: bookings.length
-    });
+  const clientTrips = useMemo(() => {
+    // Use authUser directly as primary source (from real authentication), with fallbacks
+    const activeUser = selectedClient || clientUser || authUser;
     
-    // If no context at all, return empty
-    if (!selectedClient && !clientUser && !authUser) {
-      console.log('[MyBookings] No user context available, returning empty');
+    // If still loading or no user yet, return empty (but UI should show loading state)
+    if (!activeUser) {
+      console.log('[MyBookings] No active user context yet');
       return [];
     }
     
-    // If we have a user context but no identification (email/phone), we can't filter
-    // But on the live site, if they are logged in, they should have one.
-    // As a fallback, if they are an admin or it's a selected client view, maybe show more?
-    // No, this is for "My Bookings".
+    const effectiveEmail = (activeUser.email || '').toLowerCase().trim();
+    const effectivePhone = (activeUser.phone || '').replace(/\D/g, '');
+
+    console.log('[MyBookings] Filtering for user:', { 
+      email: effectiveEmail,
+      phone: effectivePhone ? `***${effectivePhone.slice(-4)}` : 'none',
+      bookingsCount: bookings.length
+    });
     
     if (!effectiveEmail && !effectivePhone) {
-      console.log('[MyBookings] No email or phone available for filtering');
+      console.log('[MyBookings] User has no email or phone for filtering');
       return [];
     }
     
     const trips = bookings.filter(b => {
-      let driverObj: any = {};
-      try {
-        driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
-      } catch (e) {
-        console.error('[MyBookings] Error parsing driver JSON', e);
-      }
+      if (!b.driver) return false;
+      const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
       
       const driverEmail = (driverObj?.email || '').toLowerCase().trim();
       const driverPhone = (driverObj?.phone || '').replace(/\D/g, '');
       
       const emailMatch = effectiveEmail && driverEmail === effectiveEmail;
-      const phoneMatch = effectivePhone && driverPhone && (driverPhone === effectivePhone || driverPhone.includes(effectivePhone) || effectivePhone.includes(driverPhone));
+      const phoneMatch = effectivePhone && driverPhone && (
+        driverPhone === effectivePhone || 
+        driverPhone.includes(effectivePhone) || 
+        effectivePhone.includes(driverPhone)
+      );
       
-      const isMatch = emailMatch || phoneMatch;
-      
-      // Special case: if user is logged in and the booking doesn't have an email/phone (old data?),
-      // but they are the ones who made it? (We don't have userId on bookings table currently, it's driver based)
-      
-      if (isMatch) {
-        console.log('[MyBookings] Match found:', b.bookingCode, '- emailMatch:', emailMatch, 'phoneMatch:', phoneMatch);
-      }
-      return isMatch;
+      return emailMatch || phoneMatch;
     });
     
-    console.log('[MyBookings] Total trips found:', trips.length);
-    return trips;
+    console.log('[MyBookings] Trips found:', trips.length);
+    return trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }, [selectedClient, clientUser, authUser, bookings]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
@@ -9996,10 +9982,18 @@ export default function CarHopApp() {
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
                   {(() => {
-                    const userEmail = (authUser?.email || clientUser?.email || '').toLowerCase().trim();
-                    const userPhone = (authUser?.phone || clientUser?.phone || '').replace(/\D/g, '');
+                    // Show loading state while auth OR bookings are being determined
+                    if (authLoading || bookingsLoading) {
+                      return <div className="text-center text-zinc-500 py-12">Loading your bookings...</div>;
+                    }
                     
-                    if (!userEmail && !userPhone) {
+                    // Get effective user identity from auth or client state
+                    const activeUser = selectedClient || clientUser || authUser;
+                    const userEmail = (activeUser?.email || '').toLowerCase().trim();
+                    const userPhone = (activeUser?.phone || '').replace(/\D/g, '');
+                    
+                    // If no user identity available, prompt sign in
+                    if (!activeUser || (!userEmail && !userPhone)) {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">Please sign in to view your bookings.</div>
@@ -10008,36 +10002,8 @@ export default function CarHopApp() {
                       );
                     }
                     
-                    if (bookingsLoading) {
-                      return <div className="text-center text-zinc-500 py-12">Loading bookings...</div>;
-                    }
-                    
-                    if (bookings.length === 0) {
-                      return <div className="text-center text-zinc-500 py-12">No bookings found in the system.</div>;
-                    }
-                    
-                    const userTrips = bookings.filter(b => {
-                      const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
-                      const bookingEmail = (driverObj?.email || '').toLowerCase().trim();
-                      const bookingPhone = (driverObj?.phone || '').replace(/\D/g, '');
-                      const bookingName = (driverObj?.name || '').toLowerCase().trim();
-                      
-                      const hostEmailInDetails = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
-                      const driverEmailInDetails = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
-                      const driverNameInDetails = ((b.details as any)?.driverName || '').toLowerCase().trim();
-
-                      const userName = (authUser?.firstName && authUser?.lastName ? `${authUser.firstName} ${authUser.lastName}` : authUser?.name || clientUser?.name || '').toLowerCase().trim();
-                      const userFirstLast = authUser?.firstName && authUser?.lastName ? `${authUser.firstName} ${authUser.lastName}`.toLowerCase().trim() : '';
-
-                      const emailMatch = userEmail && (bookingEmail === userEmail || hostEmailInDetails === userEmail || driverEmailInDetails === userEmail);
-                      const phoneMatch = userPhone && bookingPhone && bookingPhone === userPhone;
-                      const nameMatch = userName && (bookingName.includes(userName) || userName.includes(bookingName) || (driverNameInDetails && (driverNameInDetails.includes(userName) || userName.includes(driverNameInDetails))));
-                      const exactNameMatch = userFirstLast && (bookingName === userFirstLast || driverNameInDetails === userFirstLast);
-                      
-                      return emailMatch || phoneMatch || nameMatch || exactNameMatch;
-                    });
-                    
-                    if (userTrips.length === 0) {
+                    // Use the memoized clientTrips which already filters by user
+                    if (clientTrips.length === 0) {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">No bookings found for your account.</div>
@@ -10063,7 +10029,7 @@ export default function CarHopApp() {
                           <option value="pending">Pending</option>
                         </select>
                       </div>
-                      {[...userTrips]
+                      {[...clientTrips]
                         .filter(b => {
                           const normalizedStatus = b.status?.toLowerCase().trim();
                           if (clientBookingFilter === 'newest') return true;
