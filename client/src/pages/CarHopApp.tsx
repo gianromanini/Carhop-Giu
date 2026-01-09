@@ -1236,8 +1236,9 @@ export default function CarHopApp() {
     }
     
     const trips = bookings.filter(b => {
-      const driverEmail = (b.driver as any)?.email?.toLowerCase().trim() || '';
-      const driverPhone = ((b.driver as any)?.phone || '').replace(/\D/g, '');
+      const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+      const driverEmail = (driverObj?.email || '').toLowerCase().trim();
+      const driverPhone = (driverObj?.phone || '').replace(/\D/g, '');
       
       const emailMatch = clientEmail && driverEmail === clientEmail;
       const phoneMatch = userPhone && driverPhone && driverPhone === userPhone;
