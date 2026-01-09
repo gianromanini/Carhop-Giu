@@ -1222,7 +1222,8 @@ export default function CarHopApp() {
     
     const trips = bookings.filter(b => {
       const driverEmail = (b.driver as any)?.email?.toLowerCase().trim();
-      const isMatch = driverEmail === clientEmail;
+      const clientEmailNormalized = clientEmail.toLowerCase().trim();
+      const isMatch = driverEmail === clientEmailNormalized;
       if (isMatch) console.log('[MyBookings] Found matching booking:', b.bookingCode);
       return isMatch;
     });
