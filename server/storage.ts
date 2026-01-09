@@ -1110,16 +1110,26 @@ export class DatabaseStorage implements IStorage {
     if (!connectionString) {
       console.error("[Storage] CRITICAL: No database connection available. Using MemStorage (data will not persist!)");
       console.error("[Storage] Environment check - NODE_ENV:", process.env.NODE_ENV);
+      console.error("[Storage] Environment check - DATABASE_URL exists:", !!process.env.DATABASE_URL);
+      console.error("[Storage] Environment check - PGHOST exists:", !!process.env.PGHOST);
       return;
     }
     
     try {
-      const sql = neon(connectionString);
-      this.db = drizzle(sql);
+      console.log("[Storage] Attempting to connect to database...");
+      const sqlClient = neon(connectionString);
+      this.db = drizzle(sqlClient);
+      
+      // Test connection with a simple raw query
+      await sqlClient`SELECT 1`;
+      
       this.initialized = true;
-      console.log("[Storage] Database successfully initialized and connected");
-    } catch (error) {
-      console.error("[Storage] Failed to initialize database:", error);
+      console.log("[Storage] Database successfully initialized, connected, and verified");
+    } catch (error: any) {
+      console.error("[Storage] Failed to initialize database or verify connection:", error);
+      if (error?.message) {
+        console.error("[Storage] Error detail:", error.message);
+      }
       this.initialized = false;
     }
   }
