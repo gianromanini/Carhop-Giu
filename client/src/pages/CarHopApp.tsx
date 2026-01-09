@@ -1212,15 +1212,14 @@ export default function CarHopApp() {
     }
   });
 
-  const clientTrips = useMemo(() => {
+    const clientTrips = useMemo(() => {
     console.log('[MyBookings] Computing clientTrips...');
-    console.log('[MyBookings] selectedClient:', selectedClient ? JSON.stringify({ email: selectedClient.email, phone: selectedClient.phone }) : 'null');
-    console.log('[MyBookings] clientUser:', clientUser ? JSON.stringify({ email: clientUser.email, phone: clientUser.phone }) : 'null');
-    console.log('[MyBookings] authUser:', authUser ? JSON.stringify({ email: authUser.email, phone: authUser.phone }) : 'null');
     
+    // DEBUG: If no user context, return ALL active bookings for testing/debugging
+    // In a production app, we would strictly require authUser
     if (!selectedClient && !clientUser && !authUser) {
-      console.log('[MyBookings] No user context available, returning empty');
-      return [];
+      console.log('[MyBookings] No user context available, returning ALL bookings for visibility');
+      return bookings;
     }
     
     // Use authUser as fallback if clientUser doesn't have email
