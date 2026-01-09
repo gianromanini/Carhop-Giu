@@ -1348,13 +1348,25 @@ export class DatabaseStorage implements IStorage {
       console.log("[Storage] Database not initialized, attempting to initialize...");
       await this.init();
     }
+    
+    // Check if still not initialized after attempt
+    if (!this.initialized || !this.db) {
+      console.error("[Storage] CRITICAL: Database still not initialized after init attempt!");
+      return [];
+    }
+    
     try {
-      // Use orderBy directly in SQL for efficiency and correctness
-      const results = await this.db.select().from(bookings).orderBy(desc(bookings.id));
+      // Simple query without orderBy to avoid any issues
+      const results = await this.db.select().from(bookings);
       console.log(`[Storage] RAW DB FETCH: Found ${results.length} bookings in table at ${new Date().toISOString()}`);
-      return results;
-    } catch (error) {
-      console.error("Error getting bookings:", error);
+      
+      // Sort by ID descending in JavaScript
+      const sorted = results.sort((a: Booking, b: Booking) => Number(b.id) - Number(a.id));
+      return sorted;
+    } catch (error: any) {
+      console.error("[Storage] Error getting bookings:", error);
+      console.error("[Storage] Error details:", error?.message || "No message");
+      console.error("[Storage] Error stack:", error?.stack || "No stack");
       return [];
     }
   }
