@@ -1216,11 +1216,13 @@ export class DatabaseStorage implements IStorage {
       
       if (host) {
         console.log(`[Storage] User identified as host ID ${host.id}`);
+        // Compare as strings to handle mixed types (hostId can be number or string)
+        const hostIdStr = String(host.id);
         const hostVehicleIds = allVehicles
-          .filter(v => v.hostId === host.id.toString())
+          .filter(v => String(v.hostId) === hostIdStr)
           .map(v => v.id);
         
-        console.log(`[Storage] Host owns vehicle IDs: ${hostVehicleIds.join(', ')}`);
+        console.log(`[Storage] Host owns vehicle IDs: ${hostVehicleIds.join(', ') || 'none'}`);
         
         hostBookings = allBookings.filter(b => 
           b.vehicleId && hostVehicleIds.includes(b.vehicleId)
