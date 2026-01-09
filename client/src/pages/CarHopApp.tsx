@@ -824,7 +824,7 @@ export default function CarHopApp() {
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
-  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
+  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('start-first');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
@@ -5120,8 +5120,8 @@ export default function CarHopApp() {
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-filter">
-                        <option value="end-soon">End Soon (Next 3 Days)</option>
-                        <option value="start-first">Start First</option>
+                        <option value="start-first">All (Newest First)</option>
+                        <option value="end-soon">Ending Soon (3 days)</option>
                       </select>
                     </div>
                     <div>
@@ -5148,9 +5148,8 @@ export default function CarHopApp() {
                           const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
                           return aDateTime - bDateTime;
                         } else {
-                          const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
-                          const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
-                          return bDateTime - aDateTime;
+                          // Default sort: Newest ID first (which usually means newest booking)
+                          return Number(b.id) - Number(a.id);
                         }
                       })
                       .filter(b => {
@@ -8059,8 +8058,8 @@ export default function CarHopApp() {
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
-                        <option value="end-soon">End Soon (Next 3 Days)</option>
-                        <option value="start-first">Start First (Oldest First)</option>
+                        <option value="start-first">All (Newest First)</option>
+                        <option value="end-soon">Ending Soon (3 days)</option>
                       </select>
                     </div>
                     <div>
@@ -8096,9 +8095,8 @@ export default function CarHopApp() {
                           const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
                           return aDateTime - bDateTime;
                         } else {
-                          const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
-                          const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
-                          return bDateTime - aDateTime;
+                          // Default sort: Newest ID first (which usually means newest booking)
+                          return Number(b.id) - Number(a.id);
                         }
                       })
                       .filter(b => {
