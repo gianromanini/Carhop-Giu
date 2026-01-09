@@ -1349,16 +1349,10 @@ export class DatabaseStorage implements IStorage {
       await this.init();
     }
     try {
-      const results = await this.db.select().from(bookings);
+      // Use orderBy directly in SQL for efficiency and correctness
+      const results = await this.db.select().from(bookings).orderBy(desc(bookings.id));
       console.log(`[Storage] RAW DB FETCH: Found ${results.length} bookings in table at ${new Date().toISOString()}`);
-      
-      // Sort by ID descending
-      const sorted = [...results].sort((a, b) => {
-        const idA = Number(a.id);
-        const idB = Number(b.id);
-        return idB - idA;
-      });
-      return sorted;
+      return results;
     } catch (error) {
       console.error("Error getting bookings:", error);
       return [];
