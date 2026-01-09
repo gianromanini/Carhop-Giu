@@ -9925,45 +9925,46 @@ export default function CarHopApp() {
           <div className="max-w-4xl mx-auto px-2 sm:px-6 py-12">
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
-              {bookings.length === 0 ? (
-                <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Filter Bookings</label>
-                    <select 
-                      value={clientBookingFilter} 
-                      onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'active' | 'completed' | 'cancelled' | 'pending')} 
-                      className="w-full max-w-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
-                      data-testid="select-client-booking-filter"
-                    >
-                      <option value="newest">All (Newest First)</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="pending">Pending</option>
-                    </select>
-                  </div>
-                  {[...bookings]
-                    .filter(b => {
-                      // Use authUser email, fallback to clientUser email
-                      const userEmail = (authUser?.email || clientUser?.email)?.toLowerCase().trim();
+                  {bookings.length === 0 ? (
+                    <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
+                  ) : (() => {
+                    const userEmail = (authUser?.email || clientUser?.email || '').toLowerCase().trim();
+                    const userTrips = bookings.filter(b => {
                       const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
-                      
-                      // For logged in users, ONLY show their own bookings
-                      if (!userEmail || !bookingEmail) return false;
-                      
-                      const isOwner = userEmail.toLowerCase() === bookingEmail.toLowerCase();
-                      if (!isOwner) return false;
-                      
-                      const normalizedStatus = b.status?.toLowerCase().trim();
-                      if (clientBookingFilter === 'newest') return true;
-                      if (clientBookingFilter === 'active') return normalizedStatus === 'active' || normalizedStatus === 'extended';
-                      if (clientBookingFilter === 'completed') return normalizedStatus === 'completed';
-                      if (clientBookingFilter === 'cancelled') return normalizedStatus === 'cancelled';
-                      if (clientBookingFilter === 'pending') return normalizedStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
-                      return true;
-                    })
+                      return bookingEmail === userEmail;
+                    });
+                    
+                    if (userTrips.length === 0) {
+                      return <div className="text-center text-zinc-500 py-12">No bookings found for your account.</div>;
+                    }
+
+                    return (
+                    <>
+                      <div className="mb-6">
+                        <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Filter Bookings</label>
+                        <select 
+                          value={clientBookingFilter} 
+                          onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'active' | 'completed' | 'cancelled' | 'pending')} 
+                          className="w-full max-w-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+                          data-testid="select-client-booking-filter"
+                        >
+                          <option value="newest">All (Newest First)</option>
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="pending">Pending</option>
+                        </select>
+                      </div>
+                      {[...userTrips]
+                        .filter(b => {
+                          const normalizedStatus = b.status?.toLowerCase().trim();
+                          if (clientBookingFilter === 'newest') return true;
+                          if (clientBookingFilter === 'active') return normalizedStatus === 'active' || normalizedStatus === 'extended';
+                          if (clientBookingFilter === 'completed') return normalizedStatus === 'completed';
+                          if (clientBookingFilter === 'cancelled') return normalizedStatus === 'cancelled';
+                          if (clientBookingFilter === 'pending') return normalizedStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          return true;
+                        })
                     .sort((a, b) => {
                       // Always put Active and Extended at the top
                       const aIsActive = a.status === 'Active' || a.status === 'Extended';
