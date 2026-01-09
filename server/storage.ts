@@ -1275,14 +1275,14 @@ export class DatabaseStorage implements IStorage {
     try {
       const results = await this.db.select().from(bookings);
       console.log(`[Storage] RAW DB FETCH: Found ${results.length} bookings in table at ${new Date().toISOString()}`);
-      if (results.length > 0) {
-        console.log(`[Storage] Sample booking IDs: ${results.slice(0, 3).map(b => b.id).join(', ')}`);
-      }
-      return results.sort((a, b) => {
-        const idA = typeof a.id === 'number' ? a.id : parseInt(String(a.id));
-        const idB = typeof b.id === 'number' ? b.id : parseInt(String(b.id));
+      
+      // Sort by ID descending
+      const sorted = [...results].sort((a, b) => {
+        const idA = Number(a.id);
+        const idB = Number(b.id);
         return idB - idA;
       });
+      return sorted;
     } catch (error) {
       console.error("Error getting bookings:", error);
       return [];
