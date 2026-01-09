@@ -1311,17 +1311,29 @@ export default function CarHopApp() {
         firstName: authUser.firstName,
         lastName: authUser.lastName,
         phone: authUser.phone,
-        id: authUser.id
+        id: authUser.id,
+        isHost: authUser.isHost,
+        isAdmin: authUser.isAdmin
       }));
       const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
       const userEmail = authUser.email || '';
-      console.log('[Auth] Setting clientUser with email:', userEmail);
+      console.log('[Auth] Setting clientUser and potentially host context');
       setClientUser({ name: fullName, email: userEmail, phone: authUser.phone || '' });
       setDriverDetails(prev => ({ ...prev, name: fullName, email: userEmail, phone: authUser.phone || '' }));
       setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '', city: authUser.city || '', state: authUser.state || '' });
+      
+      // If the user is a host, ensure the host context is set
+      if (authUser.isHost) {
+        const hostObj = hostsData?.find(h => h.email.toLowerCase() === userEmail.toLowerCase());
+        if (hostObj) {
+          console.log('[Auth] Auto-selecting host context for authenticated host');
+          setCurrentHost(hostObj);
+        }
+      }
+      
       setShowLoginModal(false);
     }
-  }, [isAuthenticated, authUser]);
+  }, [isAuthenticated, authUser, hostsData]);
 
   // Auto-scroll to top when view changes
   useEffect(() => {
