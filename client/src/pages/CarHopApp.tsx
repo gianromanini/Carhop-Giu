@@ -9975,11 +9975,26 @@ export default function CarHopApp() {
           <div className="max-w-4xl mx-auto px-2 sm:px-6 py-12">
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
-                  {bookings.length === 0 ? (
-                    <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
-                  ) : (() => {
+                  {(() => {
                     const userEmail = (authUser?.email || clientUser?.email || '').toLowerCase().trim();
                     const userPhone = (authUser?.phone || clientUser?.phone || '').replace(/\D/g, '');
+                    
+                    if (!userEmail && !userPhone) {
+                      return (
+                        <div className="text-center space-y-4 py-12">
+                          <div className="text-zinc-500">Please sign in to view your bookings.</div>
+                          <Button onClick={() => setShowLoginModal(true)} data-testid="button-login-to-view">Sign In</Button>
+                        </div>
+                      );
+                    }
+                    
+                    if (bookingsLoading) {
+                      return <div className="text-center text-zinc-500 py-12">Loading bookings...</div>;
+                    }
+                    
+                    if (bookings.length === 0) {
+                      return <div className="text-center text-zinc-500 py-12">No bookings found in the system.</div>;
+                    }
                     
                     const userTrips = bookings.filter(b => {
                       const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
@@ -9996,17 +10011,7 @@ export default function CarHopApp() {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">No bookings found for your account.</div>
-                          <div className="text-xs text-zinc-400">Logged in as: {userEmail || 'No Email'} {userPhone ? `(${userPhone})` : ''}</div>
-                          {bookings.length > 0 && (
-                            <div className="mt-4">
-                              <p className="text-xs text-zinc-500 mb-2">Debug: Found {bookings.length} total bookings in database.</p>
-                              <Button variant="outline" size="sm" onClick={() => {
-                                // For testing, let's show all bookings if none match
-                                console.log('[MyBookings] Debug mode: Showing all bookings');
-                                setClientBookingFilter('newest');
-                              }}>Show All (Debug)</Button>
-                            </div>
-                          )}
+                          <div className="text-xs text-zinc-400">Logged in as: {userEmail} {userPhone ? `(${userPhone})` : ''}</div>
                         </div>
                       );
                     }
