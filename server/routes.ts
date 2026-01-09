@@ -591,8 +591,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       const { email, password } = result.data;
 
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
+      // Find user by email (case-insensitive)
+      const user = await storage.getUserByEmail(email.toLowerCase());
       if (!user || !user.passwordHash) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
@@ -606,8 +606,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Set session
       req.login(user, (err) => {
         if (err) {
+          console.error("[Auth] Login session error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
+        console.log(`[Auth] User logged in: ${user.email} (ID: ${user.id})`);
         res.json({ message: "Logged in successfully", user });
       });
     } catch (error) {
