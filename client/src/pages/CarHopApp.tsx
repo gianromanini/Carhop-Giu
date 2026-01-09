@@ -1222,8 +1222,14 @@ export default function CarHopApp() {
     
     const trips = bookings.filter(b => {
       const driverEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      const driverPhone = (b.driver as any)?.phone?.replace(/\D/g, '');
       const clientEmailNormalized = clientEmail.toLowerCase().trim();
-      const isMatch = driverEmail === clientEmailNormalized;
+      const userPhone = (clientUser?.phone || selectedClient?.phone)?.replace(/\D/g, '');
+      
+      const emailMatch = driverEmail === clientEmailNormalized;
+      const phoneMatch = userPhone && driverPhone === userPhone;
+      
+      const isMatch = emailMatch || phoneMatch;
       if (isMatch) console.log('[MyBookings] Found matching booking:', b.bookingCode);
       return isMatch;
     });
@@ -8115,6 +8121,13 @@ export default function CarHopApp() {
                         const bVehicleId = String(b.vehicleId);
                         const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
                         
+                        // Ensure booking is only shown if vehicle exists (data integrity check)
+                        if (!vehicle && !bookingFilterCarModel) {
+                          // matches stays true if no car model filter is active
+                        } else if (!vehicle && bookingFilterCarModel) {
+                          matches = false;
+                        }
+
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
                         if (bookingFilterNumber) {
                           const searchTerm = bookingFilterNumber.toLowerCase();
