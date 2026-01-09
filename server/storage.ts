@@ -1233,7 +1233,7 @@ export class DatabaseStorage implements IStorage {
 
       // 1. Bookings where the user is the driver
       const driverBookings = allBookings.filter((b: Booking) => {
-        const driverEmail = (b.driver?.email || "").trim().toLowerCase();
+        const driverEmail = (b.driver as any)?.email ? String((b.driver as any).email).trim().toLowerCase() : "";
         const matches = driverEmail === emailToSearch;
         if (matches) console.log(`[Storage] Found match as driver: ${b.bookingCode} (ID: ${b.id})`);
         return matches;
@@ -1242,7 +1242,7 @@ export class DatabaseStorage implements IStorage {
       console.log(`[Storage] Found ${driverBookings.length} bookings as driver`);
 
       // 2. Bookings where the user is the host of the car
-      const host = allHosts.find(h => (h.email || "").trim().toLowerCase() === emailToSearch);
+      const host = allHosts.find((h: Host) => (h.email || "").trim().toLowerCase() === emailToSearch);
       let hostBookings: Booking[] = [];
       
       if (host) {
@@ -1250,20 +1250,20 @@ export class DatabaseStorage implements IStorage {
         // Compare as strings to handle mixed types (hostId can be number or string)
         const hostIdStr = String(host.id);
         const hostVehicleIds = allVehicles
-          .filter(v => String(v.hostId) === hostIdStr)
-          .map(v => v.id);
+          .filter((v: Vehicle) => String(v.hostId) === hostIdStr)
+          .map((v: Vehicle) => v.id);
         
         console.log(`[Storage] Host owns vehicle IDs: ${hostVehicleIds.join(', ') || 'none'}`);
         
-        hostBookings = allBookings.filter(b => 
+        hostBookings = allBookings.filter((b: Booking) => 
           b.vehicleId && hostVehicleIds.includes(b.vehicleId)
         );
         console.log(`[Storage] Found ${hostBookings.length} bookings for host vehicles`);
       }
 
       // 3. Fallback: Check if the booking details has the hostEmail
-      const detailHostBookings = allBookings.filter(b => {
-        const hostEmail = (b.details?.hostEmail || "").trim().toLowerCase();
+      const detailHostBookings = allBookings.filter((b: Booking) => {
+        const hostEmail = ((b.details as any)?.hostEmail || "").trim().toLowerCase();
         return hostEmail === emailToSearch;
       });
       
@@ -1273,9 +1273,9 @@ export class DatabaseStorage implements IStorage {
 
       // Combine and remove duplicates using a Map
       const combinedMap = new Map<number, Booking>();
-      driverBookings.forEach(b => combinedMap.set(b.id, b));
-      hostBookings.forEach(b => combinedMap.set(b.id, b));
-      detailHostBookings.forEach(b => combinedMap.set(b.id, b));
+      driverBookings.forEach((b: Booking) => combinedMap.set(b.id, b));
+      hostBookings.forEach((b: Booking) => combinedMap.set(b.id, b));
+      detailHostBookings.forEach((b: Booking) => combinedMap.set(b.id, b));
 
       const result = Array.from(combinedMap.values());
       console.log(`[Storage] Returning ${result.length} unique bookings for ${emailToSearch}`);
