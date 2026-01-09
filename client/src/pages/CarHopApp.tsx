@@ -10007,12 +10007,14 @@ export default function CarHopApp() {
                       const driverNameInDetails = ((b.details as any)?.driverName || '').toLowerCase().trim();
 
                       const userName = (authUser?.firstName && authUser?.lastName ? `${authUser.firstName} ${authUser.lastName}` : authUser?.name || clientUser?.name || '').toLowerCase().trim();
+                      const userFirstLast = authUser?.firstName && authUser?.lastName ? `${authUser.firstName} ${authUser.lastName}`.toLowerCase().trim() : '';
 
                       const emailMatch = userEmail && (bookingEmail === userEmail || hostEmailInDetails === userEmail || driverEmailInDetails === userEmail);
                       const phoneMatch = userPhone && bookingPhone && bookingPhone === userPhone;
-                      const nameMatch = userName && (bookingName === userName || driverNameInDetails === userName);
+                      const nameMatch = userName && (bookingName.includes(userName) || userName.includes(bookingName) || (driverNameInDetails && (driverNameInDetails.includes(userName) || userName.includes(driverNameInDetails))));
+                      const exactNameMatch = userFirstLast && (bookingName === userFirstLast || driverNameInDetails === userFirstLast);
                       
-                      return emailMatch || phoneMatch || nameMatch;
+                      return emailMatch || phoneMatch || nameMatch || exactNameMatch;
                     });
                     
                     if (userTrips.length === 0) {
