@@ -1242,15 +1242,31 @@ export default function CarHopApp() {
       
       const driverEmail = (driverObj?.email || '').toLowerCase().trim();
       const driverPhone = (driverObj?.phone || '').replace(/\D/g, '');
+      const driverName = (driverObj?.name || '').toLowerCase().trim();
+
+      // Check details for secondary storage locations
+      const detailDriverEmail = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
+      const detailHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
+      const detailDriverName = ((b.details as any)?.driverName || '').toLowerCase().trim();
+
+      const userName = (activeUser.firstName && activeUser.lastName ? `${activeUser.firstName} ${activeUser.lastName}` : (activeUser as any).name || '').toLowerCase().trim();
       
-      const emailMatch = effectiveEmail && driverEmail === effectiveEmail;
+      const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail);
       const phoneMatch = effectivePhone && driverPhone && (
         driverPhone === effectivePhone || 
         driverPhone.includes(effectivePhone) || 
         effectivePhone.includes(driverPhone)
       );
+      // More flexible name matching
+      const nameMatch = userName && (
+        (driverName && (driverName.includes(userName) || userName.includes(driverName))) || 
+        (detailDriverName && (detailDriverName.includes(userName) || userName.includes(detailDriverName)))
+      );
       
-      return emailMatch || phoneMatch;
+      // If we are in the live site and user is authenticated, we should also try matching by ID if available in metadata
+      const userIdMatch = activeUser.id && (b as any).userId === activeUser.id;
+      
+      return emailMatch || phoneMatch || nameMatch || userIdMatch;
     });
     
     console.log('[MyBookings] Trips found:', trips.length);
