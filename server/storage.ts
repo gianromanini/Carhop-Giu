@@ -1085,21 +1085,26 @@ export class DatabaseStorage implements IStorage {
   private db: any;
   private initialized: boolean = false;
 
-  constructor() {
+  async init() {
+    if (this.initialized) return;
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       console.warn("DATABASE_URL not found, falling back to MemStorage");
-      this.initialized = false;
       return;
     }
     try {
       const sql = neon(connectionString);
       this.db = drizzle(sql);
       this.initialized = true;
+      console.log("[Storage] Database successfully initialized");
     } catch (error) {
       console.error("Failed to initialize database:", error);
       this.initialized = false;
     }
+  }
+
+  constructor() {
+    this.init().catch(err => console.error("Error in storage constructor init:", err));
   }
 
   // Users
