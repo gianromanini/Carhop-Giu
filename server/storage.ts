@@ -1191,48 +1191,63 @@ export class DatabaseStorage implements IStorage {
       await this.init();
     }
     try {
-      // First, find all bookings for this driver email
-      const allBookings = await this.db.select().from(bookings);
+      const emailToSearch = userEmail.trim().toLowerCase();
+      console.log(`[Storage] Fetching trips for user email: "${emailToSearch}"`);
       
-      const filtered = allBookings.filter((b: Booking) => {
-        const driverEmail = b.driver?.email?.toLowerCase() || '';
-        const matches = driverEmail === userEmail.toLowerCase();
+      const allBookings = await this.db.select().from(bookings);
+      const allVehicles = await this.db.select().from(vehicles);
+      const allHosts = await this.db.select().from(hosts);
+      
+      console.log(`[Storage] DEBUG: DB Stats - Bookings: ${allBookings.length}, Vehicles: ${allVehicles.length}, Hosts: ${allHosts.length}`);
+
+      // 1. Bookings where the user is the driver
+      const driverBookings = allBookings.filter((b: Booking) => {
+        const driverEmail = (b.driver?.email || "").trim().toLowerCase();
+        const matches = driverEmail === emailToSearch;
+        if (matches) console.log(`[Storage] Found match as driver: ${b.bookingCode} (ID: ${b.id})`);
         return matches;
       });
       
-      console.log(`[Storage] Found ${filtered.length} bookings for user email: ${userEmail}`);
+      console.log(`[Storage] Found ${driverBookings.length} bookings as driver`);
+
+      // 2. Bookings where the user is the host of the car
+      const host = allHosts.find(h => (h.email || "").trim().toLowerCase() === emailToSearch);
+      let hostBookings: Booking[] = [];
       
-      // If we found bookings, return them sorted
-      if (filtered.length > 0) {
-        return filtered.sort((a: Booking, b: Booking) => {
-          const idA = Number(a.id);
-          const idB = Number(b.id);
-          return idB - idA;
-        });
+      if (host) {
+        console.log(`[Storage] User identified as host ID ${host.id}`);
+        const hostVehicleIds = allVehicles
+          .filter(v => v.hostId === host.id.toString())
+          .map(v => v.id);
+        
+        console.log(`[Storage] Host owns vehicle IDs: ${hostVehicleIds.join(', ')}`);
+        
+        hostBookings = allBookings.filter(b => 
+          b.vehicleId && hostVehicleIds.includes(b.vehicleId)
+        );
+        console.log(`[Storage] Found ${hostBookings.length} bookings for host vehicles`);
       }
 
-      // If no bookings found by driver email, check if the user is a host
-      // and if they have bookings for their vehicles
-      const host = await this.getHostByEmail(userEmail);
-      if (host) {
-        console.log(`[Storage] User ${userEmail} is a host (ID: ${host.id}), fetching host bookings`);
-        const hostVehicles = await this.db.select().from(vehicles).where(eq(vehicles.hostId, host.id.toString()));
-        const hostVehicleIds = hostVehicles.map((v: any) => v.id);
-        
-        if (hostVehicleIds.length > 0) {
-          const hostBookings = allBookings.filter((b: Booking) => 
-            b.vehicleId && hostVehicleIds.includes(b.vehicleId)
-          );
-          console.log(`[Storage] Found ${hostBookings.length} bookings for host vehicles`);
-          return hostBookings.sort((a: Booking, b: Booking) => {
-            const idA = Number(a.id);
-            const idB = Number(b.id);
-            return idB - idA;
-          });
-        }
-      }
+      // 3. Fallback: Check if the booking details has the hostEmail
+      const detailHostBookings = allBookings.filter(b => {
+        const hostEmail = (b.details?.hostEmail || "").trim().toLowerCase();
+        return hostEmail === emailToSearch;
+      });
       
-      return [];
+      if (detailHostBookings.length > 0) {
+        console.log(`[Storage] Found ${detailHostBookings.length} bookings matching hostEmail in details`);
+      }
+
+      // Combine and remove duplicates using a Map
+      const combinedMap = new Map<number, Booking>();
+      driverBookings.forEach(b => combinedMap.set(b.id, b));
+      hostBookings.forEach(b => combinedMap.set(b.id, b));
+      detailHostBookings.forEach(b => combinedMap.set(b.id, b));
+
+      const result = Array.from(combinedMap.values());
+      console.log(`[Storage] Returning ${result.length} unique bookings for ${emailToSearch}`);
+
+      return result.sort((a, b) => Number(b.id) - Number(a.id));
     } catch (error) {
       console.error("Error getting user trips:", error);
       return [];
