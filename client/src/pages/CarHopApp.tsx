@@ -1213,34 +1213,54 @@ export default function CarHopApp() {
   });
 
     const clientTrips = useMemo(() => {
-    console.log('[MyBookings] Computing clientTrips...');
+    // Determine the effective user email and phone from all available contexts
+    const effectiveEmail = (selectedClient?.email || clientUser?.email || authUser?.email || '').toLowerCase().trim();
+    const effectivePhone = (selectedClient?.phone || clientUser?.phone || authUser?.phone || '').replace(/\D/g, '');
+
+    console.log('[MyBookings] Computing clientTrips...', { 
+      hasSelectedClient: !!selectedClient, 
+      hasClientUser: !!clientUser, 
+      hasAuthUser: !!authUser,
+      effectiveEmail,
+      effectivePhone,
+      bookingsCount: bookings.length
+    });
     
+    // If no context at all, return empty
     if (!selectedClient && !clientUser && !authUser) {
       console.log('[MyBookings] No user context available, returning empty');
       return [];
     }
     
-    // Use authUser as fallback if clientUser doesn't have email
-    const clientEmail = (selectedClient?.email || clientUser?.email || authUser?.email || '').toLowerCase().trim();
-    const userPhone = (selectedClient?.phone || clientUser?.phone || authUser?.phone || '').replace(/\D/g, '');
+    // If we have a user context but no identification (email/phone), we can't filter
+    // But on the live site, if they are logged in, they should have one.
+    // As a fallback, if they are an admin or it's a selected client view, maybe show more?
+    // No, this is for "My Bookings".
     
-    console.log('[MyBookings] Filtering with email:', clientEmail, 'phone:', userPhone);
-    console.log('[MyBookings] Total bookings available:', bookings.length);
-    
-    if (!clientEmail && !userPhone) {
-      console.log('[MyBookings] No email or phone available, returning empty');
+    if (!effectiveEmail && !effectivePhone) {
+      console.log('[MyBookings] No email or phone available for filtering');
       return [];
     }
     
     const trips = bookings.filter(b => {
-      const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+      let driverObj: any = {};
+      try {
+        driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+      } catch (e) {
+        console.error('[MyBookings] Error parsing driver JSON', e);
+      }
+      
       const driverEmail = (driverObj?.email || '').toLowerCase().trim();
       const driverPhone = (driverObj?.phone || '').replace(/\D/g, '');
       
-      const emailMatch = clientEmail && driverEmail === clientEmail;
-      const phoneMatch = userPhone && driverPhone && driverPhone === userPhone;
+      const emailMatch = effectiveEmail && driverEmail === effectiveEmail;
+      const phoneMatch = effectivePhone && driverPhone && (driverPhone === effectivePhone || driverPhone.includes(effectivePhone) || effectivePhone.includes(driverPhone));
       
       const isMatch = emailMatch || phoneMatch;
+      
+      // Special case: if user is logged in and the booking doesn't have an email/phone (old data?),
+      // but they are the ones who made it? (We don't have userId on bookings table currently, it's driver based)
+      
       if (isMatch) {
         console.log('[MyBookings] Match found:', b.bookingCode, '- emailMatch:', emailMatch, 'phoneMatch:', phoneMatch);
       }
