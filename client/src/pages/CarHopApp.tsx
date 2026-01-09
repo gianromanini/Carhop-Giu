@@ -1241,7 +1241,7 @@ export default function CarHopApp() {
     const total = userBookings.reduce((sum, b) => {
       const details = b.details;
       if (!details) return sum;
-      return sum + (details.rate * 1 + details.extras + details.protection + details.fees + details.tax - (details.discount || 0));
+      return sum + (Number(details.rate || 0) + Number(details.extras || 0) + Number(details.protection || 0) + Number(details.fees || 0) + Number(details.tax || 0) - Number(details.discount || 0));
     }, 0);
     return { trips: userBookings.length, total };
   };
