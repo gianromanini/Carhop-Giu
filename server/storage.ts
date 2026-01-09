@@ -1271,11 +1271,12 @@ export class DatabaseStorage implements IStorage {
       // 3. Fallback: Check if the booking details has the hostEmail
       const detailHostBookings = allBookings.filter((b: Booking) => {
         const hostEmail = ((b.details as any)?.hostEmail || "").trim().toLowerCase();
-        return hostEmail === emailToSearch;
+        const driverEmailInDetails = ((b.details as any)?.driverEmail || "").trim().toLowerCase();
+        return hostEmail === emailToSearch || driverEmailInDetails === emailToSearch;
       });
       
       if (detailHostBookings.length > 0) {
-        console.log(`[Storage] Found ${detailHostBookings.length} bookings matching hostEmail in details`);
+        console.log(`[Storage] Found ${detailHostBookings.length} bookings matching emails in details`);
       }
 
       // Combine and remove duplicates using a Map
