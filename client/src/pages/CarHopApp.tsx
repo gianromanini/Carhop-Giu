@@ -8115,9 +8115,6 @@ export default function CarHopApp() {
                         const bVehicleId = String(b.vehicleId);
                         const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
                         
-                        // Debug log for Admin filtering
-                        console.log(`[AdminBookings] Booking ${b.bookingCode}: status=${b.status}, normalizedStatus=${(b.status || "").toLowerCase().trim()}, matches=${matches}, filterStatus=${bookingFilterStatus}`);
-                        
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
                         if (bookingFilterNumber) {
                           const searchTerm = bookingFilterNumber.toLowerCase();
