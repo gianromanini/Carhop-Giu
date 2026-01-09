@@ -8106,12 +8106,13 @@ export default function CarHopApp() {
                         
                         if (bookingFilterStatus) {
                           const status = (bookingFilterStatus as string).toLowerCase().trim();
-                          if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
-                          else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
-                          else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
-                          else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
+                          if (status === "active") matches = normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended';
+                          else if (status === 'completed') matches = normalizedStatusForFilter === 'completed';
+                          else if (status === 'cancelled') matches = normalizedStatusForFilter === 'cancelled';
+                          else if (status === 'pending-approval') matches = normalizedStatusForFilter === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
-                        const vehicle = vehicles.find(v => v.id === b.vehicleId);
+                        const vehicle = vehicles.find(v => String(v.id) === String(b.vehicleId));
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
                         if (bookingFilterNumber) {
                           const searchTerm = bookingFilterNumber.toLowerCase();
