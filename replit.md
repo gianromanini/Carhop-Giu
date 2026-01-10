@@ -236,3 +236,12 @@ Preferred communication style: Simple, everyday language.
 - Each vehicle has its own individual pricing settings via `pricing` JSONB field
 - Button label: **"Update Configuration"** (not "Save Settings")
 - Settings apply individually to each car in the fleet
+
+## Production Deployment Configuration
+25. **API Base URL Configuration (Jan 2026):**
+    - Added `VITE_API_BASE_URL` environment variable support for production deployments
+    - In development, Vite serves frontend and backend on the same origin (relative paths work)
+    - In production, if frontend/backend are on different origins, set `VITE_API_BASE_URL` to backend origin
+    - Located in `client/src/lib/queryClient.ts` - buildApiUrl() helper prefixes all API requests
+    - Note: On Replit deployments, Express serves both frontend and backend, so this should not be needed
+    - If production shows 0 bookings but database has data, check browser Network tab for 404s on /api/* routes
