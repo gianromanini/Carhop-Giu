@@ -8375,6 +8375,9 @@ export default function CarHopApp() {
                           else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed' || normalizedStatusForFilter === 'concluido' || normalizedStatusForFilter === 'concluído');
                           else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
                           else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || normalizedStatusForFilter === 'aguardando aprovação' || (b.details as any)?.deliveryApprovalStatus === 'pending');
+                        } else {
+                          // No status filter, match everything
+                          matches = true;
                         }
                         
                         const bVehicleId = String(b.vehicleId || '');
