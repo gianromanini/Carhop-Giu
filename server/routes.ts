@@ -900,52 +900,59 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         });
       }
       
-      // Optimize response by limiting image data size for list view
-      // Full image data is still available when fetching individual booking
+      // Optimize response by removing heavy image data for list view
+      // Full image data is available when fetching individual booking via /api/bookings/:id
+      // This prevents timeout/memory issues when there are many bookings with large photos
       const optimizedBookings = bookings.map(booking => {
         const optimized = { ...booking };
         
-        // Truncate large base64 images in driver license to save bandwidth
+        // Replace large base64 images with placeholder info
         if (optimized.driver && typeof optimized.driver === 'object') {
-          const driver = optimized.driver as any;
+          const driver = { ...optimized.driver as any };
           if (driver.licenseImages && Array.isArray(driver.licenseImages)) {
-            driver.licenseImages = driver.licenseImages.map((img: string) => {
-              if (typeof img === 'string' && img.length > 1000) {
-                return img.substring(0, 100) + '...[TRUNCATED]';
-              }
-              return img;
-            });
+            // Keep count but replace actual images with placeholders
+            driver.licenseImagesCount = driver.licenseImages.length;
+            driver.licenseImages = driver.licenseImages.map((img: string) => 
+              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
+            );
           }
+          optimized.driver = driver;
         }
         
-        // Truncate check-in photos
+        // Replace check-in photos with placeholders
         if (optimized.checkInData && typeof optimized.checkInData === 'object') {
-          const checkIn = optimized.checkInData as any;
+          const checkIn = { ...optimized.checkInData as any };
           if (checkIn.photosOutside && Array.isArray(checkIn.photosOutside)) {
+            checkIn.photosOutsideCount = checkIn.photosOutside.length;
             checkIn.photosOutside = checkIn.photosOutside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
             );
           }
           if (checkIn.photosInside && Array.isArray(checkIn.photosInside)) {
+            checkIn.photosInsideCount = checkIn.photosInside.length;
             checkIn.photosInside = checkIn.photosInside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
             );
           }
+          optimized.checkInData = checkIn;
         }
         
-        // Truncate check-out photos
+        // Replace check-out photos with placeholders
         if (optimized.checkOutData && typeof optimized.checkOutData === 'object') {
-          const checkOut = optimized.checkOutData as any;
+          const checkOut = { ...optimized.checkOutData as any };
           if (checkOut.photosOutside && Array.isArray(checkOut.photosOutside)) {
+            checkOut.photosOutsideCount = checkOut.photosOutside.length;
             checkOut.photosOutside = checkOut.photosOutside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
             );
           }
           if (checkOut.photosInside && Array.isArray(checkOut.photosInside)) {
+            checkOut.photosInsideCount = checkOut.photosInside.length;
             checkOut.photosInside = checkOut.photosInside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
             );
           }
+          optimized.checkOutData = checkOut;
         }
         
         return optimized;

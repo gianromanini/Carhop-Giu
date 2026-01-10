@@ -860,6 +860,11 @@ export default function CarHopApp() {
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
+  
+  // Cache for full booking data (with images) - fetched on demand
+  const [fullBookingCache, setFullBookingCache] = useState<Record<number, Booking>>({});
+  // Track in-flight requests to avoid duplicate fetches
+  const pendingFetchesRef = useRef<Set<number>>(new Set());
 
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
@@ -1205,6 +1210,76 @@ export default function CarHopApp() {
       toast({ title: 'Rating deleted' });
     }
   });
+
+  // Fetch full booking data (with images) on demand - with deduplication
+  const fetchFullBooking = useCallback(async (bookingId: number): Promise<Booking | null> => {
+    // Return from cache if available
+    if (fullBookingCache[bookingId]) {
+      return fullBookingCache[bookingId];
+    }
+    
+    // Check if already fetching this booking
+    if (pendingFetchesRef.current.has(bookingId)) {
+      return null;
+    }
+    
+    // Mark as in-flight
+    pendingFetchesRef.current.add(bookingId);
+    
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, { credentials: 'include' });
+      if (!response.ok) return null;
+      const fullBooking = await response.json();
+      setFullBookingCache(prev => ({ ...prev, [bookingId]: fullBooking }));
+      return fullBooking;
+    } catch (error) {
+      console.error('Error fetching full booking:', error);
+      return null;
+    } finally {
+      // Remove from pending set
+      pendingFetchesRef.current.delete(bookingId);
+    }
+  }, [fullBookingCache]);
+
+  // Get booking with full data (images) - uses cache or returns original
+  // Note: The actual fetch is triggered via the useEffect below to avoid render-time side effects
+  const getBookingWithImages = useCallback((booking: Booking): Booking => {
+    // If we have cached full data, use it
+    if (fullBookingCache[booking.id]) {
+      return fullBookingCache[booking.id];
+    }
+    return booking;
+  }, [fullBookingCache]);
+
+  // Check if a booking has placeholder images that need to be fetched
+  const bookingNeedsImageFetch = useCallback((booking: Booking): boolean => {
+    if (fullBookingCache[booking.id]) return false;
+    if (pendingFetchesRef.current.has(booking.id)) return false;
+    
+    return (
+      (booking.driver as any)?.licenseImages?.some((img: string) => img === '[IMAGE]') ||
+      (booking.checkInData as any)?.photosOutside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.checkInData as any)?.photosInside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.checkOutData as any)?.photosOutside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.checkOutData as any)?.photosInside?.some((img: string) => img === '[IMAGE]')
+    );
+  }, [fullBookingCache]);
+
+  // Effect to fetch full booking data when placeholders are detected
+  useEffect(() => {
+    if (!bookings || bookings.length === 0) return;
+    
+    // Find bookings that need image fetching
+    const bookingsToFetch = bookings.filter(bookingNeedsImageFetch);
+    
+    // Limit concurrent fetches to avoid overwhelming the server
+    const maxConcurrent = 3;
+    const toFetch = bookingsToFetch.slice(0, maxConcurrent);
+    
+    toFetch.forEach(booking => {
+      fetchFullBooking(booking.id);
+    });
+  }, [bookings, bookingNeedsImageFetch, fetchFullBooking]);
 
   // Host pickup locations - per host, not global
   const { data: hostPickupLocationsData } = useQuery<{ locations: string[] }>({
@@ -5833,12 +5908,22 @@ export default function CarHopApp() {
                               <div>
                                 <p className="text-xs font-bold text-zinc-400 mb-2">Driver's License</p>
                                 <div className="flex gap-2 flex-wrap">
-                                  {(b.driver?.licenseImages || []).map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-driver-license-${idx}`}/>
-                                      <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                    </div>
-                                  ))}
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const licenseImages = fullBooking.driver?.licenseImages || [];
+                                    const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    if (validImages.length > 0) {
+                                      return validImages.map((img: string, idx: number) => (
+                                        <div key={idx} className="relative group">
+                                          <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-driver-license-${idx}`}/>
+                                          <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                        </div>
+                                      ));
+                                    } else if (licenseImages.some((img: string) => img === '[IMAGE]')) {
+                                      return <span className="text-xs text-zinc-500">Loading...</span>;
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               </div>
 
@@ -5846,12 +5931,22 @@ export default function CarHopApp() {
                               <div>
                                 <p className="text-xs font-bold text-zinc-400 mb-2">Check-in (Start)</p>
                                 <div className="flex gap-2 flex-wrap">
-                                  {(b.checkInData?.photosOutside || []).concat(b.checkInData?.photosInside || []).slice(0, 2).map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`Check-in ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkin-${idx}`}/>
-                                      <div className="absolute inset-0 rounded border border-blue-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                    </div>
-                                  ))}
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const allPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
+                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    if (validPhotos.length > 0) {
+                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
+                                        <div key={idx} className="relative group">
+                                          <img src={img} alt={`Check-in ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkin-${idx}`}/>
+                                          <div className="absolute inset-0 rounded border border-blue-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                        </div>
+                                      ));
+                                    } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
+                                      return <span className="text-xs text-zinc-500">Loading...</span>;
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               </div>
 
@@ -5859,20 +5954,30 @@ export default function CarHopApp() {
                               <div>
                                 <p className="text-xs font-bold text-zinc-400 mb-2">Check-out (End)</p>
                                 <div className="flex gap-2 flex-wrap">
-                                  {(b.checkOutData?.photosOutside || []).concat(b.checkOutData?.photosInside || []).slice(0, 2).map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`Check-out ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkout-${idx}`}/>
-                                      {idx === 1 && (
-                                        <button
-                                          onClick={() => window.open(img, '_blank')}
-                                          className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 rounded-full p-1 transition-colors"
-                                          data-testid={`button-expand-checkout-${idx}`}
-                                        >
-                                          <ChevronRight size={12} className="text-white"/>
-                                        </button>
-                                      )}
-                                    </div>
-                                  ))}
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const allPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
+                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    if (validPhotos.length > 0) {
+                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
+                                        <div key={idx} className="relative group">
+                                          <img src={img} alt={`Check-out ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkout-${idx}`}/>
+                                          {idx === 1 && (
+                                            <button
+                                              onClick={() => window.open(img, '_blank')}
+                                              className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 rounded-full p-1 transition-colors"
+                                              data-testid={`button-expand-checkout-${idx}`}
+                                            >
+                                              <ChevronRight size={12} className="text-white"/>
+                                            </button>
+                                          )}
+                                        </div>
+                                      ));
+                                    } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
+                                      return <span className="text-xs text-zinc-500">Loading...</span>;
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -7882,32 +7987,54 @@ export default function CarHopApp() {
                           </div>
 
                           {/* Check-in Photos */}
-                          {((selectedTripForView.checkInData?.photosOutside?.length || 0) + (selectedTripForView.checkInData?.photosInside?.length || 0)) > 0 && (
-                            <div>
-                              <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({(selectedTripForView.checkInData?.photosOutside?.length || 0) + (selectedTripForView.checkInData?.photosInside?.length || 0)})</p>
-                              <div className="grid grid-cols-3 gap-3">
-                                {[...(selectedTripForView.checkInData?.photosOutside || []), ...(selectedTripForView.checkInData?.photosInside || [])].map((photo, idx) => (
-                                  <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(selectedTripForView.checkInData?.photosOutside || []), ...(selectedTripForView.checkInData?.photosInside || [])], idx)}>
-                                    <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                          {(() => {
+                            const fullBooking = getBookingWithImages(selectedTripForView);
+                            const allCheckInPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
+                            const validCheckInPhotos = allCheckInPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            
+                            if (validCheckInPhotos.length > 0) {
+                              return (
+                                <div>
+                                  <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({validCheckInPhotos.length})</p>
+                                  <div className="grid grid-cols-3 gap-3">
+                                    {validCheckInPhotos.map((photo: string, idx: number) => (
+                                      <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckInPhotos, idx)}>
+                                        <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                </div>
+                              );
+                            } else if (allCheckInPhotos.some((img: string) => img === '[IMAGE]')) {
+                              return <div className="text-sm text-zinc-500">Loading check-in photos...</div>;
+                            }
+                            return null;
+                          })()}
 
                           {/* Check-out Photos */}
-                          {((selectedTripForView.checkOutData?.photosOutside?.length || 0) + (selectedTripForView.checkOutData?.photosInside?.length || 0)) > 0 && (
-                            <div>
-                              <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({(selectedTripForView.checkOutData?.photosOutside?.length || 0) + (selectedTripForView.checkOutData?.photosInside?.length || 0)})</p>
-                              <div className="grid grid-cols-3 gap-3">
-                                {[...(selectedTripForView.checkOutData?.photosOutside || []), ...(selectedTripForView.checkOutData?.photosInside || [])].map((photo, idx) => (
-                                  <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(selectedTripForView.checkOutData?.photosOutside || []), ...(selectedTripForView.checkOutData?.photosInside || [])], idx)}>
-                                    <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                          {(() => {
+                            const fullBooking = getBookingWithImages(selectedTripForView);
+                            const allCheckOutPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
+                            const validCheckOutPhotos = allCheckOutPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            
+                            if (validCheckOutPhotos.length > 0) {
+                              return (
+                                <div>
+                                  <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({validCheckOutPhotos.length})</p>
+                                  <div className="grid grid-cols-3 gap-3">
+                                    {validCheckOutPhotos.map((photo: string, idx: number) => (
+                                      <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckOutPhotos, idx)}>
+                                        <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                </div>
+                              );
+                            } else if (allCheckOutPhotos.some((img: string) => img === '[IMAGE]')) {
+                              return <div className="text-sm text-zinc-500">Loading check-out photos...</div>;
+                            }
+                            return null;
+                          })()}
 
                           {/* Mileage Info */}
                           {selectedTripForView.checkInData?.miles && selectedTripForView.checkOutData?.miles && (
@@ -9017,15 +9144,23 @@ export default function CarHopApp() {
                               <div>
                                 <label className="text-xs text-zinc-500 mb-2 block">Driver's License</label>
                                 <div className="flex gap-2">
-                                  {b.driver.licenseImages && b.driver.licenseImages.length > 0 ? (
-                                    b.driver.licenseImages.map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(b.driver.licenseImages || [], i)}>
-                                        <img src={img} alt={`License ${i+1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-xs text-zinc-600">No images</div>
-                                  )}
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const licenseImages = fullBooking.driver?.licenseImages || [];
+                                    const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    
+                                    if (validImages.length > 0) {
+                                      return validImages.map((img: string, i: number) => (
+                                        <div key={i} className="w-16 h-12 rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validImages, i)}>
+                                          <img src={img} alt={`License ${i+1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                      ));
+                                    } else if (licenseImages.some((img: string) => img === '[IMAGE]')) {
+                                      return <span className="text-xs text-zinc-500">Loading...</span>;
+                                    } else {
+                                      return <div className="text-xs text-zinc-600">No images</div>;
+                                    }
+                                  })()}
                                 </div>
                               </div>
                               
@@ -9033,20 +9168,35 @@ export default function CarHopApp() {
                               <div>
                                 <label className="text-xs text-green-500 mb-2 block">Check-in (Start)</label>
                                 <div className="flex gap-2 flex-wrap">
-                                  {b.checkInData?.photosOutside && b.checkInData.photosOutside.length > 0 ? (
-                                    [...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].slice(0, 4).map((img, i, allPhotos) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-green-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox([...(b.checkInData?.photosOutside || []), ...(b.checkInData?.photosInside || [])], i)}>
-                                        <img src={img} alt={`Check-in ${i+1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-xs text-zinc-600">No images</div>
-                                  )}
-                                  {b.checkInData?.photosOutside && ([...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].length > 4) && (
-                                    <div className="w-16 h-12 rounded overflow-hidden border border-green-700 bg-green-900/50 flex items-center justify-center cursor-pointer hover:bg-green-900 transition-colors" onClick={() => openLightbox([...(b.checkInData?.photosOutside || []), ...(b.checkInData?.photosInside || [])], 4)}>
-                                      <span className="text-xs text-green-400 font-bold">+{[...(b.checkInData.photosOutside || []), ...(b.checkInData.photosInside || [])].length - 4}</span>
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const allPhotos = [
+                                      ...(fullBooking.checkInData?.photosOutside || []),
+                                      ...(fullBooking.checkInData?.photosInside || [])
+                                    ];
+                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    
+                                    if (validPhotos.length > 0) {
+                                      return (
+                                        <>
+                                          {validPhotos.slice(0, 4).map((img: string, i: number) => (
+                                            <div key={i} className="w-16 h-12 rounded overflow-hidden border border-green-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validPhotos, i)}>
+                                              <img src={img} alt={`Check-in ${i+1}`} className="w-full h-full object-cover" />
+                                            </div>
+                                          ))}
+                                          {validPhotos.length > 4 && (
+                                            <div className="w-16 h-12 rounded overflow-hidden border border-green-700 bg-green-900/50 flex items-center justify-center cursor-pointer hover:bg-green-900 transition-colors" onClick={() => openLightbox(validPhotos, 4)}>
+                                              <span className="text-xs text-green-400 font-bold">+{validPhotos.length - 4}</span>
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
+                                      return <span className="text-xs text-zinc-500">Loading...</span>;
+                                    } else {
+                                      return <div className="text-xs text-zinc-600">No images</div>;
+                                    }
+                                  })()}
                                 </div>
                               </div>
                               
@@ -9054,20 +9204,35 @@ export default function CarHopApp() {
                               <div>
                                 <label className="text-xs text-orange-500 mb-2 block">Check-out (End)</label>
                                 <div className="flex gap-2 flex-wrap">
-                                  {b.checkOutData?.photosOutside && b.checkOutData.photosOutside.length > 0 ? (
-                                    [...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].slice(0, 4).map((img, i) => (
-                                      <div key={i} className="w-16 h-12 rounded overflow-hidden border border-orange-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox([...(b.checkOutData?.photosOutside || []), ...(b.checkOutData?.photosInside || [])], i)}>
-                                        <img src={img} alt={`Check-out ${i+1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-xs text-zinc-600">No images</div>
-                                  )}
-                                  {b.checkOutData?.photosOutside && ([...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].length > 4) && (
-                                    <div className="w-16 h-12 rounded overflow-hidden border border-orange-700 bg-orange-900/50 flex items-center justify-center cursor-pointer hover:bg-orange-900 transition-colors" onClick={() => openLightbox([...(b.checkOutData?.photosOutside || []), ...(b.checkOutData?.photosInside || [])], 4)}>
-                                      <span className="text-xs text-orange-400 font-bold">+{[...(b.checkOutData.photosOutside || []), ...(b.checkOutData.photosInside || [])].length - 4}</span>
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const allPhotos = [
+                                      ...(fullBooking.checkOutData?.photosOutside || []),
+                                      ...(fullBooking.checkOutData?.photosInside || [])
+                                    ];
+                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    
+                                    if (validPhotos.length > 0) {
+                                      return (
+                                        <>
+                                          {validPhotos.slice(0, 4).map((img: string, i: number) => (
+                                            <div key={i} className="w-16 h-12 rounded overflow-hidden border border-orange-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validPhotos, i)}>
+                                              <img src={img} alt={`Check-out ${i+1}`} className="w-full h-full object-cover" />
+                                            </div>
+                                          ))}
+                                          {validPhotos.length > 4 && (
+                                            <div className="w-16 h-12 rounded overflow-hidden border border-orange-700 bg-orange-900/50 flex items-center justify-center cursor-pointer hover:bg-orange-900 transition-colors" onClick={() => openLightbox(validPhotos, 4)}>
+                                              <span className="text-xs text-orange-400 font-bold">+{validPhotos.length - 4}</span>
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
+                                      return <span className="text-xs text-zinc-500">Loading...</span>;
+                                    } else {
+                                      return <div className="text-xs text-zinc-600">No images</div>;
+                                    }
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -10030,32 +10195,54 @@ export default function CarHopApp() {
                   )}
 
                   {/* Check-in Photos */}
-                  {((receiptBooking.checkInData?.photosOutside?.length || 0) + (receiptBooking.checkInData?.photosInside?.length || 0)) > 0 && (
-                    <div className="no-print">
-                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({(receiptBooking.checkInData?.photosOutside?.length || 0) + (receiptBooking.checkInData?.photosInside?.length || 0)})</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[...(receiptBooking.checkInData?.photosOutside || []), ...(receiptBooking.checkInData?.photosInside || [])].map((photo, idx) => (
-                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(receiptBooking.checkInData?.photosOutside || []), ...(receiptBooking.checkInData?.photosInside || [])], idx)}>
-                            <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                  {(() => {
+                    const fullBooking = getBookingWithImages(receiptBooking);
+                    const allCheckInPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
+                    const validCheckInPhotos = allCheckInPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                    
+                    if (validCheckInPhotos.length > 0) {
+                      return (
+                        <div className="no-print">
+                          <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({validCheckInPhotos.length})</p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {validCheckInPhotos.map((photo: string, idx: number) => (
+                              <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckInPhotos, idx)}>
+                                <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      );
+                    } else if (allCheckInPhotos.some((img: string) => img === '[IMAGE]')) {
+                      return <div className="no-print text-sm text-zinc-500">Loading check-in photos...</div>;
+                    }
+                    return null;
+                  })()}
 
                   {/* Check-out Photos */}
-                  {((receiptBooking.checkOutData?.photosOutside?.length || 0) + (receiptBooking.checkOutData?.photosInside?.length || 0)) > 0 && (
-                    <div className="no-print">
-                      <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({(receiptBooking.checkOutData?.photosOutside?.length || 0) + (receiptBooking.checkOutData?.photosInside?.length || 0)})</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[...(receiptBooking.checkOutData?.photosOutside || []), ...(receiptBooking.checkOutData?.photosInside || [])].map((photo, idx) => (
-                          <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox([...(receiptBooking.checkOutData?.photosOutside || []), ...(receiptBooking.checkOutData?.photosInside || [])], idx)}>
-                            <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                  {(() => {
+                    const fullBooking = getBookingWithImages(receiptBooking);
+                    const allCheckOutPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
+                    const validCheckOutPhotos = allCheckOutPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                    
+                    if (validCheckOutPhotos.length > 0) {
+                      return (
+                        <div className="no-print">
+                          <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({validCheckOutPhotos.length})</p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {validCheckOutPhotos.map((photo: string, idx: number) => (
+                              <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckOutPhotos, idx)}>
+                                <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      );
+                    } else if (allCheckOutPhotos.some((img: string) => img === '[IMAGE]')) {
+                      return <div className="no-print text-sm text-zinc-500">Loading check-out photos...</div>;
+                    }
+                    return null;
+                  })()}
 
                   {/* Mileage Info */}
                   {receiptBooking.checkInData?.miles && receiptBooking.checkOutData?.miles && (
