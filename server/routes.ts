@@ -761,13 +761,6 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.status(204).send();
   });
 
-  app.patch("/api/bookings/:id/read", async (req, res) => {
-    const id = parseInt(req.params.id);
-    const updated = await storage.updateBooking(id, { unread: false });
-    if (!updated) return res.status(404).json({ error: "Booking not found" });
-    res.json(updated);
-  });
-
   // ========== EXTENSION REQUESTS ==========
   app.post("/api/bookings/:id/extension-request", async (req, res) => {
     const id = parseInt(req.params.id);
