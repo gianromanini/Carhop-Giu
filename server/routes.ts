@@ -451,7 +451,7 @@ async function calculateCorrectTotal(booking: any): Promise<number> {
   
   // Additional Charges = extendedRate + manualCharges + extraPayments - discount
   const extendedRate = booking.details?.extendedRate || 0;
-  const manualChargesTotal = (booking.details?.manualCharges || []).reduce((sum: number, c: any) => sum + c.amount, 0);
+  const manualChargesTotal = Array.isArray(booking.details?.manualCharges) ? (booking.details.manualCharges as any[]).reduce((sum: number, c: any) => sum + (c.amount || 0), 0) : 0;
   const extraPaymentsTotal = (booking.extraPayments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
   const discount = booking.details?.discount || 0;
   const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
@@ -468,6 +468,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
+      console.log('[API] /api/auth/user - User data:', JSON.stringify({
+        id: user?.id,
+        email: user?.email,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        role: user?.role,
+        hasEmail: !!user?.email
+      }));
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -583,8 +591,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       const { email, password } = result.data;
 
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
+      // Find user by email (case-insensitive)
+      const user = await storage.getUserByEmail(email.toLowerCase());
       if (!user || !user.passwordHash) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
@@ -598,8 +606,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Set session
       req.login(user, (err) => {
         if (err) {
+          console.error("[Auth] Login session error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
+        console.log(`[Auth] User logged in: ${user.email} (ID: ${user.id})`);
         res.json({ message: "Logged in successfully", user });
       });
     } catch (error) {
@@ -692,10 +702,43 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.status(204).send();
   });
 
-  // ========== BOOKINGS ==========
   app.get("/api/bookings", async (_req, res) => {
-    const bookings = await storage.getBookings();
-    res.json(bookings);
+    try {
+      const bookings = await storage.getBookings();
+      console.log(`[API] Returning ${bookings.length} bookings to client at ${new Date().toISOString()}`);
+      
+      // Check for a debug query param to see all raw data
+      if (_req.query.debug === 'true') {
+        return res.json({
+          count: bookings.length,
+          data: bookings,
+          timestamp: new Date().toISOString(),
+          env: process.env.NODE_ENV
+        });
+      }
+      
+      res.json(bookings);
+    } catch (error) {
+      console.error("API error fetching bookings:", error);
+      res.status(500).json({ message: "Error fetching bookings" });
+    }
+  });
+
+  app.get("/api/bookings/user", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Not authenticated");
+    try {
+      const userEmail = req.user?.email || '';
+      if (!userEmail) {
+        console.log('[API] /api/bookings/user - No email in user session');
+        return res.json([]);
+      }
+      const userBookings = await storage.getUserTrips(userEmail);
+      console.log(`[API] Returning ${userBookings.length} user bookings for ${userEmail} at ${new Date().toISOString()}`);
+      res.json(userBookings);
+    } catch (error) {
+      console.error("API error fetching user bookings:", error);
+      res.status(500).json({ message: "Error fetching user bookings" });
+    }
   });
 
   app.get("/api/bookings/:id", async (req, res) => {
@@ -712,18 +755,27 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   app.post("/api/bookings", async (req, res) => {
+    console.log("[API] Received booking request:", JSON.stringify(req.body).substring(0, 200));
     const result = insertBookingSchema.safeParse(req.body);
     if (!result.success) {
+      console.error("[API] Validation error:", JSON.stringify(result.error.flatten()));
       return res.status(400).json({ error: result.error.flatten() });
     }
-    const booking = await storage.createBooking(result.data);
-    
-    // Send email notifications
-    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
-    sendBookingConfirmationEmail(booking, vehicle);
-    sendNewBookingNotificationToHost(booking, vehicle);
-    
-    res.status(201).json(booking);
+
+    try {
+      const booking = await storage.createBooking(result.data);
+      console.log("[API] Booking created successfully:", booking.id);
+      
+      // Send email notifications in background to avoid blocking response
+      const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
+      sendBookingConfirmationEmail(booking, vehicle).catch(err => console.error("Error sending confirmation email:", err));
+      sendNewBookingNotificationToHost(booking, vehicle).catch(err => console.error("Error sending host notification:", err));
+
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error("[API] Error creating booking:", error);
+      res.status(500).json({ error: "Failed to create booking" });
+    }
   });
 
   app.put("/api/bookings/:id", async (req, res) => {
@@ -759,6 +811,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const deleted = await storage.deleteBooking(id);
     if (!deleted) return res.status(404).json({ error: "Booking not found" });
     res.status(204).send();
+  });
+
+  app.patch("/api/bookings/:id/read", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const updated = await storage.updateBooking(id, { unread: false });
+    if (!updated) return res.status(404).json({ error: "Booking not found" });
+    res.json(updated);
   });
 
   // ========== EXTENSION REQUESTS ==========

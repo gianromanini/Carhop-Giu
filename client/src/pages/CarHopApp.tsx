@@ -652,7 +652,7 @@ interface FormDataType {
 
 export default function CarHopApp() {
   const queryClient = useQueryClient();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuth();
   const proceedButtonRef = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
@@ -824,11 +824,11 @@ export default function CarHopApp() {
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
-  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('end-soon');
+  const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('start-first');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
-  const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'completed' | 'cancelled' | 'pending'>('newest');
+  const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'active' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
@@ -879,7 +879,13 @@ export default function CarHopApp() {
 
     return result;
   }, [vehicles, fleetSort]);
-  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({ queryKey: ['/api/bookings'] });
+  const { data: bookings = [], isLoading: bookingsLoading, refetch: refetchBookings } = useQuery<Booking[]>({ 
+    queryKey: ['/api/bookings'],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 3000 // Poll every 3 seconds for live updates
+  });
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
@@ -897,7 +903,8 @@ export default function CarHopApp() {
   const [carDetailsBooking, setCarDetailsBooking] = useState({ startDate: getTodayString(), startTime: getNext30MinSlot(), endDate: addDaysToDate(getTodayString(), 3), endTime: getNext30MinSlot() });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [bookingResult, setBookingResult] = useState<Booking | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [editForm, setEditForm] = useState<Partial<User> | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showClientPassword, setShowClientPassword] = useState(false);
@@ -1036,6 +1043,12 @@ export default function CarHopApp() {
     }
   });
 
+  const handleDeleteVehicle = (id: number, model: string) => {
+    if (confirm(`Are you sure you want to delete ${model}? This action cannot be undone.`)) {
+      deleteVehicleMutation.mutate(id);
+    }
+  };
+
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => 
       apiRequest('PUT', `/api/admin/users/${id}`, data),
@@ -1060,20 +1073,55 @@ export default function CarHopApp() {
   });
 
   const createBookingMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('POST', '/api/bookings', data),
-    onSuccess: () => { 
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/bookings', data);
+      return res.json();
+    },
+    onSuccess: (data) => { 
+      console.log('Booking created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       toast({ title: 'Booking created successfully' });
+    },
+    onError: (error) => {
+      console.error('Error creating booking mutation:', error);
+      toast({ 
+        title: 'Error creating booking', 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive' 
+      });
     }
   });
 
   const updateBookingMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest('PUT', `/api/bookings/${id}`, data),
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await apiRequest('PUT', `/api/bookings/${id}`, data);
+      return res.json();
+    },
     onSuccess: () => { 
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       toast({ title: 'Booking updated successfully' });
+    }
+  });
+
+  const markBookingAsReadMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('PATCH', `/api/bookings/${id}/read`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['/api/bookings'] });
+      const previousBookings = queryClient.getQueryData<Booking[]>(['/api/bookings']);
+      queryClient.setQueryData<Booking[]>(['/api/bookings'], (old) => 
+        old?.map(b => b.id === id ? { ...b, unread: false } : b) || []
+      );
+      return { previousBookings };
+    },
+    onError: (err, id, context) => {
+      if (context?.previousBookings) {
+        queryClient.setQueryData(['/api/bookings'], context.previousBookings);
+      }
+    },
+    onSettled: () => { 
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
     }
   });
 
@@ -1165,17 +1213,77 @@ export default function CarHopApp() {
   });
 
   const clientTrips = useMemo(() => {
-    if (!selectedClient) return [];
-    return bookings.filter(b => b.driver.email === selectedClient.email);
-  }, [selectedClient, bookings]);
+    // Use authUser directly as primary source (from real authentication), with fallbacks
+    const activeUser = selectedClient || clientUser || authUser;
+    
+    // If still loading or no user yet, return empty (but UI should show loading state)
+    if (!activeUser) {
+      console.log('[MyBookings] No active user context yet');
+      return [];
+    }
+    
+    const effectiveEmail = (activeUser.email || '').toLowerCase().trim();
+    const effectivePhone = (activeUser.phone || '').replace(/\D/g, '');
+
+    console.log('[MyBookings] Filtering for user:', { 
+      email: effectiveEmail,
+      phone: effectivePhone ? `***${effectivePhone.slice(-4)}` : 'none',
+      bookingsCount: bookings.length
+    });
+    
+    if (!effectiveEmail && !effectivePhone) {
+      console.log('[MyBookings] User has no email or phone for filtering');
+      return [];
+    }
+    
+    const trips = bookings.filter(b => {
+      if (!b.driver) return false;
+      const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+      
+      const driverEmail = (driverObj?.email || '').toLowerCase().trim();
+      const driverPhone = (driverObj?.phone || '').replace(/\D/g, '');
+      const driverName = (driverObj?.name || '').toLowerCase().trim();
+
+      // Check details for secondary storage locations
+      const detailDriverEmail = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
+      const detailHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
+      const detailDriverName = ((b.details as any)?.driverName || '').toLowerCase().trim();
+
+      const userName = (activeUser.firstName && activeUser.lastName ? `${activeUser.firstName} ${activeUser.lastName}` : (activeUser as any).name || '').toLowerCase().trim();
+      
+      const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail);
+      const phoneMatch = effectivePhone && driverPhone && (
+        driverPhone === effectivePhone || 
+        driverPhone.includes(effectivePhone) || 
+        effectivePhone.includes(driverPhone)
+      );
+      // More flexible name matching
+      const nameMatch = userName && (
+        (driverName && (driverName.includes(userName) || userName.includes(driverName))) || 
+        (detailDriverName && (detailDriverName.includes(userName) || userName.includes(detailDriverName)))
+      );
+      
+      // If we are in the live site and user is authenticated, we should also try matching by ID if available in metadata
+      const userIdMatch = activeUser.id && (b as any).userId === activeUser.id;
+      
+      return emailMatch || phoneMatch || nameMatch || userIdMatch;
+    });
+    
+    console.log('[MyBookings] Trips found:', trips.length);
+    return trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+  }, [selectedClient, clientUser, authUser, bookings]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
-    const userBookings = bookings.filter(b => b.driver.email === userEmail);
+    const normalizedUserEmail = userEmail.toLowerCase().trim();
+    const userBookings = bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail === normalizedUserEmail;
+    });
     const total = userBookings.reduce((sum, b) => {
       const details = b.details;
       if (!details) return sum;
-      return sum + (details.rate * 1 + details.extras + details.protection + details.fees + details.tax - (details.discount || 0));
+      return sum + (Number(details.rate || 0) + Number(details.extras || 0) + Number(details.protection || 0) + Number(details.fees || 0) + Number(details.tax || 0) - Number(details.discount || 0));
     }, 0);
     return { trips: userBookings.length, total };
   };
@@ -1217,13 +1325,34 @@ export default function CarHopApp() {
 
   useEffect(() => {
     if (isAuthenticated && authUser) {
+      console.log('[Auth] User authenticated:', JSON.stringify({
+        email: authUser.email,
+        firstName: authUser.firstName,
+        lastName: authUser.lastName,
+        phone: authUser.phone,
+        id: authUser.id,
+        isHost: authUser.isHost,
+        isAdmin: authUser.isAdmin
+      }));
       const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ') || authUser.email?.split('@')[0] || 'User';
-      setClientUser({ name: fullName, email: authUser.email || '' });
-      setDriverDetails(prev => ({ ...prev, name: fullName, email: authUser.email || '' }));
+      const userEmail = authUser.email || '';
+      console.log('[Auth] Setting clientUser and potentially host context');
+      setClientUser({ name: fullName, email: userEmail, phone: authUser.phone || '' });
+      setDriverDetails(prev => ({ ...prev, name: fullName, email: userEmail, phone: authUser.phone || '' }));
       setProfileForm({ firstName: authUser.firstName || '', lastName: authUser.lastName || '', phone: authUser.phone || '', city: authUser.city || '', state: authUser.state || '' });
+      
+      // If the user is a host, ensure the host context is set
+      if (authUser.isHost) {
+        const hostObj = hostsData?.find(h => h.email.toLowerCase() === userEmail.toLowerCase());
+        if (hostObj) {
+          console.log('[Auth] Auto-selecting host context for authenticated host');
+          setCurrentHost(hostObj);
+        }
+      }
+      
       setShowLoginModal(false);
     }
-  }, [isAuthenticated, authUser]);
+  }, [isAuthenticated, authUser, hostsData]);
 
   // Auto-scroll to top when view changes
   useEffect(() => {
@@ -1351,6 +1480,7 @@ export default function CarHopApp() {
     setClientUser(null); 
     setDriverDetails({ name: '', email: '', phone: '', licenseNumber: '', licenseImages: [] }); 
     setView('home'); 
+    queryClient.clear(); // Clear all cache on sign out
     window.location.href = '/api/logout';
   };
 
@@ -1640,11 +1770,21 @@ export default function CarHopApp() {
       checkOutData: null 
     };
     
-    await createBookingMutation.mutateAsync(newBooking);
-    setIsProcessingPayment(false);
-    setPickupAddress('');
-    setView('confirmation');
-    window.scrollTo(0, 0);
+    console.log('[Frontend] Creating booking with data:', JSON.stringify(newBooking).substring(0, 500));
+    
+    try {
+      const createdBooking = await createBookingMutation.mutateAsync(newBooking);
+      console.log('[Frontend] Created booking:', createdBooking);
+      setIsProcessingPayment(false);
+      setBookingResult(createdBooking);
+      setPickupAddress('');
+      setView('confirmation');
+      window.scrollTo(0, 0);
+    } catch (error) {
+      console.error('[Frontend] Error creating booking:', error);
+      setIsProcessingPayment(false);
+      // toast is already handled by mutation onError
+    }
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
@@ -1870,7 +2010,12 @@ export default function CarHopApp() {
   };
 
   const getClientUnreadCount = () => {
-    return bookings.filter(b => clientUser && b.driver.email === clientUser.email && b.status !== 'Cancelled').reduce((acc, b) => {
+    const userEmail = (authUser?.email || clientUser?.email)?.toLowerCase().trim();
+    if (!userEmail) return 0;
+    return bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === userEmail && b.status !== 'Cancelled';
+    }).reduce((acc, b) => {
       const unread = (b.messages || []).filter(m => m.sender === 'admin' && !m.read).length;
       return acc + unread;
     }, 0);
@@ -1930,7 +2075,10 @@ export default function CarHopApp() {
       });
     });
     
-    bookings.filter(b => b.driver.email === clientUser.email && b.status !== 'Cancelled').forEach(booking => {
+    bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === clientUser.email.toLowerCase().trim() && b.status !== 'Cancelled';
+    }).forEach(booking => {
       const vehicle = vehicles.find(v => v.id === booking.vehicleId);
       const carName = vehicle?.model || 'Your vehicle';
       
@@ -4505,7 +4653,7 @@ export default function CarHopApp() {
                                 }} className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all" data-testid={`button-edit-vehicle-${car.id}`}>
                                   <Edit size={20} className="sm:w-6 sm:h-6" />
                                 </button>
-                                <button onClick={() => { if(confirm('Delete this vehicle?')) deleteVehicleMutation.mutate(car.id); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteVehicle(car.id, car.model); }} className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50" data-testid={`button-delete-vehicle-${car.id}`}>
                                   <Trash2 size={14} className="sm:w-4 sm:h-4" />
                                 </button>
                               </div>
@@ -5014,7 +5162,18 @@ export default function CarHopApp() {
 
           {hostTab === 'bookings' && (() => {
             const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
-            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId)));
+            const hostBookings = bookings.filter(b => {
+              const isOwner = b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId));
+              const hostEmail = currentHost.email?.toLowerCase().trim();
+              const bookingHostEmail = (b.details as any)?.hostEmail?.toLowerCase().trim();
+              // Adicionamos comparação por nome também caso o email não esteja presente
+              const hostName = `${currentHost.firstName} ${currentHost.lastName}`.toLowerCase().trim();
+              const bookingHostName = (b.details as any)?.hostName?.toLowerCase().trim();
+              
+              return isOwner || 
+                     (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) ||
+                     (hostName && bookingHostName && hostName === bookingHostName);
+            });
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - Bookings List */}
@@ -5025,14 +5184,15 @@ export default function CarHopApp() {
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-filter">
-                        <option value="end-soon">End Soon (Next 3 Days)</option>
-                        <option value="start-first">Start First</option>
+                        <option value="start-first">All (Newest First)</option>
+                        <option value="end-soon">Ending Soon (3 days)</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
                       <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-status">
                         <option value="">All Status</option>
+                        <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="pending-approval">Pending Approval</option>
@@ -5052,19 +5212,27 @@ export default function CarHopApp() {
                           const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
                           return aDateTime - bDateTime;
                         } else {
-                          const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
-                          const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
-                          return aDateTime - bDateTime;
+                          // Default sort: Newest ID first (which usually means newest booking)
+                          return Number(b.id) - Number(a.id);
                         }
                       })
                       .filter(b => {
                         let matches = true;
+                        const normalizedBookingStatus = b.status?.toLowerCase().trim();
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
-                          else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
-                          else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          const status = bookingFilterStatus as string;
+                          if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
+                          else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
+                          else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
+                          else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                         }
-                        if (bookingFilterNumber && !b.bookingCode.toLowerCase().includes(bookingFilterNumber.toLowerCase())) matches = false;
+                        if (bookingFilterNumber) {
+                          const searchTerm = bookingFilterNumber.toLowerCase();
+                          const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
+                          const driverName = (b.driver as any)?.name?.toLowerCase() || "";
+                          const matchesName = driverName.includes(searchTerm);
+                          if (!matchesCode && !matchesName) matches = false;
+                        }
                         return matches;
                       })
                       .map(b => {
@@ -5085,7 +5253,8 @@ export default function CarHopApp() {
                         const returnIsTomorrow = returnDate === tomorrow;
                         
                         return (
-                          <div key={b.id} onClick={() => setHostManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
+                          <div key={b.id} onClick={() => { setHostManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-host-booking-${b.id}`}>
+                            {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
                             <div className="flex justify-between items-start gap-3 mb-2">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
@@ -5529,7 +5698,7 @@ export default function CarHopApp() {
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
-                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const manualChargesTotal = Array.isArray(b.details.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 
                                 return (
@@ -6524,7 +6693,10 @@ export default function CarHopApp() {
                       </div>
                       <div className="p-4 sm:p-5">
                         <div className="flex justify-between items-start mb-3 gap-2">
-                          <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate flex-1" data-testid={`text-vehicle-name-${car.id}`}>{car.model}</h3>
+                          <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate flex-1" data-testid={`text-vehicle-name-${car.id}`}>
+                            {car.model} {car.year}
+                            {car.hostName && <span className="text-zinc-500 font-normal"> - {car.hostName}</span>}
+                          </h3>
                           <div className="text-right flex-shrink-0">
                             <div className="text-base sm:text-xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
                             <div className="text-[9px] sm:text-xs text-zinc-500">/day</div>
@@ -6685,9 +6857,9 @@ export default function CarHopApp() {
                         <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
                         <select 
                           name="hostId" 
-                          value={formData.hostId || ''} 
+                          value={formData.hostId ? String(formData.hostId) : ''} 
                           onChange={(e) => {
-                            const selectedHost = hostsData.find((h: any) => h.id === parseInt(e.target.value));
+                            const selectedHost = hostsData.find((h: any) => String(h.id) === e.target.value);
                             setFormData({...formData, hostId: e.target.value, hostName: selectedHost ? `${selectedHost.firstName} ${selectedHost.lastName}` : ''});
                           }} 
                           className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
@@ -6938,8 +7110,10 @@ export default function CarHopApp() {
                             <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm truncate">
-                                <span className="text-zinc-600 dark:text-zinc-300 font-medium">{car.model} {car.year}</span>
-                                {car.hostName && <span className="text-blue-500 font-semibold ml-1"> - {car.hostName}</span>}
+                                <span className="text-zinc-600 dark:text-zinc-300 font-medium">
+                                  {car.model} {car.year}
+                                  {car.hostName && <span className="text-blue-500 font-semibold"> - {car.hostName}</span>}
+                                </span>
                               </h4>
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                 {car.fuel} · {car.driveType || 'FWD'} · {car.transmission} · {car.category}
@@ -6995,9 +7169,9 @@ export default function CarHopApp() {
                                   <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
                                   <select 
                                     name="hostId" 
-                                    value={formData.hostId || ''} 
+                                    value={formData.hostId ? String(formData.hostId) : ''} 
                                     onChange={(e) => {
-                                      const selectedHost = hostsData.find((h: any) => h.id === parseInt(e.target.value));
+                                      const selectedHost = hostsData.find((h: any) => String(h.id) === e.target.value);
                                       setFormData({...formData, hostId: e.target.value, hostName: selectedHost ? `${selectedHost.firstName} ${selectedHost.lastName}` : ''});
                                     }} 
                                     className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm"
@@ -7207,6 +7381,30 @@ export default function CarHopApp() {
                                 </div>
                               </div>
                             </Card>
+                          )}
+
+                          {deletingVehicleId !== null && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                              <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                                <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Vehicle?</h3>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to permanently delete this vehicle from your fleet?</p>
+                                <div className="flex gap-3">
+                                  <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancel</button>
+                                  <button 
+                                    onClick={() => { 
+                                      if (deletingVehicleId) {
+                                        deleteVehicleMutation.mutate(deletingVehicleId); 
+                                      }
+                                      setDeletingVehicleId(null); 
+                                    }} 
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors" 
+                                    data-testid="button-confirm-delete-vehicle"
+                                  >
+                                    Yes, Delete
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
                       );
@@ -7536,7 +7734,7 @@ export default function CarHopApp() {
                                 
                                 // Calculate additional charges
                                 const extendedRate = selectedTripForView.details?.extendedRate || 0;
-                                const manualChargesTotal = (selectedTripForView.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const manualChargesTotal = Array.isArray(selectedTripForView.details?.manualCharges) ? selectedTripForView.details.manualCharges.reduce((sum, c: any) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (selectedTripForView.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const discount = selectedTripForView.details?.discount || 0;
                                 const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
@@ -7924,14 +8122,15 @@ export default function CarHopApp() {
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort By Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
-                        <option value="end-soon">End Soon (Next 3 Days)</option>
-                        <option value="start-first">Start First (Oldest First)</option>
+                        <option value="start-first">All (Newest First)</option>
+                        <option value="end-soon">Ending Soon (3 days)</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
                       <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-status">
                         <option value="">All Status</option>
+                        <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="pending-approval">Pending Approval</option>
@@ -7960,24 +8159,38 @@ export default function CarHopApp() {
                           const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
                           return aDateTime - bDateTime;
                         } else {
-                          const aDateTime = new Date(`${a.startDate}T${a.startTime}`).getTime();
-                          const bDateTime = new Date(`${b.startDate}T${b.startTime}`).getTime();
-                          return bDateTime - aDateTime;
+                          // Default sort: Newest ID first (which usually means newest booking)
+                          return Number(b.id) - Number(a.id);
                         }
                       })
                       .filter(b => {
                         let matches = true;
+                        const normalizedBookingStatus = b.status?.toLowerCase().trim();
+                        
                         if (bookingFilterStatus) {
-                          if (bookingFilterStatus === 'completed') matches = b.status === 'Completed';
-                          else if (bookingFilterStatus === 'cancelled') matches = b.status === 'Cancelled';
-                          else if (bookingFilterStatus === 'pending-approval') matches = b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          const status = (bookingFilterStatus as string).toLowerCase().trim();
+                          const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
+                          if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
+                          else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed');
+                          else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled');
+                          else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending');
                         }
-                        const vehicle = vehicles.find(v => v.id === b.vehicleId);
+                        const bVehicleId = String(b.vehicleId);
+                        const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
+                        
+                        // Ensure booking is only shown if vehicle exists (data integrity check)
+                        if (!vehicle && !bookingFilterCarModel) {
+                          // matches stays true if no car model filter is active
+                        } else if (!vehicle && bookingFilterCarModel) {
+                          matches = false;
+                        }
+
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
                         if (bookingFilterNumber) {
                           const searchTerm = bookingFilterNumber.toLowerCase();
-                          const matchesCode = b.bookingCode.toLowerCase().includes(searchTerm);
-                          const matchesName = b.driver?.name?.toLowerCase().includes(searchTerm) || false;
+                          const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
+                          const driverName = (b.driver as any)?.name?.toLowerCase() || (b.driver as any)?.firstName?.toLowerCase() || "";
+                          const matchesName = driverName.includes(searchTerm);
                           if (!matchesCode && !matchesName) matches = false;
                         }
                         return matches;
@@ -8004,7 +8217,8 @@ export default function CarHopApp() {
                         const hasRated = bookingRating?.hostStarsToClient;
                         
                         return (
-                          <div key={b.id} onClick={() => setManageBookingId(b.id)} className={`p-3 rounded-lg border cursor-pointer transition-colors ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
+                          <div key={b.id} onClick={() => { setManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-booking-${b.id}`}>
+                            {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
                             {/* Header: Code + Status Badge */}
                             <div className="flex justify-between items-center gap-2 mb-2">
                               <div className="flex items-center gap-1 flex-1">
@@ -8438,7 +8652,7 @@ export default function CarHopApp() {
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
-                                const manualChargesTotal = (b.details.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                                const manualChargesTotal = Array.isArray(b.details.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal;
                                 const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * (taxRate / 100) : 0;
@@ -9664,7 +9878,7 @@ export default function CarHopApp() {
                       
                       // Calculate additional charges
                       const extendedRate = receiptBooking.details?.extendedRate || 0;
-                      const manualChargesTotal = (receiptBooking.details?.manualCharges || []).reduce((sum, c) => sum + c.amount, 0);
+                      const manualChargesTotal = Array.isArray(receiptBooking.details?.manualCharges) ? receiptBooking.details.manualCharges.reduce((sum, c: any) => sum + (c.amount || 0), 0) : 0;
                       const extraPaymentsTotal = (receiptBooking.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                       const discount = receiptBooking.details?.discount || 0;
                       const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
@@ -9783,93 +9997,121 @@ export default function CarHopApp() {
           <div className="max-w-4xl mx-auto px-2 sm:px-6 py-12">
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
-              {bookings.length === 0 ? (
-                <div className="text-center text-zinc-500 py-12">No active bookings found.</div>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Sort Bookings</label>
-                    <select 
-                      value={clientBookingFilter} 
-                      onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'completed' | 'cancelled' | 'pending')} 
-                      className="w-full max-w-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
-                      data-testid="select-client-booking-filter"
-                    >
-                      <option value="newest">Newest First</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="pending">Pending / Active</option>
-                    </select>
-                  </div>
-                  {[...bookings].sort((a, b) => {
-                    // Always put Active and Extended at the top
-                    const aIsActive = a.status === 'Active' || a.status === 'Extended';
-                    const bIsActive = b.status === 'Active' || b.status === 'Extended';
-                    
-                    if (aIsActive && !bIsActive) return -1;
-                    if (!aIsActive && bIsActive) return 1;
-
-                    // Within the same group, sort by date newest first
-                    const aDate = new Date(`${a.startDate}T${convertTo24Hour(a.startTime)}:00`).getTime();
-                    const bDate = new Date(`${b.startDate}T${convertTo24Hour(b.startTime)}:00`).getTime();
-                    
-                    if (clientBookingFilter === 'newest') {
-                      return bDate - aDate;
-                    } else if (clientBookingFilter === 'completed') {
-                      if (a.status === 'Completed' && b.status === 'Completed') return bDate - aDate;
-                      if (a.status === 'Completed') return -1;
-                      if (b.status === 'Completed') return 1;
-                      return bDate - aDate;
-                    } else if (clientBookingFilter === 'cancelled') {
-                      if (a.status === 'Cancelled' && b.status === 'Cancelled') return bDate - aDate;
-                      if (a.status === 'Cancelled') return -1;
-                      if (b.status === 'Cancelled') return 1;
-                      return bDate - aDate;
-                    } else if (clientBookingFilter === 'pending') {
-                      const aIsPending = a.status !== 'Completed' && a.status !== 'Cancelled';
-                      const bIsPending = b.status !== 'Completed' && b.status !== 'Cancelled';
-                      if (aIsPending && bIsPending) return bDate - aDate;
-                      if (aIsPending) return -1;
-                      if (bIsPending) return 1;
-                      return bDate - aDate;
+                  {(() => {
+                    // Show loading state while auth OR bookings are being determined
+                    if (authLoading || bookingsLoading) {
+                      return <div className="text-center text-zinc-500 py-12">Loading your bookings...</div>;
                     }
-                    return bDate - aDate;
-                  }).map((b) => {
-                    const isCompleted = b.status === 'Completed';
-                    const isCancelled = b.status === 'Cancelled';
-                    const isActive = b.status === 'Active' || b.status === 'Extended';
+                    
+                    // Get effective user identity from auth or client state
+                    const activeUser = selectedClient || clientUser || authUser;
+                    const userEmail = (activeUser?.email || '').toLowerCase().trim();
+                    const userPhone = (activeUser?.phone || '').replace(/\D/g, '');
+                    
+                    // If no user identity available, prompt sign in
+                    if (!activeUser || (!userEmail && !userPhone)) {
+                      return (
+                        <div className="text-center space-y-4 py-12">
+                          <div className="text-zinc-500">Please sign in to view your bookings.</div>
+                          <Button onClick={() => setShowLoginModal(true)} data-testid="button-login-to-view">Sign In</Button>
+                        </div>
+                      );
+                    }
+                    
+                    // Use the memoized clientTrips which already filters by user
+                    if (clientTrips.length === 0) {
+                      return (
+                        <div className="text-center space-y-4 py-12">
+                          <div className="text-zinc-500">No bookings found for your account.</div>
+                          <div className="text-xs text-zinc-400">Logged in as: {userEmail} {userPhone ? `(${userPhone})` : ''}</div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                    <>
+                      <div className="mb-6">
+                        <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Filter Bookings</label>
+                        <select 
+                          value={clientBookingFilter} 
+                          onChange={(e) => setClientBookingFilter(e.target.value as 'newest' | 'active' | 'completed' | 'cancelled' | 'pending')} 
+                          className="w-full max-w-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+                          data-testid="select-client-booking-filter"
+                        >
+                          <option value="newest">All (Newest First)</option>
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="pending">Pending</option>
+                        </select>
+                      </div>
+                      {[...clientTrips]
+                        .filter(b => {
+                          const normalizedStatus = b.status?.toLowerCase().trim();
+                          if (clientBookingFilter === 'newest') return true;
+                          if (clientBookingFilter === 'active') return normalizedStatus === 'active' || normalizedStatus === 'extended';
+                          if (clientBookingFilter === 'completed') return normalizedStatus === 'completed';
+                          if (clientBookingFilter === 'cancelled') return normalizedStatus === 'cancelled';
+                          if (clientBookingFilter === 'pending') return normalizedStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          return true;
+                        })
+                    .sort((a, b) => {
+                      // Always put Active and Extended at the top
+                      const aIsActive = a.status === 'Active' || a.status === 'Extended';
+                      const bIsActive = b.status === 'Active' || b.status === 'Extended';
+                      
+                      if (aIsActive && !bIsActive) return -1;
+                      if (!aIsActive && bIsActive) return 1;
+
+                      // Within the same group, sort by date newest first
+                      const aDate = new Date(`${a.startDate}T${convertTo24Hour(a.startTime)}:00`).getTime();
+                      const bDate = new Date(`${b.startDate}T${convertTo24Hour(b.startTime)}:00`).getTime();
+                      
+                      return bDate - aDate;
+                    }).map((b) => {
+                    const normalizedStatus = b.status?.toLowerCase().trim();
+                    const isCompleted = normalizedStatus === 'completed';
+                    const isCancelled = normalizedStatus === 'cancelled';
+                    const isActive = normalizedStatus === 'active' || normalizedStatus === 'extended';
                     const isCollapsed = (isCompleted || isCancelled) && expandedBookingId !== b.id;
 
                     return (
                     <Card 
                       key={b.id} 
-                      className={`p-3 md:p-6 transition-all duration-300 ${
+                      className={`p-3 md:p-6 transition-all duration-300 relative ${
                         isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 
                         isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
+                        normalizedStatus === 'pending approval' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
                         'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
-                      }`} 
+                      } ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} 
                       data-testid={`card-my-booking-${b.id}`}
                     >
+                      {b.unread && (
+                        <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full animate-pulse" title="New booking" />
+                      )}
                       <div 
                         className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
                         onClick={() => {
-                          if (isCompleted || isCancelled) {
+                          if (isCompleted || isCancelled || normalizedStatus === 'pending approval') {
                             setExpandedBookingId(expandedBookingId === b.id ? null : b.id);
+                          }
+                          if (b.unread) {
+                            markBookingAsReadMutation.mutate(b.id);
                           }
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : b.status === 'Extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
+                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                           <div>
-                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : b.status === 'Extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-600'}`}>{b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
-                            {!isCollapsed && b.status === 'Active' && b.checkInStatus !== 'completed' && (
+                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-600'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
+                            {!isCollapsed && normalizedStatus === 'active' && b.checkInStatus !== 'completed' && (
                               <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
-                          {(isCompleted || isCancelled) && (
+                          {(isCompleted || isCancelled || normalizedStatus === 'pending approval') && (
                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${expandedBookingId === b.id ? 'rotate-180' : ''} md:hidden`} />
                           )}
                         </div>
@@ -10179,8 +10421,9 @@ export default function CarHopApp() {
                     </Card>
                   );
                 })}
-                </>
-              )}
+                    </>
+                    );
+                  })()}
             </div>
             <Button variant="ghost" onClick={() => setView('home')} className="mt-8" data-testid="button-back-to-home"><ArrowLeft size={16}/> Back to Home</Button>
           </div>

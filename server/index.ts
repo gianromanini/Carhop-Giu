@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { initializeStorage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,6 +12,24 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+// Health check endpoints - must respond immediately for deployment health checks
+// These are defined BEFORE any other middleware to ensure fastest response
+let isFullyInitialized = false;
+
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+
+// Root health check - responds with minimal HTML during initialization
+// After full init, this will be overridden by static file serving in production
+app.get("/", (req, res, next) => {
+  if (!isFullyInitialized) {
+    res.status(200).send("<!DOCTYPE html><html><head><title>Loading...</title></head><body>Loading...</body></html>");
+  } else {
+    next();
+  }
+});
 
 app.use(
   express.json({
@@ -61,39 +80,46 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await registerRoutes(httpServer, app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
-  }
-
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  // Start listening FIRST so health checks pass while initialization continues
   const port = parseInt(process.env.PORT || "5000", 10);
+  
   httpServer.listen(
     {
       port,
       host: "0.0.0.0",
       reusePort: true,
     },
-    () => {
+    async () => {
       log(`serving on port ${port}`);
+      
+      // Initialize database storage AFTER server starts listening
+      console.log("[Server] Initializing storage connection...");
+      const dbConnected = await initializeStorage();
+      console.log(`[Server] Storage initialization complete. Database connected: ${dbConnected}`);
+      
+      await registerRoutes(httpServer, app);
+
+      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
+
+        res.status(status).json({ message });
+        throw err;
+      });
+
+      // importantly only setup vite in development and after
+      // setting up all the other routes so the catch-all route
+      // doesn't interfere with the other routes
+      if (process.env.NODE_ENV === "production") {
+        serveStatic(app);
+      } else {
+        const { setupVite } = await import("./vite");
+        await setupVite(httpServer, app);
+      }
+      
+      isFullyInitialized = true;
+      log("Server fully initialized");
     },
   );
 })();

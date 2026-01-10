@@ -9,7 +9,7 @@ import {
   type SupportMessage, type InsertSupportMessage
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, ilike, or, and, inArray } from "drizzle-orm";
+import { eq, ilike, or, and, inArray, sql, desc } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
@@ -307,6 +307,7 @@ export class MemStorage implements IStorage {
         agreementAccepted: h.agreementAccepted ?? false,
         agreementAcceptedAt: h.agreementAcceptedAt ?? null,
         status: h.status ?? 'active',
+        pickupLocations: h.pickupLocations ?? [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -589,8 +590,11 @@ export class MemStorage implements IStorage {
       seats: vehicle.seats ?? 5,
       transmission: vehicle.transmission ?? 'Automatic',
       driveType: vehicle.driveType ?? 'AWD',
+      year: vehicle.year ?? null,
+      vinNumber: vehicle.vinNumber ?? null,
+      licensePlate: vehicle.licensePlate ?? null,
+      hostName: vehicle.hostName ?? null,
       images: vehicle.images ?? [],
-      createdAt: new Date(),
       consumption: vehicle.consumption ?? null,
       isPriceMatch: vehicle.isPriceMatch ?? false,
       isAWD: vehicle.isAWD ?? false,
@@ -605,12 +609,22 @@ export class MemStorage implements IStorage {
       hasBlindSpotWarning: vehicle.hasBlindSpotWarning ?? false,
       hasDriveAssist: vehicle.hasDriveAssist ?? false,
       hasUSBCharger: vehicle.hasUSBCharger ?? false,
-      expenses: vehicle.expenses ?? null,
       hostId: vehicle.hostId ?? null,
       commission: vehicle.commission ?? 10,
       deductible: vehicle.deductible ?? 1000,
       availableLocations: vehicle.availableLocations ?? [],
+      deliveryAddress: vehicle.deliveryAddress ?? '',
+      isDeliveryEnabled: vehicle.isDeliveryEnabled ?? false,
+      maxDeliveryDistance: vehicle.maxDeliveryDistance ?? 50,
+      minDeliveryFeeMiles: vehicle.minDeliveryFeeMiles ?? 5,
+      minDeliveryFee: vehicle.minDeliveryFee ?? 15,
+      deliveryPricePerMile: vehicle.deliveryPricePerMile ?? 2.50,
+      minDeliveryHours: vehicle.minDeliveryHours ?? 6,
+      locationLat: vehicle.locationLat ?? null,
+      locationLon: vehicle.locationLon ?? null,
       pricing: vehicle.pricing ?? null,
+      expenses: vehicle.expenses ?? null,
+      createdAt: new Date(),
     };
     this.vehicles.set(id, newVehicle);
     return newVehicle;
@@ -678,6 +692,7 @@ export class MemStorage implements IStorage {
       details,
       checkInStatus: booking.checkInStatus ?? 'pending',
       checkOutStatus: booking.checkOutStatus ?? 'pending',
+      unread: true,
       createdAt: new Date(),
       vehicleId: booking.vehicleId ?? null,
       image: booking.image ?? null,
@@ -757,6 +772,7 @@ export class MemStorage implements IStorage {
       extensionRequests: booking.extensionRequests ? [...booking.extensionRequests] as { id: string; type: 'extension' | 'reduction'; requestedReturnDate: string; requestedReturnTime: string; reason: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; respondedAt?: string; }[] : existing.extensionRequests,
       extraPayments: booking.extraPayments ? [...booking.extraPayments] as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[] : existing.extraPayments,
       messages: booking.messages ? [...booking.messages] as { id: string; sender: 'client' | 'admin'; text: string; createdAt: string; read: boolean; }[] : existing.messages,
+      unread: booking.unread !== undefined ? booking.unread : existing.unread,
     };
     this.bookings.set(id, updated);
     return updated;
@@ -836,6 +852,7 @@ export class MemStorage implements IStorage {
       socialSecurityNumber: hostData.socialSecurityNumber ?? null,
       username: hostData.username,
       passwordHash: hostData.passwordHash,
+      pickupLocations: hostData.pickupLocations ?? [],
       agreementAccepted: hostData.agreementAccepted ?? false,
       agreementAcceptedAt: hostData.agreementAcceptedAt ?? null,
       status: hostData.status ?? 'active',
@@ -866,6 +883,7 @@ export class MemStorage implements IStorage {
       socialSecurityNumber: hostData.socialSecurityNumber ?? existing.socialSecurityNumber,
       username: hostData.username ?? existing.username,
       passwordHash: hostData.passwordHash ?? existing.passwordHash,
+      pickupLocations: hostData.pickupLocations ?? existing.pickupLocations,
       agreementAccepted: hostData.agreementAccepted ?? existing.agreementAccepted,
       agreementAcceptedAt: hostData.agreementAcceptedAt ?? existing.agreementAcceptedAt,
       status: hostData.status ?? existing.status,
@@ -1063,25 +1081,68 @@ export class MemStorage implements IStorage {
 }
 
 // Database Storage Implementation
+  // Database Storage Implementation
 export class DatabaseStorage implements IStorage {
   private db: any;
   private initialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
+
+  async init() {
+    if (this.initialized) return;
+    if (this.initPromise) return this.initPromise;
+
+    this.initPromise = (async () => {
+      // Try DATABASE_URL first, then construct from individual PG* variables
+      let connectionString = process.env.DATABASE_URL;
+      
+      if (!connectionString) {
+        console.log("[Storage] DATABASE_URL not found, trying to construct from PG* variables...");
+        const pgHost = process.env.PGHOST;
+        const pgUser = process.env.PGUSER;
+        const pgPassword = process.env.PGPASSWORD;
+        const pgDatabase = process.env.PGDATABASE;
+        const pgPort = process.env.PGPORT || "5432";
+        
+        console.log(`[Storage] PG vars check - PGHOST: ${pgHost ? 'set' : 'missing'}, PGUSER: ${pgUser ? 'set' : 'missing'}, PGPASSWORD: ${pgPassword ? 'set' : 'missing'}, PGDATABASE: ${pgDatabase ? 'set' : 'missing'}`);
+        
+        if (pgHost && pgUser && pgPassword && pgDatabase) {
+          connectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}?sslmode=require`;
+          console.log("[Storage] Successfully constructed connection string from PG* variables");
+        }
+      }
+      
+      if (!connectionString) {
+        console.error("[Storage] CRITICAL: No database connection available. Using MemStorage (data will not persist!)");
+        console.error("[Storage] Environment check - NODE_ENV:", process.env.NODE_ENV);
+        console.error("[Storage] Environment check - DATABASE_URL exists:", !!process.env.DATABASE_URL);
+        console.error("[Storage] Environment check - PGHOST exists:", !!process.env.PGHOST);
+        return;
+      }
+      
+      try {
+        console.log("[Storage] Attempting to connect to database...");
+        const sqlClient = neon(connectionString);
+        this.db = drizzle(sqlClient);
+        
+        // Test connection with a simple raw query
+        await sqlClient`SELECT 1`;
+        
+        this.initialized = true;
+        console.log("[Storage] Database successfully initialized, connected, and verified");
+      } catch (error: any) {
+        console.error("[Storage] Failed to initialize database or verify connection:", error);
+        if (error?.message) {
+          console.error("[Storage] Error detail:", error.message);
+        }
+        this.initialized = false;
+      }
+    })();
+
+    return this.initPromise;
+  }
 
   constructor() {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      console.warn("DATABASE_URL not found, falling back to MemStorage");
-      this.initialized = false;
-      return;
-    }
-    try {
-      const sql = neon(connectionString);
-      this.db = drizzle(sql);
-      this.initialized = true;
-    } catch (error) {
-      console.error("Failed to initialize database:", error);
-      this.initialized = false;
-    }
+    // Initialized by initializeStorage() in index.ts or explicitly
   }
 
   // Users
@@ -1099,7 +1160,7 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     if (!this.initialized) return undefined;
     try {
-      const result = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+      const result = await this.db.select().from(users).where(eq(sql`lower(${users.email})`, email.toLowerCase())).limit(1);
       return result[0];
     } catch (error) {
       console.error("Error getting user by email:", error);
@@ -1163,10 +1224,71 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserTrips(userEmail: string): Promise<Booking[]> {
-    if (!this.initialized) return [];
+    if (!this.initialized) {
+      console.log("[Storage] Database not initialized for user trips, attempting to initialize...");
+      await this.init();
+    }
     try {
+      const emailToSearch = userEmail.trim().toLowerCase();
+      console.log(`[Storage] Fetching trips for user email: "${emailToSearch}"`);
+      
       const allBookings = await this.db.select().from(bookings);
-      return allBookings.filter((b: Booking) => b.driver?.email?.toLowerCase() === userEmail.toLowerCase());
+      const allVehicles = await this.db.select().from(vehicles);
+      const allHosts = await this.db.select().from(hosts);
+      
+      console.log(`[Storage] DEBUG: DB Stats - Bookings: ${allBookings.length}, Vehicles: ${allVehicles.length}, Hosts: ${allHosts.length}`);
+
+      // 1. Bookings where the user is the driver
+      const driverBookings = allBookings.filter((b: Booking) => {
+        const driverEmail = (b.driver as any)?.email ? String((b.driver as any).email).trim().toLowerCase() : "";
+        const matches = driverEmail === emailToSearch;
+        if (matches) console.log(`[Storage] Found match as driver: ${b.bookingCode} (ID: ${b.id})`);
+        return matches;
+      });
+      
+      console.log(`[Storage] Found ${driverBookings.length} bookings as driver`);
+
+      // 2. Bookings where the user is the host of the car
+      const host = allHosts.find((h: Host) => (h.email || "").trim().toLowerCase() === emailToSearch);
+      let hostBookings: Booking[] = [];
+      
+      if (host) {
+        console.log(`[Storage] User identified as host ID ${host.id}`);
+        // Compare as strings to handle mixed types (hostId can be number or string)
+        const hostIdStr = String(host.id);
+        const hostVehicleIds = allVehicles
+          .filter((v: Vehicle) => String(v.hostId) === hostIdStr)
+          .map((v: Vehicle) => v.id);
+        
+        console.log(`[Storage] Host owns vehicle IDs: ${hostVehicleIds.join(', ') || 'none'}`);
+        
+        hostBookings = allBookings.filter((b: Booking) => 
+          b.vehicleId && hostVehicleIds.includes(b.vehicleId)
+        );
+        console.log(`[Storage] Found ${hostBookings.length} bookings for host vehicles`);
+      }
+
+      // 3. Fallback: Check if the booking details has the hostEmail
+      const detailHostBookings = allBookings.filter((b: Booking) => {
+        const hostEmail = ((b.details as any)?.hostEmail || "").trim().toLowerCase();
+        const driverEmailInDetails = ((b.details as any)?.driverEmail || "").trim().toLowerCase();
+        return hostEmail === emailToSearch || driverEmailInDetails === emailToSearch;
+      });
+      
+      if (detailHostBookings.length > 0) {
+        console.log(`[Storage] Found ${detailHostBookings.length} bookings matching emails in details`);
+      }
+
+      // Combine and remove duplicates using a Map
+      const combinedMap = new Map<number, Booking>();
+      driverBookings.forEach((b: Booking) => combinedMap.set(b.id, b));
+      hostBookings.forEach((b: Booking) => combinedMap.set(b.id, b));
+      detailHostBookings.forEach((b: Booking) => combinedMap.set(b.id, b));
+
+      const result = Array.from(combinedMap.values());
+      console.log(`[Storage] Returning ${result.length} unique bookings for ${emailToSearch}`);
+
+      return result.sort((a, b) => Number(b.id) - Number(a.id));
     } catch (error) {
       console.error("Error getting user trips:", error);
       return [];
@@ -1230,11 +1352,29 @@ export class DatabaseStorage implements IStorage {
 
   // Bookings
   async getBookings(): Promise<Booking[]> {
-    if (!this.initialized) return [];
+    if (!this.initialized) {
+      console.log("[Storage] Database not initialized, attempting to initialize...");
+      await this.init();
+    }
+    
+    // Check if still not initialized after attempt
+    if (!this.initialized || !this.db) {
+      console.error("[Storage] CRITICAL: Database still not initialized after init attempt!");
+      return [];
+    }
+    
     try {
-      return await this.db.select().from(bookings);
-    } catch (error) {
-      console.error("Error getting bookings:", error);
+      // Simple query without orderBy to avoid any issues
+      const results = await this.db.select().from(bookings);
+      console.log(`[Storage] RAW DB FETCH: Found ${results.length} bookings in table at ${new Date().toISOString()}`);
+      
+      // Sort by ID descending in JavaScript
+      const sorted = results.sort((a: Booking, b: Booking) => Number(b.id) - Number(a.id));
+      return sorted;
+    } catch (error: any) {
+      console.error("[Storage] Error getting bookings:", error);
+      console.error("[Storage] Error details:", error?.message || "No message");
+      console.error("[Storage] Error stack:", error?.stack || "No stack");
       return [];
     }
   }
@@ -1253,7 +1393,7 @@ export class DatabaseStorage implements IStorage {
   async getBookingByCode(code: string): Promise<Booking | undefined> {
     if (!this.initialized) return undefined;
     try {
-      const result = await this.db.select().from(bookings).where(eq(bookings.bookingCode, code)).limit(1);
+      const result = await this.db.select().from(bookings).where(sql`LOWER(${bookings.bookingCode}) = LOWER(${code})`).limit(1);
       return result[0];
     } catch (error) {
       console.error("Error getting booking by code:", error);
@@ -1264,7 +1404,9 @@ export class DatabaseStorage implements IStorage {
   async createBooking(booking: InsertBooking): Promise<Booking> {
     if (!this.initialized) throw new Error("Database not initialized");
     try {
+      console.log("[Storage] Creating booking:", JSON.stringify(booking).substring(0, 200));
       const result = await this.db.insert(bookings).values(booking).returning();
+      console.log("[Storage] Booking created with ID:", result[0].id);
       return result[0];
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -1704,6 +1846,30 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Initialize storage with DatabaseStorage (tables created in PostgreSQL)
-const storage: IStorage = new DatabaseStorage();
+const storage = new DatabaseStorage();
 
-export { storage };
+// Initialize storage explicitly (call this before starting the server)
+async function initializeStorage(): Promise<boolean> {
+  console.log("[Storage] Starting storage initialization...");
+  console.log("[Storage] Environment check on startup:");
+  console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGHOST: ${process.env.PGHOST ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGUSER: ${process.env.PGUSER ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGPASSWORD: ${process.env.PGPASSWORD ? 'set' : 'NOT SET'}`);
+  console.log(`  - PGDATABASE: ${process.env.PGDATABASE ? 'set' : 'NOT SET'}`);
+  console.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+  
+  await storage.init();
+  
+  const isInitialized = (storage as any).initialized === true;
+  console.log(`[Storage] Initialization complete. Database connected: ${isInitialized}`);
+  
+  if (!isInitialized) {
+    console.error("[Storage] WARNING: Database not connected! Data will NOT persist!");
+    console.error("[Storage] Please ensure DATABASE_URL secret is configured for this deployment.");
+  }
+  
+  return isInitialized;
+}
+
+export { storage, initializeStorage };
