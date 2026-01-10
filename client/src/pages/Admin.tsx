@@ -141,13 +141,6 @@ export default function Admin() {
       resetForm();
       setConfirmationDialog({ open: false, action: 'edit', vehicle: null });
     },
-    onError: (error: any) => {
-      toast({ 
-        title: "Failed to update vehicle", 
-        description: error.message || "An error occurred while updating the vehicle",
-        variant: "destructive" 
-      });
-    },
   });
 
   const deleteMutation = useMutation({
@@ -343,7 +336,7 @@ export default function Admin() {
                 onClick={handleSubmit}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
-                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {createMutation.isPending || updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingVehicle ? "Update Vehicle" : "Create Vehicle"}
               </Button>
             </div>

@@ -5,27 +5,6 @@ import session from "express-session";
 
 // @ts-ignore - passport-apple doesn't have types
 declare module 'passport-apple';
-
-// Extend Express.User to include our User type
-declare global {
-  namespace Express {
-    interface User {
-      id: string;
-      email?: string | null;
-      firstName?: string | null;
-      lastName?: string | null;
-      phone?: string | null;
-      city?: string | null;
-      state?: string | null;
-      profileImageUrl?: string | null;
-      isAdmin?: boolean | null;
-      isHost?: boolean | null;
-      pickupLocations?: string[] | null;
-      createdAt?: Date | null;
-      updatedAt?: Date | null;
-    }
-  }
-}
 import type { Express, RequestHandler } from "express";
 import createMemoryStore from "memorystore";
 import { storage } from "./storage";
