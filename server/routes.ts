@@ -298,58 +298,142 @@ async function sendCheckInCompletedEmail(booking: any) {
 
 async function sendCheckOutCompletedEmail(booking: any) {
   const clientEmail = booking.driver?.email;
-  if (!clientEmail) return;
+  const adminEmail = process.env.EMAIL_USER;
+  
+  if (!clientEmail && !adminEmail) return;
+
+  // Get vehicle and host info if possible
+  const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
+  const host = vehicle?.hostId ? await storage.getHost(parseInt(vehicle.hostId)).catch(() => null) : null;
+  const hostEmail = host?.email;
+
+  const recipients = [clientEmail, adminEmail, hostEmail].filter(Boolean) as string[];
+  
+  // Format check-in/out photos for display
+  const checkInPhotos = [
+    ...(booking.checkInData?.photosOutside || []),
+    ...(booking.checkInData?.photosInside || [])
+  ];
+  
+  const checkOutPhotos = [
+    ...(booking.checkOutData?.photosOutside || []),
+    ...(booking.checkOutData?.photosInside || [])
+  ];
+
+  const photoHtml = (photos: string[], title: string) => {
+    if (!photos || photos.length === 0) return '';
+    return `
+      <div style="margin-top: 20px;">
+        <h3 style="font-size: 16px; color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">${title}</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+          ${photos.map((p, i) => `
+            <div style="margin-bottom: 10px; margin-right: 10px; display: inline-block;">
+              <img src="${p}" alt="${title} ${i+1}" style="width: 180px; height: 120px; object-cover: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  };
 
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: clientEmail,
-      subject: `CarHop - Rental Complete - Thank You! #${booking.bookingCode}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">Rental Complete!</h1>
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #1f2937;">
+          <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Final Rental Receipt</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">Booking #${booking.bookingCode}</p>
           </div>
           
-          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
-            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
-            
-            <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-              Thank you for choosing CarHop! Your rental has been successfully completed and the vehicle has been checked out.
-            </p>
-            
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
-              <p style="margin: 0 0 10px 0; color: #6b7280;">
-                <strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}
-              </p>
-              <p style="margin: 0 0 10px 0; color: #6b7280;">
-                <strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || 'N/A'}
-              </p>
-              <p style="margin: 0 0 10px 0; color: #6b7280;">
-                <strong style="color: #1f2937;">Rental Period:</strong> ${booking.startDate} - ${booking.returnDate}
-              </p>
-              <p style="margin: 0; color: #6b7280;">
-                <strong style="color: #1f2937;">Total:</strong> $${(booking.total || 0).toFixed(2)}
-              </p>
+          <div style="padding: 30px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #f3f4f6; padding-bottom: 20px; margin-bottom: 20px;">
+              <div style="flex: 1;">
+                <h2 style="font-size: 18px; margin: 0 0 10px 0;">Customer Information</h2>
+                <p style="margin: 2px 0;"><strong>Name:</strong> ${booking.driver?.name}</p>
+                <p style="margin: 2px 0;"><strong>Email:</strong> ${booking.driver?.email}</p>
+                <p style="margin: 2px 0;"><strong>Phone:</strong> ${booking.driver?.phone}</p>
+                <p style="margin: 2px 0;"><strong>License #:</strong> ${booking.driver?.licenseNumber}</p>
+              </div>
+              <div style="flex: 1; text-align: right;">
+                <h2 style="font-size: 18px; margin: 0 0 10px 0;">Vehicle Details</h2>
+                <p style="margin: 2px 0;"><strong>Vehicle:</strong> ${booking.carName || 'N/A'}</p>
+                <p style="margin: 2px 0;"><strong>Location:</strong> ${booking.location}</p>
+                <p style="margin: 2px 0;"><strong>Period:</strong> ${booking.startDate} to ${booking.returnDate}</p>
+              </div>
             </div>
-            
-            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 0; color: #0369a1; font-size: 14px;">
-                We hope you had a great experience! We'd love to see you again for your next rental.
-              </p>
+
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+              <h2 style="font-size: 18px; margin: 0 0 15px 0; color: #111827;">Financial Summary</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #4b5563;">Daily Rate (${booking.days} days)</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold;">$${(booking.details?.rate || 0).toFixed(2)}</td>
+                </tr>
+                ${booking.details?.protection ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #4b5563;">Protection Plan</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold;">$${(booking.details.protection).toFixed(2)}</td>
+                </tr>` : ''}
+                ${booking.details?.fees ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #4b5563;">Fees & Cleaning</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold;">$${(booking.details.fees).toFixed(2)}</td>
+                </tr>` : ''}
+                ${booking.details?.extendedRate ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #3b82f6;">Extensions</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #3b82f6;">+$${(booking.details.extendedRate).toFixed(2)}</td>
+                </tr>` : ''}
+                ${Array.isArray(booking.details?.manualCharges) && booking.details.manualCharges.length > 0 ? 
+                  booking.details.manualCharges.map((c: any) => `
+                  <tr>
+                    <td style="padding: 8px 0; color: #f59e0b;">${c.type}</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #f59e0b;">+$${(c.amount).toFixed(2)}</td>
+                  </tr>
+                  `).join('') : ''
+                }
+                <tr style="border-top: 1px solid #d1d5db;">
+                  <td style="padding: 12px 0; color: #111827; font-weight: bold;">Total Amount Paid</td>
+                  <td style="padding: 12px 0; text-align: right; font-size: 20px; font-weight: bold; color: #1e40af;">$${(booking.total || 0).toFixed(2)}</td>
+                </tr>
+              </table>
             </div>
-            
-            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-              Questions? Contact us at (475) 449-8622 or reply to this email.<br/>
-              CarHop LLC - Connecticut, USA
-            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+              <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; border: 1px solid #a7f3d0;">
+                <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #065f46; text-transform: uppercase;">Check-In Data</h3>
+                <p style="margin: 2px 0;"><strong>Mileage:</strong> ${booking.checkInData?.miles || 'N/A'} mi</p>
+                <p style="margin: 2px 0;"><strong>Fuel:</strong> ${booking.checkInData?.gas || 'N/A'}</p>
+              </div>
+              <div style="background: #fff7ed; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa;">
+                <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #9a3412; text-transform: uppercase;">Check-Out Data</h3>
+                <p style="margin: 2px 0;"><strong>Mileage:</strong> ${booking.checkOutData?.miles || 'N/A'} mi</p>
+                <p style="margin: 2px 0;"><strong>Fuel:</strong> ${booking.checkOutData?.gas || 'N/A'}</p>
+              </div>
+            </div>
+
+            ${photoHtml(checkInPhotos, 'Check-In Condition Photos')}
+            ${photoHtml(checkOutPhotos, 'Check-Out Condition Photos')}
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center;">
+              <p>This is an automated legal receipt for booking #${booking.bookingCode}.</p>
+              <p>CarHop LLC - Professional Car Rental Management<br/>Connecticut, USA | (475) 449-8622</p>
+            </div>
           </div>
         </div>
-      `,
+    `;
+
+    // Send to each recipient individually to avoid exposing other emails if preferred, 
+    // but here we just send to all for simplicity
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: recipients.join(', '),
+      subject: `CarHop - Final Rental Receipt & Evidence #${booking.bookingCode}`,
+      html: htmlContent,
     });
-    console.log(`Check-out completed email sent to ${clientEmail}`);
+    
+    console.log(`Final receipt email sent to ${recipients.length} recipients for booking ${booking.bookingCode}`);
   } catch (error) {
-    console.error("Error sending check-out completed email:", error);
+    console.error("Error sending final receipt email:", error);
   }
 }
 
