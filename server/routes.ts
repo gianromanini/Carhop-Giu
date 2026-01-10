@@ -890,7 +890,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const bookings = await storage.getBookings();
       console.log(`[API] /api/bookings - Got ${bookings.length} bookings, preparing response...`);
       
-      // Check for a debug query param to see all raw data
+      // Check for a debug query param to see all raw data (may be very large!)
       if (_req.query.debug === 'true') {
         return res.json({
           count: bookings.length,
@@ -900,8 +900,59 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         });
       }
       
-      console.log(`[API] /api/bookings - Sending JSON response...`);
-      res.json(bookings);
+      // Optimize response by limiting image data size for list view
+      // Full image data is still available when fetching individual booking
+      const optimizedBookings = bookings.map(booking => {
+        const optimized = { ...booking };
+        
+        // Truncate large base64 images in driver license to save bandwidth
+        if (optimized.driver && typeof optimized.driver === 'object') {
+          const driver = optimized.driver as any;
+          if (driver.licenseImages && Array.isArray(driver.licenseImages)) {
+            driver.licenseImages = driver.licenseImages.map((img: string) => {
+              if (typeof img === 'string' && img.length > 1000) {
+                return img.substring(0, 100) + '...[TRUNCATED]';
+              }
+              return img;
+            });
+          }
+        }
+        
+        // Truncate check-in photos
+        if (optimized.checkInData && typeof optimized.checkInData === 'object') {
+          const checkIn = optimized.checkInData as any;
+          if (checkIn.photosOutside && Array.isArray(checkIn.photosOutside)) {
+            checkIn.photosOutside = checkIn.photosOutside.map((img: string) => 
+              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+            );
+          }
+          if (checkIn.photosInside && Array.isArray(checkIn.photosInside)) {
+            checkIn.photosInside = checkIn.photosInside.map((img: string) => 
+              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+            );
+          }
+        }
+        
+        // Truncate check-out photos
+        if (optimized.checkOutData && typeof optimized.checkOutData === 'object') {
+          const checkOut = optimized.checkOutData as any;
+          if (checkOut.photosOutside && Array.isArray(checkOut.photosOutside)) {
+            checkOut.photosOutside = checkOut.photosOutside.map((img: string) => 
+              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+            );
+          }
+          if (checkOut.photosInside && Array.isArray(checkOut.photosInside)) {
+            checkOut.photosInside = checkOut.photosInside.map((img: string) => 
+              typeof img === 'string' && img.length > 1000 ? img.substring(0, 100) + '...[TRUNCATED]' : img
+            );
+          }
+        }
+        
+        return optimized;
+      });
+      
+      console.log(`[API] /api/bookings - Sending optimized JSON response...`);
+      res.json(optimizedBookings);
       console.log(`[API] /api/bookings - Response sent successfully`);
     } catch (error: any) {
       console.error("[API] /api/bookings - ERROR:", error);
