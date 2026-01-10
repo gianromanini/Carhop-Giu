@@ -914,6 +914,13 @@ export default function CarHopApp() {
     refetchOnMount: true,
     refetchInterval: 3000 
   });
+  
+  // LOG PARA DEBUG
+  useEffect(() => {
+    if (bookings.length > 0) {
+      console.log('Bookings carregados:', bookings.length);
+    }
+  }, [bookings]);
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
@@ -8368,7 +8375,7 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         
-                        if (bookingFilterStatus && bookingFilterStatus !== "") {
+                        if (bookingFilterStatus && bookingFilterStatus !== "" && bookingFilterStatus !== "todos os status") {
                           const status = (bookingFilterStatus as string).toLowerCase().trim();
                           const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
                           if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
