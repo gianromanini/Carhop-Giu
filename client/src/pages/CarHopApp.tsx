@@ -853,7 +853,7 @@ export default function CarHopApp() {
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('start-first');
-  const [bookingFilterStatus, setBookingFilterStatus] = useState<'' | 'completed' | 'cancelled' | 'pending-approval'>('');
+  const [bookingFilterStatus, setBookingFilterStatus] = useState<string>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'active' | 'completed' | 'cancelled' | 'pending'>('newest');
@@ -8327,7 +8327,7 @@ export default function CarHopApp() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - All Bookings List */}
                 <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
-                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Todas as Reservas</h3>
+                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Todas as Reservas ({bookings.length})</h3>
                   
                   {/* Filters */}
                   <div className="space-y-2 mb-4">
@@ -8368,23 +8368,23 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         
-                        if (bookingFilterStatus) {
+                        if (bookingFilterStatus && bookingFilterStatus !== "") {
                           const status = (bookingFilterStatus as string).toLowerCase().trim();
                           const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
                           if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
                           else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed' || normalizedStatusForFilter === 'concluido' || normalizedStatusForFilter === 'concluído');
                           else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
                           else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || normalizedStatusForFilter === 'aguardando aprovação' || (b.details as any)?.deliveryApprovalStatus === 'pending');
-                        } else {
-                          // No status filter, match everything
-                          matches = true;
                         }
                         
-                        const bVehicleId = String(b.vehicleId || '');
-                        const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
-                        
-                        if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
-                        if (bookingFilterNumber) {
+                        // Only filter by car model if one is selected
+                        if (bookingFilterCarModel && bookingFilterCarModel !== "") {
+                          const bVehicleId = String(b.vehicleId || '');
+                          const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
+                          if (vehicle?.model !== bookingFilterCarModel) matches = false;
+                        }
+
+                        if (bookingFilterNumber && bookingFilterNumber !== "") {
                           const searchTerm = bookingFilterNumber.toLowerCase();
                           const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
                           const driverName = (b.driver as any)?.name?.toLowerCase() || (b.driver as any)?.firstName?.toLowerCase() || "";
