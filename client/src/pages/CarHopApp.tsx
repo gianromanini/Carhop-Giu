@@ -1250,6 +1250,8 @@ export default function CarHopApp() {
       const detailDriverName = ((b.details as any)?.driverName || '').toLowerCase().trim();
 
       const userName = (activeUser.firstName && activeUser.lastName ? `${activeUser.firstName} ${activeUser.lastName}` : (activeUser as any).name || '').toLowerCase().trim();
+      const userFirstName = (activeUser.firstName || '').toLowerCase().trim();
+      const userLastName = (activeUser.lastName || '').toLowerCase().trim();
       
       const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail);
       const phoneMatch = effectivePhone && driverPhone && (
@@ -1257,13 +1259,17 @@ export default function CarHopApp() {
         driverPhone.includes(effectivePhone) || 
         effectivePhone.includes(driverPhone)
       );
-      // More flexible name matching
-      const nameMatch = userName && (
+      
+      // Much more inclusive name matching
+      const nameMatch = (userName && (
         (driverName && (driverName.includes(userName) || userName.includes(driverName))) || 
         (detailDriverName && (detailDriverName.includes(userName) || userName.includes(detailDriverName)))
-      );
+      )) || (userFirstName && userLastName && (
+        (driverName && (driverName.includes(userFirstName) && driverName.includes(userLastName))) ||
+        (detailDriverName && (detailDriverName.includes(userFirstName) && detailDriverName.includes(userLastName)))
+      ));
       
-      // If we are in the live site and user is authenticated, we should also try matching by ID if available in metadata
+      // Use ID match as absolute if available
       const userIdMatch = activeUser.id && (b as any).userId === activeUser.id;
       
       return emailMatch || phoneMatch || nameMatch || userIdMatch;

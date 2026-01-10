@@ -702,22 +702,49 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.status(204).send();
   });
 
-  app.get("/api/bookings", async (_req, res) => {
+  app.get("/api/bookings", async (req: any, res) => {
     try {
-      const bookings = await storage.getBookings();
-      console.log(`[API] Returning ${bookings.length} bookings to client at ${new Date().toISOString()}`);
+      const user = req.user;
+      const allBookings = await storage.getBookings();
       
-      // Check for a debug query param to see all raw data
-      if (_req.query.debug === 'true') {
-        return res.json({
-          count: bookings.length,
-          data: bookings,
-          timestamp: new Date().toISOString(),
-          env: process.env.NODE_ENV
-        });
+      if (user && (user.isAdmin || user.isHost)) {
+        console.log(`[API] Returning all ${allBookings.length} bookings for Admin/Host`);
+        return res.json(allBookings);
       }
       
-      res.json(bookings);
+      // For authenticated regular users, filter more comprehensively
+      if (req.isAuthenticated() && user) {
+        const userEmail = (user.email || '').toLowerCase().trim();
+        const userPhone = (user.phone || '').replace(/\D/g, '');
+        const userFirstName = (user.firstName || '').toLowerCase().trim();
+        const userLastName = (user.lastName || '').toLowerCase().trim();
+        const userName = (userFirstName && userLastName ? `${userFirstName} ${userLastName}` : (user.name || '')).toLowerCase().trim();
+
+        const filtered = allBookings.filter(b => {
+          const driver = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+          const dEmail = (driver?.email || '').toLowerCase().trim();
+          const dName = (driver?.name || '').toLowerCase().trim();
+          const dPhone = (driver?.phone || '').replace(/\D/g, '');
+          
+          const detailDriverEmail = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
+          const detailHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
+          const detailDriverName = ((b.details as any)?.driverName || '').toLowerCase().trim();
+
+          const emailMatch = userEmail && (dEmail === userEmail || detailDriverEmail === userEmail || detailHostEmail === userEmail);
+          const phoneMatch = userPhone && dPhone && (dPhone === userPhone || dPhone.includes(userPhone) || userPhone.includes(dPhone));
+          const nameMatch = (userName && (dName.includes(userName) || userName.includes(dName) || detailDriverName.includes(userName) || userName.includes(detailDriverName))) ||
+                           (userFirstName && userLastName && (dName.includes(userFirstName) && dName.includes(userLastName)));
+          const idMatch = (b as any).userId === user.id;
+
+          return emailMatch || phoneMatch || nameMatch || idMatch;
+        });
+        
+        console.log(`[API] Returning ${filtered.length} filtered bookings for user ${userEmail}`);
+        return res.json(filtered);
+      }
+      
+      // Guest or non-authenticated: return empty
+      res.json([]);
     } catch (error) {
       console.error("API error fetching bookings:", error);
       res.status(500).json({ message: "Error fetching bookings" });
