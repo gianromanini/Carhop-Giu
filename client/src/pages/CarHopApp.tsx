@@ -1045,7 +1045,9 @@ export default function CarHopApp() {
   });
 
   const handleDeleteVehicle = (id: number, model: string) => {
-    setDeletingVehicleId(id);
+    if (confirm(`Deseja excluir o veículo ${model}? Esta ação não pode ser desfeita.`)) {
+      deleteVehicleMutation.mutate(id);
+    }
   };
 
   const updateUserMutation = useMutation({
