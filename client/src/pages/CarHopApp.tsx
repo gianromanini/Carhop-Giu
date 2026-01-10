@@ -8372,12 +8372,13 @@ export default function CarHopApp() {
                           const status = (bookingFilterStatus as string).toLowerCase().trim();
                           const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
                           if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
-                          else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed');
-                          else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled');
-                          else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending');
+                          else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed' || normalizedStatusForFilter === 'concluido' || normalizedStatusForFilter === 'concluído');
+                          else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
+                          else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || normalizedStatusForFilter === 'aguardando aprovação' || (b.details as any)?.deliveryApprovalStatus === 'pending');
                         }
                         
-                        const vehicle = vehicles.find(v => v.id === b.vehicleId || String(v.id) === String(b.vehicleId));
+                        const bVehicleId = String(b.vehicleId || '');
+                        const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
                         
                         if (bookingFilterCarModel && vehicle?.model !== bookingFilterCarModel) matches = false;
                         if (bookingFilterNumber) {
