@@ -325,12 +325,19 @@ async function sendCheckOutCompletedEmail(booking: any) {
     return `
       <div style="margin-top: 20px;">
         <h3 style="font-size: 16px; color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">${title}</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
-          ${photos.map((p, i) => `
-            <div style="margin-bottom: 10px; margin-right: 10px; display: inline-block;">
-              <img src="${p}" alt="${title} ${i+1}" style="width: 180px; height: 120px; object-cover: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
-            </div>
-          `).join('')}
+        <div style="margin-top: 10px;">
+          ${photos.map((p, i) => {
+            // Ensure we have a valid data URL or absolute URL
+            const src = p.startsWith('data:') ? p : (p.startsWith('http') ? p : '');
+            if (!src) return '';
+            
+            return `
+              <div style="margin-bottom: 15px; display: block; text-align: center;">
+                <img src="${src}" alt="${title} ${i+1}" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #d1d5db; display: block; margin: 0 auto;" />
+                <p style="font-size: 10px; color: #9ca3af; margin-top: 5px;">Photo ${i+1}</p>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
@@ -356,7 +363,7 @@ async function sendCheckOutCompletedEmail(booking: any) {
               <div style="flex: 1; text-align: right;">
                 <h2 style="font-size: 18px; margin: 0 0 10px 0;">Vehicle Details</h2>
                 <p style="margin: 2px 0;"><strong>Vehicle:</strong> ${booking.carName || 'N/A'}</p>
-                <p style="margin: 2px 0;"><strong>Location:</strong> ${booking.location}</p>
+                <p style="margin: 2px 0;"><strong>Location:</strong> ${booking.location?.split(',')[0] || 'N/A'}</p>
                 <p style="margin: 2px 0;"><strong>Period:</strong> ${booking.startDate} to ${booking.returnDate}</p>
               </div>
             </div>
