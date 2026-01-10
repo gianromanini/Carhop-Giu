@@ -5160,15 +5160,16 @@ export default function CarHopApp() {
           })()}
 
           {hostTab === 'bookings' && (() => {
-            const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
+            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === String(currentHost.id)).map(v => v.id);
             const hostBookings = bookings.filter(b => {
-              const isOwner = b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId));
+              const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+              const isOwner = bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
               const hostEmail = currentHost.email?.toLowerCase().trim();
               const bookingHostEmail = (b.details as any)?.hostEmail?.toLowerCase().trim();
               const hostName = `${currentHost.firstName} ${currentHost.lastName}`.toLowerCase().trim();
               const bookingHostName = (b.details as any)?.hostName?.toLowerCase().trim();
               const bookingCarName = b.carName?.toLowerCase().trim();
-              const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
+              const hostVehicles = vehicles.filter(v => String(v.hostId) === String(currentHost.id));
               const matchesCarModel = hostVehicles.some(v => bookingCarName?.includes(v.model.toLowerCase().trim()));
               
               return isOwner || 
@@ -5865,7 +5866,7 @@ export default function CarHopApp() {
           })()}
 
           {hostTab === 'earnings' && (() => {
-            const hostVehicleIds = vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => v.id);
+            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === String(currentHost.id)).map(v => v.id);
             const hostVehicleMap = Object.fromEntries(vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => [v.id, v]));
             const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId)) && b.status === 'Completed');
             
