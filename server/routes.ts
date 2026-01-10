@@ -780,6 +780,41 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // ========== DIAGNOSTICS ==========
+  app.get("/api/diagnostics", async (_req, res) => {
+    try {
+      const dbStatus = await (storage as any).getDatabaseStatus?.() || { initialized: (storage as any).initialized || false };
+      const bookingsCount = await storage.getBookings().then(b => b.length).catch(() => -1);
+      const vehiclesCount = await storage.getVehicles().then(v => v.length).catch(() => -1);
+      
+      res.json({
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'unknown',
+        database: {
+          initialized: dbStatus.initialized || (storage as any).initialized || false,
+          hasDb: !!(storage as any).db,
+        },
+        counts: {
+          bookings: bookingsCount,
+          vehicles: vehiclesCount,
+        },
+        envVars: {
+          DATABASE_URL: !!process.env.DATABASE_URL,
+          PGHOST: !!process.env.PGHOST,
+          PGUSER: !!process.env.PGUSER,
+          PGPASSWORD: !!process.env.PGPASSWORD,
+          PGDATABASE: !!process.env.PGDATABASE,
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "Diagnostics failed",
+        message: error?.message || "Unknown error",
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
   // ========== VEHICLES ==========
   app.get("/api/vehicles", async (req, res) => {
     const vehicles = await storage.getVehicles();
@@ -850,9 +885,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
       
       res.json(bookings);
-    } catch (error) {
+    } catch (error: any) {
       console.error("API error fetching bookings:", error);
-      res.status(500).json({ message: "Error fetching bookings" });
+      console.error("API error details:", error?.message || "No message");
+      console.error("API error stack:", error?.stack || "No stack");
+      res.status(500).json({ 
+        message: "Error fetching bookings",
+        error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      });
     }
   });
 
