@@ -1304,8 +1304,10 @@ export default function CarHopApp() {
       
       const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail);
       
-      // Removed phone and name matching for simplicity in production as requested
-      return !!emailMatch;
+      // If we are in the live site and user is authenticated, we should also try matching by ID if available in metadata
+      const userIdMatch = activeUser.id && (b as any).userId === activeUser.id;
+      
+      return emailMatch || userIdMatch;
     });
     
     console.log('[MyBookings] Trips found:', trips.length);
