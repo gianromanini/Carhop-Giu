@@ -7412,6 +7412,30 @@ export default function CarHopApp() {
                 </Card>
               </div>
             )}
+            {/* Modal de confirmação para frota do Host */}
+            {hostTab === 'fleet' && deletingVehicleId !== null && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Excluir Veículo?</h3>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Tem certeza que deseja excluir permanentemente este veículo da sua frota?</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-host-cancel-delete-vehicle">Cancelar</button>
+                    <button 
+                      onClick={() => { 
+                        if (deletingVehicleId) {
+                          deleteVehicleMutation.mutate(deletingVehicleId); 
+                        }
+                      }} 
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors" 
+                      data-testid="button-host-confirm-delete-vehicle"
+                      disabled={deleteVehicleMutation.isPending}
+                    >
+                      {deleteVehicleMutation.isPending ? 'Excluindo...' : 'Sim, Excluir'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {adminTab === 'clients' && (
               <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
