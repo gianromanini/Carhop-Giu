@@ -917,10 +917,13 @@ export default function CarHopApp() {
   
   // LOG PARA DEBUG
   useEffect(() => {
-    if (bookings.length > 0) {
-      console.log('Bookings carregados:', bookings.length);
-    }
-  }, [bookings]);
+    console.log('Bookings DEBUG:', { 
+      count: bookings.length, 
+      isLoading: bookingsLoading,
+      firstBooking: bookings[0] || 'none',
+      allBookingIds: bookings.map(b => b.id)
+    });
+  }, [bookings, bookingsLoading]);
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
@@ -8371,6 +8374,12 @@ export default function CarHopApp() {
                   </div>
                   
                   <div className="space-y-2">
+                    {bookings.length === 0 && !bookingsLoading && (
+                      <p className="text-zinc-400 text-center py-4">Nenhuma reserva encontrada. Verifique se a API está retornando dados.</p>
+                    )}
+                    {bookingsLoading && (
+                      <p className="text-zinc-400 text-center py-4">Carregando reservas...</p>
+                    )}
                     {bookings
                       .filter(b => {
                         let matches = true;
