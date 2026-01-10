@@ -707,12 +707,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const allBookings = await storage.getBookings();
       const user = req.user;
       
+      console.log(`[API] GET /api/bookings - User: ${user ? user.email : 'Guest'}, Total Bookings: ${allBookings.length}`);
+
       // If Admin or Host, return everything
       if (user && (user.isAdmin || user.isHost)) {
         return res.json(allBookings);
       }
       
-      // For the live site, be as inclusive as possible
+      // For authenticated users, be extremely thorough in matching
       if (user) {
         const userEmail = (user.email || '').toLowerCase().trim();
         const userPhone = (user.phone || '').replace(/\D/g, '');
@@ -721,11 +723,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         const userName = (userFirstName && userLastName ? `${userFirstName} ${userLastName}` : (user.name || '')).toLowerCase().trim();
 
         const filtered = allBookings.filter(b => {
+          // Parse driver info safely
           let driver: any = {};
           try {
             driver = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
           } catch (e) {
-            console.error("Error parsing driver JSON", e);
+            driver = b.driver || {};
           }
 
           const dEmail = (driver?.email || '').toLowerCase().trim();
@@ -736,20 +739,27 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
           const detailDriverEmail = (details.driverEmail || '').toLowerCase().trim();
           const detailHostEmail = (details.hostEmail || '').toLowerCase().trim();
           const detailDriverName = (details.driverName || '').toLowerCase().trim();
+          const detailPhone = (details.phone || details.driverPhone || '').replace(/\D/g, '');
 
           const emailMatch = userEmail && (dEmail === userEmail || detailDriverEmail === userEmail || detailHostEmail === userEmail);
-          const phoneMatch = userPhone && dPhone && (dPhone === userPhone || dPhone.includes(userPhone) || userPhone.includes(dPhone));
+          const phoneMatch = userPhone && (
+            (dPhone && (dPhone === userPhone || dPhone.includes(userPhone) || userPhone.includes(dPhone))) ||
+            (detailPhone && (detailPhone === userPhone || detailPhone.includes(userPhone) || userPhone.includes(detailPhone)))
+          );
           const nameMatch = (userName && (dName.includes(userName) || userName.includes(dName) || detailDriverName.includes(userName) || userName.includes(detailDriverName))) ||
                            (userFirstName && userLastName && (dName.includes(userFirstName) && dName.includes(userLastName)));
-          const idMatch = (b as any).userId === user.id;
+          
+          // Use abstract matching for userId if present
+          const idMatch = (b as any).userId === user.id || (details as any).userId === user.id;
 
           return emailMatch || phoneMatch || nameMatch || idMatch;
         });
         
+        console.log(`[API] Returning ${filtered.length} filtered bookings for ${userEmail}`);
         return res.json(filtered);
       }
       
-      return res.json([]);
+      res.json([]);
     } catch (error) {
       console.error("API error fetching bookings:", error);
       res.status(500).json({ message: "Error fetching bookings" });

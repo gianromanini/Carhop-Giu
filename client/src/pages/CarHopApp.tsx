@@ -888,11 +888,12 @@ export default function CarHopApp() {
     enabled: !!authUser || !authLoading,
   });
 
+  // Force refetch on auth state changes
   useEffect(() => {
-    if (isAuthenticated && authUser) {
+    if (authUser?.id || isAuthenticated) {
       refetchBookings();
     }
-  }, [isAuthenticated, authUser, refetchBookings]);
+  }, [authUser?.id, isAuthenticated, refetchBookings]);
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
