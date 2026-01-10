@@ -10016,15 +10016,15 @@ export default function CarHopApp() {
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
                   {(() => {
-                    // Show loading state while auth OR bookings are being determined
-                    if (authLoading || bookingsLoading) {
-                      return <div className="text-center text-zinc-500 py-12">Loading your bookings...</div>;
-                    }
-                    
                     // Get effective user identity from auth or client state
                     const activeUser = selectedClient || clientUser || authUser;
                     const userEmail = (activeUser?.email || '').toLowerCase().trim();
                     const userPhone = (activeUser?.phone || '').replace(/\D/g, '');
+                    
+                    // Show loading state ONLY if we don't have a user yet and we are still loading auth
+                    if (authLoading && !activeUser) {
+                      return <div className="text-center text-zinc-500 py-12">Loading...</div>;
+                    }
                     
                     // If no user identity available, prompt sign in
                     if (!activeUser || (!userEmail && !userPhone)) {
