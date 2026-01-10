@@ -1039,14 +1039,13 @@ export default function CarHopApp() {
     mutationFn: (id: number) => apiRequest('DELETE', `/api/vehicles/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
-      toast({ title: 'Vehicle deleted successfully' });
+      setDeletingVehicleId(null);
+      toast({ title: 'Veículo excluído com sucesso' });
     }
   });
 
   const handleDeleteVehicle = (id: number, model: string) => {
-    if (confirm(`Are you sure you want to delete ${model}? This action cannot be undone.`)) {
-      deleteVehicleMutation.mutate(id);
-    }
+    setDeletingVehicleId(id);
   };
 
   const updateUserMutation = useMutation({
@@ -7386,21 +7385,21 @@ export default function CarHopApp() {
                           {deletingVehicleId !== null && (
                             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                               <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
-                                <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Vehicle?</h3>
-                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to permanently delete this vehicle from your fleet?</p>
+                                <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Excluir Veículo?</h3>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Tem certeza que deseja excluir permanentemente este veículo da sua frota?</p>
                                 <div className="flex gap-3">
-                                  <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancel</button>
+                                  <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancelar</button>
                                   <button 
                                     onClick={() => { 
                                       if (deletingVehicleId) {
                                         deleteVehicleMutation.mutate(deletingVehicleId); 
                                       }
-                                      setDeletingVehicleId(null); 
                                     }} 
                                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors" 
                                     data-testid="button-confirm-delete-vehicle"
+                                    disabled={deleteVehicleMutation.isPending}
                                   >
-                                    Yes, Delete
+                                    {deleteVehicleMutation.isPending ? 'Excluindo...' : 'Sim, Excluir'}
                                   </button>
                                 </div>
                               </div>
