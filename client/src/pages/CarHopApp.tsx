@@ -5165,10 +5165,21 @@ export default function CarHopApp() {
               const isOwner = b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId));
               const hostEmail = currentHost.email?.toLowerCase().trim();
               const bookingHostEmail = (b.details as any)?.hostEmail?.toLowerCase().trim();
-              // Adicionamos comparação por nome também caso o email não esteja presente
               const hostName = `${currentHost.firstName} ${currentHost.lastName}`.toLowerCase().trim();
               const bookingHostName = (b.details as any)?.hostName?.toLowerCase().trim();
               
+              // Log para depuração em desenvolvimento
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Filtrando reserva:', b.bookingCode, {
+                  isOwner,
+                  hostEmail,
+                  bookingHostEmail,
+                  hostName,
+                  bookingHostName,
+                  match: isOwner || (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) || (hostName && bookingHostName && hostName === bookingHostName)
+                });
+              }
+
               return isOwner || 
                      (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) ||
                      (hostName && bookingHostName && hostName === bookingHostName);
