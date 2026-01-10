@@ -880,12 +880,19 @@ export default function CarHopApp() {
     return result;
   }, [vehicles, fleetSort]);
   const { data: bookings = [], isLoading: bookingsLoading, refetch: refetchBookings } = useQuery<Booking[]>({ 
-    queryKey: ['/api/bookings'],
+    queryKey: ['/api/bookings', authUser?.id],
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 3000 // Poll every 3 seconds for live updates
+    refetchInterval: 3000,
+    enabled: !!authUser || !authLoading,
   });
+
+  useEffect(() => {
+    if (isAuthenticated && authUser) {
+      refetchBookings();
+    }
+  }, [isAuthenticated, authUser, refetchBookings]);
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
@@ -10004,18 +10011,10 @@ export default function CarHopApp() {
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
             <div className="space-y-6">
                   {(() => {
-                    // Show loading state while auth OR bookings are being determined
-                    if (authLoading || bookingsLoading) {
-                      return <div className="text-center text-zinc-500 py-12">Loading your bookings...</div>;
-                    }
-                    
-                    // Get effective user identity from auth or client state
                     const activeUser = selectedClient || clientUser || authUser;
-                    const userEmail = (activeUser?.email || '').toLowerCase().trim();
-                    const userPhone = (activeUser?.phone || '').replace(/\D/g, '');
                     
-                    // If no user identity available, prompt sign in
-                    if (!activeUser || (!userEmail && !userPhone)) {
+                    // Show sign in prompt if no user info at all
+                    if (!activeUser && !authLoading) {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">Please sign in to view your bookings.</div>
@@ -10023,13 +10022,21 @@ export default function CarHopApp() {
                         </div>
                       );
                     }
+
+                    const userEmail = (activeUser?.email || '').toLowerCase().trim();
+                    const userPhone = (activeUser?.phone || '').replace(/\D/g, '');
                     
-                    // Use the memoized clientTrips which already filters by user
+                    // If bookings are still loading, show a subtle hint but don't block the whole UI
+                    if (bookingsLoading && bookings.length === 0) {
+                      return <div className="text-center text-zinc-500 py-12">Checking for your bookings...</div>;
+                    }
+                    
+                    // Use clientTrips which is the already filtered list from the server
                     if (clientTrips.length === 0) {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">No bookings found for your account.</div>
-                          <div className="text-xs text-zinc-400">Logged in as: {userEmail} {userPhone ? `(${userPhone})` : ''}</div>
+                          {userEmail && <div className="text-xs text-zinc-400">Logged in as: {userEmail}</div>}
                         </div>
                       );
                     }
