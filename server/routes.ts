@@ -648,6 +648,138 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // ========== EMAIL OTP FOR BOOKING LOOKUP ==========
+  app.post('/api/auth/email-otp/request', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || !email.trim()) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Check if there are any bookings for this email
+      const bookings = await storage.getBookings();
+      const hasBookings = bookings.some(b => {
+        const driverEmail = (b.driver as any)?.email?.toLowerCase().trim() || '';
+        return driverEmail === normalizedEmail;
+      });
+
+      // Always return success to prevent email enumeration
+      // But only send OTP if there are bookings
+      if (hasBookings) {
+        const code = (storage as any).generateEmailOTP(normalizedEmail);
+        
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            to: normalizedEmail,
+            subject: "CarHop - Your Booking Access Code",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="margin: 0; font-size: 28px;">Your Access Code</h1>
+                </div>
+                
+                <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+                  <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi there,</p>
+                  
+                  <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                    Use the following code to access your bookings:
+                  </p>
+                  
+                  <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px dashed #22c55e;">
+                    <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1f2937;">${code}</span>
+                  </div>
+                  
+                  <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+                    This code will expire in <strong>10 minutes</strong>.
+                  </p>
+                  
+                  <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                    If you didn't request this code, you can safely ignore this email.<br/>
+                    CarHop LLC - Connecticut, USA
+                  </p>
+                </div>
+              </div>
+            `,
+          });
+          console.log(`[Auth] OTP sent to ${normalizedEmail}`);
+        } catch (emailError) {
+          console.error("Error sending OTP email:", emailError);
+        }
+      }
+
+      // Always return success to prevent email enumeration
+      res.json({ 
+        message: "If you have bookings with this email, you will receive a verification code shortly.",
+        success: true
+      });
+    } catch (error) {
+      console.error("Email OTP request error:", error);
+      res.status(500).json({ message: "Failed to send verification code" });
+    }
+  });
+
+  app.post('/api/auth/email-otp/verify', async (req, res) => {
+    try {
+      const { email, code } = req.body;
+      
+      if (!email || !email.trim() || !code || !code.trim()) {
+        return res.status(400).json({ message: "Email and code are required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const isValid = (storage as any).validateEmailOTP(normalizedEmail, code.trim());
+
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid or expired code" });
+      }
+
+      // Get bookings for this email
+      const bookings = await storage.getBookings();
+      const userBookings = bookings.filter(b => {
+        const driverEmail = (b.driver as any)?.email?.toLowerCase().trim() || '';
+        return driverEmail === normalizedEmail;
+      });
+
+      console.log(`[Auth] OTP verified for ${normalizedEmail}, found ${userBookings.length} bookings`);
+
+      res.json({ 
+        success: true, 
+        email: normalizedEmail,
+        bookingsCount: userBookings.length
+      });
+    } catch (error) {
+      console.error("Email OTP verification error:", error);
+      res.status(500).json({ message: "Verification failed" });
+    }
+  });
+
+  // Get bookings by verified email (no auth required, email verified via OTP)
+  app.get('/api/bookings/email/:email', async (req, res) => {
+    try {
+      const email = decodeURIComponent(req.params.email).toLowerCase().trim();
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const bookings = await storage.getBookings();
+      const userBookings = bookings.filter(b => {
+        const driverEmail = (b.driver as any)?.email?.toLowerCase().trim() || '';
+        return driverEmail === email;
+      });
+
+      console.log(`[API] Returning ${userBookings.length} bookings for email ${email}`);
+      res.json(userBookings);
+    } catch (error) {
+      console.error("Error fetching bookings by email:", error);
+      res.status(500).json({ message: "Error fetching bookings" });
+    }
+  });
+
   // ========== VEHICLES ==========
   app.get("/api/vehicles", async (req, res) => {
     const vehicles = await storage.getVehicles();

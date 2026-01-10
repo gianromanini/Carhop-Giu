@@ -724,6 +724,34 @@ export default function CarHopApp() {
   const [signupMessage, setSignupMessage] = useState('');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Email-only booking lookup with OTP verification
+  const [showEmailLookupModal, setShowEmailLookupModal] = useState(false);
+  const [emailLookupStep, setEmailLookupStep] = useState<'email' | 'otp'>('email');
+  const [emailLookupEmail, setEmailLookupEmail] = useState('');
+  const [emailLookupOtp, setEmailLookupOtp] = useState('');
+  const [emailLookupLoading, setEmailLookupLoading] = useState(false);
+  const [emailLookupMessage, setEmailLookupMessage] = useState('');
+  const [verifiedBookingEmail, setVerifiedBookingEmail] = useState<string>(() => {
+    // Initialize from localStorage with 24-hour expiration check
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('carhop_verified_email_data');
+        if (stored) {
+          const { email, timestamp } = JSON.parse(stored);
+          const expiryMs = 24 * 60 * 60 * 1000; // 24 hours
+          if (Date.now() - timestamp < expiryMs) {
+            return email;
+          }
+          // Expired, remove
+          localStorage.removeItem('carhop_verified_email_data');
+        }
+      } catch {
+        localStorage.removeItem('carhop_verified_email_data');
+      }
+    }
+    return '';
+  });
 
   const [searchParams, setSearchParams] = useState({ location: '', start: '', startTime: '10:00 AM', end: '', endTime: '10:00 AM' });
   const [isSearching, setIsSearching] = useState(false);
@@ -1217,6 +1245,22 @@ export default function CarHopApp() {
     // Use authUser directly as primary source (from real authentication), with fallbacks
     const activeUser = selectedClient || clientUser || authUser;
     
+    // Check for verified email from OTP verification (stored in localStorage)
+    const hasVerifiedEmail = verifiedBookingEmail && verifiedBookingEmail.length > 0;
+    
+    // If no authenticated user but we have a verified email, use that
+    if (!activeUser && hasVerifiedEmail) {
+      console.log('[MyBookings] Using verified email for lookup:', verifiedBookingEmail);
+      const trips = bookings.filter(b => {
+        if (!b.driver) return false;
+        const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+        const driverEmail = (driverObj?.email || '').toLowerCase().trim();
+        return driverEmail === verifiedBookingEmail;
+      });
+      console.log('[MyBookings] Trips found for verified email:', trips.length);
+      return trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    }
+    
     // If still loading or no user yet, return empty (but UI should show loading state)
     if (!activeUser) {
       console.log('[MyBookings] No active user context yet');
@@ -1233,6 +1277,17 @@ export default function CarHopApp() {
     });
     
     if (!effectiveEmail && !effectivePhone) {
+      // As a fallback, check for verified email
+      if (hasVerifiedEmail) {
+        console.log('[MyBookings] Using verified email as fallback:', verifiedBookingEmail);
+        const trips = bookings.filter(b => {
+          if (!b.driver) return false;
+          const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
+          const driverEmail = (driverObj?.email || '').toLowerCase().trim();
+          return driverEmail === verifiedBookingEmail;
+        });
+        return trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+      }
       console.log('[MyBookings] User has no email or phone for filtering');
       return [];
     }
@@ -1272,7 +1327,7 @@ export default function CarHopApp() {
     
     console.log('[MyBookings] Trips found:', trips.length);
     return trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  }, [selectedClient, clientUser, authUser, bookings]);
+  }, [selectedClient, clientUser, authUser, bookings, verifiedBookingEmail]);
 
   const getUserTripsAndTotal = (userEmail: string | null) => {
     if (!userEmail) return { trips: 0, total: 0 };
@@ -3383,9 +3438,152 @@ export default function CarHopApp() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center space-y-2">
+              <button onClick={() => { setShowLoginModal(false); setShowEmailLookupModal(true); }} className="text-[10px] sm:text-xs text-blue-500 hover:text-blue-400 flex items-center justify-center gap-1 mx-auto font-bold" data-testid="button-find-bookings"><Mail size={10}/> Find My Bookings (No Password)</button>
               <button onClick={() => { setShowLoginModal(false); setShowAdminLoginModal(true); }} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Host Login</button>
               <button onClick={() => { setShowLoginModal(false); setShowHostRegisterModal(true); }} className="text-[10px] sm:text-xs text-green-500 hover:text-green-400 flex items-center justify-center gap-1 mx-auto font-bold" data-testid="button-become-host"><Building2 size={10}/> Become a Host</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showEmailLookupModal && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-zinc-200 dark:border-zinc-800">
+            <button 
+              onClick={() => { 
+                setShowEmailLookupModal(false); 
+                setEmailLookupStep('email');
+                setEmailLookupEmail('');
+                setEmailLookupOtp('');
+                setEmailLookupMessage('');
+              }} 
+              className="absolute top-3 right-3 text-zinc-500 hover:text-red-500 transition-colors" 
+              data-testid="button-close-email-lookup"
+            >
+              <X size={20}/>
+            </button>
+            
+            <h2 className="text-2xl font-bold mb-2 text-center text-zinc-900 dark:text-white">Find My Bookings</h2>
+            <p className="text-sm text-zinc-500 text-center mb-6">Quick access with email verification</p>
+            
+            {emailLookupStep === 'email' ? (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setEmailLookupLoading(true);
+                setEmailLookupMessage('');
+                try {
+                  const response = await fetch('/api/auth/email-otp/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailLookupEmail }),
+                  });
+                  const data = await response.json();
+                  if (response.ok) {
+                    setEmailLookupStep('otp');
+                    setEmailLookupMessage('Check your email for the 6-digit code.');
+                  } else {
+                    setEmailLookupMessage(data.message || 'Something went wrong. Please try again.');
+                  }
+                } catch (err) {
+                  setEmailLookupMessage('Error sending verification code. Please try again.');
+                } finally {
+                  setEmailLookupLoading(false);
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Your Email Address</label>
+                  <input 
+                    type="email" 
+                    value={emailLookupEmail}
+                    onChange={(e) => setEmailLookupEmail(e.target.value)}
+                    placeholder="Enter the email used for your booking" 
+                    required 
+                    className="w-full px-3 py-3 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm" 
+                    data-testid="input-email-lookup" 
+                  />
+                </div>
+                {emailLookupMessage && (
+                  <div className="text-sm text-center text-blue-600">{emailLookupMessage}</div>
+                )}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3" 
+                  disabled={emailLookupLoading}
+                  data-testid="button-send-code"
+                >
+                  {emailLookupLoading ? <><Loader size={18} className="animate-spin mr-2"/> Sending...</> : <><Mail size={18} className="mr-2"/> Send Verification Code</>}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setEmailLookupLoading(true);
+                setEmailLookupMessage('');
+                try {
+                  const response = await fetch('/api/auth/email-otp/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailLookupEmail, code: emailLookupOtp }),
+                  });
+                  const data = await response.json();
+                  if (response.ok && data.success) {
+                    const normalizedEmail = data.email.toLowerCase().trim();
+                    const verifiedData = { email: normalizedEmail, timestamp: Date.now() };
+                    localStorage.setItem('carhop_verified_email_data', JSON.stringify(verifiedData));
+                    setVerifiedBookingEmail(normalizedEmail);
+                    setShowEmailLookupModal(false);
+                    setEmailLookupStep('email');
+                    setEmailLookupEmail('');
+                    setEmailLookupOtp('');
+                    setEmailLookupMessage('');
+                    toast({ description: 'Email verified! Showing your bookings.', duration: 3000 });
+                    setView('bookings');
+                  } else {
+                    setEmailLookupMessage(data.message || 'Invalid or expired code. Please try again.');
+                  }
+                } catch (err) {
+                  setEmailLookupMessage('Verification failed. Please try again.');
+                } finally {
+                  setEmailLookupLoading(false);
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Enter Verification Code</label>
+                  <p className="text-xs text-zinc-500 mb-3">We sent a 6-digit code to <strong>{emailLookupEmail}</strong></p>
+                  <input 
+                    type="text" 
+                    value={emailLookupOtp}
+                    onChange={(e) => setEmailLookupOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000" 
+                    required 
+                    maxLength={6}
+                    className="w-full px-3 py-3 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-2xl text-center font-bold tracking-widest" 
+                    data-testid="input-otp-code" 
+                  />
+                </div>
+                {emailLookupMessage && (
+                  <div className={`text-sm text-center ${emailLookupMessage.includes('Check your email') ? 'text-green-600' : 'text-red-500'}`}>{emailLookupMessage}</div>
+                )}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3" 
+                  disabled={emailLookupLoading || emailLookupOtp.length !== 6}
+                  data-testid="button-verify-code"
+                >
+                  {emailLookupLoading ? <><Loader size={18} className="animate-spin mr-2"/> Verifying...</> : <><Check size={18} className="mr-2"/> Verify & View Bookings</>}
+                </Button>
+                <div className="text-center">
+                  <button 
+                    type="button"
+                    onClick={() => { setEmailLookupStep('email'); setEmailLookupOtp(''); setEmailLookupMessage(''); }}
+                    className="text-sm text-blue-500 hover:text-blue-400"
+                    data-testid="button-back-to-email"
+                  >
+                    Back to Email Entry
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -10022,28 +10220,50 @@ export default function CarHopApp() {
                     const activeUser = selectedClient || clientUser || authUser;
                     const userEmail = (activeUser?.email || '').toLowerCase().trim();
                     const userPhone = (activeUser?.phone || '').replace(/\D/g, '');
+                    const hasVerifiedEmail = verifiedBookingEmail && verifiedBookingEmail.length > 0;
                     
                     // Show loading state ONLY if we don't have a user yet and we are still loading auth
-                    if (authLoading && !activeUser) {
+                    if (authLoading && !activeUser && !hasVerifiedEmail) {
                       return <div className="text-center text-zinc-500 py-12">Loading...</div>;
                     }
                     
-                    // If no user identity available, prompt sign in
-                    if (!activeUser || (!userEmail && !userPhone)) {
+                    // If no user identity available AND no verified email, prompt sign in or use email lookup
+                    if ((!activeUser || (!userEmail && !userPhone)) && !hasVerifiedEmail) {
                       return (
                         <div className="text-center space-y-4 py-12">
-                          <div className="text-zinc-500">Please sign in to view your bookings.</div>
-                          <Button onClick={() => setShowLoginModal(true)} data-testid="button-login-to-view">Sign In</Button>
+                          <div className="text-zinc-500 mb-4">Access your bookings by verifying your email.</div>
+                          <Button onClick={() => setShowEmailLookupModal(true)} className="bg-green-600 hover:bg-green-700" data-testid="button-find-my-bookings">
+                            <Mail size={18} className="mr-2"/> Find My Bookings
+                          </Button>
+                          <div className="text-sm text-zinc-400 mt-4">
+                            <span>Or </span>
+                            <button onClick={() => setShowLoginModal(true)} className="text-blue-500 hover:text-blue-400 underline" data-testid="button-login-to-view">sign in to your account</button>
+                          </div>
                         </div>
                       );
                     }
                     
-                    // Use the memoized clientTrips which already filters by user
+                    // Determine display email for the current session
+                    const displayEmail = userEmail || verifiedBookingEmail;
+                    
+                    // Use the memoized clientTrips which already filters by user or verified email
                     if (clientTrips.length === 0) {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">No bookings found for your account.</div>
-                          <div className="text-xs text-zinc-400">Logged in as: {userEmail} {userPhone ? `(${userPhone})` : ''}</div>
+                          <div className="text-xs text-zinc-400">Searching as: {displayEmail} {userPhone ? `(${userPhone})` : ''}</div>
+                          {hasVerifiedEmail && !activeUser && (
+                            <button 
+                              onClick={() => { 
+                                localStorage.removeItem('carhop_verified_email_data'); 
+                                setVerifiedBookingEmail(''); 
+                              }} 
+                              className="text-xs text-red-500 hover:text-red-400 underline"
+                              data-testid="button-clear-verified-email"
+                            >
+                              Use a different email
+                            </button>
+                          )}
                         </div>
                       );
                     }

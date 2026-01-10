@@ -84,12 +84,41 @@ export class MemStorage implements IStorage {
   private hosts: Map<number, Host> = new Map();
   private supportMessagesMap: Map<number, SupportMessage> = new Map();
   private passwordResetTokens: Map<string, { email: string; expiresAt: number }> = new Map();
+  private emailOTPs: Map<string, { code: string; expiresAt: number; attempts: number }> = new Map();
   private vehicleId = 1;
   private bookingId = 1;
   private settingsId = 1;
   private hostId = 1;
   private supportMessageId = 1;
   private bookingCodeCounter = 1;
+
+  // Email OTP for booking lookup
+  generateEmailOTP(email: string): string {
+    const normalizedEmail = email.toLowerCase().trim();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    this.emailOTPs.set(normalizedEmail, { code, expiresAt, attempts: 0 });
+    return code;
+  }
+
+  validateEmailOTP(email: string, code: string): boolean {
+    const normalizedEmail = email.toLowerCase().trim();
+    const otp = this.emailOTPs.get(normalizedEmail);
+    if (!otp || otp.expiresAt < Date.now()) {
+      this.emailOTPs.delete(normalizedEmail);
+      return false;
+    }
+    if (otp.attempts >= 5) {
+      this.emailOTPs.delete(normalizedEmail);
+      return false;
+    }
+    if (otp.code !== code) {
+      otp.attempts++;
+      return false;
+    }
+    this.emailOTPs.delete(normalizedEmail);
+    return true;
+  }
 
   // Password reset tokens
   generatePasswordResetToken(email: string): string {
@@ -1817,6 +1846,36 @@ export class DatabaseStorage implements IStorage {
       console.error("Error getting unread support messages count:", error);
       return 0;
     }
+  }
+
+  // Email OTP for booking lookup
+  generateEmailOTP(email: string): string {
+    const normalizedEmail = email.toLowerCase().trim();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    (this as any).emailOTPs = (this as any).emailOTPs || new Map();
+    (this as any).emailOTPs.set(normalizedEmail, { code, expiresAt, attempts: 0 });
+    return code;
+  }
+
+  validateEmailOTP(email: string, code: string): boolean {
+    const normalizedEmail = email.toLowerCase().trim();
+    (this as any).emailOTPs = (this as any).emailOTPs || new Map();
+    const otp = (this as any).emailOTPs.get(normalizedEmail);
+    if (!otp || otp.expiresAt < Date.now()) {
+      (this as any).emailOTPs.delete(normalizedEmail);
+      return false;
+    }
+    if (otp.attempts >= 5) {
+      (this as any).emailOTPs.delete(normalizedEmail);
+      return false;
+    }
+    if (otp.code !== code) {
+      otp.attempts++;
+      return false;
+    }
+    (this as any).emailOTPs.delete(normalizedEmail);
+    return true;
   }
 
   // Password reset tokens
