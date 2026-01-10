@@ -1297,32 +1297,15 @@ export default function CarHopApp() {
       const driverObj = typeof b.driver === 'string' ? JSON.parse(b.driver) : b.driver;
       
       const driverEmail = (driverObj?.email || '').toLowerCase().trim();
-      const driverPhone = (driverObj?.phone || '').replace(/\D/g, '');
-      const driverName = (driverObj?.name || '').toLowerCase().trim();
 
       // Check details for secondary storage locations
       const detailDriverEmail = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
       const detailHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
-      const detailDriverName = ((b.details as any)?.driverName || '').toLowerCase().trim();
-
-      const userName = (activeUser.firstName && activeUser.lastName ? `${activeUser.firstName} ${activeUser.lastName}` : (activeUser as any).name || '').toLowerCase().trim();
       
       const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail);
-      const phoneMatch = effectivePhone && driverPhone && (
-        driverPhone === effectivePhone || 
-        driverPhone.includes(effectivePhone) || 
-        effectivePhone.includes(driverPhone)
-      );
-      // More flexible name matching
-      const nameMatch = userName && (
-        (driverName && (driverName.includes(userName) || userName.includes(driverName))) || 
-        (detailDriverName && (detailDriverName.includes(userName) || userName.includes(detailDriverName)))
-      );
       
-      // If we are in the live site and user is authenticated, we should also try matching by ID if available in metadata
-      const userIdMatch = activeUser.id && (b as any).userId === activeUser.id;
-      
-      return emailMatch || phoneMatch || nameMatch || userIdMatch;
+      // Removed phone and name matching for simplicity in production as requested
+      return !!emailMatch;
     });
     
     console.log('[MyBookings] Trips found:', trips.length);
@@ -10251,7 +10234,7 @@ export default function CarHopApp() {
                       return (
                         <div className="text-center space-y-4 py-12">
                           <div className="text-zinc-500">No bookings found for your account.</div>
-                          <div className="text-xs text-zinc-400">Searching as: {displayEmail} {userPhone ? `(${userPhone})` : ''}</div>
+                          <div className="text-xs text-zinc-400">Searching as: {displayEmail}</div>
                           {hasVerifiedEmail && !activeUser && (
                             <button 
                               onClick={() => { 
