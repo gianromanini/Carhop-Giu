@@ -781,6 +781,21 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // ========== DIAGNOSTICS ==========
+  // Simple bookings count endpoint for debugging
+  app.get("/api/bookings-count", async (_req, res) => {
+    try {
+      const bookings = await storage.getBookings();
+      res.json({ 
+        count: bookings.length,
+        timestamp: new Date().toISOString(),
+        firstId: bookings[0]?.id || null,
+        lastId: bookings[bookings.length - 1]?.id || null
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || "Unknown error" });
+    }
+  });
+
   app.get("/api/diagnostics", async (_req, res) => {
     try {
       const dbStatus = await (storage as any).getDatabaseStatus?.() || { initialized: (storage as any).initialized || false };
@@ -871,8 +886,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
   app.get("/api/bookings", async (_req, res) => {
     try {
+      console.log(`[API] /api/bookings - Starting fetch at ${new Date().toISOString()}`);
       const bookings = await storage.getBookings();
-      console.log(`[API] Returning ${bookings.length} bookings to client at ${new Date().toISOString()}`);
+      console.log(`[API] /api/bookings - Got ${bookings.length} bookings, preparing response...`);
       
       // Check for a debug query param to see all raw data
       if (_req.query.debug === 'true') {
@@ -884,11 +900,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         });
       }
       
+      console.log(`[API] /api/bookings - Sending JSON response...`);
       res.json(bookings);
+      console.log(`[API] /api/bookings - Response sent successfully`);
     } catch (error: any) {
-      console.error("API error fetching bookings:", error);
-      console.error("API error details:", error?.message || "No message");
-      console.error("API error stack:", error?.stack || "No stack");
+      console.error("[API] /api/bookings - ERROR:", error);
+      console.error("[API] /api/bookings - Error message:", error?.message || "No message");
+      console.error("[API] /api/bookings - Error stack:", error?.stack || "No stack");
       res.status(500).json({ 
         message: "Error fetching bookings",
         error: process.env.NODE_ENV === 'development' ? error?.message : undefined
