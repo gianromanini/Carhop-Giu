@@ -833,6 +833,8 @@ export default function CarHopApp() {
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [checkData, setCheckData] = useState(initialCheckState);
   const [isCheckOutMode, setIsCheckOutMode] = useState(false);
+  const [expandedCheckInPhotos, setExpandedCheckInPhotos] = useState(false);
+  const [expandedCheckOutPhotos, setExpandedCheckOutPhotos] = useState(false);
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
 
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
@@ -10202,19 +10204,35 @@ export default function CarHopApp() {
                     
                     if (validCheckInPhotos.length > 0) {
                       return (
-                        <div className="no-print">
-                          <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({validCheckInPhotos.length})</p>
-                          <div className="grid grid-cols-3 gap-3">
-                            {validCheckInPhotos.map((photo: string, idx: number) => (
-                              <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckInPhotos, idx)}>
-                                <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
+                        <div className="no-print border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+                          <button 
+                            onClick={() => setExpandedCheckInPhotos(!expandedCheckInPhotos)}
+                            className="w-full flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Camera size={18} className="text-zinc-500" />
+                              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 uppercase tracking-wider">Check-in Photos ({validCheckInPhotos.length})</span>
+                            </div>
+                            <ChevronDown size={20} className={`text-zinc-400 transition-transform duration-300 ${expandedCheckInPhotos ? 'rotate-180' : ''}`} />
+                          </button>
+                          
+                          {expandedCheckInPhotos && (
+                            <div className="p-4 bg-white dark:bg-zinc-900 animate-in slide-in-from-top-2 duration-300">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {validCheckInPhotos.map((photo: string, idx: number) => (
+                                  <div key={idx} className="aspect-video rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validCheckInPhotos, idx)}>
+                                    <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-full object-cover"/>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       );
                     } else if (allCheckInPhotos.some((img: string) => img === '[IMAGE]')) {
-                      return <div className="no-print text-sm text-zinc-500">Loading check-in photos...</div>;
+                      return <div className="no-print text-sm text-zinc-500 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+                        <Loader size={16} className="animate-spin" /> Loading check-in photos...
+                      </div>;
                     }
                     return null;
                   })()}
@@ -10227,19 +10245,35 @@ export default function CarHopApp() {
                     
                     if (validCheckOutPhotos.length > 0) {
                       return (
-                        <div className="no-print">
-                          <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({validCheckOutPhotos.length})</p>
-                          <div className="grid grid-cols-3 gap-3">
-                            {validCheckOutPhotos.map((photo: string, idx: number) => (
-                              <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckOutPhotos, idx)}>
-                                <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
+                        <div className="no-print border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+                          <button 
+                            onClick={() => setExpandedCheckOutPhotos(!expandedCheckOutPhotos)}
+                            className="w-full flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Camera size={18} className="text-zinc-500" />
+                              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 uppercase tracking-wider">Check-out Photos ({validCheckOutPhotos.length})</span>
+                            </div>
+                            <ChevronDown size={20} className={`text-zinc-400 transition-transform duration-300 ${expandedCheckOutPhotos ? 'rotate-180' : ''}`} />
+                          </button>
+                          
+                          {expandedCheckOutPhotos && (
+                            <div className="p-4 bg-white dark:bg-zinc-900 animate-in slide-in-from-top-2 duration-300">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {validCheckOutPhotos.map((photo: string, idx: number) => (
+                                  <div key={idx} className="aspect-video rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validCheckOutPhotos, idx)}>
+                                    <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-full object-cover"/>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       );
                     } else if (allCheckOutPhotos.some((img: string) => img === '[IMAGE]')) {
-                      return <div className="no-print text-sm text-zinc-500">Loading check-out photos...</div>;
+                      return <div className="no-print text-sm text-zinc-500 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+                        <Loader size={16} className="animate-spin" /> Loading check-out photos...
+                      </div>;
                     }
                     return null;
                   })()}
