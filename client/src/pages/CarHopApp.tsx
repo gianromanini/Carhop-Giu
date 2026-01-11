@@ -10221,7 +10221,7 @@ export default function CarHopApp() {
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {validCheckInPhotos.map((photo: string, idx: number) => (
                                   <div key={idx} className="aspect-video rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validCheckInPhotos, idx)}>
-                                    <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-full object-cover"/>
+                                    <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                                   </div>
                                 ))}
                               </div>
@@ -10262,7 +10262,7 @@ export default function CarHopApp() {
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {validCheckOutPhotos.map((photo: string, idx: number) => (
                                   <div key={idx} className="aspect-video rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(validCheckOutPhotos, idx)}>
-                                    <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-full object-cover"/>
+                                    <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                                   </div>
                                 ))}
                               </div>
