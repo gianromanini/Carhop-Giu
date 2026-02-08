@@ -12554,12 +12554,22 @@ export default function CarHopApp() {
                 </div>
                 <div>
                   <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
-                  <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">{viewCar.model}</h1>
+                  <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">
+                    {viewCar.model}
+                    {viewCar.hostName && <span className="text-blue-500 font-medium text-sm ml-2">- {viewCar.hostName}</span>}
+                  </h1>
                   <div className="flex gap-4 text-sm text-zinc-500 mb-6 flex-wrap">
                     <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
                     <span className="flex items-center gap-1"><Gauge size={16}/> {viewCar.consumption}</span>
                     <span className="flex items-center gap-1"><Zap size={16}/> {viewCar.transmission}</span>
-                    {viewCar.isAWD && <span className="flex items-center gap-1"><Car size={16}/> AWD</span>}
+                    {viewCar.driveType && (
+                      <span className="flex items-center gap-1">
+                        {viewCar.driveType === 'AWD' && <Car size={16} />}
+                        {viewCar.driveType === 'FWD' && <Navigation size={16} />}
+                        {viewCar.driveType === 'RWD' && <Navigation size={16} className="transform rotate-180" />}
+                        {viewCar.driveType}
+                      </span>
+                    )}
                   </div>
                   
                   {/* Features - Without Icons */}
