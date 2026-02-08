@@ -2362,21 +2362,6 @@ export default function CarHopApp() {
     alert(`Charge of $${chargeAmount.toFixed(2)} (${chargeLabel}) added successfully!`);
   };
 
-  const handleRemoveDiscount = async (booking: Booking) => {
-    const discountAmount = booking.details.discount || 0;
-    if (discountAmount <= 0) return;
-    
-    const newTotal = booking.total + discountAmount;
-    
-    await updateBookingMutation.mutateAsync({
-      id: booking.id,
-      data: {
-        total: newTotal,
-        details: { ...booking.details, discount: 0 }
-      }
-    });
-  };
-
   const handleRemoveDiscount = (booking: Booking) => {
     const discountAmount = booking.details.discount || 0;
     if (discountAmount <= 0) return;
@@ -2385,8 +2370,7 @@ export default function CarHopApp() {
     const newTotal = booking.total + discountAmount;
     updateBookingMutation.mutate({
       id: booking.id,
-      booking: {
-        ...booking,
+      data: {
         total: newTotal,
         details: { ...booking.details, discount: 0 }
       }
