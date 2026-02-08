@@ -5875,36 +5875,63 @@ export default function CarHopApp() {
                               </div>
                             </div>
 
-                            <div>
-                              <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <select 
-                                  value={extraCharge.type}
-                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                  data-testid="select-host-charge-type"
-                                >
-                                  <option value="refuel">Refuel</option>
-                                  <option value="mileage">Extra Mileage</option>
-                                  <option value="damage">Damage</option>
-                                  <option value="cleaning">Extra Cleaning</option>
-                                  <option value="other">Other</option>
-                                </select>
-                                <Input 
-                                  placeholder="Value ($)" 
-                                  type="number"
-                                  value={extraCharge.amount}
-                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs" 
-                                  data-testid="input-host-charge-value" 
-                                />
-                                <button 
-                                  className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleAddCharge(b)}
-                                  data-testid="button-host-charge"
-                                >
-                                  Add Charge
-                                </button>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <select 
+                                    value={extraCharge.type}
+                                    onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
+                                    data-testid="select-host-charge-type"
+                                  >
+                                    <option value="refuel">Refuel</option>
+                                    <option value="tolls">Tolls</option>
+                                    <option value="mileage">Extra Mileage</option>
+                                    <option value="damage">Damage</option>
+                                    <option value="cleaning">Extra Cleaning</option>
+                                    <option value="other">Other</option>
+                                  </select>
+                                  <Input 
+                                    placeholder="Value ($)" 
+                                    type="number"
+                                    value={extraCharge.amount}
+                                    onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                    className="flex-1 mb-0 text-xs" 
+                                    data-testid="input-host-charge-value" 
+                                  />
+                                  <button 
+                                    className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
+                                    onClick={() => handleAddCharge(b)}
+                                    data-testid="button-host-charge"
+                                  >
+                                    Add Charge
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="pt-4 border-t border-zinc-700">
+                                <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                    <input 
+                                      type="number" 
+                                      value={extraPaymentAmount} 
+                                      onChange={(e) => setExtraPaymentAmount(e.target.value)} 
+                                      placeholder="0.00" 
+                                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" 
+                                      data-testid="input-extra-payment-amount-host"
+                                    />
+                                  </div>
+                                  <button 
+                                    onClick={() => handleChargeExtraPayment(b)} 
+                                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" 
+                                    data-testid="button-charge-extra-payment-host"
+                                  >
+                                    Charge Extra Payment Trip
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -8954,9 +8981,8 @@ export default function CarHopApp() {
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
                             
-                            {/* Apply Discount */}
                             <div className="mb-4">
-                              <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
+                              <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Apply Discount</label>
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <select 
                                   value={adjustment.type} 
@@ -8985,38 +9011,63 @@ export default function CarHopApp() {
                               </div>
                             </div>
 
-                            {/* Extra Charges */}
-                            <div>
-                              <label className="text-xs text-zinc-500 mb-2 block">Extra Charges</label>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <select 
-                                  value={extraCharge.type}
-                                  onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                  data-testid="select-charge-type"
-                                >
-                                  <option value="refuel">Refuel</option>
-                                  <option value="tolls">Tolls</option>
-                                  <option value="mileage">Extra Mileage</option>
-                                  <option value="damage">Damage</option>
-                                  <option value="cleaning">Extra Cleaning</option>
-                                  <option value="other">Other</option>
-                                </select>
-                                <Input 
-                                  placeholder="Value ($)" 
-                                  type="number"
-                                  value={extraCharge.amount}
-                                  onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs" 
-                                  data-testid="input-charge-value" 
-                                />
-                                <button 
-                                  className="px-3 h-[38px] bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleAddCharge(b)}
-                                  data-testid="button-charge"
-                                >
-                                  Charge
-                                </button>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Extra Charges</label>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <select 
+                                    value={extraCharge.type}
+                                    onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
+                                    data-testid="select-charge-type"
+                                  >
+                                    <option value="refuel">Refuel</option>
+                                    <option value="tolls">Tolls</option>
+                                    <option value="mileage">Extra Mileage</option>
+                                    <option value="damage">Damage</option>
+                                    <option value="cleaning">Extra Cleaning</option>
+                                    <option value="other">Other</option>
+                                  </select>
+                                  <Input 
+                                    placeholder="Value ($)" 
+                                    type="number"
+                                    value={extraCharge.amount}
+                                    onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                    className="flex-1 mb-0 text-xs" 
+                                    data-testid="input-charge-value" 
+                                  />
+                                  <button 
+                                    className="px-3 h-[38px] bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
+                                    onClick={() => handleAddCharge(b)}
+                                    data-testid="button-charge"
+                                  >
+                                    Charge
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="pt-4 border-t border-zinc-700">
+                                <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                    <input 
+                                      type="number" 
+                                      value={extraPaymentAmount} 
+                                      onChange={(e) => setExtraPaymentAmount(e.target.value)} 
+                                      placeholder="0.00" 
+                                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" 
+                                      data-testid="input-extra-payment-amount"
+                                    />
+                                  </div>
+                                  <button 
+                                    onClick={() => handleChargeExtraPayment(b)} 
+                                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" 
+                                    data-testid="button-charge-extra-payment"
+                                  >
+                                    Charge Extra Payment Trip
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
