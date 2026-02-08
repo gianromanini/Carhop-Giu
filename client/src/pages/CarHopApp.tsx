@@ -5457,7 +5457,7 @@ export default function CarHopApp() {
                   
                   <div className="space-y-2 mb-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Ordernar por Data</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort by Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-host-booking-filter">
                         <option value="start-first">All (Newest First)</option>
                         <option value="end-soon">Ending Soon (3 days)</option>
@@ -5475,7 +5475,7 @@ export default function CarHopApp() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number</label>
-                      <input type="text" placeholder="Search code..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-host-booking-number" />
+                      <input type="text" placeholder="Search number..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-host-booking-number" />
                     </div>
                   </div>
                   
@@ -5640,7 +5640,7 @@ export default function CarHopApp() {
                           {/* Customer & Rental Info */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                             <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Cliente</h4>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.driver.name}</p>
                                 <p className="text-zinc-500">{b.driver.phone}</p>
@@ -5648,17 +5648,24 @@ export default function CarHopApp() {
                               </div>
                             </div>
                             <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Informações do Aluguel</h4>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Entrega' : 'Retirada' }</p>
-                                <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
+                                <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
+                                <a 
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:underline block"
+                                >
+                                  {formatAddressForDisplay(b.location)}
+                                </a>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                                  <p className="text-orange-500 font-bold text-xs">Aguardando Aprovação</p>
+                                  <p className="text-orange-500 font-bold text-xs">Awaiting Approval</p>
                                 )}
                                 {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
-                                  <p className="text-green-500 font-bold text-xs">Entrega Aprovada</p>
+                                  <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
                                 )}
                                 {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
                                   <p className="text-red-500 font-bold text-xs">Delivery Declined</p>
@@ -8465,39 +8472,39 @@ export default function CarHopApp() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - All Bookings List */}
                 <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
-                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Todas as Reservas ({bookings.length})</h3>
+                  <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">All Bookings ({bookings.length})</h3>
                   
                   {/* Filters */}
                   <div className="space-y-2 mb-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Ordernar por Data</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Sort by Date</label>
                       <select value={bookingFilterType} onChange={(e) => setBookingFilterType(e.target.value as 'end-soon' | 'start-first')} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-booking-filter">
-                        <option value="start-first">Todos (Mais recentes)</option>
-                        <option value="end-soon">Terminando em breve (3 dias)</option>
+                        <option value="start-first">All (Newest First)</option>
+                        <option value="end-soon">Ending soon (3 days)</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Status</label>
                       <select value={bookingFilterStatus} onChange={(e) => setBookingFilterStatus(e.target.value as any)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-status">
-                        <option value="">Todos os Status</option>
-                        <option value="active">Ativos</option>
-                        <option value="completed">Concluídos</option>
-                        <option value="cancelled">Cancelados</option>
-                        <option value="pending-approval">Pendente de Aprovação</option>
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="pending-approval">Pending Approval</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Modelo do Carro</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Car Model</label>
                       <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value as string)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-carmodel">
-                        <option value="">Todos os Modelos</option>
+                        <option value="">All Models</option>
                         {Array.from(new Set(vehicles.map(v => v.model))).sort().map(model => (
                           <option key={model} value={model}>{model}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Número da Reserva ou Nome</label>
-                      <input type="text" placeholder="Buscar número ou nome..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
+                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number or Name</label>
+                      <input type="text" placeholder="Search number or name..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
                     </div>
                   </div>
                   
@@ -8548,7 +8555,7 @@ export default function CarHopApp() {
                       })
                       .map(b => {
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'CONCLUÍDO' : b.status === 'Active' ? 'ATIVO' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'ENTREGA APROVADA' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AGUARDANDO APROVAÇÃO' : b.status;
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
@@ -8573,7 +8580,7 @@ export default function CarHopApp() {
                             {/* Header: Code + Status Badge */}
                             <div className="flex justify-between items-center gap-2 mb-2">
                               <div className="flex items-center gap-1 flex-1">
-                          {b.status === 'Completed' && !hasRated && (<span className="text-red-500 text-lg" title="Pendente de Avaliação">!</span>)}
+                          {b.status === 'Completed' && !hasRated && (<span className="text-red-500 text-lg" title="Pending Rating">!</span>)}
                                 {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
                                   <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`}><AlertTriangle size={12}/></span>
                                 )}
@@ -8634,7 +8641,7 @@ export default function CarHopApp() {
                             {/* Return Status Alerts */}
                             <div className="text-[10px] text-zinc-400 mt-1 leading-tight space-y-0.5">
                               {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
-                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>Retorno {returnIsToday ? 'HOJE ⚠️' : 'AMANHÃ ⚠️'}</div>
+                                <div className={`text-[9px] font-bold ${returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}>Return {returnIsToday ? 'TODAY ⚠️' : 'TOMORROW ⚠️'}</div>
                               )}
                             </div>
                             {hasNotifications && (
@@ -8681,7 +8688,7 @@ export default function CarHopApp() {
                           {/* Customer & Rental Info */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                             <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Cliente</h4>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Customer</h4>
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.driver.name}</p>
                                 <p className="text-zinc-500">{b.driver.phone}</p>
@@ -8689,17 +8696,24 @@ export default function CarHopApp() {
                               </div>
                             </div>
                             <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Informações do Aluguel</h4>
+                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                               <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Entrega' : 'Retirada' }</p>
-                                <p className="text-zinc-500">{formatAddressForDisplay(b.location)}</p>
+                                <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
+                                <a 
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:underline block"
+                                >
+                                  {formatAddressForDisplay(b.location)}
+                                </a>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                                  <p className="text-orange-500 font-bold text-xs">Aguardando Aprovação</p>
+                                  <p className="text-orange-500 font-bold text-xs">Awaiting Approval</p>
                                 )}
                                 {(b.details as any)?.deliveryApprovalStatus === 'approved' && (
-                                  <p className="text-green-500 font-bold text-xs">Entrega Aprovada</p>
+                                  <p className="text-green-500 font-bold text-xs">Delivery Approved</p>
                                 )}
                                 {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
                                   <p className="text-red-500 font-bold text-xs">Delivery Declined</p>
