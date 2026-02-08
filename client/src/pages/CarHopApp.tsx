@@ -7000,7 +7000,6 @@ export default function CarHopApp() {
                         <div className="flex justify-between items-start mb-3 gap-2">
                           <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate flex-1" data-testid={`text-vehicle-name-${car.id}`}>
                             {car.model} {car.year}
-                            {car.hostName && <span className="text-zinc-500 font-normal"> - {car.hostName}</span>}
                           </h3>
                           <div className="text-right flex-shrink-0">
                             <div className="text-base sm:text-xl font-bold text-green-600" data-testid={`text-vehicle-price-${car.id}`}>${car.price}</div>
