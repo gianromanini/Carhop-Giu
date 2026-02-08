@@ -6051,7 +6051,7 @@ export default function CarHopApp() {
                                               <button 
                                                 onClick={() => handleRemoveDiscount(b)} 
                                                 className="text-red-400 hover:text-red-300"
-                                                data-testid="button-host-remove-discount"
+                                                data-testid="button-remove-discount"
                                               >
                                                 <X size={10}/>
                                               </button>
@@ -6109,6 +6109,18 @@ export default function CarHopApp() {
                                       <div className="flex justify-between text-green-400 font-bold">
                                         <span>TOTAL</span>
                                         <span>${b.total.toFixed(2)}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Charge Extras by Original Payment Method */}
+                                    <div className="mt-4 pt-4 border-t border-zinc-600">
+                                      <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                      <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                          <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount-host"/>
+                                        </div>
+                                        <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment-host">Charge Extra Payment Trip</button>
                                       </div>
                                     </div>
                                   </>
@@ -9072,7 +9084,7 @@ export default function CarHopApp() {
                                               <button 
                                                 onClick={() => handleRemoveDiscount(b)} 
                                                 className="text-red-400 hover:text-red-300"
-                                                data-testid="button-host-remove-discount"
+                                                data-testid="button-remove-discount"
                                               >
                                                 <X size={10}/>
                                               </button>
