@@ -2377,6 +2377,22 @@ export default function CarHopApp() {
     });
   };
 
+  const handleRemoveDiscount = (booking: Booking) => {
+    const discountAmount = booking.details.discount || 0;
+    if (discountAmount <= 0) return;
+    if (!confirm("Remove this discount?")) return;
+    
+    const newTotal = booking.total + discountAmount;
+    updateBookingMutation.mutate({
+      id: booking.id,
+      booking: {
+        ...booking,
+        total: newTotal,
+        details: { ...booking.details, discount: 0 }
+      }
+    });
+  };
+
   const handleRemoveCharge = async (booking: Booking, chargeIndex: number) => {
     const currentCharges = booking.details.manualCharges || [];
     if (chargeIndex < 0 || chargeIndex >= currentCharges.length) return;
@@ -6046,7 +6062,16 @@ export default function CarHopApp() {
                                         )}
                                         {discount > 0 && (
                                           <div className="flex justify-between text-green-400 text-xs">
-                                            <span>Discount Applied</span>
+                                            <span className="flex items-center gap-1">
+                                              Discount Applied
+                                              <button 
+                                                onClick={() => handleRemoveDiscount(b)} 
+                                                className="text-red-400 hover:text-red-300"
+                                                data-testid="button-host-remove-discount"
+                                              >
+                                                <X size={10}/>
+                                              </button>
+                                            </span>
                                             <span>-${discount.toFixed(2)}</span>
                                           </div>
                                         )}
@@ -8964,9 +8989,9 @@ export default function CarHopApp() {
                               </div>
                             </div>
 
-                            {/* Charge Archived Card */}
+                            {/* Extra Charges */}
                             <div>
-                              <label className="text-xs text-zinc-500 mb-2 block">Charge Archived Card</label>
+                              <label className="text-xs text-zinc-500 mb-2 block">Extra Charges</label>
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <select 
                                   value={extraCharge.type}
@@ -8975,6 +9000,7 @@ export default function CarHopApp() {
                                   data-testid="select-charge-type"
                                 >
                                   <option value="refuel">Refuel</option>
+                                  <option value="tolls">Tolls</option>
                                   <option value="mileage">Extra Mileage</option>
                                   <option value="damage">Damage</option>
                                   <option value="cleaning">Extra Cleaning</option>
@@ -9057,7 +9083,16 @@ export default function CarHopApp() {
                                         )}
                                         {discount > 0 && (
                                           <div className="flex justify-between text-green-400 text-xs">
-                                            <span>Discount Applied</span>
+                                            <span className="flex items-center gap-1">
+                                              Discount Applied
+                                              <button 
+                                                onClick={() => handleRemoveDiscount(b)} 
+                                                className="text-red-400 hover:text-red-300"
+                                                data-testid="button-host-remove-discount"
+                                              >
+                                                <X size={10}/>
+                                              </button>
+                                            </span>
                                             <span>-${discount.toFixed(2)}</span>
                                           </div>
                                         )}
