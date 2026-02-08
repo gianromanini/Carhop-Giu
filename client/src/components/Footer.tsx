@@ -32,9 +32,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/">
               <div className="flex items-center gap-2 cursor-pointer mb-4">
-                <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-                  <Car className="h-6 w-6 text-primary-foreground" />
-                </div>
+                <img src="/logo.png" alt="CarHop Logo" className="h-10 w-auto object-contain" />
                 <span className="font-display font-bold text-xl">CarHop</span>
               </div>
             </Link>
