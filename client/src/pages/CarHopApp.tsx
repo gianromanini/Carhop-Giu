@@ -10545,15 +10545,15 @@ export default function CarHopApp() {
                     <Card 
                       key={b.id} 
                       className={`p-3 md:p-6 transition-all duration-300 relative ${
-                        isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 
+                        isActive ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800' : 
                         isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
                         normalizedStatus === 'pending approval' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
                         'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
-                      } ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} 
+                      } ${b.unread ? 'ring-2 ring-cyan-500 ring-opacity-50' : ''}`} 
                       data-testid={`card-my-booking-${b.id}`}
                     >
                       {b.unread && (
-                        <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full animate-pulse" title="New booking" />
+                        <div className="absolute top-2 right-2 w-3 h-3 bg-cyan-500 rounded-full animate-pulse" title="New booking" />
                       )}
                       <div 
                         className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
@@ -10567,9 +10567,9 @@ export default function CarHopApp() {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
+                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                           <div>
-                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-600'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
+                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-cyan-600'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
                             {!isCollapsed && normalizedStatus === 'active' && b.checkInStatus !== 'completed' && (
                               <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                             )}
@@ -10588,7 +10588,7 @@ export default function CarHopApp() {
                       {(b.details as any)?.deliveryType === 'delivery' ? (
                         <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
-                        <div className="text-xs md:text-sm font-bold text-blue-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                        <div className="text-xs md:text-sm font-bold text-cyan-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       )}
                       {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                         <div className="text-xs font-bold text-yellow-500 mt-1 flex items-center gap-1">
@@ -10613,7 +10613,7 @@ export default function CarHopApp() {
                       <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
-                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
+                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
                       
                       {/* Pending Approval - Show button to check status and complete payment */}
                       {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
