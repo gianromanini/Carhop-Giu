@@ -1132,7 +1132,6 @@ export class DatabaseStorage implements IStorage {
         const pgDatabase = process.env.PGDATABASE;
         const pgPort = process.env.PGPORT || "5432";
         
-        console.log(`[Storage] PG vars check - PGHOST: ${pgHost ? 'set' : 'missing'}, PGUSER: ${pgUser ? 'set' : 'missing'}, PGPASSWORD: ${pgPassword ? 'set' : 'missing'}, PGDATABASE: ${pgDatabase ? 'set' : 'missing'}`);
         
         if (pgHost && pgUser && pgPassword && pgDatabase) {
           connectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}?sslmode=require`;
