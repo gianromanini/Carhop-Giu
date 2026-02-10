@@ -5656,12 +5656,12 @@ export default function CarHopApp() {
                                 <div className="mt-0.5 mb-1">
                                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
                                   <a 
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((b.details as any)?.deliveryAddress || b.location)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-400 hover:underline text-xs block"
                                   >
-                                    {b.location}
+                                    {(b.details as any)?.deliveryAddress || b.location}
                                   </a>
                                 </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
@@ -5684,7 +5684,7 @@ export default function CarHopApp() {
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
                               <p className="text-sm text-zinc-300 mb-3">
-                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay(b.location)}</span>
+                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
                               </p>
                               <p className="text-xs text-zinc-500 mb-4">
                                 Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
@@ -8731,12 +8731,12 @@ export default function CarHopApp() {
                                 <div className="mt-0.5 mb-1">
                                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
                                   <a 
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((b.details as any)?.deliveryAddress || b.location)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-400 hover:underline text-xs block"
                                   >
-                                    {b.location}
+                                    {(b.details as any)?.deliveryAddress || b.location}
                                   </a>
                                 </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
@@ -8759,7 +8759,7 @@ export default function CarHopApp() {
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
                               <p className="text-sm text-zinc-300 mb-3">
-                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay(b.location)}</span>
+                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
                               </p>
                               <p className="text-xs text-zinc-500 mb-4">
                                 Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
