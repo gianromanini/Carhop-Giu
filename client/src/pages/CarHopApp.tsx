@@ -5653,14 +5653,17 @@ export default function CarHopApp() {
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
-                                <a 
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-500 hover:underline block"
-                                >
-                                  {formatAddressForDisplay(b.location)}
-                                </a>
+                                <div className="mt-0.5 mb-1">
+                                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
+                                  <a 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:underline text-xs block"
+                                  >
+                                    {b.location}
+                                  </a>
+                                </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                                   <p className="text-orange-500 font-bold text-xs">Awaiting Approval</p>
                                 )}
@@ -8725,14 +8728,17 @@ export default function CarHopApp() {
                                 <p className="font-medium">{b.carName}</p>
                                 <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
-                                <a 
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-500 hover:underline block"
-                                >
-                                  {formatAddressForDisplay(b.location)}
-                                </a>
+                                <div className="mt-0.5 mb-1">
+                                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
+                                  <a 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.location)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:underline text-xs block"
+                                  >
+                                    {b.location}
+                                  </a>
+                                </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                                   <p className="text-orange-500 font-bold text-xs">Awaiting Approval</p>
                                 )}
