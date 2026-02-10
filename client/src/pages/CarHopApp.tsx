@@ -87,110 +87,38 @@ const STATE_ABBREVIATIONS: { [key: string]: string } = {
 const formatAddressForDisplay = (fullAddress: string): string => {
   if (!fullAddress) return fullAddress;
   
+  // Example: 40, Lindeman Drive, Trumbull, Greater Bridgeport Planning Region, Connecticut, 06611, United States
+  // To: 40, Lindeman Drive, Trumbull, Connecticut, 06611, USA
+  
   const parts = fullAddress.split(',').map(p => p.trim());
-  if (parts.length < 3) return fullAddress;
   
-  // First, find ZIP code and STATE from the end
-  let zip = '';
-  let state = '';
-  let stateIndex = -1;
-  let zipIndex = -1;
-  
-  for (let i = parts.length - 1; i >= 0; i--) {
-    const part = parts[i];
-    if (!zip) {
-      const zipMatch = part.match(/(\d{5})/);
-      if (zipMatch) {
-        zip = zipMatch[1];
-        zipIndex = i;
-      }
-    }
-    if (!state && i !== zipIndex) {
-      if (STATE_ABBREVIATIONS[part]) {
-        state = STATE_ABBREVIATIONS[part];
-        stateIndex = i;
-      } else if (/^[A-Z]{2}$/.test(part)) {
-        state = part;
-        stateIndex = i;
-      }
-    }
+  // Define parts to remove (Region, County, Area, District, Country names like United States)
+  const filteredParts = parts.filter(part => {
+    if (!part) return false;
+    const lower = part.toLowerCase();
+    if (lower.includes('region') || lower.includes('planning region')) return false;
+    if (lower.includes('county')) return false;
+    if (lower.includes('area') && !lower.includes('bay area')) return false; // Keep some common ones
+    if (lower.includes('district')) return false;
+    if (lower === 'united states') return false;
+    return true;
+  });
+
+  // Re-append USA if it was United States or similar
+  if (fullAddress.toLowerCase().includes('united states')) {
+    filteredParts.push('USA');
+  } else if (fullAddress.toLowerCase().includes('brazil') || fullAddress.toLowerCase().includes('brasil')) {
+    filteredParts.push('Brazil');
   }
+
+  // Basic cleanup: join back and handle state abbreviations if needed
+  // However, the user specifically wants a clean format.
+  // Let's try to detect the street, city, state, zip pattern.
   
-  if (!zip || !state) return fullAddress;
-  
-  // Now work backwards from state to find city
-  let city = '';
-  let cityIndex = -1;
-  if (stateIndex > 0) {
-    // Go backwards from state, skip regional areas, find city
-    for (let i = stateIndex - 1; i >= 0; i--) {
-      const part = parts[i];
-      if (part && !part.match(/Region|County|Area|District/i)) {
-        city = part;
-        cityIndex = i;
-        break;
-      }
-    }
-  }
-  
-  if (!city) return fullAddress;
-  
-  // Get everything before city as street/number/place
-  let streetParts = parts.slice(0, cityIndex).join(', ');
-  
-  // Try to extract place name and street number
-  let placeName = '';
-  let number = '';
-  let streetName = '';
-  
-  const firstParts = parts.slice(0, cityIndex);
-  if (firstParts.length > 0) {
-    // First part might be place name if non-numeric
-    let startIdx = 0;
-    if (!/^\d+$/.test(firstParts[0]) && !firstParts[0].match(/^(\d+)\s+/)) {
-      placeName = firstParts[0];
-      startIdx = 1;
-    }
-    
-    // Next parts: look for number and street
-    const remaining = firstParts.slice(startIdx);
-    if (remaining.length > 0) {
-      if (/^\d+$/.test(remaining[0])) {
-        // Standalone number
-        number = remaining[0];
-        if (remaining.length > 1) {
-          streetName = remaining.slice(1).join(' ');
-        }
-      } else {
-        // Try to extract number from first element
-        const match = remaining[0].match(/^(\d+)\s+(.+)$/);
-        if (match) {
-          number = match[1];
-          const rest = [match[2], ...remaining.slice(1)];
-          streetName = rest.join(' ');
-        } else {
-          // No number found, use everything as street
-          streetName = remaining.join(' ');
-        }
-      }
-    }
-  }
-  
-  // Build formatted address
-  if (placeName && number && streetName) {
-    return `${placeName}, ${number} ${streetName}, ${city} - ${state}, ${zip}`;
-  }
-  if (placeName && streetName) {
-    return `${placeName}, ${streetName}, ${city} - ${state}, ${zip}`;
-  }
-  if (number && streetName) {
-    return `${number} ${streetName}, ${city} - ${state}, ${zip}`;
-  }
-  if (streetName) {
-    return `${streetName}, ${city} - ${state}, ${zip}`;
-  }
-  if (city && state && zip) {
-    return `${city} - ${state}, ${zip}`;
+  // If we have enough parts, let's just return the joined filtered parts
+  if (filteredParts.length > 0) {
+    // If the last part is a zip code and we have a state before it, ensure it's "City, State, Zip, Country"
+    return filteredParts.join(', ');
   }
   
   return fullAddress;
@@ -5661,7 +5589,7 @@ export default function CarHopApp() {
                                     rel="noopener noreferrer"
                                     className="text-blue-400 hover:underline text-xs block"
                                   >
-                                    {(b.details as any)?.deliveryAddress || b.location}
+                                    {formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}
                                   </a>
                                 </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
@@ -8736,7 +8664,7 @@ export default function CarHopApp() {
                                     rel="noopener noreferrer"
                                     className="text-blue-400 hover:underline text-xs block"
                                   >
-                                    {(b.details as any)?.deliveryAddress || b.location}
+                                    {formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}
                                   </a>
                                 </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
