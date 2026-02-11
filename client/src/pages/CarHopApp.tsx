@@ -791,6 +791,38 @@ export default function CarHopApp() {
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
   
+  const [showHostTransferModal, setShowHostTransferModal] = useState(false);
+  const [pendingHostTransfer, setPendingHostTransfer] = useState<{ vehicleId: number; vehicleModel: string; fromHostId: string; fromHostName: string; toHostId: string; toHostName: string } | null>(null);
+  
+  const confirmHostTransfer = async () => {
+    if (!pendingHostTransfer) return;
+    try {
+      await apiRequest('POST', `/api/vehicles/${pendingHostTransfer.vehicleId}/transfer-request`, {
+        toHostId: pendingHostTransfer.toHostId,
+        toHostName: pendingHostTransfer.toHostName,
+        requestedBy: 'admin',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      setShowHostTransferModal(false);
+      setPendingHostTransfer(null);
+      setEditingId(null);
+      setFormData(initialFormState);
+      toast({ description: 'Transfer request sent to the current host for approval.' });
+    } catch {
+      toast({ description: 'Failed to send transfer request.', variant: 'destructive' });
+    }
+  };
+  
+  const handleTransferAction = async (vehicleId: number, requestId: string, status: 'approved' | 'declined') => {
+    try {
+      await apiRequest('PUT', `/api/vehicles/${vehicleId}/transfer-request/${requestId}`, { status });
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      toast({ description: status === 'approved' ? 'Transfer approved. Vehicle host updated.' : 'Transfer declined.' });
+    } catch {
+      toast({ description: 'Failed to process transfer request.', variant: 'destructive' });
+    }
+  };
+  
   // Cache for full booking data (with images) - fetched on demand
   const [fullBookingCache, setFullBookingCache] = useState<Record<number, Booking>>({});
   // Track in-flight requests to avoid duplicate fetches
@@ -1931,57 +1963,40 @@ export default function CarHopApp() {
     
     const diffTime = newReturn.getTime() - oldReturn.getTime();
     
-    // If reduction (new date is before current), create a request for admin approval
-    if (diffTime < 0) {
-      await apiRequest('POST', `/api/bookings/${booking.id}/extension-request`, {
-        type: 'reduction',
+    const type = diffTime < 0 ? 'reduction' : 'extension';
+    
+    try {
+      const response = await apiRequest('POST', `/api/bookings/${booking.id}/extension-request`, {
+        type,
         requestedReturnDate: extensionDate,
         requestedReturnTime: extensionTime,
-        reason: extensionRequestReason || 'Reduction request'
+        reason: extensionRequestReason || (type === 'reduction' ? 'Reduction request' : 'Extension request')
       });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       setExtendingBookingId(null);
       setExtensionRequestReason('');
-      alert("Reduction request submitted for admin approval.");
-      return;
-    }
-    
-    const diffMinutes = diffTime / (1000 * 60);
-    let extraDays = 0;
-
-    if (diffMinutes > 30) {
-       const diffHours = diffTime / (1000 * 60 * 60);
-       extraDays = Math.ceil(diffHours / 24);
-       if (extraDays === 0) extraDays = 1;
-    } else {
-       alert("Extension granted as courtesy (30 min grace period).");
-    }
-
-    const baseRate = booking.details.rate || 0;
-    const currentExtended = booking.details.extendedRate || 0;
-    const currentDays = booking.days || 1;
-    
-    const dailyRate = (baseRate + currentExtended) / currentDays;
-    const extraCost = dailyRate * extraDays;
-    const carForTaxCalc = vehicles.find(v => v.id === booking.vehicleId);
-    const extensionTaxRate = carForTaxCalc?.pricing?.taxes || settings.taxes || 0;
-    const extraTax = extraCost * (extensionTaxRate / 100);
-    const totalExtra = extraCost + extraTax;
-    
-    await updateBookingMutation.mutateAsync({
-      id: booking.id,
-      data: {
-        returnDate: extensionDate,
-        returnTime: extensionTime,
-        days: currentDays + extraDays,
-        total: booking.total + totalExtra,
-        status: 'Extended',
-        details: { ...booking.details, extendedRate: (booking.details.extendedRate || 0) + extraCost, tax: (booking.details.tax || 0) + extraTax }
+      
+      toast({
+        title: type === 'extension' ? 'Extension Request Submitted' : 'Reduction Request Submitted',
+        description: 'Your request has been sent to the host for approval. You will be notified once a decision is made.',
+      });
+    } catch (error: any) {
+      const errorData = error?.message || '';
+      if (errorData.includes('already booked')) {
+        toast({
+          title: 'Vehicle Unavailable',
+          description: 'The vehicle is already booked for those dates. Please choose different dates.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Request Failed',
+          description: 'Could not submit your request. Please try again.',
+          variant: 'destructive'
+        });
       }
-    });
-    
-    setExtendingBookingId(null);
-    if (extraDays > 0) alert(`Rental updated by ${extraDays} days.\nAdjustment Cost: $${totalExtra.toFixed(2)}`);
+    }
   };
 
   const sendChatMessage = async (bookingId: number, sender: 'client' | 'admin' | 'host') => {
@@ -2404,6 +2419,25 @@ export default function CarHopApp() {
     };
 
     if (editingId) {
+      const existingVehicle = vehicles.find(v => v.id === editingId);
+      const oldHostId = existingVehicle?.hostId || '';
+      const newHostId = formData.hostId || '';
+      
+      if (oldHostId && newHostId && oldHostId !== newHostId) {
+        const oldHost = hostsData.find((h: any) => String(h.id) === String(oldHostId));
+        const newHost = hostsData.find((h: any) => String(h.id) === String(newHostId));
+        setPendingHostTransfer({
+          vehicleId: editingId,
+          vehicleModel: formData.model,
+          fromHostId: String(oldHostId),
+          fromHostName: oldHost ? `${oldHost.firstName} ${oldHost.lastName}` : 'Unknown',
+          toHostId: String(newHostId),
+          toHostName: newHost ? `${newHost.firstName} ${newHost.lastName}` : 'Unknown',
+        });
+        setShowHostTransferModal(true);
+        return;
+      }
+      
       updateVehicleMutation.mutate({ id: editingId, data: vehicleData }, {
         onSuccess: () => {
           setEditingId(null);
@@ -4710,8 +4744,38 @@ export default function CarHopApp() {
 
           {hostTab === 'fleet' && (() => {
             const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
+            const pendingTransfers = vehicles
+              .filter(v => v.hostId === String(currentHost.id) && (v as any).transferRequests?.length > 0)
+              .flatMap(v => ((v as any).transferRequests || [])
+                .filter((tr: any) => tr.status === 'pending')
+                .map((tr: any) => ({ ...tr, vehicleId: v.id, vehicleModel: v.model }))
+              );
             return (
               <div className="space-y-4 sm:space-y-6">
+                {pendingTransfers.length > 0 && (
+                  <Card className="p-3 sm:p-5 border-orange-300 dark:border-orange-700">
+                    <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2" data-testid="text-pending-transfers-title">
+                      <AlertTriangle size={16} className="text-orange-500" />
+                      Pending Transfer Requests ({pendingTransfers.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {pendingTransfers.map((tr: any) => (
+                        <div key={tr.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800" data-testid={`transfer-request-${tr.id}`}>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-zinc-900 dark:text-white">{tr.vehicleModel}</p>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">Transfer to: <span className="font-semibold">{tr.toHostName}</span></p>
+                            <p className="text-xs text-zinc-400 dark:text-zinc-500">Requested: {new Date(tr.createdAt).toLocaleDateString()}</p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <Button size="sm" onClick={() => handleTransferAction(tr.vehicleId, tr.id, 'approved')} className="bg-green-600 text-white" data-testid={`button-approve-transfer-${tr.id}`}>Approve</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleTransferAction(tr.vehicleId, tr.id, 'declined')} className="text-red-600 border-red-300 dark:border-red-700" data-testid={`button-decline-transfer-${tr.id}`}>Decline</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+                
                 {/* Add New Vehicle Button */}
                 <div className="flex justify-center">
                   <Button 
@@ -12664,6 +12728,29 @@ export default function CarHopApp() {
             >
               <ZoomIn size={16}/> {lightboxZoom === 1 ? 'Zoom In' : 'Zoom Out'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showHostTransferModal && pendingHostTransfer && (
+        <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6 max-w-md w-full">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-transfer-title">Confirm Host Transfer</h3>
+              <button onClick={() => { setShowHostTransferModal(false); setPendingHostTransfer(null); }} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-testid="button-close-transfer-modal"><X size={20}/></button>
+            </div>
+            <div className="space-y-3 mb-6">
+              <p className="text-sm text-zinc-600 dark:text-zinc-300" data-testid="text-transfer-description">
+                You are requesting to transfer the vehicle <span className="font-semibold">{pendingHostTransfer.vehicleModel}</span> from host <span className="font-semibold">{pendingHostTransfer.fromHostName}</span> to <span className="font-semibold">{pendingHostTransfer.toHostName}</span>.
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                The current host will need to approve this transfer before it takes effect.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => { setShowHostTransferModal(false); setPendingHostTransfer(null); }} data-testid="button-cancel-transfer">Cancel</Button>
+              <Button onClick={confirmHostTransfer} data-testid="button-confirm-transfer">Send Transfer Request</Button>
+            </div>
           </div>
         </div>
       )}

@@ -102,6 +102,17 @@ export const vehicles = pgTable("vehicles", {
     trackApp: number;
     downPayment: number;
   }>(),
+  transferRequests: jsonb("transfer_requests").$type<{
+    id: string;
+    fromHostId: string;
+    fromHostName: string;
+    toHostId: string;
+    toHostName: string;
+    requestedBy: string;
+    status: 'pending' | 'approved' | 'declined';
+    createdAt: string;
+    respondedAt?: string;
+  }[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

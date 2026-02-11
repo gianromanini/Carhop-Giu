@@ -927,7 +927,28 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const hosts = await storage.getHosts();
     const hostsMap = new Map(hosts.map(h => [h.id.toString(), h]));
     
-    const vehiclesWithHost = vehicles.map(v => ({
+    let filteredVehicles = vehicles;
+    
+    const { startDate, endDate } = req.query;
+    if (startDate && endDate) {
+      const requestedStart = startDate as string;
+      const requestedEnd = endDate as string;
+      const allBookings = await storage.getBookings();
+      const activeStatuses = ['Cancelled', 'Declined', 'Completed'];
+      const overlappingVehicleIds = new Set<number>();
+      
+      for (const booking of allBookings) {
+        if (activeStatuses.includes(booking.status)) continue;
+        if (!booking.vehicleId) continue;
+        if (booking.startDate < requestedEnd && booking.returnDate > requestedStart) {
+          overlappingVehicleIds.add(booking.vehicleId);
+        }
+      }
+      
+      filteredVehicles = vehicles.filter(v => !overlappingVehicleIds.has(v.id));
+    }
+    
+    const vehiclesWithHost = filteredVehicles.map(v => ({
       ...v,
       hostInfo: v.hostId ? {
         id: hostsMap.get(v.hostId)?.id,
@@ -973,6 +994,67 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const deleted = await storage.deleteVehicle(id);
     if (!deleted) return res.status(404).json({ error: "Vehicle not found" });
     res.status(204).send();
+  });
+
+  app.post("/api/vehicles/:id/transfer-request", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const vehicle = await storage.getVehicle(id);
+    if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+    if (!vehicle.hostId) return res.status(400).json({ error: "Vehicle has no current host" });
+
+    const { toHostId, toHostName, requestedBy } = req.body;
+    
+    const existingPending = (vehicle.transferRequests || []).find(r => r.status === 'pending');
+    if (existingPending) {
+      return res.status(409).json({ error: "A transfer request is already pending for this vehicle" });
+    }
+    
+    const hosts = await storage.getHosts();
+    const hostsMap = new Map(hosts.map(h => [h.id.toString(), h]));
+    const currentHost = hostsMap.get(vehicle.hostId);
+    const fromHostName = currentHost ? `${currentHost.firstName} ${currentHost.lastName}` : (vehicle.hostName || 'Unknown');
+
+    const transferRequest = {
+      id: 'transfer-' + Date.now(),
+      fromHostId: vehicle.hostId,
+      fromHostName,
+      toHostId,
+      toHostName,
+      requestedBy,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+    };
+
+    const transferRequests = [...(vehicle.transferRequests || []), transferRequest];
+    const updated = await storage.updateVehicle(id, { transferRequests } as any);
+    res.json(updated);
+  });
+
+  app.put("/api/vehicles/:id/transfer-request/:requestId", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const requestId = req.params.requestId;
+    const vehicle = await storage.getVehicle(id);
+    if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+
+    const { status } = req.body;
+    const transferRequests = [...(vehicle.transferRequests || [])];
+    const requestIndex = transferRequests.findIndex(r => r.id === requestId);
+    if (requestIndex === -1) return res.status(404).json({ error: "Transfer request not found" });
+
+    transferRequests[requestIndex] = {
+      ...transferRequests[requestIndex],
+      status,
+      respondedAt: new Date().toISOString(),
+    };
+
+    const updateData: any = { transferRequests };
+    if (status === 'approved') {
+      updateData.hostId = transferRequests[requestIndex].toHostId;
+      updateData.hostName = transferRequests[requestIndex].toHostName;
+    }
+
+    const updated = await storage.updateVehicle(id, updateData);
+    res.json(updated);
   });
 
   app.get("/api/bookings", async (_req, res) => {
@@ -1166,6 +1248,26 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (!booking) return res.status(404).json({ error: "Booking not found" });
     
     const { type, requestedReturnDate, requestedReturnTime, reason } = req.body;
+
+    if (booking.vehicleId && requestedReturnDate) {
+      const allBookings = await storage.getBookings();
+      const excludedStatuses = ['Cancelled', 'Completed', 'Declined'];
+      const extensionStart = booking.returnDate;
+      const extensionEnd = requestedReturnDate;
+      const conflicting = allBookings.find(b => {
+        if (b.id === id) return false;
+        if (b.vehicleId !== booking.vehicleId) return false;
+        if (excludedStatuses.includes(b.status)) return false;
+        return b.startDate < extensionEnd && b.returnDate > extensionStart;
+      });
+      if (conflicting) {
+        return res.status(409).json({
+          error: "Vehicle is already booked for those dates",
+          conflictingBooking: conflicting.bookingCode,
+        });
+      }
+    }
+
     const newRequest = {
       id: `ext-${Date.now()}`,
       type: type as 'extension' | 'reduction',
