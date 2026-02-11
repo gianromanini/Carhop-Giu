@@ -24,7 +24,7 @@ export function Header({ onManageBooking, onSignIn, onChat }: HeaderProps) {
         <div className="flex items-center justify-between h-16 gap-4">
           <Link href="/" data-testid="link-home">
             <div className="flex items-center gap-2 cursor-pointer">
-              <img src="/logo_chg_jeep_realistic.png?v=2" alt="CarHopGo Logo" className="h-14 w-auto object-contain" />
+              <img src="/logo_chg_jeep_realistic.png?v=4" alt="CarHopGo Logo" className="h-14 w-auto object-contain" />
             </div>
           </Link>
 
