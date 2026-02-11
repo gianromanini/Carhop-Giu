@@ -1775,9 +1775,8 @@ export default function CarHopApp() {
       };
       
       try {
-        const response = await createBookingMutation.mutateAsync(pendingBooking);
-        const created = await response.json();
-        setPendingDeliveryBookingId(created.id);
+        const createdBooking = await createBookingMutation.mutateAsync(pendingBooking);
+        setPendingDeliveryBookingId(createdBooking.id);
         setIsProcessingPayment(false);
         setView('awaiting-approval');
       } catch (error) {
