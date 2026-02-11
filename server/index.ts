@@ -33,7 +33,7 @@ app.get("/", (req, res, next) => {
 
 app.use(
   express.json({
-    limit: '50mb',
+    limit: '2mb',
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },

@@ -1636,11 +1636,41 @@ export default function CarHopApp() {
   };
   const handleImageClick = (src: string) => { setSelectedImage(src); };
 
-  const handleLicenseUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = async (base64: string, maxWidth = 1200, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+    });
+  };
+
+  const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "Image too large", description: "Maximum size is 10MB. We will compress it for you.", variant: "destructive" });
+      }
       const reader = new FileReader();
-      reader.onloadend = () => setDriverDetails(prev => { if (prev.licenseImages.length >= 2) return prev; return { ...prev, licenseImages: [...prev.licenseImages, reader.result as string] }; });
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setDriverDetails(prev => { 
+          if (prev.licenseImages.length >= 2) return prev; 
+          return { ...prev, licenseImages: [...prev.licenseImages, compressed] }; 
+        });
+      };
       reader.readAsDataURL(file);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -1857,15 +1887,21 @@ export default function CarHopApp() {
     setView('check-workflow');
   };
 
-  const handleCheckUpload = (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
+  const handleCheckUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "Image too large", description: "Maximum size is 10MB. We will compress it for you.", variant: "destructive" });
+      }
       const reader = new FileReader();
-      reader.onloadend = () => setCheckData(prev => {
-        const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
-        if (currentList.length >= 15) return prev;
-        return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, reader.result as string] };
-      });
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setCheckData(prev => {
+          const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
+          if (currentList.length >= 15) return prev;
+          return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, compressed] };
+        });
+      };
       reader.readAsDataURL(file);
     }
     if (checkInInputRef.current) checkInInputRef.current.value = '';
