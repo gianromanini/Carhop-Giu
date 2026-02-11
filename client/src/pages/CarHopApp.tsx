@@ -1660,8 +1660,8 @@ export default function CarHopApp() {
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "Image too large", description: "Maximum size is 10MB. We will compress it for you.", variant: "destructive" });
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ title: "Imagem sendo otimizada", description: "O arquivo é maior que 2MB. Estamos otimizando para garantir o carregamento rápido.", variant: "default" });
       }
       const reader = new FileReader();
       reader.onloadend = async () => {
@@ -1890,8 +1890,8 @@ export default function CarHopApp() {
   const handleCheckUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "Image too large", description: "Maximum size is 10MB. We will compress it for you.", variant: "destructive" });
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ title: "Imagem sendo otimizada", description: "O arquivo é maior que 2MB. Estamos otimizando para garantir o carregamento rápido.", variant: "default" });
       }
       const reader = new FileReader();
       reader.onloadend = async () => {
