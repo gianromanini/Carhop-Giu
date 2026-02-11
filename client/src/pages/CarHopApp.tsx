@@ -1730,66 +1730,9 @@ export default function CarHopApp() {
   const handleProceedToPayment = async () => { 
     if (!isCheckoutValid()) { alert("Please complete all mandatory fields and upload driver license photos."); return; } 
     
-    // If delivery type and address is set, create pending booking first
-    if (selectedDeliveryType === 'delivery' && deliveryValidationStatus === 'valid') {
-      setIsProcessingPayment(true);
-      const totalData = calculateTotal();
-      const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
-      
-      const pendingBooking = {
-        bookingCode: 'BK-' + Math.floor(Math.random() * 10000),
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: 'Pending Approval',
-        carName: cart.car!.model,
-        vehicleId: cart.car!.id,
-        location: deliveryAddressBooking,
-        startDate: searchParams.start,
-        startTime: searchParams.startTime,
-        returnDate: searchParams.end,
-        returnTime: searchParams.endTime,
-        days: days,
-        total: totalData.total,
-        image: cart.car!.images?.[0] || '',
-        driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages },
-        paymentRaw: null,
-        paymentMethod: null,
-        deliveryType: 'delivery',
-        details: { 
-          rate: cart.car!.price * days, 
-          extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), 
-          protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, 
-          protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
-          fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
-          deliveryFee: totalData.deliveryFee || 0, 
-          tax: totalData.taxAmount, 
-          deliveryType: 'delivery', 
-          deliveryApprovalStatus: 'pending', 
-          pickupAddress: pickupAddress 
-        },
-        messages: [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm shortly. You will be notified once approved or if only pickup is available.', createdAt: new Date().toISOString(), read: false }],
-        carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
-        checkInStatus: 'pending',
-        checkOutStatus: 'pending',
-        checkInData: null,
-        checkOutData: null
-      };
-      
-      try {
-        const createdBooking = await createBookingMutation.mutateAsync(pendingBooking);
-        setPendingDeliveryBookingId(createdBooking.id);
-        setIsProcessingPayment(false);
-        setView('awaiting-approval');
-      } catch (error) {
-        // If it's not a real error (mutation already handled it), don't alert
-        if (createBookingMutation.isError) return;
-        console.error('Error creating pending booking:', error);
-        setIsProcessingPayment(false);
-      }
-      return;
-    }
-    
-    // For pickup, go directly to payment
+    // Set view to payment and scroll to top
     setView('payment'); 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2;
