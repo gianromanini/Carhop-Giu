@@ -1781,9 +1781,10 @@ export default function CarHopApp() {
         setIsProcessingPayment(false);
         setView('awaiting-approval');
       } catch (error) {
+        // If it's not a real error (mutation already handled it), don't alert
+        if (createBookingMutation.isError) return;
         console.error('Error creating pending booking:', error);
         setIsProcessingPayment(false);
-        alert('Error creating booking. Please try again.');
       }
       return;
     }
