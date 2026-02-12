@@ -5654,12 +5654,24 @@ export default function CarHopApp() {
                               <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
-                              <p className="text-sm text-zinc-300 mb-3">
+                              <p className="text-sm text-zinc-300 mb-1">
                                 Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
                               </p>
-                              <p className="text-xs text-zinc-500 mb-4">
-                                Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
-                              </p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                                <p className="text-xs text-zinc-500">
+                                  Delivery scheduled for: <span className="text-zinc-300">{formatDisplayDate(b.startDate, b.startTime)}</span>
+                                </p>
+                                {(b.details as any)?.deliveryDistance && (
+                                  <p className="text-xs text-zinc-500">
+                                    Distance: <span className="text-zinc-300">{(b.details as any).deliveryDistance.toFixed(1)} miles</span>
+                                  </p>
+                                )}
+                                {(b.details as any)?.deliveryFee !== undefined && (
+                                  <p className="text-xs text-zinc-500">
+                                    Delivery Fee: <span className="text-green-400 font-bold">${(b.details as any).deliveryFee.toFixed(2)}</span>
+                                  </p>
+                                )}
+                              </div>
                               <div className="flex gap-2">
                                 <button 
                                   onClick={() => handleDeliveryApproval(b.id, 'approved')}
@@ -8729,12 +8741,24 @@ export default function CarHopApp() {
                               <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
-                              <p className="text-sm text-zinc-300 mb-3">
+                              <p className="text-sm text-zinc-300 mb-1">
                                 Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
                               </p>
-                              <p className="text-xs text-zinc-500 mb-4">
-                                Delivery scheduled for: {formatDisplayDate(b.startDate, b.startTime)}
-                              </p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                                <p className="text-xs text-zinc-500">
+                                  Delivery scheduled for: <span className="text-zinc-300">{formatDisplayDate(b.startDate, b.startTime)}</span>
+                                </p>
+                                {(b.details as any)?.deliveryDistance && (
+                                  <p className="text-xs text-zinc-500">
+                                    Distance: <span className="text-zinc-300">{(b.details as any).deliveryDistance.toFixed(1)} miles</span>
+                                  </p>
+                                )}
+                                {(b.details as any)?.deliveryFee !== undefined && (
+                                  <p className="text-xs text-zinc-500">
+                                    Delivery Fee: <span className="text-green-400 font-bold">${(b.details as any).deliveryFee.toFixed(2)}</span>
+                                  </p>
+                                )}
+                              </div>
                               <div className="flex gap-2">
                                 <button 
                                   onClick={() => handleDeliveryApproval(b.id, 'approved')}
