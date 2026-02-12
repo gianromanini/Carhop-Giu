@@ -1822,7 +1822,19 @@ export default function CarHopApp() {
       paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
       paymentMethod: paymentMethodDisplay, 
       deliveryType: selectedDeliveryType,
-      details: { rate: cart.car!.price * days, extras: (cart.extrasSelected.includes('childSeat') ? settings.prices.childSeat : 0), protection: (cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * days, protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), deliveryFee: totalData.deliveryFee || 0, tax: totalData.taxAmount, deliveryType: selectedDeliveryType, deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, pickupAddress: pickupAddress },
+      details: { 
+        rate: cart.car!.price * days, 
+        extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
+        childSeatSelected: cart.extrasSelected.includes('childSeat'),
+        protection: (cart.insuranceOption === '500' ? (cart.car!.pricing?.prices?.insurance500 || settings.prices.insurance500) : (cart.car!.pricing?.prices?.insurance1000 || settings.prices.insurance1000)) * days, 
+        protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
+        fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
+        deliveryFee: totalData.deliveryFee || 0, 
+        tax: totalData.taxAmount, 
+        deliveryType: selectedDeliveryType, 
+        deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
+        pickupAddress: pickupAddress 
+      },
       messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
@@ -6097,7 +6109,7 @@ export default function CarHopApp() {
                                         </div>
                                         {extras > 0 && (
                                           <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Extras</span>
+                                            <span>{(b.details as any)?.childSeatSelected ? 'Child Chair' : 'Extras'}</span>
                                             <span>+${extras.toFixed(2)}</span>
                                           </div>
                                         )}
@@ -9150,7 +9162,7 @@ export default function CarHopApp() {
                                         </div>
                                         {extras > 0 && (
                                           <div className="flex justify-between text-zinc-300 text-xs">
-                                            <span>Extras</span>
+                                            <span>{(b.details as any)?.childSeatSelected ? 'Child Chair' : 'Extras'}</span>
                                             <span>+${extras.toFixed(2)}</span>
                                           </div>
                                         )}
@@ -10484,7 +10496,7 @@ export default function CarHopApp() {
                               )}
                               {extras > 0 && (
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-zinc-600 dark:text-zinc-400">Extras</span>
+                                  <span className="text-zinc-600 dark:text-zinc-400">{(receiptBooking.details as any)?.childSeatSelected ? 'Child Chair' : 'Extras'}</span>
                                   <span className="text-green-600 dark:text-green-400">+${extras.toFixed(2)}</span>
                                 </div>
                               )}
