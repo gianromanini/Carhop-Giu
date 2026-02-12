@@ -653,6 +653,7 @@ export class MemStorage implements IStorage {
       locationLon: vehicle.locationLon ?? null,
       pricing: vehicle.pricing ?? null,
       expenses: vehicle.expenses ?? null,
+      transferRequests: [],
       createdAt: new Date(),
     };
     this.vehicles.set(id, newVehicle);
@@ -662,7 +663,7 @@ export class MemStorage implements IStorage {
   async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
     const existing = this.vehicles.get(id);
     if (!existing) return undefined;
-    const updated = { ...existing, ...vehicle };
+    const updated = { ...existing, ...vehicle } as Vehicle;
     this.vehicles.set(id, updated);
     return updated;
   }

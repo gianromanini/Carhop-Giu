@@ -1049,7 +1049,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
     const updateData: any = { transferRequests };
     if (status === 'approved') {
-      updateData.hostId = transferRequests[requestIndex].toHostId;
+      updateData.hostId = String(transferRequests[requestIndex].toHostId);
       updateData.hostName = transferRequests[requestIndex].toHostName;
     }
 
