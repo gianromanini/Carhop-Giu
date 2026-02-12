@@ -4858,7 +4858,7 @@ export default function CarHopApp() {
           </div>
 
           {hostTab === 'fleet' && (() => {
-            const hostVehicles = vehicles.filter(v => v.hostId === String(currentHost.id));
+            const hostVehicles = vehicles.filter(v => String(v.hostId) === String(currentHost.id));
             const pendingTransfers = vehicles
               .filter(v => v.hostId === String(currentHost.id) && (v as any).transferRequests?.length > 0)
               .flatMap(v => ((v as any).transferRequests || [])
