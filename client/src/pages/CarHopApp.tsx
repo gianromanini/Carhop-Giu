@@ -1750,9 +1750,23 @@ export default function CarHopApp() {
     const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
     const carPricing = cart.car.pricing || settings;
     let runningTotal = cart.car.price * days; 
-    if (cart.extrasSelected.includes('childSeat')) runningTotal += settings.prices.childSeat;
-    if (cart.insuranceOption === '500') runningTotal += (settings.prices.insurance500 * days); 
-    if (cart.insuranceOption === '1000') runningTotal += (settings.prices.insurance1000 * days); 
+    if (cart.extrasSelected.includes('childSeat')) runningTotal += (cart.car.pricing?.prices?.childSeat || settings.prices.childSeat);
+    
+    // Protection Plan Pricing Logic
+    const dailyRate = cart.car.price;
+    let standardPlanPrice = 26; // Default global
+    if (dailyRate >= 50 && dailyRate <= 120) {
+      standardPlanPrice = 29; // Automatically 29 if rate is between 50 and 120
+    }
+    
+    // Use custom vehicle pricing if set by admin, otherwise use calculated global defaults
+    const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
+    const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
+    const finalGoldPrice = finalStandardPrice + 18;
+
+    if (cart.insuranceOption === '500') runningTotal += (finalStandardPrice * days); 
+    if (cart.insuranceOption === '1000') runningTotal += (finalGoldPrice * days); 
+    
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
     if (deliveryValidationStatus === 'valid') runningTotal += deliveryFee;
     const taxAmount = runningTotal * ((carPricing.taxes || settings.taxes) / 100); 
@@ -1788,53 +1802,49 @@ export default function CarHopApp() {
     // Simulate payment processing animation
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    const totalData = calculateTotal(); 
-    const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
-    
-    const paymentMethodDisplay = paymentMethod === 'paypal' 
-      ? 'PayPal' 
-      : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
-    
-    // Ensure booking location is always valid
-    let bookingLocation = '';
-    if (selectedDeliveryType === 'delivery') {
-      bookingLocation = deliveryAddressBooking;
-    } else {
-      // For pickup, must use a selected location from available locations
-      bookingLocation = pickupAddress || (cart.car?.availableLocations?.[0] || '');
-    }
-    
-    const newBooking = { 
-      bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
-      status: 'Active', 
-      carName: cart.car!.model, 
-      vehicleId: cart.car!.id,
-      location: bookingLocation, 
-      startDate: searchParams.start, 
-      startTime: searchParams.startTime, 
-      returnDate: searchParams.end, 
-      returnTime: searchParams.endTime, 
-      days: days, 
-      total: totalData.total, 
-      image: cart.car!.images?.[0] || '', 
-      driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
-      paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
-      paymentMethod: paymentMethodDisplay, 
-      deliveryType: selectedDeliveryType,
-      details: { 
-        rate: cart.car!.price * days, 
-        extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
-        childSeatSelected: cart.extrasSelected.includes('childSeat'),
-        protection: (cart.insuranceOption === '500' ? (cart.car!.pricing?.prices?.insurance500 || settings.prices.insurance500) : (cart.car!.pricing?.prices?.insurance1000 || settings.prices.insurance1000)) * days, 
-        protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
-        fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
-        deliveryFee: totalData.deliveryFee || 0, 
-        tax: totalData.taxAmount, 
-        deliveryType: selectedDeliveryType, 
-        deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
-        pickupAddress: pickupAddress 
-      },
+        const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
+        
+        // Protection Plan Pricing Logic for Booking Creation
+        const dailyRate = cart.car.price;
+        let standardPlanPrice = 26;
+        if (dailyRate >= 50 && dailyRate <= 120) {
+          standardPlanPrice = 29;
+        }
+        const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
+        const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
+        const finalGoldPrice = finalStandardPrice + 18;
+
+        const newBooking = { 
+          bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
+          status: 'Active', 
+          carName: cart.car!.model, 
+          vehicleId: cart.car!.id,
+          location: bookingLocation, 
+          startDate: searchParams.start, 
+          startTime: searchParams.startTime, 
+          returnDate: searchParams.end, 
+          returnTime: searchParams.endTime, 
+          days: days, 
+          total: totalData.total, 
+          image: cart.car!.images?.[0] || '', 
+          driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
+          paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
+          paymentMethod: paymentMethodDisplay, 
+          deliveryType: selectedDeliveryType,
+          details: { 
+            rate: cart.car!.price * days, 
+            extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
+            childSeatSelected: cart.extrasSelected.includes('childSeat'),
+            protection: (cart.insuranceOption === '500' ? finalStandardPrice : finalGoldPrice) * days, 
+            protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
+            fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
+            deliveryFee: totalData.deliveryFee || 0, 
+            tax: totalData.taxAmount, 
+            deliveryType: selectedDeliveryType, 
+            deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
+            pickupAddress: pickupAddress 
+          },
       messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
       carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
       checkInStatus: 'pending', 
@@ -7784,14 +7794,15 @@ export default function CarHopApp() {
                                     <h4 className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Extras & Protection</h4>
                                     <div className="grid grid-cols-2 gap-2">
                                       <div>
-                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">INS. $500</label>
-                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Standard Plan ($)</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
                                       </div>
                                       <div>
-                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">INS. $1000</label>
-                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Gold Plan ($)</label>
+                                        <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
                                       </div>
                                     </div>
+                                    <p className="text-[8px] text-zinc-500 mt-1 uppercase italic">* Standard Plan covers host damage/theft. Gold Plan adds liability. Admin only can override global defaults.</p>
                                   </div>
                                 </div>
 
