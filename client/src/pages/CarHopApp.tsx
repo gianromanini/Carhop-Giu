@@ -1754,18 +1754,23 @@ export default function CarHopApp() {
     
     // Protection Plan Pricing Logic
     const dailyRate = cart.car.price;
-    let standardPlanPrice = 26; // Default global
+    const hostEmail = cart.car.hostEmail || ''; // Using hostEmail directly from car object if available, otherwise fallback
+    const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com' || (vehicles.find(v => v.id === cart.car?.id)?.hostName === 'giuspfc123@gmail.com' || vehicles.find(v => v.id === cart.car?.id)?.hostName === 'gianromanini@gmail.com');
+
+    let standardPlanPrice = 25.70; // Default global
     if (dailyRate >= 50 && dailyRate <= 120) {
-      standardPlanPrice = 29; // Automatically 29 if rate is between 50 and 120
+      standardPlanPrice = 27.90; // Automatically 27.90 if rate is between 50 and 120
     }
     
     // Use custom vehicle pricing if set by admin, otherwise use calculated global defaults
     const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
     const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
-    const finalGoldPrice = finalStandardPrice + 18;
+    const finalGoldPrice = finalStandardPrice + 16.90;
+    const minimumPlanPrice = 16.90;
 
     if (cart.insuranceOption === '500') runningTotal += (finalStandardPrice * days); 
-    if (cart.insuranceOption === '1000') runningTotal += (finalGoldPrice * days); 
+    if (cart.insuranceOption === '1000' && isSpecialHost) runningTotal += (finalGoldPrice * days); 
+    if (cart.insuranceOption === 'minimum') runningTotal += (minimumPlanPrice * days); 
     
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
     if (deliveryValidationStatus === 'valid') runningTotal += deliveryFee;
@@ -1806,13 +1811,17 @@ export default function CarHopApp() {
         
         // Protection Plan Pricing Logic for Booking Creation
         const dailyRate = cart.car.price;
-        let standardPlanPrice = 26;
+        const hostEmail = cart.car.hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
+        const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
+
+        let standardPlanPrice = 25.70;
         if (dailyRate >= 50 && dailyRate <= 120) {
-          standardPlanPrice = 29;
+          standardPlanPrice = 27.90;
         }
         const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
         const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
-        const finalGoldPrice = finalStandardPrice + 18;
+        const finalGoldPrice = finalStandardPrice + 16.90;
+        const minimumPlanPrice = 16.90;
 
         const newBooking = { 
           bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
@@ -1836,8 +1845,8 @@ export default function CarHopApp() {
             rate: cart.car!.price * days, 
             extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
             childSeatSelected: cart.extrasSelected.includes('childSeat'),
-            protection: (cart.insuranceOption === '500' ? finalStandardPrice : finalGoldPrice) * days, 
-            protectionType: (cart.insuranceOption === '500' ? 'Standard' : 'Gold'), 
+            protection: (cart.insuranceOption === '500' ? finalStandardPrice : cart.insuranceOption === '1000' ? finalGoldPrice : minimumPlanPrice) * days, 
+            protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'), 
             fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
             deliveryFee: totalData.deliveryFee || 0, 
             tax: totalData.taxAmount, 
@@ -7794,15 +7803,15 @@ export default function CarHopApp() {
                                     <h4 className="text-[10px] font-bold text-zinc-400 uppercase mb-2">Extras & Protection</h4>
                                     <div className="grid grid-cols-2 gap-2">
                                       <div>
-                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Standard Plan ($)</label>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Standard Plan (SLI) ($)</label>
                                         <input type="text" inputMode="decimal" value={pricingStrings.insurance500} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance500: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance500: val}}}); setPricingStrings({...pricingStrings, insurance500: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
                                       </div>
                                       <div>
-                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Gold Plan ($)</label>
+                                        <label className="block text-[10px] font-bold text-zinc-400 mb-1 uppercase">Gold Plan (SLI + Host) ($)</label>
                                         <input type="text" inputMode="decimal" value={pricingStrings.insurance1000} onChange={(e: any) => setPricingStrings({...pricingStrings, insurance1000: e.target.value})} onBlur={(e: any) => {const val = parseFloat(e.target.value) || 0; setFormData({...formData, pricing: {...formData.pricing, prices: {...formData.pricing.prices, insurance1000: val}}}); setPricingStrings({...pricingStrings, insurance1000: String(val)})}} className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded" />
                                       </div>
                                     </div>
-                                    <p className="text-[8px] text-zinc-500 mt-1 uppercase italic">* Standard Plan covers host damage/theft. Gold Plan adds liability. Admin only can override global defaults.</p>
+                                    <p className="text-[8px] text-zinc-500 mt-1 uppercase italic">* Standard (SLI): $400k third-party protection. Gold: SLI + Damage/Theft. Admin only override.</p>
                                   </div>
                                 </div>
 
@@ -11601,6 +11610,26 @@ export default function CarHopApp() {
                     <Shield size={18} /> Protection Plan (Daily)
                   </h2>
                   <div className="space-y-3">
+                    {/* Minimum Protection Option */}
+                    <div 
+                      onClick={() => setCart({...cart, insuranceOption: 'minimum'})} 
+                      className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === 'minimum' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                      data-testid="option-protection-minimum"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
+                            Minimum Protection 
+                            {cart.insuranceOption === 'minimum' && <Check size={16} className="text-green-500" />}
+                          </h4>
+                          <p className="text-xs text-zinc-400 mb-2">Basic protection for vehicle damage.</p>
+                          <p className="text-xs text-zinc-500">$2,500 max out-of-pocket costs for vehicle damage or theft.</p>
+                        </div>
+                        <span className="font-bold text-white whitespace-nowrap">+$16.90/day</span>
+                      </div>
+                    </div>
+
+                    {/* Standard Protection Option */}
                     <div 
                       onClick={() => setCart({...cart, insuranceOption: '500'})} 
                       className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '500' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
@@ -11608,33 +11637,57 @@ export default function CarHopApp() {
                     >
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
-                            Standard Protection 
+                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1 group relative">
+                            Standard Protection (SLI)
+                            <div className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-zinc-700 text-[10px] text-zinc-300 ml-1 cursor-help hover:bg-zinc-600">
+                              !
+                              <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
+                                <p className="text-[10px] leading-tight text-zinc-300 font-normal">
+                                  <strong>Note:</strong> Please note that Supplemental Liability Insurance (SLI) is only valid after the state’s minimum financial responsibility (MFR) limits have been applied to the loss, or the primary insurance policy limit(s) is exhausted.<br/><br/>
+                                  <strong>What you will be covered for:</strong><br/>
+                                  • Up to $400,000 of supplemental protection for damage to another person's vehicle(s) and property, and injury to other drivers and their passengers.<br/>
+                                  • Excess coverage to other forms of liability insurance (personal auto plans, umbrella policies, etc).
+                                </p>
+                              </div>
+                            </div>
                             {cart.insuranceOption === '500' && <Check size={16} className="text-green-500" />}
                           </h4>
-                          <p className="text-xs text-zinc-400 mb-2">Covers damage to host's vehicle.</p>
-                          <p className="text-xs text-zinc-500">$500 Deductible</p>
+                          <p className="text-xs text-zinc-400 mb-2">Supplemental Liability Insurance (SLI).</p>
+                          <p className="text-xs text-zinc-500">$500 max out-of-pocket costs for SLI.</p>
                         </div>
-                        <span className="font-bold text-white whitespace-nowrap">+${settings.prices.insurance500}/day</span>
+                        <span className="font-bold text-white whitespace-nowrap">+${(cart.car.price >= 50 && cart.car.price <= 120 ? 27.90 : 25.70).toFixed(2)}/day</span>
                       </div>
                     </div>
-                    <div 
-                      onClick={() => setCart({...cart, insuranceOption: '1000'})} 
-                      className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '1000' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
-                      data-testid="option-protection-gold"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
-                            Gold Protection 
-                            {cart.insuranceOption === '1000' && <Check size={16} className="text-green-500" />}
-                          </h4>
-                          <p className="text-xs text-zinc-400 mb-2">Covers damage to host's vehicle, third party vehicles + bodily injuries and propriety damage.</p>
-                          <p className="text-xs text-zinc-500">$1,000 Deductible</p>
+
+                    {/* Gold Protection Option (Special Hosts Only) */}
+                    {(() => {
+                      const hostEmail = vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
+                      const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
+                      if (!isSpecialHost) return null;
+
+                      const standardPrice = cart.car.price >= 50 && cart.car.price <= 120 ? 27.90 : 25.70;
+                      const goldPrice = standardPrice + 16.90;
+
+                      return (
+                        <div 
+                          onClick={() => setCart({...cart, insuranceOption: '1000'})} 
+                          className={`p-4 rounded-lg cursor-pointer transition-all ${cart.insuranceOption === '1000' ? 'bg-zinc-800 border-2 border-green-500' : 'bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600'}`}
+                          data-testid="option-protection-gold"
+                        >
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
+                                Gold Protection 
+                                {cart.insuranceOption === '1000' && <Check size={16} className="text-green-500" />}
+                              </h4>
+                              <p className="text-xs text-zinc-400 mb-2">SLI + Vehicle Host damage or theft.</p>
+                              <p className="text-xs text-zinc-500">$1,000 Deductible</p>
+                            </div>
+                            <span className="font-bold text-white whitespace-nowrap">+${goldPrice.toFixed(2)}/day</span>
+                          </div>
                         </div>
-                        <span className="font-bold text-white whitespace-nowrap">+${settings.prices.insurance1000}/day</span>
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -11815,7 +11868,21 @@ export default function CarHopApp() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-white">Protection</span>
-                      <span className="text-white">+${((cart.insuranceOption === '500' ? settings.prices.insurance500 : settings.prices.insurance1000) * cart.billingDays).toFixed(2)}</span>
+                      <span className="text-white">
+                        {(() => {
+                          const dailyRate = cart.car.price;
+                          let std = dailyRate >= 50 && dailyRate <= 120 ? 27.90 : 25.70;
+                          const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
+                          if (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) std = vehicleStandardPrice;
+                          
+                          let price = 0;
+                          if (cart.insuranceOption === '500') price = std;
+                          else if (cart.insuranceOption === '1000') price = std + 16.90;
+                          else if (cart.insuranceOption === 'minimum') price = 16.90;
+                          
+                          return `+$${(price * cart.billingDays).toFixed(2)}`;
+                        })()}
+                      </span>
                     </div>
                     {cart.extrasSelected.includes('childSeat') && (
                       <div className="flex justify-between">
