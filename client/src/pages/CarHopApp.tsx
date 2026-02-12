@@ -2174,6 +2174,18 @@ export default function CarHopApp() {
         }
       });
       
+      // Host/Admin message responses
+      const hostAdminMsgs = (booking.messages || []).filter((m: any) => (m.sender === 'admin' || m.sender === 'host') && !m.read);
+      hostAdminMsgs.forEach((msg: any) => {
+        notifications.push({
+          id: `msg-response-${booking.id}-${msg.id}`,
+          type: 'message-response',
+          message: `New ${msg.sender} reply on ${carName}: "${(msg.text || '').substring(0, 50)}${(msg.text || '').length > 50 ? '...' : ''}"`,
+          timestamp: msg.createdAt || booking.startDate,
+          bookingCode: booking.bookingCode
+        });
+      });
+
       // Check-in completed
       if (booking.checkInStatus === 'completed') {
         notifications.push({
@@ -2212,6 +2224,60 @@ export default function CarHopApp() {
     const newReadIds = Array.from(idSet);
     setReadNotificationIds(newReadIds);
     localStorage.setItem('carhop_read_notifications', JSON.stringify(newReadIds));
+  };
+
+  const getHostBookingsAlertCount = () => {
+    if (!currentHost) return 0;
+    const hostVehicleIds = vehicles.filter(v => String(v.hostId) === String(currentHost.id)).map(v => v.id);
+    const hostBookings = bookings.filter(b => {
+      const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+      return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
+    });
+    let count = 0;
+    hostBookings.forEach(b => {
+      if ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending') count++;
+      const pendingExtensions = (b.extensionRequests || []).filter((r: any) => r.status === 'pending');
+      count += pendingExtensions.length;
+      const unreadMsgs = (b.messages || []).filter((m: any) => m.sender === 'client' && !m.read);
+      count += unreadMsgs.length;
+    });
+    return count;
+  };
+
+  const getAdminBookingsAlertCount = () => {
+    let count = 0;
+    bookings.forEach(b => {
+      if ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending') count++;
+      const pendingExtensions = (b.extensionRequests || []).filter((r: any) => r.status === 'pending');
+      count += pendingExtensions.length;
+      const unreadMsgs = (b.messages || []).filter((m: any) => m.sender === 'client' && !m.read);
+      count += unreadMsgs.length;
+    });
+    return count;
+  };
+
+  const getClientManageBookingAlertCount = () => {
+    const userEmail = (authUser?.email || clientUser?.email)?.toLowerCase().trim();
+    if (!userEmail) return 0;
+    let count = 0;
+    const clientBookings = bookings.filter(b => {
+      const bookingEmail = (b.driver as any)?.email?.toLowerCase().trim();
+      return bookingEmail && bookingEmail === userEmail && b.status !== 'Cancelled';
+    });
+    clientBookings.forEach(b => {
+      const unreadMsgs = (b.messages || []).filter((m: any) => (m.sender === 'admin' || m.sender === 'host') && !m.read);
+      count += unreadMsgs.length;
+      const deliveryStatus = (b.details as any)?.deliveryApprovalStatus;
+      if (deliveryStatus === 'approved' || deliveryStatus === 'rejected') {
+        if (!readNotificationIds.includes(`delivery-${deliveryStatus}-${b.id}`)) count++;
+      }
+      (b.extensionRequests || []).forEach((req: any, idx: number) => {
+        if (req.status === 'approved' || req.status === 'rejected') {
+          if (!readNotificationIds.includes(`extension-${req.status}-${b.id}-${idx}`)) count++;
+        }
+      });
+    });
+    return count;
   };
 
   const handleApplyDiscount = async (booking: Booking) => {
@@ -2559,7 +2625,12 @@ export default function CarHopApp() {
             <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            <button onClick={handleManageBookingClick} className="hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">Manage Booking</button>
+            <button onClick={handleManageBookingClick} className="relative hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">
+              Manage Booking
+              {getClientManageBookingAlertCount() > 0 && (
+                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">{getClientManageBookingAlertCount() > 9 ? '9+' : getClientManageBookingAlertCount()}</span>
+              )}
+            </button>
             {clientUser ? (
               <div className="flex items-center gap-3">
                 {/* Notifications Bell */}
@@ -2594,6 +2665,7 @@ export default function CarHopApp() {
                                 }`}>
                                   {notification.type.includes('delivery') ? <Navigation size={12}/> :
                                    notification.type.includes('extension') ? <CalendarClock size={12}/> :
+                                   notification.type.includes('message') ? <MessageCircle size={12}/> :
                                    notification.type.includes('checkin') ? <Check size={12}/> :
                                    <Check size={12}/>}
                                 </div>
@@ -2658,8 +2730,8 @@ export default function CarHopApp() {
             {clientUser && (
               <>
                 <button onClick={() => { setView('bookings'); }} className="relative p-1 sm:p-2 hover:text-green-600 dark:hover:text-green-500 transition-colors text-xs font-bold" data-testid="button-mobile-bookings">My Bookings
-                  {(getClientUnreadCount() + getClientUnreadAdminRepliesCount()) > 0 && (
-                    <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{(getClientUnreadCount() + getClientUnreadAdminRepliesCount()) > 9 ? '9+' : (getClientUnreadCount() + getClientUnreadAdminRepliesCount())}</span>
+                  {getClientManageBookingAlertCount() > 0 && (
+                    <span className="absolute -top-0.5 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientManageBookingAlertCount() > 9 ? '9+' : getClientManageBookingAlertCount()}</span>
                   )}
                 </button>
                 {/* Mobile Notifications Bell */}
@@ -2693,6 +2765,7 @@ export default function CarHopApp() {
                                 }`}>
                                   {notification.type.includes('delivery') ? <Navigation size={10}/> :
                                    notification.type.includes('extension') ? <CalendarClock size={10}/> :
+                                   notification.type.includes('message') ? <MessageCircle size={10}/> :
                                    <Check size={10}/>}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -2739,7 +2812,13 @@ export default function CarHopApp() {
                   {clientUser ? (
                     <>
                       <div className="w-full px-4 py-2 text-center text-sm text-green-600 font-bold flex items-center justify-center gap-2">Hi, {clientUser.name.split(' ')[0]}</div>
-                      <button onClick={() => { setView('bookings'); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-bookings"><Briefcase className="h-4 w-4" />My Bookings</button>
+                            <button onClick={() => { setView('bookings'); setMobileActionsMenuOpen(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 whitespace-nowrap" data-testid="button-menu-bookings">
+                        <Briefcase className="h-4 w-4" />
+                        <span>My Bookings</span>
+                        {getClientManageBookingAlertCount() > 0 && (
+                          <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{getClientManageBookingAlertCount() > 9 ? '9+' : getClientManageBookingAlertCount()}</span>
+                        )}
+                      </button>
                       <button onClick={() => { 
                         if (clientUser) {
                           setClientChatForm(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' }));
@@ -4729,6 +4808,11 @@ export default function CarHopApp() {
                 <div className="flex items-center gap-1">
                   {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
+                  {tab === 'bookings' && getHostBookingsAlertCount() > 0 && (
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse">
+                      {getHostBookingsAlertCount() > 9 ? '9+' : getHostBookingsAlertCount()}
+                    </span>
+                  )}
                   {tab === 'earnings' && <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'chat' && <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'chat' && hostUnreadCount > 0 && (
@@ -7099,6 +7183,11 @@ export default function CarHopApp() {
                     {tab === 'support' && supportMessagesData.filter((m: any) => !m.read && !m.adminReply).length > 0 && (
                       <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         !
+                      </span>
+                    )}
+                    {tab === 'bookings' && getAdminBookingsAlertCount() > 0 && (
+                      <span className="absolute -top-4 -right-3 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                        {getAdminBookingsAlertCount() > 9 ? '9+' : getAdminBookingsAlertCount()}
                       </span>
                     )}
                   </div>
