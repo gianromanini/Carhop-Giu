@@ -1762,7 +1762,7 @@ export default function CarHopApp() {
     
     // Protection Plan Pricing Logic
     const dailyRate = cart.car.price;
-    const hostEmail = cart.car.hostEmail || ''; // Using hostEmail directly from car object if available, otherwise fallback
+    const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
     const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com' || (vehicles.find(v => v.id === cart.car?.id)?.hostName === 'giuspfc123@gmail.com' || vehicles.find(v => v.id === cart.car?.id)?.hostName === 'gianromanini@gmail.com');
 
     let standardPlanPrice = 25.70; // Default global
@@ -1821,64 +1821,59 @@ export default function CarHopApp() {
       const bookingLocation = selectedDeliveryType === 'delivery' ? cart.location : pickupAddress;
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
-      // Protection Plan Pricing Logic for Booking Creation
       const dailyRate = cart.car!.price;
       const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
-        let standardPlanPrice = 25.70;
-        if (dailyRate >= 50 && dailyRate <= 120) {
-          standardPlanPrice = 27.90;
-        }
-        const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
-        const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
-        const finalGoldPrice = finalStandardPrice + 16.90;
-        const minimumPlanPrice = 16.90;
+      let standardPlanPrice = 25.70;
+      if (dailyRate >= 50 && dailyRate <= 120) {
+        standardPlanPrice = 27.90;
+      }
+      const vehicleStandardPrice = cart.car!.pricing?.prices?.insurance500;
+      const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
+      const finalGoldPrice = finalStandardPrice + 16.90;
+      const minimumPlanPrice = 16.90;
 
-        const newBooking = { 
-          bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
-          status: 'Active', 
-          carName: cart.car!.model, 
-          vehicleId: cart.car!.id,
-          location: bookingLocation, 
-          startDate: searchParams.start, 
-          startTime: searchParams.startTime, 
-          returnDate: searchParams.end, 
-          returnTime: searchParams.endTime, 
-          days: days, 
-          total: totalData.total, 
-          image: cart.car!.images?.[0] || '', 
-          driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
-          paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
-          paymentMethod: paymentMethodDisplay, 
-          deliveryType: selectedDeliveryType,
-          details: { 
-            rate: cart.car!.price * days, 
-            extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
-            childSeatSelected: cart.extrasSelected.includes('childSeat'),
-            protection: (cart.insuranceOption === '500' ? finalStandardPrice : cart.insuranceOption === '1000' ? finalGoldPrice : minimumPlanPrice) * days, 
-            protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'), 
-            fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
-            deliveryFee: totalData.deliveryFee || 0, 
-            tax: totalData.taxAmount, 
-            deliveryType: selectedDeliveryType, 
-            deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
-            pickupAddress: pickupAddress 
-          },
-      messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
-      carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
-      checkInStatus: 'pending', 
-      checkOutStatus: 'pending', 
-      checkInData: null, 
-      checkOutData: null 
-    };
-    
-    console.log('[Frontend] Creating booking with data:', JSON.stringify(newBooking).substring(0, 500));
-    
-    try {
+      const newBooking = { 
+        bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
+        status: 'Active', 
+        carName: cart.car!.model, 
+        vehicleId: cart.car!.id,
+        location: bookingLocation, 
+        startDate: searchParams.start, 
+        startTime: searchParams.startTime, 
+        returnDate: searchParams.end, 
+        returnTime: searchParams.endTime, 
+        days: days, 
+        total: totalData.total, 
+        image: cart.car!.images?.[0] || '', 
+        driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
+        paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
+        paymentMethod: paymentMethodDisplay, 
+        deliveryType: selectedDeliveryType,
+        details: { 
+          rate: cart.car!.price * days, 
+          extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
+          childSeatSelected: cart.extrasSelected.includes('childSeat'),
+          protection: (cart.insuranceOption === '500' ? finalStandardPrice : cart.insuranceOption === '1000' ? finalGoldPrice : minimumPlanPrice) * days, 
+          protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'), 
+          fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
+          deliveryFee: totalData.deliveryFee || 0, 
+          tax: totalData.taxAmount, 
+          deliveryType: selectedDeliveryType, 
+          deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
+          pickupAddress: pickupAddress 
+        },
+        messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
+        carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
+        checkInStatus: 'pending', 
+        checkOutStatus: 'pending', 
+        checkInData: null, 
+        checkOutData: null 
+      };
+      
       const createdBooking = await createBookingMutation.mutateAsync(newBooking);
-      console.log('[Frontend] Created booking:', createdBooking);
       setIsProcessingPayment(false);
       setBookingResult(createdBooking);
       setPickupAddress('');
@@ -1887,7 +1882,7 @@ export default function CarHopApp() {
     } catch (error) {
       console.error('[Frontend] Error creating booking:', error);
       setIsProcessingPayment(false);
-      // toast is already handled by mutation onError
+      toast({ title: "Erro", description: "Ocorreu um erro ao processar. Tente novamente.", variant: "destructive" });
     }
   };
 
