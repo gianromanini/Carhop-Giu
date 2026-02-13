@@ -1813,14 +1813,18 @@ export default function CarHopApp() {
     setIsProcessingPayment(true); 
     
     // Simulate payment processing animation
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
-        const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
-        
-        // Protection Plan Pricing Logic for Booking Creation
-        const dailyRate = cart.car.price;
-        const hostEmail = cart.car.hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
-        const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
+    try {
+      const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
+      const totalData = calculateTotal();
+      const bookingLocation = selectedDeliveryType === 'delivery' ? cart.location : pickupAddress;
+      const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
+      
+      // Protection Plan Pricing Logic for Booking Creation
+      const dailyRate = cart.car!.price;
+      const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
+      const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
         let standardPlanPrice = 25.70;
         if (dailyRate >= 50 && dailyRate <= 120) {
@@ -12701,37 +12705,47 @@ export default function CarHopApp() {
             }
             
             setIsProcessingPayment(true);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 3000));
             
-            const paymentMethodDisplay = paymentMethod === 'paypal' 
-              ? 'PayPal' 
-              : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
+            try {
+              const paymentMethodDisplay = paymentMethod === 'paypal' 
+                ? 'PayPal' 
+                : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
             
-            // Update the booking with payment info and status
-            const updateData: any = {
-              status: 'Active',
-              total: adjustedTotal,
-              paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type },
-              paymentMethod: paymentMethodDisplay,
-            };
-            
-            // If rejected, apply discount
-            if (approvalStatus === 'rejected' && deliveryFeeAmount > 0) {
-              updateData.details = {
-                ...pendingBooking.details,
-                discount: deliveryFeeAmount,
-                deliveryType: 'pickup'
+              // Update the booking with payment info and status
+              const updateData: any = {
+                status: 'Active',
+                total: adjustedTotal,
+                paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type },
+                paymentMethod: paymentMethodDisplay,
               };
-              updateData.location = (pendingBooking.details as any)?.pickupAddress || pendingBooking.location;
+              
+              // If rejected, apply discount
+              if (approvalStatus === 'rejected' && deliveryFeeAmount > 0) {
+                updateData.details = {
+                  ...pendingBooking.details,
+                  discount: deliveryFeeAmount,
+                  deliveryType: 'pickup'
+                };
+                updateData.location = (pendingBooking.details as any)?.pickupAddress || pendingBooking.location;
+              }
+              
+              await updateBookingMutation.mutateAsync({ id: pendingDeliveryBookingId, data: updateData });
+              
+              setIsProcessingPayment(false);
+              setPendingDeliveryBookingId(null);
+              setPaymentDetails({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
+              toast({ description: "Payment confirmed! Booking is now active." });
+              setView('confirmation');
+            } catch (error) {
+              console.error('[Frontend] Error processing final payment:', error);
+              setIsProcessingPayment(false);
+              toast({ 
+                title: "Erro no pagamento", 
+                description: "Ocorreu um erro ao processar o pagamento via PayPal. Por favor, tente novamente.", 
+                variant: "destructive" 
+              });
             }
-            
-            await updateBookingMutation.mutateAsync({ id: pendingDeliveryBookingId, data: updateData });
-            
-            setIsProcessingPayment(false);
-            setPendingDeliveryBookingId(null);
-            setPaymentDetails({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
-            toast({ description: "Payment confirmed! Booking is now active." });
-            setView('confirmation');
           };
           
           return (
