@@ -747,6 +747,7 @@ export class MemStorage implements IStorage {
       } : null,
       extraPayments: (booking.extraPayments || []) as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[],
       extensionRequests: [],
+      vehicleReplaceRequests: [],
       messages: [],
     };
     this.bookings.set(id, newBooking);
@@ -801,6 +802,7 @@ export class MemStorage implements IStorage {
       } : existing.checkOutData,
       extensionRequests: booking.extensionRequests ? [...booking.extensionRequests] as { id: string; type: 'extension' | 'reduction'; requestedReturnDate: string; requestedReturnTime: string; reason: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; respondedAt?: string; }[] : existing.extensionRequests,
       extraPayments: booking.extraPayments ? [...booking.extraPayments] as { id: string; type: string; amount: number; description: string; paymentMethod: string; processedAt: string; status: 'pending' | 'completed' | 'failed'; }[] : existing.extraPayments,
+      vehicleReplaceRequests: (booking as any).vehicleReplaceRequests ? [...(booking as any).vehicleReplaceRequests] : existing.vehicleReplaceRequests,
       messages: booking.messages ? [...booking.messages] as { id: string; sender: 'client' | 'admin'; text: string; createdAt: string; read: boolean; }[] : existing.messages,
       unread: booking.unread !== undefined ? booking.unread : existing.unread,
     };

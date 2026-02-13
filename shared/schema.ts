@@ -209,6 +209,23 @@ export const bookings = pgTable("bookings", {
     processedAt: string;
     status: 'pending' | 'completed' | 'failed';
   }[]>().default([]),
+  vehicleReplaceRequests: jsonb("vehicle_replace_requests").$type<{
+    id: string;
+    requestedBy: 'client' | 'host' | 'admin';
+    reason: string;
+    status: 'pending' | 'approved' | 'rejected';
+    newVehicleId?: number;
+    newVehicleModel?: string;
+    newDailyRate?: number;
+    oldVehicleId: number;
+    oldVehicleModel: string;
+    oldDailyRate: number;
+    priceDifference?: number;
+    remainingDays?: number;
+    createdAt: string;
+    respondedAt?: string;
+    respondedBy?: string;
+  }[]>().default([]),
   unread: boolean("unread").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

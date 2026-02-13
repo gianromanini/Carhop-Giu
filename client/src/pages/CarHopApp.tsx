@@ -794,6 +794,14 @@ export default function CarHopApp() {
   const [showHostTransferModal, setShowHostTransferModal] = useState(false);
   const [pendingHostTransfer, setPendingHostTransfer] = useState<{ vehicleId: number; vehicleModel: string; fromHostId: string; fromHostName: string; toHostId: string; toHostName: string } | null>(null);
   
+  const [clientChatMode, setClientChatMode] = useState<'chat' | 'replace'>('chat');
+  const [replaceReason, setReplaceReason] = useState('');
+  const [replacingBookingId, setReplacingBookingId] = useState<number | null>(null);
+  const [hostReplaceVehicleId, setHostReplaceVehicleId] = useState<number | null>(null);
+  const [hostReplaceReason, setHostReplaceReason] = useState('');
+  const [showHostReplaceModal, setShowHostReplaceModal] = useState(false);
+  const [hostReplaceBookingId, setHostReplaceBookingId] = useState<number | null>(null);
+  
   const confirmHostTransfer = async () => {
     if (!pendingHostTransfer) return;
     try {
@@ -5887,6 +5895,165 @@ export default function CarHopApp() {
                             </div>
                           )}
 
+                          {/* Vehicle Replacement Requests from Client */}
+                          {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'pending').length > 0 && (
+                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-orange-400">
+                                <Car size={14}/> Vehicle Replacement Requests
+                              </h4>
+                              <div className="space-y-3">
+                                {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'pending').map((req: any) => {
+                                  const hostVehiclesForReplace = vehicles.filter(v => String(v.hostId) === String(currentHost?.id) && v.id !== b.vehicleId);
+                                  return (
+                                    <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                      <div className="mb-2">
+                                        <span className="text-xs font-bold uppercase text-orange-400">
+                                          {req.requestedBy === 'client' ? 'Client Request' : req.requestedBy === 'admin' ? 'Admin Request' : 'Your Offer'}
+                                        </span>
+                                        <div className="text-sm text-zinc-300 mt-1">Current: <span className="font-bold">{req.oldVehicleModel}</span> (${req.oldDailyRate}/day)</div>
+                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                      </div>
+                                      
+                                      <div className="mt-3 space-y-2">
+                                        <label className="text-xs text-zinc-400 block">Select replacement vehicle:</label>
+                                        <select
+                                          value={hostReplaceVehicleId || ''}
+                                          onChange={(e) => setHostReplaceVehicleId(Number(e.target.value) || null)}
+                                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                          data-testid="select-host-replace-vehicle"
+                                        >
+                                          <option value="">Choose a vehicle...</option>
+                                          {hostVehiclesForReplace.map(v => (
+                                            <option key={v.id} value={v.id}>{v.model} - ${v.price}/day</option>
+                                          ))}
+                                        </select>
+                                        
+                                        {hostReplaceVehicleId && (() => {
+                                          const selectedV = vehicles.find(v => v.id === hostReplaceVehicleId);
+                                          if (!selectedV) return null;
+                                          const priceDiff = selectedV.price - req.oldDailyRate;
+                                          const today = new Date();
+                                          const returnDate = new Date(b.returnDate);
+                                          const remainingDays = Math.max(1, Math.ceil((returnDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+                                          const totalDiff = priceDiff * remainingDays;
+                                          return (
+                                            <div className="p-2 bg-zinc-800 rounded text-xs text-zinc-300 space-y-1">
+                                              <p>New rate: <span className="font-bold text-white">${selectedV.price}/day</span></p>
+                                              <p>Remaining days: <span className="font-bold text-white">{remainingDays}</span></p>
+                                              <p>Price difference: <span className={`font-bold ${totalDiff > 0 ? 'text-red-400' : totalDiff < 0 ? 'text-green-400' : 'text-white'}`}>{totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(2)}</span></p>
+                                            </div>
+                                          );
+                                        })()}
+                                        
+                                        <div className="flex gap-2 mt-2">
+                                          <button
+                                            onClick={async () => {
+                                              if (!hostReplaceVehicleId) {
+                                                toast({ description: 'Please select a replacement vehicle', variant: 'destructive' });
+                                                return;
+                                              }
+                                              try {
+                                                await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                  requestId: req.id,
+                                                  status: 'approved',
+                                                  newVehicleId: hostReplaceVehicleId,
+                                                  respondedBy: 'host',
+                                                });
+                                                queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                setHostReplaceVehicleId(null);
+                                                toast({ description: 'Vehicle replacement approved!' });
+                                              } catch (error) {
+                                                toast({ description: 'Error approving replacement', variant: 'destructive' });
+                                              }
+                                            }}
+                                            className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                            data-testid={`button-host-approve-replace-${req.id}`}
+                                          >
+                                            Approve & Replace
+                                          </button>
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                  requestId: req.id,
+                                                  status: 'rejected',
+                                                  respondedBy: 'host',
+                                                });
+                                                queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                toast({ description: 'Replacement request declined' });
+                                              } catch (error) {
+                                                toast({ description: 'Error declining request', variant: 'destructive' });
+                                              }
+                                            }}
+                                            className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                            data-testid={`button-host-reject-replace-${req.id}`}
+                                          >
+                                            Decline
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Host: Offer Vehicle Replacement */}
+                          {b.status === 'Active' && (
+                            <div className="mt-2">
+                              {hostReplaceBookingId !== b.id ? (
+                                <button
+                                  onClick={() => { setHostReplaceBookingId(b.id); setHostReplaceReason(''); setHostReplaceVehicleId(null); }}
+                                  className="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                  data-testid={`button-host-offer-replace-${b.id}`}
+                                >
+                                  <Car size={14}/> Offer Vehicle Replacement
+                                </button>
+                              ) : (
+                                <div className="p-3 bg-zinc-900 rounded-lg border border-orange-900/50 space-y-2">
+                                  <label className="text-xs text-orange-400 font-bold">Offer Replacement Vehicle</label>
+                                  <textarea
+                                    value={hostReplaceReason}
+                                    onChange={(e) => setHostReplaceReason(e.target.value)}
+                                    placeholder="Reason for offering replacement..."
+                                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white resize-none"
+                                    rows={2}
+                                    data-testid="input-host-replace-reason"
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/request`, {
+                                            requestedBy: 'host',
+                                            reason: hostReplaceReason || 'Host offering vehicle replacement',
+                                          });
+                                          queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                          setHostReplaceBookingId(null);
+                                          setHostReplaceReason('');
+                                          toast({ description: 'Replacement offer sent to client!' });
+                                        } catch (error) {
+                                          toast({ description: 'Error sending offer', variant: 'destructive' });
+                                        }
+                                      }}
+                                      className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded transition-colors"
+                                      data-testid="button-host-send-replace-offer"
+                                    >
+                                      Send Offer
+                                    </button>
+                                    <button
+                                      onClick={() => setHostReplaceBookingId(null)}
+                                      className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-bold rounded transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* GUEST & HOST RATINGS SECTION */}
                           {b.status === 'Completed' && (() => {
                             const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
@@ -8980,6 +9147,126 @@ export default function CarHopApp() {
                             </div>
                           )}
 
+                          {/* Vehicle Replacement - Admin View */}
+                          {((b as any).vehicleReplaceRequests || []).length > 0 && (
+                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-orange-400">
+                                <Car size={14}/> Vehicle Replacement History
+                              </h4>
+                              <div className="space-y-3">
+                                {((b as any).vehicleReplaceRequests || []).map((req: any) => (
+                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <span className={`text-xs font-bold uppercase ${req.status === 'pending' ? 'text-yellow-400' : req.status === 'approved' ? 'text-green-400' : 'text-red-400'}`}>
+                                          {req.status} - By {req.requestedBy}
+                                        </span>
+                                        <div className="text-sm text-zinc-300 mt-1">
+                                          From: <span className="font-bold">{req.oldVehicleModel}</span> (${req.oldDailyRate}/day)
+                                        </div>
+                                        {req.newVehicleModel && (
+                                          <div className="text-sm text-zinc-300">
+                                            To: <span className="font-bold text-green-400">{req.newVehicleModel}</span> (${req.newDailyRate}/day)
+                                          </div>
+                                        )}
+                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                        {req.priceDifference !== undefined && req.priceDifference !== 0 && (
+                                          <div className="text-xs mt-1">
+                                            Price adjustment: <span className={req.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>{req.priceDifference > 0 ? '+' : ''}${req.priceDifference.toFixed(2)}</span> ({req.remainingDays} days)
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                    {req.status === 'pending' && (
+                                      <div className="mt-3 space-y-2">
+                                        <select
+                                          value={hostReplaceVehicleId || ''}
+                                          onChange={(e) => setHostReplaceVehicleId(Number(e.target.value) || null)}
+                                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                          data-testid={`select-admin-replace-vehicle-${req.id}`}
+                                        >
+                                          <option value="">Choose replacement vehicle...</option>
+                                          {vehicles.filter(v => v.id !== b.vehicleId).map(v => (
+                                            <option key={v.id} value={v.id}>{v.model} - ${v.price}/day</option>
+                                          ))}
+                                        </select>
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={async () => {
+                                              if (!hostReplaceVehicleId) {
+                                                toast({ description: 'Please select a replacement vehicle', variant: 'destructive' });
+                                                return;
+                                              }
+                                              try {
+                                                await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                  requestId: req.id,
+                                                  status: 'approved',
+                                                  newVehicleId: hostReplaceVehicleId,
+                                                  respondedBy: 'admin',
+                                                });
+                                                queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                setHostReplaceVehicleId(null);
+                                                toast({ description: 'Vehicle replacement approved!' });
+                                              } catch (error) {
+                                                toast({ description: 'Error approving replacement', variant: 'destructive' });
+                                              }
+                                            }}
+                                            className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                            data-testid={`button-admin-approve-replace-${req.id}`}
+                                          >
+                                            Approve
+                                          </button>
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                  requestId: req.id,
+                                                  status: 'rejected',
+                                                  respondedBy: 'admin',
+                                                });
+                                                queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                toast({ description: 'Replacement request declined' });
+                                              } catch (error) {
+                                                toast({ description: 'Error declining request', variant: 'destructive' });
+                                              }
+                                            }}
+                                            className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                            data-testid={`button-admin-reject-replace-${req.id}`}
+                                          >
+                                            Decline
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Admin: Initiate Vehicle Replacement */}
+                          {(b.status === 'Active' || b.status === 'Confirmed') && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/request`, {
+                                    requestedBy: 'admin',
+                                    reason: 'Admin-initiated vehicle replacement',
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                  toast({ description: 'Vehicle replacement initiated. Select a replacement vehicle above.' });
+                                } catch (error) {
+                                  toast({ description: 'Error initiating replacement', variant: 'destructive' });
+                                }
+                              }}
+                              className="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                              data-testid={`button-admin-initiate-replace-${b.id}`}
+                            >
+                              <Car size={14}/> Initiate Vehicle Replacement
+                            </button>
+                          )}
+
                           {/* Payment Details (Sensitive) */}
                           <div className={`p-4 rounded-lg border ${b.paymentRaw?.type === 'paypal' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-red-950/30 border-red-900/50'}`}>
                             <div className="flex justify-between items-center mb-3">
@@ -10977,7 +11264,7 @@ export default function CarHopApp() {
                                 (b.messages || []).map(msg => (
                                   <div key={msg.id} className={`p-2 rounded text-xs ${msg.sender === 'client' ? 'bg-blue-100 dark:bg-blue-900/30 border-l-2 border-blue-500 ml-2' : 'bg-green-100 dark:bg-green-900/30 border-l-2 border-green-500 mr-2'}`}>
                                     <div className="flex justify-between items-center mb-1">
-                                      <span className={`font-bold ${msg.sender === 'client' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}>{msg.sender === 'client' ? 'You' : 'CarHop Support'}</span>
+                                      <span className={`font-bold ${msg.sender === 'client' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}>{msg.sender === 'client' ? 'You' : msg.sender === 'host' ? 'Host' : 'CarHop Support'}</span>
                                       <span className="text-zinc-400 text-[10px]">{new Date(msg.createdAt).toLocaleTimeString()}</span>
                                     </div>
                                     <p className="text-zinc-700 dark:text-zinc-300">{msg.text}</p>
@@ -10985,24 +11272,110 @@ export default function CarHopApp() {
                                 ))
                               )}
                             </div>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={chatMessage}
-                                onChange={(e) => setChatMessage(e.target.value)}
-                                placeholder="Type your message..."
-                                className="flex-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 text-sm"
-                                data-testid="input-client-message"
-                                onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'client')}
-                              />
-                              <button 
-                                onClick={() => sendChatMessage(b.id, 'client')}
-                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                                data-testid="button-send-client-message"
+                            
+                            {/* Two mode buttons: Talk with Host / Request a Change Vehicle */}
+                            <div className="flex gap-2 mb-3">
+                              <button
+                                onClick={() => setClientChatMode('chat')}
+                                className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1 ${clientChatMode === 'chat' ? 'bg-green-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
+                                data-testid="button-talk-with-host"
                               >
-                                <Send size={14}/>
+                                <MessageCircle size={12}/> Talk with Host
+                              </button>
+                              <button
+                                onClick={() => setClientChatMode('replace')}
+                                className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1 ${clientChatMode === 'replace' ? 'bg-orange-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
+                                data-testid="button-request-change-vehicle"
+                              >
+                                <Car size={12}/> Request a Change Vehicle
                               </button>
                             </div>
+
+                            {clientChatMode === 'chat' && (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={chatMessage}
+                                  onChange={(e) => setChatMessage(e.target.value)}
+                                  placeholder="Type your message..."
+                                  className="flex-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 text-sm"
+                                  data-testid="input-client-message"
+                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'client')}
+                                />
+                                <button 
+                                  onClick={() => sendChatMessage(b.id, 'client')}
+                                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                                  data-testid="button-send-client-message"
+                                >
+                                  <Send size={14}/>
+                                </button>
+                              </div>
+                            )}
+
+                            {clientChatMode === 'replace' && (
+                              <div className="space-y-3">
+                                {/* Show pending replace requests */}
+                                {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'pending').length > 0 && (
+                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                    <p className="text-xs font-bold text-yellow-700 dark:text-yellow-400 flex items-center gap-1"><AlertCircle size={12}/> Pending replacement request</p>
+                                    <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">Waiting for host approval...</p>
+                                  </div>
+                                )}
+                                {/* Show approved replace history */}
+                                {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved').map((r: any) => (
+                                  <div key={r.id} className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                    <p className="text-xs font-bold text-green-700 dark:text-green-400 flex items-center gap-1"><Check size={12}/> Vehicle replaced</p>
+                                    <p className="text-xs text-green-600 dark:text-green-500 mt-1">{r.oldVehicleModel} &rarr; {r.newVehicleModel}</p>
+                                    {r.priceDifference !== 0 && r.priceDifference !== undefined && (
+                                      <p className="text-xs mt-1 text-zinc-600 dark:text-zinc-400">
+                                        Price adjustment: <span className={r.priceDifference > 0 ? 'text-red-500' : 'text-green-500'}>{r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}</span> ({r.remainingDays} remaining days)
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                                {/* Request form - only show if no pending request */}
+                                {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'pending').length === 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-xs text-zinc-500">Need a different vehicle? Submit a request and the host will review available options.</p>
+                                    <textarea
+                                      value={replaceReason}
+                                      onChange={(e) => setReplaceReason(e.target.value)}
+                                      placeholder="Describe why you need a vehicle change..."
+                                      className="w-full bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm resize-none"
+                                      rows={2}
+                                      data-testid="input-replace-reason"
+                                    />
+                                    <button
+                                      onClick={async () => {
+                                        if (!replaceReason.trim()) {
+                                          toast({ description: 'Please describe the reason for vehicle change', variant: 'destructive' });
+                                          return;
+                                        }
+                                        try {
+                                          setReplacingBookingId(b.id);
+                                          await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/request`, {
+                                            requestedBy: 'client',
+                                            reason: replaceReason,
+                                          });
+                                          queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                          setReplaceReason('');
+                                          setReplacingBookingId(null);
+                                          toast({ description: 'Vehicle replacement request sent to host!' });
+                                        } catch (error) {
+                                          toast({ description: 'Error sending request', variant: 'destructive' });
+                                          setReplacingBookingId(null);
+                                        }
+                                      }}
+                                      disabled={replacingBookingId === b.id}
+                                      className="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                      data-testid="button-submit-replace-request"
+                                    >
+                                      <Car size={14}/> Submit Replacement Request
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ) : null}

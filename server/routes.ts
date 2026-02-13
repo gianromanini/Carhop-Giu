@@ -1492,6 +1492,144 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json(updated);
   });
 
+  // ========== VEHICLE REPLACEMENT ==========
+  app.post("/api/bookings/:id/replace-vehicle/request", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { requestedBy, reason } = req.body;
+    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
+    
+    const newRequest = {
+      id: `vr-${Date.now()}`,
+      requestedBy: requestedBy as 'client' | 'host' | 'admin',
+      reason: reason || '',
+      status: 'pending' as const,
+      oldVehicleId: booking.vehicleId || 0,
+      oldVehicleModel: booking.carName || vehicle?.model || '',
+      oldDailyRate: vehicle?.price || 0,
+      createdAt: new Date().toISOString(),
+    };
+    
+    const vehicleReplaceRequests = [...(booking.vehicleReplaceRequests || []), newRequest];
+    
+    const messageText = requestedBy === 'client' 
+      ? `Vehicle replacement requested by client. Reason: ${reason || 'Not specified'}`
+      : requestedBy === 'host'
+      ? `Host is offering a vehicle replacement. Reason: ${reason || 'Not specified'}`
+      : `Admin initiated a vehicle replacement. Reason: ${reason || 'Not specified'}`;
+    
+    const newMessage = {
+      id: `msg-${Date.now()}`,
+      sender: requestedBy === 'client' ? 'client' as const : requestedBy === 'host' ? 'host' as const : 'admin' as const,
+      text: messageText,
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    
+    const messages = [...(booking.messages || []), newMessage];
+    const updated = await storage.updateBooking(id, { vehicleReplaceRequests, messages } as any);
+    res.json(updated);
+  });
+
+  app.post("/api/bookings/:id/replace-vehicle/respond", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    
+    const { requestId, status, newVehicleId, respondedBy } = req.body;
+    
+    if (!requestId || !status) {
+      return res.status(400).json({ error: "requestId and status required" });
+    }
+    
+    const requests = [...(booking.vehicleReplaceRequests || [])];
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex === -1) return res.status(404).json({ error: "Request not found" });
+    
+    if (status === 'approved' && newVehicleId) {
+      const newVehicle = await storage.getVehicle(newVehicleId);
+      if (!newVehicle) return res.status(404).json({ error: "New vehicle not found" });
+      
+      const oldRate = requests[reqIndex].oldDailyRate;
+      const newRate = newVehicle.price;
+      
+      const today = new Date();
+      const returnDate = new Date(booking.returnDate);
+      const remainingMs = returnDate.getTime() - today.getTime();
+      const remainingDays = Math.max(1, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+      
+      const priceDiffPerDay = newRate - oldRate;
+      const totalPriceDifference = priceDiffPerDay * remainingDays;
+      
+      requests[reqIndex] = {
+        ...requests[reqIndex],
+        status: 'approved',
+        newVehicleId: newVehicle.id,
+        newVehicleModel: newVehicle.model,
+        newDailyRate: newRate,
+        priceDifference: totalPriceDifference,
+        remainingDays,
+        respondedAt: new Date().toISOString(),
+        respondedBy: respondedBy || 'host',
+      };
+      
+      let messageText = `Vehicle replacement approved! Swapping from ${booking.carName} to ${newVehicle.model}.`;
+      if (totalPriceDifference > 0) {
+        messageText += ` Additional charge: +$${totalPriceDifference.toFixed(2)} for ${remainingDays} remaining day(s).`;
+      } else if (totalPriceDifference < 0) {
+        messageText += ` Discount applied: -$${Math.abs(totalPriceDifference).toFixed(2)} for ${remainingDays} remaining day(s).`;
+      } else {
+        messageText += ` No price difference.`;
+      }
+      
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        sender: 'admin' as const,
+        text: messageText,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      
+      const messages = [...(booking.messages || []), newMessage];
+      
+      let newTotal = booking.total + totalPriceDifference;
+      
+      const updated = await storage.updateBooking(id, {
+        vehicleReplaceRequests: requests,
+        vehicleId: newVehicle.id,
+        carName: newVehicle.model,
+        image: newVehicle.images?.[0] || booking.image,
+        total: newTotal,
+        messages,
+      } as any);
+      
+      res.json(updated);
+    } else if (status === 'rejected') {
+      requests[reqIndex] = {
+        ...requests[reqIndex],
+        status: 'rejected',
+        respondedAt: new Date().toISOString(),
+        respondedBy: respondedBy || 'host',
+      };
+      
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        sender: 'admin' as const,
+        text: `Vehicle replacement request has been declined.`,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      
+      const messages = [...(booking.messages || []), newMessage];
+      const updated = await storage.updateBooking(id, { vehicleReplaceRequests: requests, messages } as any);
+      res.json(updated);
+    } else {
+      return res.status(400).json({ error: "Invalid status or missing newVehicleId for approval" });
+    }
+  });
+
   // ========== SETTINGS ==========
   app.get("/api/settings", async (_req, res) => {
     const allSettings = await storage.getAllSettings();
