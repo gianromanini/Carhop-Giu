@@ -13514,7 +13514,7 @@ export default function CarHopApp() {
                         className="text-blue-500 hover:text-blue-400 font-medium text-sm ml-2 transition-colors inline-flex items-center gap-1"
                         data-testid="link-host-profile-detail"
                       >
-                        <User size={14}/> {(() => { const h = hostsData.find((h: any) => String(h.id) === String(viewCar.hostId)); return h ? `${h.firstName} ${h.lastName}` : viewCar.hostName; })()}
+                        <User size={14}/> {(() => { const h = hostsData.find((h: any) => String(h.id) === String(viewCar.hostId)); return h ? `${h.firstName} ${h.lastName}` : (viewCar.hostName || 'Host'); })()}
                       </button>
                     )}
                   </h1>
