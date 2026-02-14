@@ -11327,7 +11327,17 @@ export default function CarHopApp() {
                           {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}
                         </button>
                       </h3>
-                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
+                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                        {b.days} Days | <a 
+                          href={`https://maps.google.com/?q=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'approved' && (b.details as any)?.deliveryAddress) ? (b.details as any).deliveryAddress : b.location)}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 transition-colors font-bold underline underline-offset-2" 
+                          data-testid={`link-map-${b.id}`}
+                        >
+                          {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'approved' && (b.details as any)?.deliveryAddress) ? (b.details as any).deliveryAddress : b.location)}
+                        </a>
+                      </div>
                       
                       {/* Pending Approval - Show button to check status and complete payment */}
                       {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
