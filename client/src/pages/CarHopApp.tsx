@@ -829,19 +829,55 @@ export default function CarHopApp() {
   const confirmHostTransfer = async () => {
     if (!pendingHostTransfer) return;
     try {
-      await apiRequest('POST', `/api/vehicles/${pendingHostTransfer.vehicleId}/transfer-request`, {
-        toHostId: pendingHostTransfer.toHostId,
-        toHostName: pendingHostTransfer.toHostName,
-        requestedBy: 'admin',
-      });
+      const vehicleData = {
+        model: formData.model,
+        year: parseInt(formData.year.toString()) || new Date().getFullYear(),
+        vinNumber: formData.vinNumber,
+        licensePlate: formData.licensePlate,
+        hostName: pendingHostTransfer.toHostName,
+        hostId: pendingHostTransfer.toHostId,
+        category: formData.category,
+        price: parseFloat(formData.price) || 0,
+        fuel: formData.fuel,
+        seats: formData.seats,
+        transmission: formData.transmission,
+        driveType: formData.driveType,
+        images: formData.images.filter(img => img.trim() !== ''),
+        consumption: formData.consumption,
+        isPriceMatch: formData.isPriceMatch,
+        isAWD: formData.isAWD,
+        hasCarPlay: formData.hasCarPlay,
+        hasBluetooth: formData.hasBluetooth,
+        hasReverseCamera: formData.hasReverseCamera,
+        hasHeatedSeats: formData.hasHeatedSeats,
+        hasHeatedSteering: formData.hasHeatedSteering,
+        hasElectricSeats: formData.hasElectricSeats,
+        hasPaddleShifters: formData.hasPaddleShifters,
+        hasKeylessEntry: formData.hasKeylessEntry,
+        hasBlindSpotWarning: formData.hasBlindSpotWarning,
+        hasDriveAssist: formData.hasDriveAssist,
+        hasUSBCharger: formData.hasUSBCharger,
+        availableLocations: formData.availableLocations || [],
+        locationLat: formData.locationLat || null,
+        locationLon: formData.locationLon || null,
+        isDeliveryEnabled: formData.isDeliveryEnabled || false,
+        maxDeliveryDistance: formData.maxDeliveryDistance || 50,
+        minDeliveryFeeMiles: formData.minDeliveryFeeMiles || 5,
+        minDeliveryFee: formData.minDeliveryFee || 15,
+        deliveryPricePerMile: formData.deliveryPricePerMile || 2.50,
+        minDeliveryHours: formData.minDeliveryHours || 6,
+        pricing: formData.pricing,
+      };
+      await apiRequest('PUT', `/api/vehicles/${pendingHostTransfer.vehicleId}`, vehicleData);
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       setShowHostTransferModal(false);
       setPendingHostTransfer(null);
       setEditingId(null);
       setFormData(initialFormState);
-      toast({ description: 'Transfer request sent to the current host for approval.' });
+      setPricingStrings(defaultPricingStrings);
+      toast({ description: `Vehicle transferred to ${pendingHostTransfer.toHostName} successfully!` });
     } catch {
-      toast({ description: 'Failed to send transfer request.', variant: 'destructive' });
+      toast({ description: 'Failed to transfer vehicle.', variant: 'destructive' });
     }
   };
   
@@ -13677,15 +13713,15 @@ export default function CarHopApp() {
             </div>
             <div className="space-y-3 mb-6">
               <p className="text-sm text-zinc-600 dark:text-zinc-300" data-testid="text-transfer-description">
-                You are requesting to transfer the vehicle <span className="font-semibold">{pendingHostTransfer.vehicleModel}</span> from host <span className="font-semibold">{pendingHostTransfer.fromHostName}</span> to <span className="font-semibold">{pendingHostTransfer.toHostName}</span>.
+                You are about to transfer the vehicle <span className="font-semibold">{pendingHostTransfer.vehicleModel}</span> from host <span className="font-semibold">{pendingHostTransfer.fromHostName}</span> to <span className="font-semibold">{pendingHostTransfer.toHostName}</span>.
               </p>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                The current host will need to approve this transfer before it takes effect.
+                This will immediately update the vehicle owner. The vehicle will appear in the new host's fleet.
               </p>
             </div>
             <div className="flex gap-3 justify-end">
               <Button variant="outline" onClick={() => { setShowHostTransferModal(false); setPendingHostTransfer(null); }} data-testid="button-cancel-transfer">Cancel</Button>
-              <Button onClick={confirmHostTransfer} data-testid="button-confirm-transfer">Send Transfer Request</Button>
+              <Button onClick={confirmHostTransfer} data-testid="button-confirm-transfer">Confirm Transfer</Button>
             </div>
           </div>
         </div>
