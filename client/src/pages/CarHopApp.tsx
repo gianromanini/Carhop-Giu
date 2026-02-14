@@ -1678,7 +1678,7 @@ export default function CarHopApp() {
   };
   const handleImageClick = (src: string) => { setSelectedImage(src); };
 
-  const compressImage = async (base64: string, maxWidth = 1200, quality = 0.7): Promise<string> => {
+  const compressImage = async (base64: string, maxWidth = 1200, quality = 0.6): Promise<string> => {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.src = base64;
@@ -1686,14 +1686,25 @@ export default function CarHopApp() {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
+        
+        // Calculate best dimensions to keep size around 1-2MB while maintaining quality
+        const maxDimension = 1600; 
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
         }
+        
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
+        
+        // JPEG format with 0.6 quality usually yields ~500KB to 1.5MB for 1600px images
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
     });
@@ -1702,9 +1713,7 @@ export default function CarHopApp() {
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast({ title: "Imagem sendo otimizada", description: "O arquivo é maior que 2MB. Estamos otimizando para garantir o carregamento rápido.", variant: "default" });
-      }
+      toast({ title: "Otimizando imagem", description: "Estamos ajustando a foto para garantir qualidade e velocidade.", variant: "default" });
       const reader = new FileReader();
       reader.onloadend = async () => {
         const compressed = await compressImage(reader.result as string);
@@ -1908,9 +1917,7 @@ export default function CarHopApp() {
   const handleCheckUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast({ title: "Imagem sendo otimizada", description: "O arquivo é maior que 2MB. Estamos otimizando para garantir o carregamento rápido.", variant: "default" });
-      }
+      toast({ title: "Otimizando foto", description: "Ajustando tamanho para o check-in/out.", variant: "default" });
       const reader = new FileReader();
       reader.onloadend = async () => {
         const compressed = await compressImage(reader.result as string);
