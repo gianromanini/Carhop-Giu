@@ -5752,11 +5752,18 @@ export default function CarHopApp() {
                                 <p className="text-zinc-500">{b.driver.email}</p>
                               </div>
                             </div>
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
-                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
-                                <p className="font-medium">{b.carName}</p>
-                                <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
+                                <div>
+                                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
+                                  <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                    <div className="flex flex-wrap items-center gap-1">
+                                      <p className="font-medium">{b.carName}</p>
+                                      {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                                          Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
                                 <div className="mt-0.5 mb-1">
                                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
@@ -6361,7 +6368,15 @@ export default function CarHopApp() {
                                     {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
                                         <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
-                                        <div className="space-y-1 mb-2">
+                                        <div className="space-y-1">
+                                          {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
+                                            <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
+                                              <span>Substituição Veículo: {r.oldVehicleModel} → {b.carName}</span>
+                                              <span className={r.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>
+                                                {r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}
+                                              </span>
+                                            </div>
+                                          ))}
                                           {extendedRate > 0 && (
                                             <div className="flex justify-between text-blue-300 text-xs">
                                               <span>Extended Days</span>
@@ -9004,11 +9019,18 @@ export default function CarHopApp() {
                                 <p className="text-zinc-500">{b.driver.email}</p>
                               </div>
                             </div>
-                            <div>
-                              <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
-                              <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
-                                <p className="font-medium">{b.carName}</p>
-                                <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
+                                <div>
+                                  <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
+                                  <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
+                                    <div className="flex flex-wrap items-center gap-1">
+                                      <p className="font-medium">{b.carName}</p>
+                                      {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                                          Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
                                 <div className="mt-0.5 mb-1">
                                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
@@ -9536,7 +9558,15 @@ export default function CarHopApp() {
                                     {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
                                         <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
-                                        <div className="space-y-1 mb-2">
+                                        <div className="space-y-1">
+                                          {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
+                                            <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
+                                              <span>Substituição Veículo: {r.oldVehicleModel} → {b.carName}</span>
+                                              <span className={r.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>
+                                                {r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}
+                                              </span>
+                                            </div>
+                                          ))}
                                           {extendedRate > 0 && (
                                             <div className="flex justify-between text-blue-300 text-xs">
                                               <span>Extended Days - {Math.round(extendedRate / (vehicles.find(v => v.id === b.vehicleId)?.price || 1))} Days</span>
@@ -10636,7 +10666,14 @@ export default function CarHopApp() {
                         <p className="text-sm font-bold text-green-600">Completed</p>
                       </div>
                     </div>
-                    <h3 className="text-base font-bold text-zinc-900 dark:text-white">{receiptBooking.carName}</h3>
+                    <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                      {receiptBooking.carName}
+                      {((receiptBooking as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
+                        <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                          Substituído: {((receiptBooking as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
+                        </span>
+                      )}
+                    </h3>
                     <div className="mt-1 space-y-0.5">
                       <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Loc:</strong> {formatAddressForDisplay(receiptBooking.location)}</p>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Type:</strong> {receiptBooking.details?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup'}</p>
@@ -10838,9 +10875,17 @@ export default function CarHopApp() {
                           {/* Additional Charges Section */}
                           {additionalChargesBeforeTax > 0 && (
                             <div>
-                              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Additional Charges</h4>
-                              <div className="space-y-1">
-                                {extendedRate > 0 && (
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Additional Charges</h4>
+                            <div className="space-y-1">
+                              {((receiptBooking as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
+                                <div key={`receipt-replace-diff-${r.id}`} className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Substituição Veículo: {r.oldVehicleModel} → {receiptBooking.carName}</span>
+                                  <span className={`font-bold ${r.priceDifference > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                    {r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                              {extendedRate > 0 && (
                                   <div className="flex justify-between text-sm">
                                     <span className="text-zinc-600 dark:text-zinc-400">Extended Days - {Math.round(extendedRate / (vehicles.find(v => v.id === receiptBooking.vehicleId)?.price || 1))} Days</span>
                                     <span className="text-blue-600 dark:text-blue-400">+${extendedRate.toFixed(2)}</span>
