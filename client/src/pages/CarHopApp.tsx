@@ -13507,7 +13507,7 @@ export default function CarHopApp() {
                 <div>
                   <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
                   <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">
-                    {viewCar.model}
+                    {viewCar.model} {viewCar.year}
                     {viewCar.hostId && (
                       <button 
                         onClick={() => { setViewHostProfile(viewCar.hostId!); setView('host-profile'); window.scrollTo(0, 0); }}
