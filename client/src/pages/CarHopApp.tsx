@@ -5688,7 +5688,7 @@ export default function CarHopApp() {
                                   )}
                                   <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                                 </div>
-                                <div className="text-xs text-zinc-400 font-medium">{b.carName}</div>
+                                <div className="text-xs text-zinc-400 font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</div>
                                 <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
                               </div>
                               <div className="text-right">
@@ -5794,7 +5794,7 @@ export default function CarHopApp() {
                                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                                   <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <p className="font-medium">{b.carName}</p>
+                                      <p className="font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</p>
                                       {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                                           Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
@@ -8956,7 +8956,7 @@ export default function CarHopApp() {
                             
                             {/* Car Name + Guest Label */}
                             <div className="flex justify-between items-start gap-2 mb-0.5">
-                              <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName}</div>
+                              <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</div>
                               {b.status === 'Completed' && (() => {
                                 const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                 return bookingRating?.stars ? (
@@ -9063,7 +9063,7 @@ export default function CarHopApp() {
                                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                                   <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <p className="font-medium">{b.carName}</p>
+                                      <p className="font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</p>
                                       {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                                           Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
@@ -11176,7 +11176,7 @@ export default function CarHopApp() {
                           className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 underline underline-offset-2 transition-colors cursor-pointer"
                           data-testid={`link-car-details-${b.id}`}
                         >
-                          {b.carName}
+                          {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}
                         </button>
                       </h3>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
