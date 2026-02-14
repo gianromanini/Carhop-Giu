@@ -2570,6 +2570,7 @@ export default function CarHopApp() {
       minDeliveryFee: formData.minDeliveryFee || 15,
       deliveryPricePerMile: formData.deliveryPricePerMile || 2.50,
       minDeliveryHours: formData.minDeliveryHours || 6,
+      hostId: formData.hostId,
       pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
     };
 
