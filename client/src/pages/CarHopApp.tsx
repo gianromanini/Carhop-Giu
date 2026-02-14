@@ -6492,7 +6492,17 @@ export default function CarHopApp() {
                                   )}
                                 </div>
                               ) : (
-                                <p className="text-yellow-400 text-sm">Pending</p>
+                                <div className="space-y-3">
+                                  <p className="text-yellow-400 text-sm">Pending</p>
+                                  <Button 
+                                    variant="primary" 
+                                    className="w-full text-xs h-8"
+                                    onClick={() => handleStartWorkflow(b, 'checkin')}
+                                    data-testid={`button-host-checkin-${b.id}`}
+                                  >
+                                    Perform Host Check-In
+                                  </Button>
+                                </div>
                               )}
                             </div>
                             <div className={`p-4 rounded-lg border ${b.checkOutStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
@@ -6511,7 +6521,18 @@ export default function CarHopApp() {
                                   )}
                                 </div>
                               ) : (
-                                <p className="text-yellow-400 text-sm">Pending</p>
+                                <div className="space-y-3">
+                                  <p className="text-yellow-400 text-sm">Pending</p>
+                                  <Button 
+                                    variant="orange" 
+                                    className={`w-full text-xs h-8 ${b.checkInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`}
+                                    disabled={b.checkInStatus !== 'completed'}
+                                    onClick={() => handleStartWorkflow(b, 'checkout')}
+                                    data-testid={`button-host-checkout-${b.id}`}
+                                  >
+                                    Perform Host Check-Out
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           </div>
