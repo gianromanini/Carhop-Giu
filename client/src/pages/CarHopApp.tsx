@@ -8491,7 +8491,7 @@ export default function CarHopApp() {
                                         {initialTax > 0 && (
                                           <div className="flex justify-between text-sm">
                                             <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                                            <span className="text-purple-600 dark:text-purple-400">+${initialTax.toFixed(2)}</span>
+                                            <span className="text-zinc-600 dark:text-zinc-400">+${initialTax.toFixed(2)}</span>
                                           </div>
                                         )}
                                         <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
@@ -8535,7 +8535,7 @@ export default function CarHopApp() {
                                           {additionalTax > 0 && (
                                             <div className="flex justify-between text-sm">
                                               <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                                              <span className="text-purple-600 dark:text-purple-400">+${additionalTax.toFixed(2)}</span>
+                                              <span className="text-zinc-600 dark:text-zinc-400">+${additionalTax.toFixed(2)}</span>
                                             </div>
                                           )}
                                           <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
@@ -10902,7 +10902,7 @@ export default function CarHopApp() {
                               {initialTax > 0 && (
                                 <div className="flex justify-between text-sm">
                                   <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                                  <span className="text-purple-600 dark:text-purple-400">+${initialTax.toFixed(2)}</span>
+                                  <span className="text-zinc-600 dark:text-zinc-400">+${initialTax.toFixed(2)}</span>
                                 </div>
                               )}
                               <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
@@ -10954,7 +10954,7 @@ export default function CarHopApp() {
                                 {additionalTax > 0 && (
                                   <div className="flex justify-between text-sm">
                                     <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
-                                    <span className="text-purple-600 dark:text-purple-400">+${additionalTax.toFixed(2)}</span>
+                                    <span className="text-zinc-600 dark:text-zinc-400">+${additionalTax.toFixed(2)}</span>
                                   </div>
                                 )}
                                 <div className="flex justify-between text-sm pt-2 border-t border-zinc-200 dark:border-zinc-700">
@@ -12712,7 +12712,7 @@ export default function CarHopApp() {
                             <span>${subtotal.toFixed(2)}</span>
                           </div>
                           {adjustedTax > 0 && (
-                            <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                            <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
                               <span>Tax</span>
                               <span>+${adjustedTax.toFixed(2)}</span>
                             </div>
