@@ -1857,7 +1857,7 @@ export default function CarHopApp() {
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
       const dailyRate = cart.car!.price;
-      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostEmail || '';
+      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostId || '';
       console.log("[Booking] Final host email used:", hostEmail);
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
