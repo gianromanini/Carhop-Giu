@@ -9274,7 +9274,7 @@ export default function CarHopApp() {
                               className="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                               data-testid={`button-admin-initiate-replace-${b.id}`}
                             >
-                              <Car size={14}/> Initiate Vehicle Replacement
+                              <Car size={14}/> Start a Vehicle Replacement By Admin
                             </button>
                           )}
 
