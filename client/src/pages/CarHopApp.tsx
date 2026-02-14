@@ -1829,7 +1829,7 @@ export default function CarHopApp() {
     try {
       const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
       const totalData = calculateTotal();
-      const bookingLocation = selectedDeliveryType === 'delivery' ? (cart as any).location : pickupAddress;
+      const bookingLocation = selectedDeliveryType === 'delivery' ? ((cart as any).location || "Default Location") : (pickupAddress || "Default Location");
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
       const dailyRate = cart.car!.price;
