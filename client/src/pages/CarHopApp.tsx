@@ -11164,7 +11164,21 @@ export default function CarHopApp() {
                       )}
                       <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
-                      <h3 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white mt-2">{b.carName}</h3>
+                      <h3 className="text-base md:text-lg font-bold mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const car = vehicles.find(v => v.id === b.vehicleId);
+                            if (car) {
+                              handleViewDetails(car);
+                            }
+                          }}
+                          className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 underline underline-offset-2 transition-colors cursor-pointer"
+                          data-testid={`link-car-details-${b.id}`}
+                        >
+                          {b.carName}
+                        </button>
+                      </h3>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{b.days} Days | <a href={`https://maps.google.com/?q=${encodeURIComponent(b.location)}`} target="_blank" rel="noopener noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors" data-testid={`link-map-${b.id}`}>{formatAddressForDisplay(b.location)}</a></div>
                       
                       {/* Pending Approval - Show button to check status and complete payment */}
