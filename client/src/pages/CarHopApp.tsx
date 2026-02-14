@@ -5107,12 +5107,19 @@ export default function CarHopApp() {
                       locationLon: formData.locationLon || null,
                       pricing: vehiclePricing
                     };
+
+                    // In admin mode, make sure hostId is set even if not provided by currentHost
+                    const finalVehicleData = {
+                      ...vehicleData,
+                      hostId: adminAuthenticated ? (formData.hostId || vehicleData.hostId) : vehicleData.hostId
+                    };
+
                     if (editingHostVehicle) {
-                      updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: vehicleData });
+                      updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: finalVehicleData });
                       setEditingHostVehicle(null);
                       setFormData(initialFormState);
                     } else {
-                      createVehicleMutation.mutate(vehicleData);
+                      createVehicleMutation.mutate(finalVehicleData);
                       setShowHostAddVehicleForm(false);
                       setFormData(initialFormState);
                     }
@@ -5166,6 +5173,29 @@ export default function CarHopApp() {
                             <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Daily Rate ($) *</label>
                             <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="e.g. 45" required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-price" />
                           </div>
+                          {adminAuthenticated && (
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Assign to Host (Admin Only)</label>
+                              <select 
+                                value={formData.hostId || ''} 
+                                onChange={(e) => {
+                                  const hostId = e.target.value;
+                                  const host = hostsData.find((h: any) => String(h.id) === hostId);
+                                  setFormData({
+                                    ...formData, 
+                                    hostId: hostId,
+                                    hostName: host ? `${host.firstName} ${host.lastName}` : formData.hostName
+                                  });
+                                }} 
+                                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm"
+                              >
+                                <option value="">Select Host</option>
+                                {hostsData.map((h: any) => (
+                                  <option key={h.id} value={String(h.id)}>{h.firstName} {h.lastName} ({h.email})</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                           <div>
                             <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Fuel Type</label>
                             <select value={formData.fuel} onChange={(e) => setFormData({...formData, fuel: e.target.value})} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm">
