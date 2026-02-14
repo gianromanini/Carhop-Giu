@@ -7629,7 +7629,7 @@ export default function CarHopApp() {
                         <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-vehicle-plate" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
+                        <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host {adminAuthenticated && <span className="text-red-500">*</span>}</label>
                         <select 
                           name="hostId" 
                           value={formData.hostId ? String(formData.hostId) : ''} 
@@ -7639,10 +7639,11 @@ export default function CarHopApp() {
                           }} 
                           className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                           data-testid="select-vehicle-host"
+                          disabled={!adminAuthenticated}
                         >
                           <option value="">Select a Host</option>
                           {hostsData.map((host: any) => (
-                            <option key={host.id} value={host.id}>{host.firstName} {host.lastName}</option>
+                            <option key={host.id} value={host.id}>{host.firstName} {host.lastName} ({host.email})</option>
                           ))}
                         </select>
                       </div>
@@ -7953,7 +7954,7 @@ export default function CarHopApp() {
                                   <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-edit-vehicle-plate" />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host</label>
+                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host {adminAuthenticated && <span className="text-red-500">*</span>}</label>
                                   <select 
                                     name="hostId" 
                                     value={formData.hostId ? String(formData.hostId) : ''} 
@@ -7963,10 +7964,11 @@ export default function CarHopApp() {
                                     }} 
                                     className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm"
                                     data-testid="select-edit-vehicle-host"
+                                    disabled={!adminAuthenticated}
                                   >
                                     <option value="">Select a Host</option>
                                     {hostsData.map((host: any) => (
-                                      <option key={host.id} value={host.id}>{host.firstName} {host.lastName}</option>
+                                      <option key={host.id} value={host.id}>{host.firstName} {host.lastName} ({host.email})</option>
                                     ))}
                                   </select>
                                 </div>
