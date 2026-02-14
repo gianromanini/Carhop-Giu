@@ -6498,9 +6498,12 @@ export default function CarHopApp() {
                                     variant="primary" 
                                     className="w-full text-xs h-8"
                                     onClick={() => handleStartWorkflow(b, 'checkin')}
+                                    disabled={(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved'}
                                     data-testid={`button-host-checkin-${b.id}`}
                                   >
-                                    Perform Host Check-In
+                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' 
+                                      ? 'Check-In Disabled (Delivery Declined)' 
+                                      : 'Perform Host Check-In'}
                                   </Button>
                                 </div>
                               )}
