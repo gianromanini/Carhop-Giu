@@ -867,6 +867,7 @@ export default function CarHopApp() {
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
+  const [viewHostProfile, setViewHostProfile] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
   // Load vehicles with availability filter based on search dates
@@ -7386,7 +7387,7 @@ export default function CarHopApp() {
                         <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="p-4 sm:p-5">
-                        <div className="flex justify-between items-start mb-3 gap-2">
+                        <div className="flex justify-between items-start mb-1 gap-2">
                           <h3 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate flex-1" data-testid={`text-vehicle-name-${car.id}`}>
                             {car.model} {car.year}
                           </h3>
@@ -7395,6 +7396,15 @@ export default function CarHopApp() {
                             <div className="text-[9px] sm:text-xs text-zinc-500">/day</div>
                           </div>
                         </div>
+                        {car.hostId && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setViewHostProfile(car.hostId!); setView('host-profile'); window.scrollTo(0, 0); }}
+                            className="text-[11px] text-blue-500 hover:text-blue-400 transition-colors mb-2 inline-flex items-center gap-1"
+                            data-testid={`link-host-profile-${car.id}`}
+                          >
+                            <User size={11}/> {(() => { const h = hostsData.find((h: any) => String(h.id) === String(car.hostId)); return h ? `${h.firstName} ${h.lastName}` : car.hostName; })()}
+                          </button>
+                        )}
                         <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-2 flex-wrap">
                           <span className="flex items-center gap-1"><Users size={14}/> {car.seats} passengers</span>
                           <span className="flex items-center gap-1">
@@ -7650,7 +7660,7 @@ export default function CarHopApp() {
                         <textarea 
                           name="pickupInstructions"
                           value={formData.pickupInstructions || ''}
-                          onChange={handleInputChange}
+                          onChange={(e) => setFormData({...formData, pickupInstructions: e.target.value})}
                           placeholder="Provide specific details on where to find the car (e.g. 'Parked at floor 3, spot 42. Code for lockbox is...')"
                           className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm min-h-[80px]"
                           data-testid="textarea-pickup-instructions"
@@ -7972,7 +7982,7 @@ export default function CarHopApp() {
                                   <textarea 
                                     name="pickupInstructions"
                                     value={formData.pickupInstructions || ''}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => setFormData({...formData, pickupInstructions: e.target.value})}
                                     placeholder="Add vehicle-specific pickup instructions for your guest..."
                                     className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm min-h-[80px]"
                                   />
@@ -13311,6 +13321,130 @@ export default function CarHopApp() {
           </div>
         )}
 
+        {view === 'host-profile' && viewHostProfile && (() => {
+          const hostId = viewHostProfile;
+          const host = hostsData.find((h: any) => String(h.id) === String(hostId));
+          const hostVehicles = vehicles.filter(v => String(v.hostId) === String(hostId));
+          const hostVehicleIds = hostVehicles.map(v => v.id);
+          const hostRatings = ratingsData.filter((r: any) => hostVehicleIds.includes(r.vehicleId));
+          const avgRating = hostRatings.length > 0 ? hostRatings.reduce((sum: number, r: any) => sum + r.stars, 0) / hostRatings.length : 0;
+          const hostName = host ? `${host.firstName} ${host.lastName}` : (hostVehicles[0]?.hostName || 'Host');
+          const hostNameMap = Object.fromEntries(hostsData.map((h: any) => [String(h.id), `${h.firstName} ${h.lastName}`]));
+
+          return (
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+              <Button variant="ghost" onClick={() => { setView('home'); setViewHostProfile(null); }} className="mb-6" data-testid="button-back-from-host-profile"><ArrowLeft size={20} /> Back to Fleet</Button>
+              
+              <div className="mb-8">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
+                    {hostName.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white" data-testid="text-host-profile-name">{hostName}</h1>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      <span className="text-sm text-zinc-500">{hostVehicles.length} vehicle{hostVehicles.length !== 1 ? 's' : ''}</span>
+                      {hostRatings.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="flex">
+                            {[1,2,3,4,5].map(star => (
+                              <span key={star} className={`text-sm ${star <= Math.round(avgRating) ? 'text-yellow-400' : 'text-zinc-300 dark:text-zinc-600'}`}>★</span>
+                            ))}
+                          </div>
+                          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{avgRating.toFixed(1)}</span>
+                          <span className="text-sm text-zinc-500">({hostRatings.length} review{hostRatings.length !== 1 ? 's' : ''})</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Available Vehicles</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
+                {hostVehicles.map(car => {
+                  const vehicleRatings = ratingsData.filter((r: any) => r.vehicleId === car.id);
+                  const vAvg = vehicleRatings.length > 0 ? vehicleRatings.reduce((s: number, r: any) => s + r.stars, 0) / vehicleRatings.length : 0;
+                  return (
+                    <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-host-vehicle-${car.id}`}>
+                    <Card className="group cursor-pointer hover-elevate overflow-visible">
+                      <div className="relative overflow-hidden rounded-t-lg">
+                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2 gap-2">
+                          <h3 className="font-bold text-sm text-zinc-900 dark:text-white truncate flex-1">{car.model} {car.year}</h3>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-base font-bold text-green-600">${car.price}</div>
+                            <div className="text-[9px] text-zinc-500">/day</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-2 flex-wrap">
+                          <span className="flex items-center gap-1"><Users size={14}/> {car.seats}</span>
+                          <span className="flex items-center gap-1"><Zap size={14}/> {car.transmission}</span>
+                          <span>{car.driveType}</span>
+                        </div>
+                        {vehicleRatings.length > 0 && (
+                          <div className="flex items-center gap-1 text-xs mb-2">
+                            <div className="flex">
+                              {[1,2,3,4,5].map(star => (
+                                <span key={star} className={`text-xs ${star <= Math.round(vAvg) ? 'text-yellow-400' : 'text-zinc-300 dark:text-zinc-600'}`}>★</span>
+                              ))}
+                            </div>
+                            <span className="text-zinc-500">{vAvg.toFixed(1)} ({vehicleRatings.length})</span>
+                          </div>
+                        )}
+                        <Button className="w-full text-xs py-2" onClick={(e: any) => { e.stopPropagation(); handleRent(car); }} data-testid={`button-rent-host-vehicle-${car.id}`}>Book Now</Button>
+                      </div>
+                    </Card>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {hostRatings.length > 0 && (
+                <div>
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Reviews ({hostRatings.length})</h2>
+                  <div className="space-y-3">
+                    {hostRatings.slice().sort((a: any, b: any) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime())).map((review: any) => {
+                      const reviewVehicle = vehicles.find(v => v.id === review.vehicleId);
+                      return (
+                        <Card key={review.id} className="p-4" data-testid={`card-host-review-${review.id}`}>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                              <p className="font-bold text-sm text-zinc-900 dark:text-white">{review.clientName}</p>
+                              <p className="text-xs text-zinc-500">{reviewVehicle?.model} {reviewVehicle?.year}</p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <div className="flex">
+                                {[1,2,3,4,5].map((star: number) => (
+                                  <span key={star} className={`text-sm ${star <= review.stars ? 'text-yellow-400' : 'text-zinc-300 dark:text-zinc-600'}`}>★</span>
+                                ))}
+                              </div>
+                              <span className="text-xs text-zinc-500 ml-1">{new Date(review.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          {review.comment && <p className="text-sm text-zinc-700 dark:text-zinc-300">{review.comment}</p>}
+                          {review.hostResponse && (
+                            <div className="mt-3 pl-4 border-l-2 border-blue-500">
+                              <p className="text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">Host Response</p>
+                              <p className="text-xs text-zinc-600 dark:text-zinc-400">{review.hostResponse}</p>
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-16 pt-8 pb-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                Copyright © All Rights Reserved 2025
+              </footer>
+            </div>
+          );
+        })()}
+
         {view === 'car-details' && viewCar && (() => {
           const bookingDays = calculateBillingDays(carDetailsBooking.startDate, carDetailsBooking.startTime, carDetailsBooking.endDate, carDetailsBooking.endTime);
           
@@ -13344,7 +13478,15 @@ export default function CarHopApp() {
                   <span className="text-xs text-zinc-500 uppercase tracking-wider">{viewCar.category}</span>
                   <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2" data-testid="text-car-detail-name">
                     {viewCar.model}
-                    {viewCar.hostName && <span className="text-blue-500 font-medium text-sm ml-2">- {viewCar.hostName}</span>}
+                    {viewCar.hostId && (
+                      <button 
+                        onClick={() => { setViewHostProfile(viewCar.hostId!); setView('host-profile'); window.scrollTo(0, 0); }}
+                        className="text-blue-500 hover:text-blue-400 font-medium text-sm ml-2 transition-colors inline-flex items-center gap-1"
+                        data-testid="link-host-profile-detail"
+                      >
+                        <User size={14}/> {(() => { const h = hostsData.find((h: any) => String(h.id) === String(viewCar.hostId)); return h ? `${h.firstName} ${h.lastName}` : viewCar.hostName; })()}
+                      </button>
+                    )}
                   </h1>
                   <div className="flex gap-4 text-sm text-zinc-500 mb-6 flex-wrap">
                     <span className="flex items-center gap-1"><Users size={16}/> {viewCar.seats} seats</span>
