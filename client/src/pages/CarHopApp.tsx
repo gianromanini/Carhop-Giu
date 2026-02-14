@@ -1763,7 +1763,7 @@ export default function CarHopApp() {
     // Protection Plan Pricing Logic
     const dailyRate = cart.car.price;
     const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
-    const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com' || (vehicles.find(v => v.id === cart.car?.id)?.hostName === 'giuspfc123@gmail.com' || vehicles.find(v => v.id === cart.car?.id)?.hostName === 'gianromanini@gmail.com');
+    const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com' || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName === 'giuspfc123@gmail.com' || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName === 'gianromanini@gmail.com';
 
     let standardPlanPrice = 25.70; // Default global
     if (dailyRate >= 50 && dailyRate <= 120) {
@@ -1822,7 +1822,7 @@ export default function CarHopApp() {
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
       const dailyRate = cart.car!.price;
-      const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
+      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName || '';
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
       let standardPlanPrice = 25.70;
@@ -1863,7 +1863,8 @@ export default function CarHopApp() {
           tax: totalData.taxAmount, 
           deliveryType: selectedDeliveryType, 
           deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
-          pickupAddress: pickupAddress 
+          pickupAddress: pickupAddress,
+          hostEmail: hostEmail
         },
         messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
         carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,

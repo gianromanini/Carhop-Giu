@@ -139,10 +139,10 @@ export const bookings = pgTable("bookings", {
     licenseImages: string[];
   }>().notNull(),
   paymentRaw: jsonb("payment_raw").$type<{
-    cardName: string;
-    cardNumber: string;
-    expiry: string;
-    cvc: string;
+    cardName?: string;
+    cardNumber?: string;
+    expiry?: string;
+    cvc?: string;
     type: string;
   }>(),
   paymentMethod: text("payment_method"),
