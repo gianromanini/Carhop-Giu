@@ -33,14 +33,26 @@ app.get("/", (req, res, next) => {
 
 app.use(
   express.json({
-    limit: '5mb',
+    limit: '50mb',
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err.type === 'entity.too.large') {
+    console.error('[Express] Request body too large:', err.message);
+    return res.status(413).json({ message: 'Request body too large. Please reduce image sizes.' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    console.error('[Express] JSON parse error:', err.message);
+    return res.status(400).json({ message: 'Invalid JSON in request body.' });
+  }
+  next(err);
+});
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

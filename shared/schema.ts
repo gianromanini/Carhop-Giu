@@ -149,6 +149,7 @@ export const bookings = pgTable("bookings", {
   details: jsonb("details").$type<{
     rate: number;
     extras: number;
+    childSeatSelected?: boolean;
     protection: number;
     protectionType?: string;
     fees: number;

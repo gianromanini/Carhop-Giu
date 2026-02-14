@@ -1088,6 +1088,7 @@ export default function CarHopApp() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log('[Booking] Sending booking request, payload size:', JSON.stringify(data).length, 'bytes');
       const res = await apiRequest('POST', '/api/bookings', data);
       return res.json();
     },
@@ -1097,11 +1098,12 @@ export default function CarHopApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
       toast({ title: 'Booking created successfully' });
     },
-    onError: (error) => {
-      console.error('Error creating booking mutation:', error);
+    onError: (error: any) => {
+      const msg = error?.message || error?.toString?.() || JSON.stringify(error) || 'Unknown error';
+      console.error('Error creating booking mutation:', msg, 'Full error:', error);
       toast({ 
         title: 'Error creating booking', 
-        description: error instanceof Error ? error.message : 'Unknown error',
+        description: msg,
         variant: 'destructive' 
       });
     }
@@ -1822,7 +1824,7 @@ export default function CarHopApp() {
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
       const dailyRate = cart.car!.price;
-      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName || '';
+      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostEmail || '';
       console.log("[Booking] Final host email used:", hostEmail);
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
@@ -1881,10 +1883,11 @@ export default function CarHopApp() {
       setPickupAddress('');
       setView('confirmation');
       window.scrollTo(0, 0);
-    } catch (error) {
-      console.error('[Frontend] Error creating booking:', error);
+    } catch (error: any) {
+      const errorMsg = error?.message || error?.toString() || 'Unknown error';
+      console.error('[Frontend] Error creating booking:', errorMsg, error);
       setIsProcessingPayment(false);
-      toast({ title: "Erro", description: "Ocorreu um erro ao processar. Tente novamente.", variant: "destructive" });
+      toast({ title: "Erro", description: errorMsg || "Ocorreu um erro ao processar. Tente novamente.", variant: "destructive" });
     }
   };
 
