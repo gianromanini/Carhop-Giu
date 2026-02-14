@@ -722,6 +722,7 @@ export default function CarHopApp() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const checkInInputRef = useRef<HTMLInputElement>(null);
   const carImageInputRef = useRef<HTMLInputElement>(null);
+  const editCarImageInputRef = useRef<HTMLInputElement>(null);
   const editVehicleImageInputRef = useRef<HTMLInputElement>(null);
 
   const [paymentDetails, setPaymentDetails] = useState({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
@@ -8128,12 +8129,21 @@ export default function CarHopApp() {
                                         <button onClick={() => setFormData({...formData, images: formData.images.filter((_, idx) => idx !== i)})} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl"><X size={10}/></button>
                                       </div>
                                     ))}
-                                    <button onClick={() => carImageInputRef.current?.click()} className="w-14 h-14 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all">
+                                    <button onClick={() => editCarImageInputRef.current?.click()} className="w-14 h-14 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-all">
                                       <Upload size={14}/>
                                       <span className="text-[8px] mt-1 uppercase">Add</span>
                                     </button>
                                   </div>
                                 </div>
+                                <input type="file" ref={editCarImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => setFormData(prev => ({...prev, images: [...(prev.images || []).filter(i => i), reader.result as string]}));
+                                    reader.readAsDataURL(file);
+                                  }
+                                  if (editCarImageInputRef.current) editCarImageInputRef.current.value = '';
+                                }} />
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                   <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
