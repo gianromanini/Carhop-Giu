@@ -11316,8 +11316,16 @@ export default function CarHopApp() {
                           <div className="flex justify-between items-center mb-4"><h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Rental Workflow</h4></div>
                           <div className="flex gap-4">
                             <div className="flex-1">
-                              <Button variant={b.checkInStatus === 'completed' ? "verified" : "primary"} className="w-full text-xs h-10 flex items-center justify-center gap-2" disabled={b.checkInStatus === 'completed'} onClick={() => handleStartWorkflow(b, 'checkin')} data-testid={`button-checkin-${b.id}`}>
-                                {b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
+                              <Button 
+                                variant={b.checkInStatus === 'completed' ? "verified" : "primary"} 
+                                className="w-full text-xs h-10 flex items-center justify-center gap-2" 
+                                disabled={b.checkInStatus === 'completed' || ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved')} 
+                                onClick={() => handleStartWorkflow(b, 'checkin')} 
+                                data-testid={`button-checkin-${b.id}`}
+                              >
+                                {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' 
+                                  ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
+                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
                               </Button>
                             </div>
                             <div className="flex-1">
