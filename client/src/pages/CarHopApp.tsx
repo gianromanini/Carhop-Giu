@@ -1823,6 +1823,7 @@ export default function CarHopApp() {
       
       const dailyRate = cart.car!.price;
       const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName || '';
+      console.log("[Booking] Final host email used:", hostEmail);
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
       let standardPlanPrice = 25.70;

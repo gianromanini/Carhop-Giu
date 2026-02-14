@@ -1051,6 +1051,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (status === 'approved') {
       updateData.hostId = String(transferRequests[requestIndex].toHostId);
       updateData.hostName = transferRequests[requestIndex].toHostName;
+      console.log(`[Transfer] Vehicle ${id} host updated from ${transferRequests[requestIndex].fromHostId} to ${transferRequests[requestIndex].toHostId}. Notification sent to previous owner.`);
     }
 
     const updated = await storage.updateVehicle(id, updateData);
