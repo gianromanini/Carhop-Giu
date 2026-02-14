@@ -1945,6 +1945,20 @@ export default function CarHopApp() {
 
   const completeWorkflow = async () => {
      if (!checkData.miles) { alert("Please enter current mileage."); return; }
+     
+     if (isCheckOutMode && activeBooking) {
+       const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
+       const checkOutMiles = parseInt(checkData.miles || '0');
+       if (checkOutMiles < checkInMiles) {
+         toast({ 
+           title: "Erro de Milhagem", 
+           description: `As milhas no check-out (${checkOutMiles}) não podem ser menores que as milhas no check-in (${checkInMiles}).`, 
+           variant: "destructive" 
+         });
+         return;
+       }
+     }
+
      if (checkData.photosOutside.length < 1) { alert("Please upload at least 1 outside photo."); return; }
      if (checkData.photosInside.length < 1) { alert("Please upload at least 1 inside photo."); return; }
 
