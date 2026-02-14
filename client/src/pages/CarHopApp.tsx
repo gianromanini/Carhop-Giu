@@ -413,99 +413,123 @@ const FinancialBarChart = ({ data, fixedExpenses }: { data: Record<string, any>;
 const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicles: Vehicle[] }) => {
   const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v]));
-  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
-  
-  // Group bookings by month
+  const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
+
+  const now = new Date();
+  const last12: string[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+    last12.push(key);
+  }
+
   const monthlyData: Record<string, { gross: number; commission: number; net: number }> = {};
+  last12.forEach(k => { monthlyData[k] = { gross: 0, commission: 0, net: 0 }; });
+
   bookings.forEach(b => {
     const date = new Date(b.startDate);
-    const monthLabel = monthOrder[date.getMonth()];
-    if (!monthlyData[monthLabel]) {
-      monthlyData[monthLabel] = { gross: 0, commission: 0, net: 0 };
-    }
+    const key = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
+    if (!monthlyData[key]) return;
+    const protectionAmount = (b.details as any)?.protection || 0;
+    const earningsBase = b.total - protectionAmount;
     const vehicle = vehicleMap[b.vehicleId as unknown as number];
-    const commission = b.total * ((vehicle?.commission || 10) / 100);
-    monthlyData[monthLabel].gross += b.total;
-    monthlyData[monthLabel].commission += commission;
-    monthlyData[monthLabel].net += b.total - commission;
+    const commission = earningsBase * ((vehicle?.commission || 10) / 100);
+    monthlyData[key].gross += earningsBase;
+    monthlyData[key].commission += commission;
+    monthlyData[key].net += earningsBase - commission;
   });
 
-  const activeMonths = monthOrder.filter(m => monthlyData[m] && monthlyData[m].gross > 0);
-  
-  if (activeMonths.length === 0) {
+  const hasAnyData = last12.some(k => monthlyData[k].gross > 0);
+  const maxGross = Math.max(...last12.map(k => monthlyData[k].gross), 1);
+  const rawIncrement = maxGross * 0.1;
+  const magnitude = rawIncrement >= 1000 ? 1000 : rawIncrement >= 100 ? 100 : rawIncrement >= 10 ? 10 : 1;
+  const increment = Math.max(magnitude, Math.ceil(rawIncrement / magnitude) * magnitude);
+  const yMax = Math.ceil(maxGross / increment) * increment || increment;
+  const yTicks: number[] = [];
+  for (let v = 0; v <= yMax; v += increment) yTicks.push(v);
+
+  const chartHeight = 320;
+  const formatVal = (v: number) => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v.toFixed(0)}`;
+
+  if (!hasAnyData) {
     return <div className="w-full flex items-center justify-center text-zinc-400 py-12">No completed bookings yet</div>;
   }
 
-  const maxGross = Math.max(...activeMonths.map(m => monthlyData[m].gross), 1);
-
   return (
-    <div className="w-full mt-6 select-none">
-      <div className="flex items-end justify-center gap-6 h-96">
-        {activeMonths.map((month) => {
-          const data = monthlyData[month];
-          const grossHeight = (data.gross / maxGross) * 100;
-          const commissionPercent = (data.commission / data.gross) * 100;
-          const netPercent = (data.net / data.gross) * 100;
-          const isExpanded = expandedMonth === month;
-          
-          return (
-            <div 
-              key={month} 
-              className="flex flex-col items-center flex-1 max-w-24"
-              onMouseEnter={() => setExpandedMonth(month)}
-              onMouseLeave={() => setExpandedMonth(null)}
-              onTouchStart={() => setExpandedMonth(month)}
-            >
-              {/* Bar container */}
-              <div 
-                className="relative flex flex-col items-stretch rounded-lg overflow-hidden transition-all cursor-pointer"
-                style={{ 
-                  height: `${Math.max(grossHeight, 5)}%`,
-                  width: isExpanded ? '80px' : '40px'
-                }}
-              >
-                {/* Blue Section - Gross Revenue (Top) */}
-                <div
-                  className="flex-1 bg-blue-500 flex items-center justify-end pr-2 relative group"
-                  style={{ flex: `${100}%` }}
-                >
-                  {isExpanded && (
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-300 whitespace-nowrap pr-2">
-                      ${data.gross > 999 ? (data.gross/1000).toFixed(1) + 'k' : data.gross.toFixed(0)}
-                    </span>
-                  )}
-                </div>
+    <div className="w-full mt-4 select-none" data-testid="host-earnings-chart">
+      <div className="flex" style={{ height: chartHeight + 40 }}>
+        <div className="flex flex-col justify-between items-end pr-2 pb-8" style={{ height: chartHeight }}>
+          {[...yTicks].reverse().map(tick => (
+            <span key={tick} className="text-[10px] text-zinc-500 leading-none">{formatVal(tick)}</span>
+          ))}
+        </div>
 
-                {/* Green Section - Net Earnings (Middle) */}
-                <div
-                  className="bg-green-500 flex items-center justify-end pr-2 relative group"
-                  style={{ flex: `${netPercent}%`, minHeight: netPercent > 0 ? '20px' : '0px' }}
-                >
-                  {isExpanded && netPercent > 0 && (
-                    <span className="text-[10px] font-bold text-green-700 dark:text-green-300 whitespace-nowrap pr-2">
-                      ${data.net > 999 ? (data.net/1000).toFixed(1) + 'k' : data.net.toFixed(0)}
-                    </span>
-                  )}
-                </div>
+        <div className="flex-1 flex flex-col">
+          <div className="relative border-l border-b border-zinc-700 flex-1" style={{ height: chartHeight }}>
+            {yTicks.map(tick => (
+              <div
+                key={`grid-${tick}`}
+                className="absolute left-0 right-0 border-t border-zinc-800"
+                style={{ bottom: `${(tick / yMax) * 100}%` }}
+              />
+            ))}
 
-                {/* Orange Section - Commission Fee (Bottom) */}
-                <div
-                  className="bg-orange-500 flex items-center justify-end pr-2 relative group"
-                  style={{ flex: `${commissionPercent}%`, minHeight: commissionPercent > 0 ? '20px' : '0px' }}
-                >
-                  {isExpanded && commissionPercent > 0 && (
-                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-300 whitespace-nowrap pr-2">
-                      ${data.commission > 99 ? (data.commission/100).toFixed(1) + 'c' : data.commission.toFixed(0)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Month label */}
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mt-3">{month}</span>
+            <div className="absolute inset-0 flex items-end justify-around px-1 gap-1">
+              {last12.map(key => {
+                const data = monthlyData[key];
+                const barHeight = yMax > 0 ? (data.gross / yMax) * chartHeight : 0;
+                const isHovered = hoveredMonth === key;
+                const monthIdx = parseInt(key.split('-')[1]);
+
+                return (
+                  <div
+                    key={key}
+                    className="flex-1 flex flex-col items-center justify-end relative"
+                    style={{ height: '100%' }}
+                    onMouseEnter={() => setHoveredMonth(key)}
+                    onMouseLeave={() => setHoveredMonth(null)}
+                    onTouchStart={() => setHoveredMonth(key)}
+                  >
+                    {isHovered && data.gross > 0 && (
+                      <div className="absolute bottom-full mb-1 bg-zinc-900 border border-zinc-700 rounded-lg p-2 z-10 min-w-[120px] text-center shadow-lg">
+                        <p className="text-[10px] text-blue-400 font-bold">Gross: {formatVal(data.gross)}</p>
+                        <p className="text-[10px] text-orange-400 font-bold">Commission: {formatVal(data.commission)}</p>
+                        <p className="text-[10px] text-green-400 font-bold">Net: {formatVal(data.net)}</p>
+                      </div>
+                    )}
+                    <div
+                      className="w-full max-w-[40px] rounded-t-md overflow-hidden flex flex-col justify-end transition-all"
+                      style={{ height: Math.max(barHeight, data.gross > 0 ? 4 : 0) }}
+                    >
+                      {data.gross > 0 && (
+                        <>
+                          <div className="bg-green-500" style={{ height: `${(data.net / data.gross) * 100}%` }} />
+                          <div className="bg-orange-500" style={{ height: `${(data.commission / data.gross) * 100}%` }} />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+
+          <div className="flex justify-around px-1 gap-1 pt-1">
+            {last12.map(key => {
+              const monthIdx = parseInt(key.split('-')[1]);
+              return (
+                <span key={`label-${key}`} className="flex-1 text-center text-[10px] font-bold text-zinc-500">
+                  {monthOrder[monthIdx]}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-4 mt-3">
+        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-green-500" /><span className="text-[10px] text-zinc-400">Net Earnings</span></div>
+        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-orange-500" /><span className="text-[10px] text-zinc-400">Commission</span></div>
       </div>
     </div>
   );
@@ -6516,8 +6540,10 @@ export default function CarHopApp() {
             
             hostBookings.forEach(b => {
               const vehicle = hostVehicleMap[b.vehicleId as unknown as number];
-              const commission = vehicle ? (b.total * (vehicle.commission || 10) / 100) : (b.total * 0.10);
-              totalGross += b.total;
+              const protectionAmount = (b.details as any)?.protection || 0;
+              const earningsBase = b.total - protectionAmount;
+              const commission = vehicle ? (earningsBase * (vehicle.commission || 10) / 100) : (earningsBase * 0.10);
+              totalGross += earningsBase;
               totalCommission += commission;
             });
             
