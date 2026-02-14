@@ -7432,7 +7432,7 @@ export default function CarHopApp() {
                             className="text-[11px] text-blue-500 hover:text-blue-400 transition-colors mb-2 inline-flex items-center gap-1"
                             data-testid={`link-host-profile-${car.id}`}
                           >
-                            <User size={11}/> {(() => { const h = hostsData.find((h: any) => String(h.id) === String(car.hostId)); return h ? `${h.firstName} ${h.lastName}` : car.hostName; })()}
+                            <User size={11}/> {(() => { const h = hostsData.find((h: any) => String(h.id) === String(car.hostId)); return h ? `${h.firstName} ${h.lastName}` : (car.hostName || 'Host'); })()}
                           </button>
                         )}
                         <div className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-400 mb-2 flex-wrap">
