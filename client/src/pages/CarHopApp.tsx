@@ -1822,7 +1822,7 @@ export default function CarHopApp() {
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
       const dailyRate = cart.car!.price;
-      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName || '';
+      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName || '';
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
       let standardPlanPrice = 25.70;
