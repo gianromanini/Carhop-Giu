@@ -11334,7 +11334,7 @@ export default function CarHopApp() {
                                   handleViewDetails(car);
                                 }
                               }}
-                              className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 underline underline-offset-2 transition-colors cursor-pointer"
+                              className="text-white hover:text-zinc-200 underline underline-offset-2 transition-colors cursor-pointer"
                               data-testid={`link-car-details-${b.id}`}
                             >
                               {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}
