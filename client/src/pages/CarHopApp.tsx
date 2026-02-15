@@ -12491,7 +12491,7 @@ export default function CarHopApp() {
                   </div>
                   
                   {/* Car Name */}
-                  <h3 className="text-xl font-bold text-white mb-2">{cart.car.model}</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{cart.car.model} {cart.car.year && `(${cart.car.year})`}</h3>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{cart.car.category}</span>
                     <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{cart.car.fuel}</span>
