@@ -5645,20 +5645,15 @@ export default function CarHopApp() {
           })()}
 
           {hostTab === 'bookings' && (() => {
-            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === String(currentHost.id)).map(v => v.id);
+            const hostId = String(currentHost.id);
+            const hostEmail = currentHost.email?.toLowerCase().trim() || '';
+            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === hostId).map(v => Number(v.id));
             const hostBookings = bookings.filter(b => {
-              const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
-              const isOwner = bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
-              const hostEmail = currentHost.email?.toLowerCase().trim();
-              const bookingHostEmail = (b.details as any)?.hostEmail?.toLowerCase().trim();
-              
-              // New matching logic: also check if the vehicle associated with the booking belongs to this host
-              const bookingVehicle = vehicles.find(v => String(v.id) === bVehicleId);
-              const isVehicleOwner = bookingVehicle && String(bookingVehicle.hostId) === String(currentHost.id);
-
-              return isOwner || 
-                     isVehicleOwner ||
-                     (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail);
+              const bVehicleId = b.vehicleId != null ? Number(b.vehicleId) : null;
+              if (bVehicleId !== null && hostVehicleIds.includes(bVehicleId)) return true;
+              const bookingHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
+              if (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) return true;
+              return false;
             });
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
