@@ -11433,7 +11433,7 @@ export default function CarHopApp() {
                               >
                                 {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted
                                   ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
-                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verificado</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
+                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
                               </Button>
                             </div>
                             <div className="flex-1">
