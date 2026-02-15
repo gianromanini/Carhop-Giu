@@ -5651,16 +5651,14 @@ export default function CarHopApp() {
               const isOwner = bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
               const hostEmail = currentHost.email?.toLowerCase().trim();
               const bookingHostEmail = (b.details as any)?.hostEmail?.toLowerCase().trim();
-              const hostName = `${currentHost.firstName} ${currentHost.lastName}`.toLowerCase().trim();
-              const bookingHostName = (b.details as any)?.hostName?.toLowerCase().trim();
-              const bookingCarName = b.carName?.toLowerCase().trim();
-              const hostVehicles = vehicles.filter(v => String(v.hostId) === String(currentHost.id));
-              const matchesCarModel = hostVehicles.some(v => bookingCarName?.includes(v.model.toLowerCase().trim()));
               
+              // New matching logic: also check if the vehicle associated with the booking belongs to this host
+              const bookingVehicle = vehicles.find(v => String(v.id) === bVehicleId);
+              const isVehicleOwner = bookingVehicle && String(bookingVehicle.hostId) === String(currentHost.id);
+
               return isOwner || 
-                     (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) ||
-                     (hostName && bookingHostName && hostName === bookingHostName) ||
-                     matchesCarModel;
+                     isVehicleOwner ||
+                     (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail);
             });
             return (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
