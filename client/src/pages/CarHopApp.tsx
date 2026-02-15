@@ -11312,21 +11312,21 @@ export default function CarHopApp() {
                           </p>
                         </div>
                       )}
-                      <h3 className="text-base md:text-lg font-bold mt-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const car = vehicles.find(v => v.id === b.vehicleId);
-                            if (car) {
-                              handleViewDetails(car);
-                            }
-                          }}
-                          className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 underline underline-offset-2 transition-colors cursor-pointer"
-                          data-testid={`link-car-details-${b.id}`}
-                        >
-                          {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}
-                        </button>
-                      </h3>
+                          <h3 className="text-base md:text-lg font-bold mt-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const car = vehicles.find(v => v.id === b.vehicleId);
+                                if (car) {
+                                  handleViewDetails(car);
+                                }
+                              }}
+                              className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300 underline underline-offset-2 transition-colors cursor-pointer"
+                              data-testid={`link-car-details-${b.id}`}
+                            >
+                              {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}
+                            </button>
+                          </h3>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                         {b.days} Days | <a 
                           href={`https://maps.google.com/?q=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'approved' && (b.details as any)?.deliveryAddress) ? (b.details as any).deliveryAddress : b.location)}`} 

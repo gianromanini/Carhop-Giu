@@ -1360,6 +1360,18 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // ========== DELIVERY APPROVAL ==========
+  app.put("/api/bookings/:id/accept-pickup", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).send("Booking not found");
+    
+    const details = (booking.details as any) || {};
+    details.pickupAccepted = true;
+    
+    await storage.updateBooking(id, { details });
+    res.json({ success: true });
+  });
+
   app.put("/api/bookings/:id/delivery-approval", async (req, res) => {
     const id = parseInt(req.params.id);
     const booking = await storage.getBooking(id);
