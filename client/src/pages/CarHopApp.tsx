@@ -5724,7 +5724,7 @@ export default function CarHopApp() {
                         return matches;
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'host');
@@ -9055,7 +9055,7 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400 text-white' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
@@ -11258,7 +11258,7 @@ export default function CarHopApp() {
                         <div className="flex items-center gap-2">
                           <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                           <div>
-                            <div className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-cyan-600'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
+                            <div className={`text-[10px] md:text-xs font-normal uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-400'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
                             {!isCollapsed && normalizedStatus === 'active' && b.checkInStatus !== 'completed' && (
                               <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                             )}
@@ -11275,9 +11275,9 @@ export default function CarHopApp() {
                       <div className={`${isCollapsed ? 'hidden md:block' : 'block'}`}>
                         <div className="flex-1 w-full mt-3 md:mt-0">
                       {(b.details as any)?.deliveryType === 'delivery' ? (
-                        <div className="text-xs md:text-sm font-bold text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                        <div className="text-xs md:text-sm font-normal text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
-                        <div className="text-xs md:text-sm font-bold text-cyan-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                        <div className="text-xs md:text-sm font-normal text-cyan-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       )}
                       {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                         <div className="text-xs font-bold text-yellow-500 mt-1 flex items-center gap-1">
@@ -11299,7 +11299,7 @@ export default function CarHopApp() {
                           </div>
                         </div>
                       )}
-                      <div className="text-xs md:text-sm font-bold text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
+                      <div className="text-xs md:text-sm font-normal text-orange-600 mt-1">Return: {formatDisplayDate(b.returnDate, b.returnTime)}</div>
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       
                       {/* Pickup Instructions for Guest */}
@@ -11425,15 +11425,15 @@ export default function CarHopApp() {
                           <div className="flex gap-4">
                             <div className="flex-1">
                               <Button 
-                                variant={b.checkInStatus === 'completed' ? "verified" : "primary"} 
-                                className="w-full text-xs h-10 flex items-center justify-center gap-2" 
+                                variant={b.checkInStatus === 'completed' ? "outline" : "primary"} 
+                                className={`w-full text-xs h-10 flex items-center justify-center gap-2 ${b.checkInStatus === 'completed' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10 font-normal' : ''}`} 
                                 disabled={b.checkInStatus === 'completed' || ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved' && !(b.details as any)?.pickupAccepted)} 
                                 onClick={() => handleStartWorkflow(b, 'checkin')} 
                                 data-testid={`button-checkin-${b.id}`}
                               >
                                 {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted
                                   ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
-                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
+                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verificado</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
                               </Button>
                             </div>
                             <div className="flex-1">
