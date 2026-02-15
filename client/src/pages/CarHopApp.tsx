@@ -5904,7 +5904,7 @@ export default function CarHopApp() {
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
                               <p className="text-sm text-zinc-300 mb-1">
-                                Customer requested delivery to: <span className="font-bold text-white">{(b.details as any)?.deliveryAddress || b.location}</span>
+                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
                               </p>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
                                 <p className="text-xs text-zinc-500">
@@ -9240,7 +9240,7 @@ export default function CarHopApp() {
                                 <Route size={14}/> Delivery Approval Required
                               </h4>
                               <p className="text-sm text-zinc-300 mb-1">
-                                Customer requested delivery to: <span className="font-bold text-white">{(b.details as any)?.deliveryAddress || b.location}</span>
+                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
                               </p>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
                                 <p className="text-xs text-zinc-500">
