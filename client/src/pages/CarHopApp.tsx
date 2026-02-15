@@ -5876,13 +5876,19 @@ export default function CarHopApp() {
                                 <div className="mt-0.5 mb-1">
                                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
                                   <a 
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((b.details as any)?.deliveryAddress || b.location)}`}
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-400 hover:underline text-xs block"
+                                    className={`text-blue-400 hover:underline text-xs block ${(b.details as any)?.deliveryApprovalStatus === 'rejected' ? '' : ''}`}
                                   >
-                                    {formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}
+                                    {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}
                                   </a>
+                                  {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                                    <div className="mt-1">
+                                      <span className="text-[10px] text-red-500 uppercase font-bold block line-through opacity-60">Original Delivery Request:</span>
+                                      <span className="text-zinc-500 text-[10px] line-through opacity-60">{formatAddressForDisplay((b.details as any)?.deliveryAddress)}</span>
+                                    </div>
+                                  )}
                                 </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                                   <p className="text-orange-500 font-bold text-xs">Awaiting Approval</p>
@@ -9212,13 +9218,19 @@ export default function CarHopApp() {
                                 <div className="mt-0.5 mb-1">
                                   <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
                                   <a 
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((b.details as any)?.deliveryAddress || b.location)}`}
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-400 hover:underline text-xs block"
+                                    className={`text-blue-400 hover:underline text-xs block ${(b.details as any)?.deliveryApprovalStatus === 'rejected' ? '' : ''}`}
                                   >
-                                    {formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}
+                                    {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}
                                   </a>
+                                  {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                                    <div className="mt-1">
+                                      <span className="text-[10px] text-red-500 uppercase font-bold block line-through opacity-60">Original Delivery Request:</span>
+                                      <span className="text-zinc-500 text-[10px] line-through opacity-60">{formatAddressForDisplay((b.details as any)?.deliveryAddress)}</span>
+                                    </div>
+                                  )}
                                 </div>
                                 {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                                   <p className="text-orange-500 font-bold text-xs">Awaiting Approval</p>
