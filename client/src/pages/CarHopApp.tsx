@@ -1891,7 +1891,7 @@ export default function CarHopApp() {
     try {
       const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
       const totalData = calculateTotal();
-      const bookingLocation = selectedDeliveryType === 'delivery' ? ((cart as any).location || "Default Location") : (pickupAddress || "Default Location");
+      const bookingLocation = selectedDeliveryType === 'delivery' ? (deliveryAddressBooking || pickupAddress || "Default Location") : (pickupAddress || "Default Location");
       const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
       
       const dailyRate = cart.car!.price;
@@ -1937,6 +1937,7 @@ export default function CarHopApp() {
           tax: totalData.taxAmount, 
           deliveryType: selectedDeliveryType, 
           deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
+          deliveryAddress: selectedDeliveryType === 'delivery' ? deliveryAddressBooking : undefined,
           pickupAddress: pickupAddress,
           hostEmail: hostEmail
         },
@@ -11328,15 +11329,23 @@ export default function CarHopApp() {
                             </button>
                           </h3>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                        {b.days} Days | <a 
-                          href={`https://maps.google.com/?q=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'approved' && (b.details as any)?.deliveryAddress) ? (b.details as any).deliveryAddress : b.location)}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 transition-colors font-bold underline underline-offset-2" 
-                          data-testid={`link-map-${b.id}`}
-                        >
-                          {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'approved' && (b.details as any)?.deliveryAddress) ? (b.details as any).deliveryAddress : b.location)}
-                        </a>
+                        {b.days} Days | {(() => {
+                          const isDelivery = (b.details as any)?.deliveryType === 'delivery';
+                          const deliveryAddr = (b.details as any)?.deliveryAddress;
+                          const isDeclined = (b.details as any)?.deliveryApprovalStatus === 'rejected';
+                          const displayAddr = isDelivery && deliveryAddr ? deliveryAddr : b.location;
+                          return (
+                            <a 
+                              href={`https://maps.google.com/?q=${encodeURIComponent(displayAddr)}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className={`text-blue-400 hover:text-blue-300 transition-colors underline underline-offset-2 ${isDeclined ? 'line-through opacity-60' : ''}`}
+                              data-testid={`link-map-${b.id}`}
+                            >
+                              {formatAddressForDisplay(displayAddr)}
+                            </a>
+                          );
+                        })()}
                       </div>
                       
                       {/* Pending Approval - Show button to check status and complete payment */}
