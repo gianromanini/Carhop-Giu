@@ -12701,7 +12701,7 @@ export default function CarHopApp() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-400">Vehicle:</span>
-                      <span className="text-white">{cart.car.model}</span>
+                      <span className="text-white">{cart.car.model} {cart.car.year && `(${cart.car.year})`}</span>
                     </div>
                   </div>
                 </div>
