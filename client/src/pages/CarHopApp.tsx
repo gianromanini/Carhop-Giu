@@ -11418,11 +11418,11 @@ export default function CarHopApp() {
                               <Button 
                                 variant={b.checkInStatus === 'completed' ? "verified" : "primary"} 
                                 className="w-full text-xs h-10 flex items-center justify-center gap-2" 
-                                disabled={b.checkInStatus === 'completed' || ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved')} 
+                                disabled={b.checkInStatus === 'completed' || ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved' && !(b.details as any)?.pickupAccepted)} 
                                 onClick={() => handleStartWorkflow(b, 'checkin')} 
                                 data-testid={`button-checkin-${b.id}`}
                               >
-                                {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' 
+                                {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted
                                   ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
                                   : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
                               </Button>
@@ -11431,6 +11431,28 @@ export default function CarHopApp() {
                               <Button variant="orange" className={`w-full text-xs h-10 flex items-center justify-center gap-2 ${b.checkInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`} disabled={b.checkInStatus !== 'completed'} onClick={() => handleStartWorkflow(b, 'checkout')} data-testid={`button-checkout-${b.id}`}>End Trip</Button>
                             </div>
                           </div>
+                          
+                          {/* Accept Pickup Button - Only if Delivery was Rejected and not yet accepted */}
+                          {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && (
+                            <div className="mt-4">
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await apiRequest('PUT', `/api/bookings/${b.id}/accept-pickup`, {});
+                                    queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                    toast({ description: 'Pickup method accepted. You can now proceed with check-in.' });
+                                  } catch (error) {
+                                    toast({ description: 'Error accepting pickup method', variant: 'destructive' });
+                                  }
+                                }}
+                                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                data-testid={`button-accept-pickup-${b.id}`}
+                              >
+                                Accept Pickup Method
+                              </button>
+                            </div>
+                          )}
+
                           <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
                             {!extendingBookingId && (<button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" onClick={() => initExtension(b)} data-testid={`button-extend-${b.id}`}>Modify Return Date</button>)}
                             {extendingBookingId === b.id && (() => {
