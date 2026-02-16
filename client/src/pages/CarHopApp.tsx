@@ -2221,19 +2221,6 @@ export default function CarHopApp() {
     }
   }, [supportMessagesData.length, vehicles.length]);
 
-  // Effect to show toast when new admin reply arrives
-  useEffect(() => {
-    if (!clientUser || !initialLoadDone || view === 'support' || view === 'home' || view === 'bookings' || view === 'host-dashboard') return;
-    const unread = supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read);
-    if (unread.length > 0) {
-      const lastReply = unread[unread.length - 1];
-      toast({
-        title: "Nova mensagem do Suporte",
-        description: `Resposta sobre: ${lastReply.subject}`,
-        onClick: () => setView('support')
-      });
-    }
-  }, [supportMessagesData.length, view, clientUser, initialLoadDone]);
 
   // Effect to mark as read when entering support view
   useEffect(() => {
