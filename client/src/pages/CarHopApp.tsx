@@ -9462,6 +9462,7 @@ export default function CarHopApp() {
                                 <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                               </div>
                               
+                              <div className="flex justify-between items-start gap-2 mb-0.5">
                                 <div className="text-xs text-zinc-300 font-medium leading-tight">
                                   {(() => { 
                                     const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || (vehicles || []).find(vv => vv.id === b.vehicleId);
