@@ -10856,10 +10856,14 @@ export default function CarHopApp() {
                         </div>
                       )}
                             <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
-                              {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}
+                              {b.carName} {(() => {
+                                const v = vehicles.find(v => v.id === b.vehicleId);
+                                return v?.year ? ` ${v.year}` : '';
+                              })()}
                               {(() => {
                                 const vehicle = vehicles.find(v => v.id === b.vehicleId);
-                                if (!vehicle?.hostId || !vehicle?.hostName) return null;
+                                const hostName = vehicle?.hostName || b.hostName;
+                                if (!vehicle?.hostId || !hostName) return null;
                                 return (
                                   <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
                                     by <button 
@@ -10872,7 +10876,7 @@ export default function CarHopApp() {
                                       className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
                                       data-testid={`link-host-profile-${b.id}`}
                                     >
-                                      {vehicle.hostName}
+                                      {hostName}
                                     </button>
                                   </span>
                                 );
