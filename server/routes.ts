@@ -1346,6 +1346,16 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         extendedRate: newExtendedRate,
         tax: newTax
       };
+
+      // Calculate new total
+      const baseRate = (booking.details?.rate || 0);
+      const protection = (booking.details?.protection || 0);
+      const fees = (booking.details?.fees || 0);
+      const deliveryFee = (booking.details?.deliveryFee || 0);
+      const discount = (booking.details?.discount || 0);
+      
+      // Sum everything up for the new total
+      updateData.total = baseRate + protection + fees + newExtendedRate + newTax + deliveryFee - discount;
     }
     
     const updated = await storage.updateBooking(id, updateData);
