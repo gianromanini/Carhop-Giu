@@ -2749,7 +2749,7 @@ export default function CarHopApp() {
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-2">
           <div className="flex items-center gap-1 sm:gap-2 cursor-pointer flex-shrink-0" onClick={() => setView('home')} data-testid="link-home">
-            <img src="/logo.png" alt="CarHop Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+            <img src="/logo.png" alt="CarHop Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain mix-blend-multiply dark:mix-blend-screen" />
             <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
@@ -4914,7 +4914,15 @@ export default function CarHopApp() {
                 m.senderType === 'host' && 
                 (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
                 m.adminReply && !m.read
-              ).length : (tab === 'bookings' ? hostBookings.filter(b => b.unread || getUnreadMessagesCount(b, 'host') > 0 || getPendingRequestsCount(b) > 0).length : 0);
+              ).length : (tab === 'bookings' ? bookings.filter((b: any) => {
+                const hostId = String(currentHost?.id);
+                const hostEmail = currentHost?.email?.toLowerCase().trim() || '';
+                const hostVehicleIds = vehicles.filter(v => String(v.hostId) === hostId).map(v => Number(v.id));
+                const bVehicleId = b.vehicleId != null ? Number(b.vehicleId) : null;
+                const isHostBooking = (bVehicleId !== null && hostVehicleIds.includes(bVehicleId)) || 
+                                     (((b.details as any)?.hostEmail || '').toLowerCase().trim() === hostEmail);
+                return isHostBooking && (b.unread || getUnreadMessagesCount(b, 'host') > 0 || getPendingRequestsCount(b) > 0);
+              }).length : 0);
               return (
               <button key={tab} 
                 onClick={() => {
