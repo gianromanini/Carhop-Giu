@@ -2371,6 +2371,9 @@ export default function CarHopApp() {
     const hostVehicleIds = vehicles.filter(v => String(v.hostId) === String(currentHost.id)).map(v => v.id);
     const hostBookings = bookings.filter(b => {
       const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+      const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
+      if (vehicle && String(vehicle.hostId) === String(currentHost.id)) return true;
+      if (String((b.details as any)?.hostId) === String(currentHost.id)) return true;
       return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
     });
     let count = 0;
@@ -5687,9 +5690,24 @@ export default function CarHopApp() {
             const hostVehicleIds = vehicles.filter(v => String(v.hostId) === hostId).map(v => Number(v.id));
             const hostBookings = bookings.filter(b => {
               const bVehicleId = b.vehicleId != null ? String(b.vehicleId) : null;
+              
+              // PRIMARY CHECK: Check vehicle ownership from the vehicles list
+              const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
+              if (vehicle && String(vehicle.hostId) === hostId) return true;
+              
+              // SECONDARY CHECK: Check if the vehicle ID is in the host's vehicle list
               if (bVehicleId !== null && hostVehicleIds.map(String).includes(bVehicleId)) return true;
+              
+              // TERTIARY CHECK: Check host email in booking details
               const bookingHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
               if (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) return true;
+              
+              // QUATERNARY CHECK: Check if host ID is stored in details.hostEmail
+              if (bookingHostEmail === hostId) return true;
+              
+              // QUINARY CHECK: Direct host ID check in details
+              if (String((b.details as any)?.hostId) === hostId) return true;
+              
               return false;
             });
             return (
@@ -6661,9 +6679,16 @@ export default function CarHopApp() {
           })()}
 
           {hostTab === 'earnings' && (() => {
-            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === String(currentHost.id)).map(v => v.id);
-            const hostVehicleMap = Object.fromEntries(vehicles.filter(v => v.hostId === String(currentHost.id)).map(v => [v.id, v]));
-            const hostBookings = bookings.filter(b => b.vehicleId && hostVehicleIds.includes(Number(b.vehicleId)) && b.status === 'Completed');
+            const hostId = String(currentHost.id);
+            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === hostId).map(v => v.id);
+            const hostVehicleMap = Object.fromEntries(vehicles.filter(v => String(v.hostId) === hostId).map(v => [v.id, v]));
+            const hostBookings = bookings.filter(b => {
+              const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+              const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
+              if (vehicle && String(vehicle.hostId) === hostId) return true;
+              if (String((b.details as any)?.hostId) === hostId) return true;
+              return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
+            }).filter(b => b.status === 'Completed');
             
             let totalGross = 0;
             let totalCommission = 0;
@@ -10862,8 +10887,9 @@ export default function CarHopApp() {
                               })()}
                               {(() => {
                                 const vehicle = vehicles.find(v => v.id === b.vehicleId);
-                                const hostName = vehicle?.hostName || b.hostName;
-                                if (!vehicle?.hostId || !hostName) return null;
+                                // Access hostName from vehicle or cast booking to any to avoid TS error
+                                const hName = vehicle?.hostName || (b as any).hostName;
+                                if (!vehicle?.hostId || !hName) return null;
                                 return (
                                   <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
                                     by <button 
@@ -10876,7 +10902,7 @@ export default function CarHopApp() {
                                       className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
                                       data-testid={`link-host-profile-${b.id}`}
                                     >
-                                      {hostName}
+                                      {hName}
                                     </button>
                                   </span>
                                 );
