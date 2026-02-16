@@ -11319,7 +11319,7 @@ export default function CarHopApp() {
                         </div>
                       )}
                             <div className="text-white text-base md:text-lg font-bold mt-2">
-                              {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}
+                              {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}
                             </div>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                         {b.days} Days | {(() => {
@@ -11426,7 +11426,17 @@ export default function CarHopApp() {
                               >
                                 {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted
                                   ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
-                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : <><span className="text-red-200 font-bold mr-1">*Required</span> Check In</>}
+                                  : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : (
+                                    <div className="relative flex flex-col items-center">
+                                      <span 
+                                        className="absolute -top-6 text-red-500 font-bold text-lg cursor-help" 
+                                        title="Required"
+                                      >
+                                        *
+                                      </span>
+                                      <span>Check In</span>
+                                    </div>
+                                  )}
                               </Button>
                             </div>
                             <div className="flex-1">
