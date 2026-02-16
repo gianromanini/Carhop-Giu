@@ -5844,28 +5844,39 @@ export default function CarHopApp() {
                                 </div>
                                 <div className="text-xs text-zinc-400 font-medium">
                                   {(() => { 
-                                    const veh = (vehicles || []).find(vv => vv.id === b.vehicleId); 
-                                    const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null; 
-                                    const hostLabel = host ? (
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedHost(host);
-                                          setAdminTab('hosts');
-                                        }}
-                                        className="text-blue-400 hover:text-blue-300 font-bold ml-1 transition-colors underline decoration-blue-400/30"
-                                      >
-                                        | {host.firstName} {host.lastName}
-                                      </button>
+                                    const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || (vehicles || []).find(vv => vv.id === b.vehicleId);
+                                    const displayYear = veh?.year || (b.details as any)?.vehicleYear || '';
+                                    const resolvedHostId = veh?.hostId || (b.details as any)?.hostId;
+                                    const hostFromList = resolvedHostId ? (hostsData || []).find((h: any) => String(h.id) === String(resolvedHostId)) : null;
+                                    const hostName = hostFromList ? `${hostFromList.firstName} ${hostFromList.lastName}` : (veh?.hostName || (b.details as any)?.hostName || '');
+                                    const hostLabel = hostName ? (
+                                      <span className="text-zinc-500 dark:text-zinc-400 font-normal">
+                                        | <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (hostFromList) {
+                                              setSelectedHost(hostFromList);
+                                              setAdminTab('hosts');
+                                            } else if (resolvedHostId) {
+                                              setViewHostProfile(String(resolvedHostId));
+                                              setView('host-profile');
+                                              window.scrollTo(0, 0);
+                                            }
+                                          }}
+                                          className="text-cyan-400 hover:text-cyan-300 font-bold transition-colors underline decoration-cyan-400/30"
+                                        >
+                                          Host: {hostName}
+                                        </button>
+                                      </span>
                                     ) : ''; 
                                     return (
                                       <span className="flex items-center flex-wrap gap-1">
-                                        {veh?.year || ''} - {b.carName} {hostLabel}
+                                        {b.carName} {displayYear} {hostLabel}
                                       </span>
                                     ); 
                                   })()}
                                 </div>
-                                <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
+                                <div className="text-xs text-white mt-0.5 font-bold">Guest - {b.driver.name}</div>
                               </div>
                               <div className="text-right">
                                 <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
@@ -9453,23 +9464,34 @@ export default function CarHopApp() {
                               <div className="flex justify-between items-start gap-2 mb-0.5">
                                 <div className="text-xs text-zinc-300 font-medium leading-tight">
                                   {(() => { 
-                                    const veh = (vehicles || []).find(vv => vv.id === b.vehicleId); 
-                                    const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null; 
-                                    const hostLabel = host ? (
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedHost(host);
-                                          setAdminTab('hosts');
-                                        }}
-                                        className="text-blue-400 hover:text-blue-300 font-bold ml-1 transition-colors underline decoration-blue-400/30"
-                                      >
-                                        | {host.firstName} {host.lastName}
-                                      </button>
+                                    const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || (vehicles || []).find(vv => vv.id === b.vehicleId);
+                                    const displayYear = veh?.year || (b.details as any)?.vehicleYear || '';
+                                    const resolvedHostId = veh?.hostId || (b.details as any)?.hostId;
+                                    const hostFromList = resolvedHostId ? (hostsData || []).find((h: any) => String(h.id) === String(resolvedHostId)) : null;
+                                    const hostName = hostFromList ? `${hostFromList.firstName} ${hostFromList.lastName}` : (veh?.hostName || (b.details as any)?.hostName || '');
+                                    const hostLabel = hostName ? (
+                                      <span className="text-zinc-500 dark:text-zinc-400 font-normal">
+                                        | <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (hostFromList) {
+                                              setSelectedHost(hostFromList);
+                                              setAdminTab('hosts');
+                                            } else if (resolvedHostId) {
+                                              setViewHostProfile(String(resolvedHostId));
+                                              setView('host-profile');
+                                              window.scrollTo(0, 0);
+                                            }
+                                          }}
+                                          className="text-cyan-400 hover:text-cyan-300 font-bold transition-colors underline decoration-cyan-400/30"
+                                        >
+                                          Host: {hostName}
+                                        </button>
+                                      </span>
                                     ) : ''; 
                                     return (
                                       <span className="flex items-center flex-wrap gap-1">
-                                        {veh?.year || ''} - {b.carName} {hostLabel}
+                                        {b.carName} {displayYear} {hostLabel}
                                       </span>
                                     ); 
                                   })()}
@@ -9486,7 +9508,7 @@ export default function CarHopApp() {
                               
                               {/* Driver Name + Guest Stars */}
                               <div className="flex justify-between items-start gap-2 mb-1">
-                                <div className="text-xs text-zinc-500 leading-tight">{b.driver.name}</div>
+                                <div className="text-xs text-white leading-tight font-bold">Guest - {b.driver.name}</div>
                                 {b.status === 'Completed' && (() => {
                                   const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                   return bookingRating?.stars ? (
