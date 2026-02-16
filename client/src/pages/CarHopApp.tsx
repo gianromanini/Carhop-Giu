@@ -8975,7 +8975,7 @@ export default function CarHopApp() {
             {adminTab === 'bookings' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - All Bookings List */}
-                <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
+                <Card className="p-3 sm:p-4 md:col-span-3 max-h-[85vh] overflow-y-auto">
                   <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">All Bookings ({bookings.length})</h3>
                   
                   {/* Filters */}
@@ -9010,7 +9010,6 @@ export default function CarHopApp() {
                         />
                       </div>
                     </div>
-                    <Card className="p-3 sm:p-4 mt-4">
                   <div className="space-y-2">
                     {bookingsLoading && (
                       <p className="text-zinc-400 text-center py-4">Carregando reservas...</p>
@@ -9225,6 +9224,228 @@ export default function CarHopApp() {
                                           <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout'); }}>Check-Out</Button>
                                         </div>
                                       </div>
+
+                                      {/* Delivery Approval Section */}
+                                      {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                                        <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
+                                            <Route size={14}/> Delivery Approval Required
+                                          </h4>
+                                          <p className="text-sm text-zinc-300 mb-1">
+                                            Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
+                                          </p>
+                                          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                                            <p className="text-xs text-zinc-500">
+                                              Delivery scheduled for: <span className="text-zinc-300">{formatDisplayDate(b.startDate, b.startTime)}</span>
+                                            </p>
+                                            {(b.details as any)?.deliveryDistance && (
+                                              <p className="text-xs text-zinc-500">
+                                                Distance: <span className="text-zinc-300">{(b.details as any).deliveryDistance.toFixed(1)} miles</span>
+                                              </p>
+                                            )}
+                                            {(b.details as any)?.deliveryFee !== undefined && (
+                                              <p className="text-xs text-zinc-500">
+                                                Delivery Fee: <span className="text-green-400 font-bold">${(b.details as any).deliveryFee.toFixed(2)}</span>
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <button 
+                                              onClick={() => handleDeliveryApproval(b.id, 'approved')}
+                                              className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                              data-testid={`button-admin-approve-delivery-${b.id}`}
+                                            >
+                                              Approve Delivery
+                                            </button>
+                                            <button 
+                                              onClick={() => handleDeliveryApproval(b.id, 'rejected')}
+                                              className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                              data-testid={`button-admin-reject-delivery-${b.id}`}
+                                            >
+                                              Decline (Pickup Only)
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Chat Messages */}
+                                      {(b.messages || []).length > 0 && (
+                                        <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
+                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                            <MessageCircle size={14}/> Customer Messages
+                                          </h4>
+                                          <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
+                                            {(b.messages || []).map(msg => (
+                                              <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                  <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
+                                                  <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                                                </div>
+                                                <p className="text-zinc-300">{msg.text}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="text"
+                                              value={chatMessage}
+                                              onChange={(e) => setChatMessage(e.target.value)}
+                                              placeholder="Type a message..."
+                                              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                              data-testid="input-admin-message"
+                                              onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
+                                            />
+                                            <button 
+                                              onClick={() => sendChatMessage(b.id, 'admin')}
+                                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                              data-testid="button-send-admin-message"
+                                            >
+                                              <Send size={16}/>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Client Requests (Priority Section) */}
+                                      {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
+                                        <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
+                                            <AlertCircle size={14}/> Client Requests
+                                          </h4>
+                                          <div className="space-y-3">
+                                            {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
+                                              <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                                <div className="flex justify-between items-start mb-2">
+                                                  <div>
+                                                    <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                                      {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
+                                                    </span>
+                                                    <div className="text-sm text-zinc-300 mt-1">
+                                                      New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                                    </div>
+                                                    {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                                  </div>
+                                                  <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                                </div>
+                                                <div className="flex gap-2 mt-3">
+                                                  <button 
+                                                    onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
+                                                    className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                                    data-testid={`button-approve-${req.id}`}
+                                                  >
+                                                    Approve
+                                                  </button>
+                                                  <button 
+                                                    onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
+                                                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                                    data-testid={`button-reject-${req.id}`}
+                                                  >
+                                                    Reject
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Vehicle Replacement - Admin View */}
+                                      {((b as any).vehicleReplaceRequests || []).length > 0 && (
+                                        <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-orange-400">
+                                            <Car size={14}/> Vehicle Replacement History
+                                          </h4>
+                                          <div className="space-y-3">
+                                            {((b as any).vehicleReplaceRequests || []).map((req: any) => (
+                                              <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                                <div className="flex justify-between items-start mb-2">
+                                                  <div>
+                                                    <span className={`text-xs font-bold uppercase ${req.status === 'pending' ? 'text-yellow-400' : req.status === 'approved' ? 'text-green-400' : 'text-red-400'}`}>
+                                                      {req.status} - By {req.requestedBy}
+                                                    </span>
+                                                    <div className="text-sm text-zinc-300 mt-1">
+                                                      From: <span className="font-bold">{req.oldVehicleModel}</span> (${req.oldDailyRate}/day)
+                                                    </div>
+                                                    {req.newVehicleModel && (
+                                                      <div className="text-sm text-zinc-300">
+                                                        To: <span className="font-bold text-green-400">{req.newVehicleModel}</span> (${req.newDailyRate}/day)
+                                                      </div>
+                                                    )}
+                                                    {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                                    {req.priceDifference !== undefined && req.priceDifference !== 0 && (
+                                                      <div className="text-xs mt-1">
+                                                        Price adjustment: <span className={req.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>{req.priceDifference > 0 ? '+' : ''}${req.priceDifference.toFixed(2)}</span> ({req.remainingDays} days)
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                                </div>
+                                                {req.status === 'pending' && (
+                                                  <div className="mt-3 space-y-2">
+                                                    <select
+                                                      value={hostReplaceVehicleId || ''}
+                                                      onChange={(e) => setHostReplaceVehicleId(Number(e.target.value) || null)}
+                                                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                                      data-testid={`select-admin-replace-vehicle-${req.id}`}
+                                                    >
+                                                      <option value="">Choose replacement vehicle...</option>
+                                                      {vehicles.filter(v => v.id !== b.vehicleId).map(v => (
+                                                        <option key={v.id} value={v.id}>{v.model} - ${v.price}/day</option>
+                                                      ))}
+                                                    </select>
+                                                    <div className="flex gap-2">
+                                                      <button
+                                                        onClick={async () => {
+                                                          if (!hostReplaceVehicleId) {
+                                                            toast({ description: 'Please select a replacement vehicle', variant: 'destructive' });
+                                                            return;
+                                                          }
+                                                          try {
+                                                            await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                              requestId: req.id,
+                                                              status: 'approved',
+                                                              newVehicleId: hostReplaceVehicleId,
+                                                              respondedBy: 'admin',
+                                                            });
+                                                            queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                            setHostReplaceVehicleId(null);
+                                                            toast({ description: 'Vehicle replacement approved!' });
+                                                          } catch (error) {
+                                                            toast({ description: 'Error approving replacement', variant: 'destructive' });
+                                                          }
+                                                        }}
+                                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                                        data-testid={`button-admin-approve-replace-${req.id}`}
+                                                      >
+                                                        Approve
+                                                      </button>
+                                                      <button
+                                                        onClick={async () => {
+                                                          try {
+                                                            await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                              requestId: req.id,
+                                                              status: 'rejected',
+                                                              respondedBy: 'admin',
+                                                            });
+                                                            queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                            toast({ description: 'Replacement request declined' });
+                                                          } catch (error) {
+                                                            toast({ description: 'Error declining request', variant: 'destructive' });
+                                                          }
+                                                        }}
+                                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                                        data-testid={`button-admin-reject-replace-${req.id}`}
+                                                      >
+                                                        Decline
+                                                      </button>
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })()}
@@ -9237,228 +9458,6 @@ export default function CarHopApp() {
                 </Card>
               </div>
             )}
-
-                          {/* Delivery Approval Section */}
-                          {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
-                                <Route size={14}/> Delivery Approval Required
-                              </h4>
-                              <p className="text-sm text-zinc-300 mb-1">
-                                Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
-                              </p>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
-                                <p className="text-xs text-zinc-500">
-                                  Delivery scheduled for: <span className="text-zinc-300">{formatDisplayDate(b.startDate, b.startTime)}</span>
-                                </p>
-                                {(b.details as any)?.deliveryDistance && (
-                                  <p className="text-xs text-zinc-500">
-                                    Distance: <span className="text-zinc-300">{(b.details as any).deliveryDistance.toFixed(1)} miles</span>
-                                  </p>
-                                )}
-                                {(b.details as any)?.deliveryFee !== undefined && (
-                                  <p className="text-xs text-zinc-500">
-                                    Delivery Fee: <span className="text-green-400 font-bold">${(b.details as any).deliveryFee.toFixed(2)}</span>
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex gap-2">
-                                <button 
-                                  onClick={() => handleDeliveryApproval(b.id, 'approved')}
-                                  className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                  data-testid={`button-admin-approve-delivery-${b.id}`}
-                                >
-                                  Approve Delivery
-                                </button>
-                                <button 
-                                  onClick={() => handleDeliveryApproval(b.id, 'rejected')}
-                                  className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                  data-testid={`button-admin-reject-delivery-${b.id}`}
-                                >
-                                  Decline (Pickup Only)
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Chat Messages */}
-                          {(b.messages || []).length > 0 && (
-                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                <MessageCircle size={14}/> Customer Messages
-                              </h4>
-                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
-                                {(b.messages || []).map(msg => (
-                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
-                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-zinc-300">{msg.text}</p>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={chatMessage}
-                                  onChange={(e) => setChatMessage(e.target.value)}
-                                  placeholder="Type a message..."
-                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                  data-testid="input-admin-message"
-                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
-                                />
-                                <button 
-                                  onClick={() => sendChatMessage(b.id, 'admin')}
-                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                  data-testid="button-send-admin-message"
-                                >
-                                  <Send size={16}/>
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Client Requests (Priority Section) */}
-                          {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
-                            <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
-                                <AlertCircle size={14}/> Client Requests
-                              </h4>
-                              <div className="space-y-3">
-                                {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
-                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
-                                          {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
-                                        </span>
-                                        <div className="text-sm text-zinc-300 mt-1">
-                                          New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
-                                        </div>
-                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
-                                      </div>
-                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
-                                    </div>
-                                    <div className="flex gap-2 mt-3">
-                                      <button 
-                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
-                                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                        data-testid={`button-approve-${req.id}`}
-                                      >
-                                        Approve
-                                      </button>
-                                      <button 
-                                        onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
-                                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                        data-testid={`button-reject-${req.id}`}
-                                      >
-                                        Reject
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Vehicle Replacement - Admin View */}
-                          {((b as any).vehicleReplaceRequests || []).length > 0 && (
-                            <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-orange-400">
-                                <Car size={14}/> Vehicle Replacement History
-                              </h4>
-                              <div className="space-y-3">
-                                {((b as any).vehicleReplaceRequests || []).map((req: any) => (
-                                  <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <span className={`text-xs font-bold uppercase ${req.status === 'pending' ? 'text-yellow-400' : req.status === 'approved' ? 'text-green-400' : 'text-red-400'}`}>
-                                          {req.status} - By {req.requestedBy}
-                                        </span>
-                                        <div className="text-sm text-zinc-300 mt-1">
-                                          From: <span className="font-bold">{req.oldVehicleModel}</span> (${req.oldDailyRate}/day)
-                                        </div>
-                                        {req.newVehicleModel && (
-                                          <div className="text-sm text-zinc-300">
-                                            To: <span className="font-bold text-green-400">{req.newVehicleModel}</span> (${req.newDailyRate}/day)
-                                          </div>
-                                        )}
-                                        {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
-                                        {req.priceDifference !== undefined && req.priceDifference !== 0 && (
-                                          <div className="text-xs mt-1">
-                                            Price adjustment: <span className={req.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>{req.priceDifference > 0 ? '+' : ''}${req.priceDifference.toFixed(2)}</span> ({req.remainingDays} days)
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
-                                    </div>
-                                    {req.status === 'pending' && (
-                                      <div className="mt-3 space-y-2">
-                                        <select
-                                          value={hostReplaceVehicleId || ''}
-                                          onChange={(e) => setHostReplaceVehicleId(Number(e.target.value) || null)}
-                                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                          data-testid={`select-admin-replace-vehicle-${req.id}`}
-                                        >
-                                          <option value="">Choose replacement vehicle...</option>
-                                          {vehicles.filter(v => v.id !== b.vehicleId).map(v => (
-                                            <option key={v.id} value={v.id}>{v.model} - ${v.price}/day</option>
-                                          ))}
-                                        </select>
-                                        <div className="flex gap-2">
-                                          <button
-                                            onClick={async () => {
-                                              if (!hostReplaceVehicleId) {
-                                                toast({ description: 'Please select a replacement vehicle', variant: 'destructive' });
-                                                return;
-                                              }
-                                              try {
-                                                await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
-                                                  requestId: req.id,
-                                                  status: 'approved',
-                                                  newVehicleId: hostReplaceVehicleId,
-                                                  respondedBy: 'admin',
-                                                });
-                                                queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-                                                setHostReplaceVehicleId(null);
-                                                toast({ description: 'Vehicle replacement approved!' });
-                                              } catch (error) {
-                                                toast({ description: 'Error approving replacement', variant: 'destructive' });
-                                              }
-                                            }}
-                                            className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                            data-testid={`button-admin-approve-replace-${req.id}`}
-                                          >
-                                            Approve
-                                          </button>
-                                          <button
-                                            onClick={async () => {
-                                              try {
-                                                await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
-                                                  requestId: req.id,
-                                                  status: 'rejected',
-                                                  respondedBy: 'admin',
-                                                });
-                                                queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-                                                toast({ description: 'Replacement request declined' });
-                                              } catch (error) {
-                                                toast({ description: 'Error declining request', variant: 'destructive' });
-                                              }
-                                            }}
-                                            className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                            data-testid={`button-admin-reject-replace-${req.id}`}
-                                          >
-                                            Decline
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
 
                           {/* Admin: Initiate Vehicle Replacement */}
                           {(b.status === 'Active' || b.status === 'Confirmed') && (
