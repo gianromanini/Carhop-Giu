@@ -6022,7 +6022,7 @@ export default function CarHopApp() {
                                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                                   <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <p className="font-medium">{(() => { const veh = vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || ''} {host ? <span className="text-zinc-500 text-xs font-normal">| {host.firstName} {host.lastName}</span> : null} - {b.carName}</>; })()}</p>
+                                      <p className="font-medium">{(() => { const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || (b.details as any)?.vehicleYear || ''} {b.carName} {host ? <span className="text-zinc-500 text-xs font-normal">| Host: {host.firstName} {host.lastName}</span> : null}</>; })()}</p>
                                       {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                                           Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
@@ -9614,7 +9614,7 @@ export default function CarHopApp() {
                                   <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Rental Information</h4>
                                   <div className="text-xs text-zinc-900 dark:text-white space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <p className="font-medium">{(() => { const veh = vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || ''} {host ? <span className="text-zinc-500 text-xs font-normal">| {host.firstName} {host.lastName}</span> : null} - {b.carName}</>; })()}</p>
+                                      <p className="font-medium">{(() => { const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || (b.details as any)?.vehicleYear || ''} {b.carName} {host ? <span className="text-zinc-500 text-xs font-normal">| Host: {host.firstName} {host.lastName}</span> : null}</>; })()}</p>
                                     </div>
                                     <p className="text-zinc-500 font-bold">Trip Total: <span className="text-green-500">${b.total.toFixed(2)}</span></p>
                                     <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
@@ -9691,6 +9691,75 @@ export default function CarHopApp() {
                                           </Button>
                                         )}
                                       </div>
+
+                                      {/* Guest Check-in/Check-out Photos */}
+                                      {(b.checkInData || b.checkOutData) && (
+                                        <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
+                                          <h4 className="text-xs font-bold uppercase text-blue-400 mb-3 flex items-center gap-2">
+                                            <Camera size={14}/> Guest Check-in / Check-out Photos
+                                          </h4>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {b.checkInData && (
+                                              <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
+                                                <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-In</p>
+                                                <p className="text-xs text-zinc-400">Miles: {b.checkInData.miles}</p>
+                                                <p className="text-xs text-zinc-400">Gas: {b.checkInData.gas}</p>
+                                                {(() => {
+                                                  const fullBooking = getBookingWithImages(b);
+                                                  const photos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                                  const isLoading = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])].some((img: string) => img === '[IMAGE]');
+                                                  if (photos.length > 0) {
+                                                    return (
+                                                      <div className="mt-2">
+                                                        <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
+                                                        <div className="grid grid-cols-3 gap-1">
+                                                          {photos.map((photo: string, idx: number) => (
+                                                            <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                              <img src={photo} alt={`Guest check-in ${idx + 1}`} className="w-full h-16 object-cover" loading="lazy"/>
+                                                            </div>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  } else if (isLoading) {
+                                                    return <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>;
+                                                  }
+                                                  return <p className="text-xs text-zinc-500 mt-2">No photos</p>;
+                                                })()}
+                                              </div>
+                                            )}
+                                            {b.checkOutData && (
+                                              <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
+                                                <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-Out</p>
+                                                <p className="text-xs text-zinc-400">Miles: {b.checkOutData.miles}</p>
+                                                <p className="text-xs text-zinc-400">Gas: {b.checkOutData.gas}</p>
+                                                {(() => {
+                                                  const fullBooking = getBookingWithImages(b);
+                                                  const photos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                                  const isLoading = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])].some((img: string) => img === '[IMAGE]');
+                                                  if (photos.length > 0) {
+                                                    return (
+                                                      <div className="mt-2">
+                                                        <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
+                                                        <div className="grid grid-cols-3 gap-1">
+                                                          {photos.map((photo: string, idx: number) => (
+                                                            <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                              <img src={photo} alt={`Guest check-out ${idx + 1}`} className="w-full h-16 object-cover" loading="lazy"/>
+                                                            </div>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  } else if (isLoading) {
+                                                    return <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>;
+                                                  }
+                                                  return <p className="text-xs text-zinc-500 mt-2">No photos</p>;
+                                                })()}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
 
                                     {/* 4. Financial Details */}
                                     <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
@@ -11220,8 +11289,10 @@ export default function CarHopApp() {
                       const extraPaymentsTotal = (receiptBooking.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                       const discount = receiptBooking.details?.discount || 0;
                       
-                      // Total sum should be exactly what we show
-                      const totalAmount = initialPayment + extendedRate + extensionTax + manualChargesTotal + extraPaymentsTotal - discount;
+                      // Compute additional charges subtotals
+                      const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
+                      const additionalTax = extensionTax;
+                      const additionalCharges = additionalChargesBeforeTax + additionalTax;
                       
                       return (
                         <>
