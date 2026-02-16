@@ -10721,6 +10721,17 @@ export default function CarHopApp() {
                               <span className="font-bold text-green-900 dark:text-green-200">Total Amount</span>
                               <span className="text-xl font-bold text-green-600 dark:text-green-400">${(initialPayment + additionalCharges).toFixed(2)}</span>
                             </div>
+                            {(() => {
+                              const veh = vehicles.find(v => v.id === receiptBooking.vehicleId);
+                              const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null;
+                              return (
+                                <div className="mt-1 text-right">
+                                  <p className="text-[10px] font-medium text-blue-500 dark:text-blue-400">
+                                    {veh?.year || ''} | {host ? `${host.firstName} ${host.lastName}` : ''}
+                                  </p>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </>
                       );
