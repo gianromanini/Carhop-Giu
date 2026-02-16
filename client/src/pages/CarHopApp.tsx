@@ -10812,13 +10812,13 @@ export default function CarHopApp() {
                           </p>
                         </div>
                       )}
-                            <div className="text-white text-base md:text-lg font-bold mt-2">
+                            <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
                               {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}
                               {(() => {
                                 const vehicle = vehicles.find(v => v.id === b.vehicleId);
                                 if (!vehicle?.hostId || !vehicle?.hostName) return null;
                                 return (
-                                  <span className="ml-2 text-xs font-normal text-zinc-400">
+                                  <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
                                     by <button 
                                       onClick={(e) => { 
                                         e.stopPropagation(); 
@@ -10826,7 +10826,7 @@ export default function CarHopApp() {
                                         setView('host-profile'); 
                                         window.scrollTo(0, 0); 
                                       }}
-                                      className="text-cyan-500 hover:text-cyan-400 underline underline-offset-2"
+                                      className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
                                       data-testid={`link-host-profile-${b.id}`}
                                     >
                                       {vehicle.hostName}
