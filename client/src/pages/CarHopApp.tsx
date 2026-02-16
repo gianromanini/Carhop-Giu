@@ -6668,6 +6668,7 @@ export default function CarHopApp() {
                                 const originalBookingAmount = subtotalBeforeTax + originalTax;
                                 
                                 const extendedRate = b.details.extendedRate || 0;
+                                const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
                                 const manualChargesTotal = Array.isArray(b.details.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                 const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 
@@ -6736,7 +6737,7 @@ export default function CarHopApp() {
 
                                     {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
-                                        <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
+                                        <div className="text-xs font-bold uppercase text-zinc-400 mb-2">ADDITIONAL CHARGES AND DISCOUNTS</div>
                                         <div className="space-y-1">
                                           {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                             <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
@@ -6747,10 +6748,18 @@ export default function CarHopApp() {
                                             </div>
                                           ))}
                                           {extendedRate > 0 && (
-                                            <div className="flex justify-between text-blue-300 text-xs">
-                                              <span>Extended Days</span>
-                                              <span>+${extendedRate.toFixed(2)}</span>
-                                            </div>
+                                            <>
+                                              <div className="flex justify-between text-blue-300 text-xs">
+                                                <span>Extended Days</span>
+                                                <span>+${extendedRate.toFixed(2)}</span>
+                                              </div>
+                                              {extensionTax > 0 && (
+                                                <div className="flex justify-between text-purple-300 text-xs">
+                                                  <span>Extension Tax ({taxRate}%)</span>
+                                                  <span>+${extensionTax.toFixed(2)}</span>
+                                                </div>
+                                              )}
+                                            </>
                                           )}
                                           {b.details.manualCharges && b.details.manualCharges.map((c, i) => (
                                             <div key={i} className="flex justify-between text-orange-300 text-xs">
@@ -6764,7 +6773,9 @@ export default function CarHopApp() {
                                                   <X size={10}/>
                                                 </button>
                                               </span>
-                                              <span>+${c.amount.toFixed(2)}</span>
+                                              <span className={c.amount < 0 ? 'text-green-400' : ''}>
+                                                {c.amount > 0 ? '+' : ''}${c.amount.toFixed(2)}
+                                              </span>
                                             </div>
                                           ))}
                                         </div>
@@ -6779,16 +6790,18 @@ export default function CarHopApp() {
                                     </div>
 
                                     {/* Charge Extras by Original Payment Method */}
-                                    <div className="mt-4 pt-4 border-t border-zinc-600">
-                                      <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
-                                      <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
-                                          <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount-host"/>
+                                    {(manualChargesTotal > 0 || extendedRate > 0) && (
+                                      <div className="mt-4 pt-4 border-t border-zinc-600">
+                                        <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                            <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount-host"/>
+                                          </div>
+                                          <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment-host">Charge Extra Payment Trip</button>
                                         </div>
-                                        <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment-host">Charge Extra Payment Trip</button>
                                       </div>
-                                    </div>
+                                    )}
                                   </>
                                 );
                               })()}
@@ -6797,7 +6810,7 @@ export default function CarHopApp() {
 
                           {/* 5. Manage Charges & Adjustments */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Adjustments</h4>
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">ADDITIONAL CHARGES AND DISCOUNTS</h4>
                             <div className="space-y-4">
                               <div className="flex gap-2">
                                 <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="fixed">$</option><option value="percent">%</option></select>
@@ -6805,8 +6818,8 @@ export default function CarHopApp() {
                                 <button onClick={() => handleApplyDiscount(b)} className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">Apply</button>
                               </div>
                               <div className="flex gap-2">
-                                <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="refuel">Refuel</option><option value="mileage">Mileage</option><option value="damage">Damage</option></select>
-                                <input type="number" placeholder="Extra Charge" value={extraCharge.amount} onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+                                <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="refuel">Refuel</option><option value="mileage">Mileage</option><option value="damage">Damage</option><option value="discount">Discount</option></select>
+                                <input type="number" placeholder="Value" value={extraCharge.amount} onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
                                 <button onClick={() => handleAddCharge(b)} className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded">Add</button>
                               </div>
                             </div>
@@ -9679,11 +9692,48 @@ export default function CarHopApp() {
                                         )}
                                       </div>
 
-                                      {/* 4. Financial Details */}
-                                      <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
-                                          <DollarSign size={14}/> Financial Details
-                                        </h4>
+                                    {/* 4. Financial Details */}
+                                    <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
+                                      {/* Chat Messages */}
+                                      {(b.messages || []).length > 0 && (
+                                        <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800 mb-4">
+                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                            <MessageCircle size={14}/> Customer Messages
+                                          </h4>
+                                          <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
+                                            {(b.messages || []).map(msg => (
+                                              <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                  <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
+                                                  <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                                                </div>
+                                                <p className="text-zinc-300">{msg.text}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="text"
+                                              value={chatMessage}
+                                              onChange={(e) => setChatMessage(e.target.value)}
+                                              placeholder="Type a message..."
+                                              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                              data-testid="input-admin-message"
+                                              onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
+                                            />
+                                            <button 
+                                              onClick={() => sendChatMessage(b.id, 'admin')}
+                                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                              data-testid="button-send-admin-message"
+                                            >
+                                              <Send size={16}/>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                      <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
+                                        <DollarSign size={14}/> Financial Details
+                                      </h4>
                                         <div className="space-y-4 text-sm">
                                           {(() => {
                                             const rate = b.details?.rate || 0;
@@ -9698,6 +9748,7 @@ export default function CarHopApp() {
                                             const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * (taxRate / 100) : 0;
                                             const originalBookingAmount = subtotalBeforeTax + originalTax;
                                             const extendedRate = b.details?.extendedRate || 0;
+                                            const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
                                             const manualChargesTotal = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                             const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                             return (
@@ -9759,7 +9810,7 @@ export default function CarHopApp() {
 
                                                 {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                                   <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
-                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
+                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">ADDITIONAL CHARGES AND DISCOUNTS</div>
                                                     <div className="space-y-1">
                                                       {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                                         <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
@@ -9770,10 +9821,18 @@ export default function CarHopApp() {
                                                         </div>
                                                       ))}
                                                       {extendedRate > 0 && (
-                                                        <div className="flex justify-between text-blue-300 text-xs">
-                                                          <span>Extended Days</span>
-                                                          <span>+${extendedRate.toFixed(2)}</span>
-                                                        </div>
+                                                        <>
+                                                          <div className="flex justify-between text-blue-300 text-xs">
+                                                            <span>Extended Days</span>
+                                                            <span>+${extendedRate.toFixed(2)}</span>
+                                                          </div>
+                                                          {extensionTax > 0 && (
+                                                            <div className="flex justify-between text-purple-300 text-xs">
+                                                              <span>Extension Tax ({taxRate}%)</span>
+                                                              <span>+${extensionTax.toFixed(2)}</span>
+                                                            </div>
+                                                          )}
+                                                        </>
                                                       )}
                                                       {b.details?.manualCharges && b.details.manualCharges.map((c, i) => (
                                                         <div key={i} className="flex justify-between text-orange-300 text-xs">
@@ -9781,7 +9840,9 @@ export default function CarHopApp() {
                                                             {c.type}
                                                             <button onClick={() => handleRemoveCharge(b, i)} className="text-red-400 hover:text-red-300" data-testid={`button-admin-remove-charge-${i}`}><X size={10}/></button>
                                                           </span>
-                                                          <span>+${c.amount.toFixed(2)}</span>
+                                                          <span className={c.amount < 0 ? 'text-green-400' : ''}>
+                                                            {c.amount > 0 ? '+' : ''}${c.amount.toFixed(2)}
+                                                          </span>
                                                         </div>
                                                       ))}
                                                     </div>
@@ -9795,16 +9856,18 @@ export default function CarHopApp() {
                                                   </div>
                                                 </div>
 
-                                                <div className="mt-4 pt-4 border-t border-zinc-600">
-                                                  <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
-                                                  <div className="flex gap-2">
-                                                    <div className="relative flex-1">
-                                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
-                                                      <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount-admin"/>
+                                                {(manualChargesTotal > 0 || extendedRate > 0) && (
+                                                  <div className="mt-4 pt-4 border-t border-zinc-600">
+                                                    <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                                    <div className="flex gap-2">
+                                                      <div className="relative flex-1">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                                        <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount-admin"/>
+                                                      </div>
+                                                      <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment-admin">Charge Extra Payment Trip</button>
                                                     </div>
-                                                    <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment-admin">Charge Extra Payment Trip</button>
                                                   </div>
-                                                </div>
+                                                )}
                                               </>
                                             );
                                           })()}
@@ -9813,7 +9876,7 @@ export default function CarHopApp() {
 
                                       {/* 5. Manage Charges & Adjustments */}
                                       <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">ADDITIONAL CHARGES AND DISCOUNTS</h4>
                                         <div className="mb-4">
                                           <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
                                           <div className="flex flex-col sm:flex-row gap-2">
@@ -9835,6 +9898,7 @@ export default function CarHopApp() {
                                                 <option value="mileage">Extra Mileage</option>
                                                 <option value="damage">Damage</option>
                                                 <option value="cleaning">Extra Cleaning</option>
+                                                <option value="discount">Discount</option>
                                                 <option value="other">Other</option>
                                               </select>
                                               <Input placeholder="Value ($)" type="number" value={extraCharge.amount} onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 mb-0 text-xs" data-testid="input-admin-charge-value" />
@@ -9849,44 +9913,6 @@ export default function CarHopApp() {
                                         <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Agreement</h4>
                                         <button onClick={() => setViewingAgreementBookingId(b.id)} className="w-full flex items-center justify-between p-2 bg-zinc-800 rounded border border-zinc-700 transition-colors"><div className="flex items-center gap-2"><FileText size={14} className="text-blue-500"/><span className="text-[10px] font-bold uppercase">View Agreement</span></div><ChevronRight size={14} /></button>
                                       </div>
-
-                                      {/* Chat Messages */}
-                                      {(b.messages || []).length > 0 && (
-                                        <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
-                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                            <MessageCircle size={14}/> Customer Messages
-                                          </h4>
-                                          <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'admin')}>
-                                            {(b.messages || []).map(msg => (
-                                              <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'admin' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
-                                                <div className="flex justify-between items-start mb-1">
-                                                  <span className={`text-[10px] font-bold uppercase ${msg.sender === 'admin' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
-                                                  <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
-                                                </div>
-                                                <p className="text-zinc-300">{msg.text}</p>
-                                              </div>
-                                            ))}
-                                          </div>
-                                          <div className="flex gap-2">
-                                            <input
-                                              type="text"
-                                              value={chatMessage}
-                                              onChange={(e) => setChatMessage(e.target.value)}
-                                              placeholder="Type a message..."
-                                              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                              data-testid="input-admin-message"
-                                              onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'admin')}
-                                            />
-                                            <button 
-                                              onClick={() => sendChatMessage(b.id, 'admin')}
-                                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                              data-testid="button-send-admin-message"
-                                            >
-                                              <Send size={16}/>
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
 
                                       {/* Client Requests (Priority Section) */}
                                       {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
