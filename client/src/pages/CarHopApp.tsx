@@ -5772,8 +5772,9 @@ export default function CarHopApp() {
                         return matches;
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
+                        const isAwaitingPickupApproval = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : isAwaitingPickupApproval ? 'bg-orange-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : isAwaitingPickupApproval ? 'PENDING PICKUP' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'host');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
@@ -5861,6 +5862,11 @@ export default function CarHopApp() {
                             {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                               <div className="mt-2 text-[10px] text-orange-400 flex items-center gap-1 font-bold">
                                 <Route size={10}/> Delivery Pending Approval
+                              </div>
+                            )}
+                            {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled' && (
+                              <div className="mt-2 text-[10px] text-orange-400 flex items-center gap-1 font-bold">
+                                <AlertCircle size={10}/> Awaiting Guest Pickup Approval
                               </div>
                             )}
                           </div>
@@ -9136,8 +9142,9 @@ export default function CarHopApp() {
                         }
                       })
                       .map(b => {
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
+                        const isAwaitingPickupApproval = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled';
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : isAwaitingPickupApproval ? 'bg-orange-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : isAwaitingPickupApproval ? 'PENDING PICKUP' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
@@ -9232,6 +9239,9 @@ export default function CarHopApp() {
                               )}
                               {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                                 <div className="mt-1 text-[9px] text-orange-400 flex items-center gap-1 font-bold"><Route size={9}/> Delivery Pending</div>
+                              )}
+                              {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled' && (
+                                <div className="mt-1 text-[9px] text-orange-400 flex items-center gap-1 font-bold"><AlertCircle size={9}/> Awaiting Guest Pickup Approval</div>
                               )}
                             </div>
 
