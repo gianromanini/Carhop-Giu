@@ -64,7 +64,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
+      refetchInterval: 2000,
       refetchOnWindowFocus: true,
       staleTime: 0,
       gcTime: 1000 * 60 * 5, // 5 minutes
