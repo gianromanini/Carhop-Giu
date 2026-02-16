@@ -786,6 +786,7 @@ export default function CarHopApp() {
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [checkData, setCheckData] = useState(initialCheckState);
   const [isCheckOutMode, setIsCheckOutMode] = useState(false);
+  const [isHostCheckMode, setIsHostCheckMode] = useState(false);
   const [expandedCheckInPhotos, setExpandedCheckInPhotos] = useState(false);
   const [expandedCheckOutPhotos, setExpandedCheckOutPhotos] = useState(false);
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
@@ -1295,7 +1296,11 @@ export default function CarHopApp() {
       (booking.checkInData as any)?.photosOutside?.some((img: string) => img === '[IMAGE]') ||
       (booking.checkInData as any)?.photosInside?.some((img: string) => img === '[IMAGE]') ||
       (booking.checkOutData as any)?.photosOutside?.some((img: string) => img === '[IMAGE]') ||
-      (booking.checkOutData as any)?.photosInside?.some((img: string) => img === '[IMAGE]')
+      (booking.checkOutData as any)?.photosInside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.hostCheckInData as any)?.photosOutside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.hostCheckInData as any)?.photosInside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.hostCheckOutData as any)?.photosOutside?.some((img: string) => img === '[IMAGE]') ||
+      (booking.hostCheckOutData as any)?.photosInside?.some((img: string) => img === '[IMAGE]')
     );
   }, [fullBookingCache]);
 
@@ -1963,7 +1968,11 @@ export default function CarHopApp() {
         checkInStatus: 'pending', 
         checkOutStatus: 'pending', 
         checkInData: null, 
-        checkOutData: null 
+        checkOutData: null,
+        hostCheckInData: null,
+        hostCheckOutData: null,
+        hostCheckInStatus: 'pending',
+        hostCheckOutStatus: 'pending'
       };
       
       const createdBooking = await createBookingMutation.mutateAsync(newBooking);
@@ -1987,10 +1996,11 @@ export default function CarHopApp() {
     setPaymentDetails({ ...paymentDetails, expiry: val }); 
   };
 
-  const handleStartWorkflow = (booking: Booking, mode: string) => {
+  const handleStartWorkflow = (booking: Booking, mode: string, isHost: boolean = false) => {
     setActiveBooking(booking);
     setCheckData(initialCheckState);
     setIsCheckOutMode(mode === 'checkout');
+    setIsHostCheckMode(isHost);
     setView('check-workflow');
   };
 
@@ -2045,7 +2055,19 @@ export default function CarHopApp() {
      if (!activeBooking) return;
 
      let updateData: any = {};
-     if (isCheckOutMode) {
+     if (isHostCheckMode) {
+       if (isCheckOutMode) {
+         updateData = {
+           hostCheckOutStatus: 'completed',
+           hostCheckOutData: checkData,
+         };
+       } else {
+         updateData = {
+           hostCheckInStatus: 'completed',
+           hostCheckInData: checkData,
+         };
+       }
+     } else if (isCheckOutMode) {
        const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
        const checkOutMiles = parseInt(checkData.miles || '0');
        const carPricing = vehicles.find(v => v.id === activeBooking.vehicleId)?.pricing;
@@ -6404,9 +6426,30 @@ export default function CarHopApp() {
                                 </div>
                               </div>
 
-                              {/* Check-in Photos */}
+                              {/* Host Check-in Photos */}
                               <div>
-                                <p className="text-xs font-bold text-zinc-400 mb-2">Check-in (Start)</p>
+                                <p className="text-xs font-bold text-green-400 mb-2">Host Check-in</p>
+                                <div className="flex gap-2 flex-wrap">
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const allPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
+                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    if (validPhotos.length > 0) {
+                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
+                                        <div key={idx} className="relative group">
+                                          <img src={img} alt={`Host check-in ${idx + 1}`} className="w-12 h-12 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-host-checkin-${idx}`}/>
+                                          <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                        </div>
+                                      ));
+                                    }
+                                    return <span className="text-xs text-zinc-500">Pending</span>;
+                                  })()}
+                                </div>
+                              </div>
+
+                              {/* Guest Check-in Photos */}
+                              <div>
+                                <p className="text-xs font-bold text-blue-400 mb-2">Guest Check-in</p>
                                 <div className="flex gap-2 flex-wrap">
                                   {(() => {
                                     const fullBooking = getBookingWithImages(b);
@@ -6415,21 +6458,45 @@ export default function CarHopApp() {
                                     if (validPhotos.length > 0) {
                                       return validPhotos.slice(0, 2).map((img: string, idx: number) => (
                                         <div key={idx} className="relative group">
-                                          <img src={img} alt={`Check-in ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkin-${idx}`}/>
+                                          <img src={img} alt={`Guest check-in ${idx + 1}`} className="w-12 h-12 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-guest-checkin-${idx}`}/>
                                           <div className="absolute inset-0 rounded border border-blue-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                                         </div>
                                       ));
                                     } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
                                       return <span className="text-xs text-zinc-500">Loading...</span>;
                                     }
-                                    return null;
+                                    return <span className="text-xs text-zinc-500">Pending</span>;
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Check-out Photos Row */}
+                            <div className="grid grid-cols-3 gap-4 mt-4">
+                              {/* Host Check-out Photos */}
+                              <div>
+                                <p className="text-xs font-bold text-green-400 mb-2">Host Check-out</p>
+                                <div className="flex gap-2 flex-wrap">
+                                  {(() => {
+                                    const fullBooking = getBookingWithImages(b);
+                                    const allPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
+                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                    if (validPhotos.length > 0) {
+                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
+                                        <div key={idx} className="relative group">
+                                          <img src={img} alt={`Host check-out ${idx + 1}`} className="w-12 h-12 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-host-checkout-${idx}`}/>
+                                          <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                        </div>
+                                      ));
+                                    }
+                                    return <span className="text-xs text-zinc-500">Pending</span>;
                                   })()}
                                 </div>
                               </div>
 
-                              {/* Check-out Photos */}
+                              {/* Guest Check-out Photos */}
                               <div>
-                                <p className="text-xs font-bold text-zinc-400 mb-2">Check-out (End)</p>
+                                <p className="text-xs font-bold text-blue-400 mb-2">Guest Check-out</p>
                                 <div className="flex gap-2 flex-wrap">
                                   {(() => {
                                     const fullBooking = getBookingWithImages(b);
@@ -6438,16 +6505,7 @@ export default function CarHopApp() {
                                     if (validPhotos.length > 0) {
                                       return validPhotos.slice(0, 2).map((img: string, idx: number) => (
                                         <div key={idx} className="relative group">
-                                          <img src={img} alt={`Check-out ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-checkout-${idx}`}/>
-                                          {idx === 1 && (
-                                            <button
-                                              onClick={() => window.open(img, '_blank')}
-                                              className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 rounded-full p-1 transition-colors"
-                                              data-testid={`button-expand-checkout-${idx}`}
-                                            >
-                                              <ChevronRight size={12} className="text-white"/>
-                                            </button>
-                                          )}
+                                          <img src={img} alt={`Guest check-out ${idx + 1}`} className="w-12 h-12 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-guest-checkout-${idx}`}/>
                                         </div>
                                       ));
                                     } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
@@ -6615,11 +6673,77 @@ export default function CarHopApp() {
                             ) : null;
                           })()}
 
-                          {/* Check-in / Check-out Status */}
+                          {/* Host Check-in / Check-out Status */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className={`p-4 rounded-lg border ${b.checkInStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                            <div className={`p-4 rounded-lg border ${b.hostCheckInStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
                               <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
-                                <Unlock size={14}/> Check-In Status
+                                <Unlock size={14}/> Host Check-In
+                              </h4>
+                              {b.hostCheckInStatus === 'completed' ? (
+                                <div className="space-y-2">
+                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
+                                  {b.hostCheckInData && (
+                                    <>
+                                      <p className="text-xs text-zinc-400">Miles: {b.hostCheckInData.miles}</p>
+                                      <p className="text-xs text-zinc-400">Gas: {b.hostCheckInData.gas}</p>
+                                      <p className="text-xs text-zinc-400">Photos: {((b.hostCheckInData as any).photosOutside?.length || 0) + ((b.hostCheckInData as any).photosInside?.length || 0)}</p>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <p className="text-yellow-400 text-sm">Pending</p>
+                                  <Button 
+                                    variant="primary" 
+                                    className="w-full text-xs h-8"
+                                    onClick={() => handleStartWorkflow(b, 'checkin', true)}
+                                    disabled={(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved'}
+                                    data-testid={`button-host-checkin-${b.id}`}
+                                  >
+                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' 
+                                      ? 'Check-In Disabled (Delivery Declined)' 
+                                      : 'Check In Host'}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <div className={`p-4 rounded-lg border ${b.hostCheckOutStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
+                                <Lock size={14}/> Host Check-Out
+                              </h4>
+                              {b.hostCheckOutStatus === 'completed' ? (
+                                <div className="space-y-2">
+                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
+                                  {b.hostCheckOutData && (
+                                    <>
+                                      <p className="text-xs text-zinc-400">Miles: {b.hostCheckOutData.miles}</p>
+                                      <p className="text-xs text-zinc-400">Gas: {b.hostCheckOutData.gas}</p>
+                                      <p className="text-xs text-zinc-400">Photos: {((b.hostCheckOutData as any).photosOutside?.length || 0) + ((b.hostCheckOutData as any).photosInside?.length || 0)}</p>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <p className="text-yellow-400 text-sm">Pending</p>
+                                  <Button 
+                                    variant="orange" 
+                                    className={`w-full text-xs h-8 ${b.hostCheckInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`}
+                                    disabled={b.hostCheckInStatus !== 'completed'}
+                                    onClick={() => handleStartWorkflow(b, 'checkout', true)}
+                                    data-testid={`button-host-checkout-${b.id}`}
+                                  >
+                                    Check Out Host
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Guest Check-in / Check-out Status */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className={`p-4 rounded-lg border ${b.checkInStatus === 'completed' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
+                                <Unlock size={14}/> Guest Check-In
                               </h4>
                               {b.checkInStatus === 'completed' ? (
                                 <div className="space-y-2">
@@ -6633,25 +6757,12 @@ export default function CarHopApp() {
                                   )}
                                 </div>
                               ) : (
-                                <div className="space-y-3">
-                                  <p className="text-yellow-400 text-sm">Pending</p>
-                                  <Button 
-                                    variant="primary" 
-                                    className="w-full text-xs h-8"
-                                    onClick={() => handleStartWorkflow(b, 'checkin')}
-                                    disabled={(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved'}
-                                    data-testid={`button-host-checkin-${b.id}`}
-                                  >
-                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' 
-                                      ? 'Check-In Disabled (Delivery Declined)' 
-                                      : 'Perform Host Check-In'}
-                                  </Button>
-                                </div>
+                                <p className="text-yellow-400 text-sm">Pending (Guest)</p>
                               )}
                             </div>
-                            <div className={`p-4 rounded-lg border ${b.checkOutStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
+                            <div className={`p-4 rounded-lg border ${b.checkOutStatus === 'completed' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
                               <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
-                                <Lock size={14}/> Check-Out Status
+                                <Lock size={14}/> Guest Check-Out
                               </h4>
                               {b.checkOutStatus === 'completed' ? (
                                 <div className="space-y-2">
@@ -6665,18 +6776,7 @@ export default function CarHopApp() {
                                   )}
                                 </div>
                               ) : (
-                                <div className="space-y-3">
-                                  <p className="text-yellow-400 text-sm">Pending</p>
-                                  <Button 
-                                    variant="orange" 
-                                    className={`w-full text-xs h-8 ${b.checkInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`}
-                                    disabled={b.checkInStatus !== 'completed'}
-                                    onClick={() => handleStartWorkflow(b, 'checkout')}
-                                    data-testid={`button-host-checkout-${b.id}`}
-                                  >
-                                    Perform Host Check-Out
-                                  </Button>
-                                </div>
+                                <p className="text-yellow-400 text-sm">Pending (Guest)</p>
                               )}
                             </div>
                           </div>
@@ -8580,55 +8680,115 @@ export default function CarHopApp() {
                             <p className="text-sm text-zinc-700 dark:text-zinc-300 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">{formatAddressForDisplay(selectedTripForView.location)}</p>
                           </div>
 
-                          {/* Check-in Photos */}
-                          {(() => {
-                            const fullBooking = getBookingWithImages(selectedTripForView);
-                            const allCheckInPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                            const validCheckInPhotos = allCheckInPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                            
-                            if (validCheckInPhotos.length > 0) {
-                              return (
-                                <div>
-                                  <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-in Photos ({validCheckInPhotos.length})</p>
-                                  <div className="grid grid-cols-3 gap-3">
-                                    {validCheckInPhotos.map((photo: string, idx: number) => (
-                                      <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckInPhotos, idx)}>
-                                        <img src={photo} alt={`Check-in ${idx + 1}`} className="w-full h-32 object-cover"/>
-                                      </div>
-                                    ))}
+                          {/* Host Check-in/out Data */}
+                          {(selectedTripForView.hostCheckInData || selectedTripForView.hostCheckOutData) && (
+                            <div className="space-y-3">
+                              <p className="text-sm font-bold text-green-500 uppercase tracking-wider">Host Check-in / Check-out</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {selectedTripForView.hostCheckInData && (
+                                  <div className="p-3 bg-green-950/20 rounded-lg border border-green-900/30">
+                                    <p className="text-xs font-bold text-green-400 uppercase mb-2">Host Check-In</p>
+                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.hostCheckInData.miles}</p>
+                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.hostCheckInData.gas}</p>
+                                    {(() => {
+                                      const fullBooking = getBookingWithImages(selectedTripForView);
+                                      const photos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                      return photos.length > 0 ? (
+                                        <div className="mt-2">
+                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
+                                          <div className="grid grid-cols-3 gap-1">
+                                            {photos.map((photo: string, idx: number) => (
+                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                <img src={photo} alt={`Host check-in ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : null;
+                                    })()}
                                   </div>
-                                </div>
-                              );
-                            } else if (allCheckInPhotos.some((img: string) => img === '[IMAGE]')) {
-                              return <div className="text-sm text-zinc-500">Loading check-in photos...</div>;
-                            }
-                            return null;
-                          })()}
+                                )}
+                                {selectedTripForView.hostCheckOutData && (
+                                  <div className="p-3 bg-green-950/20 rounded-lg border border-green-900/30">
+                                    <p className="text-xs font-bold text-green-400 uppercase mb-2">Host Check-Out</p>
+                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.hostCheckOutData.miles}</p>
+                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.hostCheckOutData.gas}</p>
+                                    {(() => {
+                                      const fullBooking = getBookingWithImages(selectedTripForView);
+                                      const photos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                      return photos.length > 0 ? (
+                                        <div className="mt-2">
+                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
+                                          <div className="grid grid-cols-3 gap-1">
+                                            {photos.map((photo: string, idx: number) => (
+                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                <img src={photo} alt={`Host check-out ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : null;
+                                    })()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
-                          {/* Check-out Photos */}
-                          {(() => {
-                            const fullBooking = getBookingWithImages(selectedTripForView);
-                            const allCheckOutPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                            const validCheckOutPhotos = allCheckOutPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                            
-                            if (validCheckOutPhotos.length > 0) {
-                              return (
-                                <div>
-                                  <p className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Check-out Photos ({validCheckOutPhotos.length})</p>
-                                  <div className="grid grid-cols-3 gap-3">
-                                    {validCheckOutPhotos.map((photo: string, idx: number) => (
-                                      <div key={idx} className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(validCheckOutPhotos, idx)}>
-                                        <img src={photo} alt={`Check-out ${idx + 1}`} className="w-full h-32 object-cover"/>
-                                      </div>
-                                    ))}
+                          {/* Guest Check-in/out Data */}
+                          {(selectedTripForView.checkInData || selectedTripForView.checkOutData) && (
+                            <div className="space-y-3">
+                              <p className="text-sm font-bold text-blue-500 uppercase tracking-wider">Guest Check-in / Check-out</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {selectedTripForView.checkInData && (
+                                  <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
+                                    <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-In</p>
+                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.checkInData.miles}</p>
+                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.checkInData.gas}</p>
+                                    {(() => {
+                                      const fullBooking = getBookingWithImages(selectedTripForView);
+                                      const photos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                      return photos.length > 0 ? (
+                                        <div className="mt-2">
+                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
+                                          <div className="grid grid-cols-3 gap-1">
+                                            {photos.map((photo: string, idx: number) => (
+                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                <img src={photo} alt={`Guest check-in ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : null;
+                                    })()}
                                   </div>
-                                </div>
-                              );
-                            } else if (allCheckOutPhotos.some((img: string) => img === '[IMAGE]')) {
-                              return <div className="text-sm text-zinc-500">Loading check-out photos...</div>;
-                            }
-                            return null;
-                          })()}
+                                )}
+                                {selectedTripForView.checkOutData && (
+                                  <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
+                                    <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-Out</p>
+                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.checkOutData.miles}</p>
+                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.checkOutData.gas}</p>
+                                    {(() => {
+                                      const fullBooking = getBookingWithImages(selectedTripForView);
+                                      const photos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                      return photos.length > 0 ? (
+                                        <div className="mt-2">
+                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
+                                          <div className="grid grid-cols-3 gap-1">
+                                            {photos.map((photo: string, idx: number) => (
+                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                <img src={photo} alt={`Guest check-out ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : null;
+                                    })()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Mileage Info */}
                           {selectedTripForView.checkInData?.miles && selectedTripForView.checkOutData?.miles && (
@@ -9337,10 +9497,9 @@ export default function CarHopApp() {
 
                                       {/* Quick Actions (Admin specific) */}
                                       <div className="space-y-2">
-                                        <button onClick={(e) => { e.stopPropagation(); sendChatMessage(b.id, 'admin'); }} className="w-full py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded">Send Message</button>
                                         <div className="flex gap-2">
-                                          <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin'); }}>Check-In</Button>
-                                          <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout'); }}>Check-Out</Button>
+                                          <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>Check In Host</Button>
+                                          <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>Check Out Host</Button>
                                         </div>
                                       </div>
 
@@ -12977,7 +13136,7 @@ export default function CarHopApp() {
           <div className="max-w-2xl mx-auto px-6 py-12">
             <Button variant="ghost" onClick={() => setView('bookings')} className="mb-8"><ArrowLeft size={20} /> Back to Bookings</Button>
             <Card className="p-8">
-              <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{isCheckOutMode ? 'Vehicle Check-Out' : 'Vehicle Check-In'}</h2>
+              <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{isHostCheckMode ? (isCheckOutMode ? 'Host Check-Out' : 'Host Check-In') : (isCheckOutMode ? 'Vehicle Check-Out' : 'Vehicle Check-In')}</h2>
               <p className="text-zinc-500 mb-6">{activeBooking.carName} - {activeBooking.bookingCode}</p>
               <div className="space-y-6">
                 {/* 1. Outside Photos - First */}
@@ -13122,7 +13281,7 @@ export default function CarHopApp() {
                         </div>
                       )}
                       <Button className={`w-full py-4 flex items-center justify-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">
-                        {`Complete ${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
+                        {`Complete ${isHostCheckMode ? 'Host ' : ''}${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
                       </Button>
                     </div>
                   );
@@ -13135,7 +13294,7 @@ export default function CarHopApp() {
         {view === 'workflow-success' && (
           <div className="max-w-md mx-auto text-center py-20 px-6">
             <div className="w-24 h-24 bg-green-100 dark:bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8"><Check size={48} /></div>
-            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white" data-testid="text-workflow-success">{isCheckOutMode ? 'Check-Out Complete!' : 'Check-In Complete!'}</h2>
+            <h2 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white" data-testid="text-workflow-success">{isHostCheckMode ? (isCheckOutMode ? 'Host Check-Out Complete!' : 'Host Check-In Complete!') : (isCheckOutMode ? 'Check-Out Complete!' : 'Check-In Complete!')}</h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-8">{isCheckOutMode ? 'Thank you for renting with CarHop. We hope to see you again!' : 'Your vehicle is ready. Have a great trip!'}</p>
             <Button onClick={() => setView('bookings')} className="w-full" data-testid="button-back-to-bookings">Back to My Bookings</Button>
           </div>

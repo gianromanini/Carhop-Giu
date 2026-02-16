@@ -185,6 +185,20 @@ export const bookings = pgTable("bookings", {
     photosOutside: string[];
     photosInside: string[];
   }>(),
+  hostCheckInData: jsonb("host_check_in_data").$type<{
+    miles: string;
+    gas: string;
+    photosOutside: string[];
+    photosInside: string[];
+  }>(),
+  hostCheckOutData: jsonb("host_check_out_data").$type<{
+    miles: string;
+    gas: string;
+    photosOutside: string[];
+    photosInside: string[];
+  }>(),
+  hostCheckInStatus: text("host_check_in_status").notNull().default('pending'),
+  hostCheckOutStatus: text("host_check_out_status").notNull().default('pending'),
   extensionRequests: jsonb("extension_requests").$type<{
     id: string;
     type: 'extension' | 'reduction';
