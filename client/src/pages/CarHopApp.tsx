@@ -5827,14 +5827,34 @@ export default function CarHopApp() {
                                       <AlertCircle size={14}/>
                                     </span>
                                   )}
-                                  <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                                  <span className="font-bold text-sm text-white flex items-center gap-2">
+                                    {b.bookingCode}
+                                    <span className="text-green-500 font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                                      ${b.total?.toFixed(2) || '0.00'}
+                                    </span>
+                                  </span>
                                 </div>
                                 <div className="text-xs text-zinc-400 font-medium">
                                   {(() => { 
                                     const veh = (vehicles || []).find(vv => vv.id === b.vehicleId); 
                                     const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null; 
-                                    const hostLabel = host ? `| ${host.firstName} ${host.lastName}` : ''; 
-                                    return `${veh?.year || ''} ${hostLabel} - ${b.carName}`; 
+                                    const hostLabel = host ? (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedHost(host);
+                                          setAdminTab('hosts');
+                                        }}
+                                        className="text-blue-400 hover:text-blue-300 font-bold ml-1 transition-colors underline decoration-blue-400/30"
+                                      >
+                                        | {host.firstName} {host.lastName}
+                                      </button>
+                                    ) : ''; 
+                                    return (
+                                      <span className="flex items-center flex-wrap gap-1">
+                                        {veh?.year || ''} - {b.carName} {hostLabel}
+                                      </span>
+                                    ); 
                                   })()}
                                 </div>
                                 <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
@@ -9357,7 +9377,12 @@ export default function CarHopApp() {
                                     <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`}><AlertTriangle size={12}/></span>
                                   )}
                                   {hasNotifications && (<span className="text-yellow-500 animate-pulse"><AlertCircle size={12}/></span>)}
-                                  <span className="font-bold text-sm text-white">{b.bookingCode}</span>
+                                  <span className="font-bold text-sm text-white flex items-center gap-2">
+                                    {b.bookingCode}
+                                    <span className="text-green-500 font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                                      ${b.total?.toFixed(2) || '0.00'}
+                                    </span>
+                                  </span>
                                 </div>
                                 <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                               </div>
@@ -9367,8 +9392,23 @@ export default function CarHopApp() {
                                   {(() => { 
                                     const veh = (vehicles || []).find(vv => vv.id === b.vehicleId); 
                                     const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null; 
-                                    const hostLabel = host ? `| ${host.firstName} ${host.lastName}` : ''; 
-                                    return `${veh?.year || ''} ${hostLabel} - ${b.carName}`; 
+                                    const hostLabel = host ? (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedHost(host);
+                                          setAdminTab('hosts');
+                                        }}
+                                        className="text-blue-400 hover:text-blue-300 font-bold ml-1 transition-colors underline decoration-blue-400/30"
+                                      >
+                                        | {host.firstName} {host.lastName}
+                                      </button>
+                                    ) : ''; 
+                                    return (
+                                      <span className="flex items-center flex-wrap gap-1">
+                                        {veh?.year || ''} - {b.carName} {hostLabel}
+                                      </span>
+                                    ); 
                                   })()}
                                 </div>
                                 {b.status === 'Completed' && (() => {
