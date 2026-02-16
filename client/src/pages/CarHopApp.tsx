@@ -5819,6 +5819,9 @@ export default function CarHopApp() {
                               </div>
                               <div className="text-right">
                                 <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${statusColor} block mb-2`}>{statusText}</span>
+                                <div className="font-bold text-sm text-zinc-900 dark:text-white">
+                                  ${b.total.toFixed(2)}
+                                </div>
                                 {b.status === 'Completed' && (() => {
                                   const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                   return (
