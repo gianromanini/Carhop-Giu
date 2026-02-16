@@ -5935,6 +5935,7 @@ export default function CarHopApp() {
                                         </span>
                                       )}
                                     </div>
+                                    <p className="text-zinc-500 font-bold">Trip Total: <span className="text-green-500">${b.total.toFixed(2)}</span></p>
                                     <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
                                 <div className="mt-0.5 mb-1">
@@ -9311,12 +9312,13 @@ export default function CarHopApp() {
                                           </div>
                                         </div>
                                         <div>
-                                          <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Rental Information</h4>
-                                          <div className="text-xs text-zinc-900 dark:text-white space-y-0.5">
-                                            <div className="flex flex-wrap items-center gap-1">
-                                              <p className="font-medium">{(() => { const veh = vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || ''} {host ? <span className="text-zinc-500 text-xs font-normal">| {host.firstName} {host.lastName}</span> : null} - {b.carName}</>; })()}</p>
-                                            </div>
-                                            <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
+                                  <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Rental Information</h4>
+                                  <div className="text-xs text-zinc-900 dark:text-white space-y-0.5">
+                                    <div className="flex flex-wrap items-center gap-1">
+                                      <p className="font-medium">{(() => { const veh = vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || ''} {host ? <span className="text-zinc-500 text-xs font-normal">| {host.firstName} {host.lastName}</span> : null} - {b.carName}</>; })()}</p>
+                                    </div>
+                                    <p className="text-zinc-500 font-bold">Trip Total: <span className="text-green-500">${b.total.toFixed(2)}</span></p>
+                                    <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                             <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
                                             <div className="mt-0.5 mb-1">
                                               <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
