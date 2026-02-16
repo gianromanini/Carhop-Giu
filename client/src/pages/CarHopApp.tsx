@@ -10557,7 +10557,8 @@ export default function CarHopApp() {
                       const rentalRate = receiptBooking.details?.rate || 0;
                       const protection = receiptBooking.details?.protection || 0;
                       const extras = receiptBooking.details?.extras || 0;
-                      const initialSubtotal = rentalRate + protection + extras + cleaningFeeForReceipt;
+                      const deliveryFeeForInitial = ((receiptBooking.details as any)?.deliveryType === 'delivery' && (receiptBooking.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((receiptBooking.details as any)?.deliveryFee || 0) : 0;
+                      const initialSubtotal = rentalRate + protection + extras + cleaningFeeForReceipt + deliveryFeeForInitial;
                       const initialTax = initialSubtotal > 0 ? initialSubtotal * ((settings.taxes || 0) / 100) : 0;
                       const initialPayment = initialSubtotal + initialTax;
                       
@@ -10596,6 +10597,20 @@ export default function CarHopApp() {
                                 <span className="text-zinc-600 dark:text-zinc-400">Cleaning Fee</span>
                                 <span className="text-zinc-900 dark:text-white">+${cleaningFeeForReceipt.toFixed(2)}</span>
                               </div>
+                              {(() => {
+                                const isDelivery = (receiptBooking.details as any)?.deliveryType === 'delivery';
+                                const isRejected = (receiptBooking.details as any)?.deliveryApprovalStatus === 'rejected';
+                                const deliveryFee = (receiptBooking.details as any)?.deliveryFee || 0;
+                                if (isDelivery && !isRejected && deliveryFee > 0) {
+                                  return (
+                                    <div className="flex justify-between text-sm font-medium text-green-600">
+                                      <span>Delivery Fee</span>
+                                      <span>+${deliveryFee.toFixed(2)}</span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                               {initialTax > 0 && (
                                 <div className="flex justify-between text-sm">
                                   <span className="text-zinc-600 dark:text-zinc-400">Tax</span>
