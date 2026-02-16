@@ -10799,11 +10799,18 @@ export default function CarHopApp() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-end gap-1">
                           <div className="font-bold text-sm md:text-base text-zinc-900 dark:text-white">${b.total.toFixed(2)}</div>
-                          {(isCompleted || isCancelled || normalizedStatus === 'pending approval') && (
-                            <ChevronDown size={18} className={`text-zinc-400 transition-transform ${expandedBookingId === b.id ? 'rotate-180' : ''} md:hidden`} />
-                          )}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingReceiptBookingId(b.id);
+                            }}
+                            className="text-[10px] text-blue-600 hover:text-blue-500 font-bold uppercase tracking-tight underline underline-offset-2"
+                            data-testid={`button-view-receipt-${b.id}`}
+                          >
+                            View Receipt
+                          </button>
                         </div>
                       </div>
 
