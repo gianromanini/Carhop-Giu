@@ -8795,7 +8795,7 @@ export default function CarHopApp() {
                                           <div className="mt-1 text-right">
                                             <p className="text-blue-500 dark:text-blue-400 text-[10px] font-bold">
                                               {veh?.year || ''} | {host ? `${host.firstName} ${host.lastName}` : ''}
-                                            </div>
+                                            </p>
                                           </div>
                                         );
                                       })()}
