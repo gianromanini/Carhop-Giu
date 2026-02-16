@@ -9196,7 +9196,6 @@ export default function CarHopApp() {
                                     return `${b.carName} ${veh?.year || ''} ${hostLabel}`; 
                                   })()}
                                 </div>
-                              </div>
                                 {b.status === 'Completed' && (() => {
                                   const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                   return bookingRating?.stars ? (
@@ -10946,28 +10945,26 @@ export default function CarHopApp() {
                         </div>
                       )}
                             <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
-                              {(() => {
-                                const veh = vehicles.find(vv => vv.id === b.vehicleId);
-                                const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null;
-                                const hostLabel = host ? `by ${host.firstName} ${host.lastName}` : '';
+                              {b.carName} {(() => {
+                                const veh = (vehicles || []).find(vv => vv.id === b.vehicleId);
+                                const yearStr = veh?.year ? ` ${veh.year}` : '';
+                                const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null;
                                 return (
                                   <>
-                                    {b.carName} {veh?.year || ''}
-                                    {hostLabel && (
+                                    {yearStr}
+                                    {host && (
                                       <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                                        {hostLabel.split('by')[0]} by <button 
+                                        by <button 
                                           onClick={(e) => { 
                                             e.stopPropagation(); 
-                                            if (veh?.hostId) {
-                                              setViewHostProfile(veh.hostId); 
-                                              setView('host-profile'); 
-                                              window.scrollTo(0, 0); 
-                                            }
+                                            setViewHostProfile(veh.hostId!); 
+                                            setView('host-profile'); 
+                                            window.scrollTo(0, 0); 
                                           }}
                                           className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
                                           data-testid={`link-host-profile-${b.id}`}
                                         >
-                                          {hostLabel.split('by')[1].trim()}
+                                          {host.firstName} {host.lastName}
                                         </button>
                                       </span>
                                     )}
