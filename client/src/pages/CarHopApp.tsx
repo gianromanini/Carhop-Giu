@@ -9039,9 +9039,7 @@ export default function CarHopApp() {
                                         
                                         return (
                                           <div className="mt-1 text-right">
-                                            <p className="text-blue-500 dark:text-blue-400 text-[10px] font-bold">
-                                              {selectedTripForView.carName} {displayYear} | Host: {hostName}
-                                            </p>
+                                            {/* Removido o tracinho azul (texto azul com margem) */}
                                           </div>
                                         );
                                       })()}
