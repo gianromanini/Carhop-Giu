@@ -10814,6 +10814,26 @@ export default function CarHopApp() {
                       )}
                             <div className="text-white text-base md:text-lg font-bold mt-2">
                               {b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}
+                              {(() => {
+                                const vehicle = vehicles.find(v => v.id === b.vehicleId);
+                                if (!vehicle?.hostId || !vehicle?.hostName) return null;
+                                return (
+                                  <span className="ml-2 text-xs font-normal text-zinc-400">
+                                    by <button 
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        setViewHostProfile(vehicle.hostId!); 
+                                        setView('host-profile'); 
+                                        window.scrollTo(0, 0); 
+                                      }}
+                                      className="text-cyan-500 hover:text-cyan-400 underline underline-offset-2"
+                                      data-testid={`link-host-profile-${b.id}`}
+                                    >
+                                      {vehicle.hostName}
+                                    </button>
+                                  </span>
+                                );
+                              })()}
                             </div>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                         {b.days} Days | {(() => {
