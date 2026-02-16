@@ -5666,8 +5666,8 @@ export default function CarHopApp() {
             const hostEmail = currentHost.email?.toLowerCase().trim() || '';
             const hostVehicleIds = vehicles.filter(v => String(v.hostId) === hostId).map(v => Number(v.id));
             const hostBookings = bookings.filter(b => {
-              const bVehicleId = b.vehicleId != null ? Number(b.vehicleId) : null;
-              if (bVehicleId !== null && hostVehicleIds.includes(bVehicleId)) return true;
+              const bVehicleId = b.vehicleId != null ? String(b.vehicleId) : null;
+              if (bVehicleId !== null && hostVehicleIds.map(String).includes(bVehicleId)) return true;
               const bookingHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
               if (hostEmail && bookingHostEmail && hostEmail === bookingHostEmail) return true;
               return false;
@@ -9007,28 +9007,24 @@ export default function CarHopApp() {
                         <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
-                        <option value="pending-approval">Pending Approval</option>
-                      </select>
+                          <option value="pending-approval">Pending Approval</option>
+                          <option value="todos os status">Todos os Status</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Search</label>
+                        <input 
+                          type="text" 
+                          placeholder="Search number or name..." 
+                          value={bookingFilterNumber} 
+                          onChange={(e) => setBookingFilterNumber(e.target.value)} 
+                          className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" 
+                          data-testid="input-admin-booking-number" 
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Car Model</label>
-                      <select value={bookingFilterCarModel} onChange={(e) => setBookingFilterCarModel(e.target.value as string)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="select-admin-booking-carmodel">
-                        <option value="">All Models</option>
-                        {Array.from(new Set(vehicles.map(v => v.model))).sort().map(model => (
-                          <option key={model} value={model}>{model}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase">Booking Number or Name</label>
-                      <input type="text" placeholder="Search number or name..." value={bookingFilterNumber} onChange={(e) => setBookingFilterNumber(e.target.value)} className="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-white" data-testid="input-admin-booking-number" />
-                    </div>
-                  </div>
-                  
+                    <Card className="p-3 sm:p-4 mt-4">
                   <div className="space-y-2">
-                    {bookings.length === 0 && !bookingsLoading && (
-                      <p className="text-zinc-400 text-center py-4">Nenhuma reserva encontrada. Verifique se a API está retornando dados.</p>
-                    )}
                     {bookingsLoading && (
                       <p className="text-zinc-400 text-center py-4">Carregando reservas...</p>
                     )}
@@ -9036,7 +9032,10 @@ export default function CarHopApp() {
                       .filter(b => {
                         let matches = true;
                         
-                        if (bookingFilterStatus && bookingFilterStatus !== "" && bookingFilterStatus !== "todos os status") {
+                        // Debug filter
+                        if (!bookingFilterStatus || bookingFilterStatus === "" || bookingFilterStatus === "todos os status") {
+                          // matches is already true
+                        } else {
                           const status = (bookingFilterStatus as string).toLowerCase().trim();
                           const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
                           if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
@@ -9171,6 +9170,7 @@ export default function CarHopApp() {
                         );
                       })}
                   </div>
+                  </Card>
                 </Card>
 
                 {/* Right Column - Booking Details */}
