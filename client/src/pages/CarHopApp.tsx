@@ -2140,7 +2140,15 @@ export default function CarHopApp() {
      }
 
      await updateBookingMutation.mutateAsync({ id: activeBooking.id, data: updateData });
-     setView('workflow-success');
+     if (isHostCheckMode) {
+       toast({
+         title: isCheckOutMode ? "Check-out do Host Concluído" : "Check-in do Host Concluído",
+         description: "Os dados foram salvos com sucesso.",
+       });
+       setView('dashboard');
+     } else {
+       setView('workflow-success');
+     }
   };
 
   const initExtension = (booking: Booking) => { 
