@@ -949,7 +949,7 @@ export default function CarHopApp() {
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 3000 
+    refetchInterval: 2000 
   });
   
   // LOG PARA DEBUG
