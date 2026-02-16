@@ -2301,17 +2301,19 @@ export default function CarHopApp() {
         }
       });
       
-      // Host/Admin message responses
-      const hostAdminMsgs = (booking.messages || []).filter((m: any) => (m.sender === 'admin' || m.sender === 'host') && !m.read);
-      hostAdminMsgs.forEach((msg: any) => {
-        notifications.push({
-          id: `msg-response-${booking.id}-${msg.id}`,
-          type: 'message-response',
-          message: `New ${msg.sender} reply on ${carName}: "${(msg.text || '').substring(0, 50)}${(msg.text || '').length > 50 ? '...' : ''}"`,
-          timestamp: msg.createdAt || booking.startDate,
-          bookingCode: booking.bookingCode
-        });
-      });
+            // Host/Admin message responses (only if NOT on home view/login)
+            const hostAdminMsgs = (booking.messages || []).filter((m: any) => (m.sender === 'admin' || m.sender === 'host') && !m.read);
+            if (view !== 'home') {
+              hostAdminMsgs.forEach((msg: any) => {
+                notifications.push({
+                  id: `msg-response-${booking.id}-${msg.id}`,
+                  type: 'message-response',
+                  message: `New ${msg.sender} reply on ${carName}: "${(msg.text || '').substring(0, 50)}${(msg.text || '').length > 50 ? '...' : ''}"`,
+                  timestamp: msg.createdAt || booking.startDate,
+                  bookingCode: booking.bookingCode
+                });
+              });
+            }
 
       // Check-in completed
       if (booking.checkInStatus === 'completed') {
@@ -9100,7 +9102,7 @@ export default function CarHopApp() {
                             
                             {/* Car Name + Guest Label */}
                             <div className="flex justify-between items-start gap-2 mb-0.5">
-                              <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</div>
+                              <div className="text-xs text-zinc-300 font-medium leading-tight">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}</div>
                               {b.status === 'Completed' && (() => {
                                 const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                 return bookingRating?.stars ? (
@@ -11435,13 +11437,8 @@ export default function CarHopApp() {
                                 {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted
                                   ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
                                   : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : (
-                                    <div className="relative flex flex-col items-center">
-                                      <span 
-                                        className="absolute -top-6 text-red-500 font-bold text-lg cursor-help" 
-                                        title="Required"
-                                      >
-                                        *
-                                      </span>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-red-500 font-bold text-lg leading-none">*</span>
                                       <span>Check In</span>
                                     </div>
                                   )}
@@ -12533,7 +12530,7 @@ export default function CarHopApp() {
                   </div>
                   
                   {/* Car Name */}
-                  <h3 className="text-xl font-bold text-white mb-2">{cart.car.model} {cart.car.year && `(${cart.car.year})`}</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{cart.car.model} {cart.car.year && ` ${cart.car.year}`}</h3>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{cart.car.category}</span>
                     <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{cart.car.fuel}</span>
@@ -12743,7 +12740,7 @@ export default function CarHopApp() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-400">Vehicle:</span>
-                      <span className="text-white">{cart.car.model} {cart.car.year && `(${cart.car.year})`}</span>
+                      <span className="text-white">{cart.car.model} {cart.car.year && ` ${cart.car.year}`}</span>
                     </div>
                   </div>
                 </div>
