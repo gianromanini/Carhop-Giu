@@ -2214,9 +2214,16 @@ export default function CarHopApp() {
     }
   };
 
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  useEffect(() => {
+    if (supportMessagesData.length > 0 || vehicles.length > 0) {
+      setTimeout(() => setInitialLoadDone(true), 2000);
+    }
+  }, [supportMessagesData.length, vehicles.length]);
+
   // Effect to show toast when new admin reply arrives
   useEffect(() => {
-    if (!clientUser || view === 'support') return;
+    if (!clientUser || !initialLoadDone || view === 'support' || view === 'home' || view === 'bookings' || view === 'host-dashboard') return;
     const unread = supportMessagesData.filter((m: any) => m.senderType === 'client' && m.adminReply && !m.read);
     if (unread.length > 0) {
       const lastReply = unread[unread.length - 1];
@@ -2226,7 +2233,7 @@ export default function CarHopApp() {
         onClick: () => setView('support')
       });
     }
-  }, [supportMessagesData.length, view]);
+  }, [supportMessagesData.length, view, clientUser, initialLoadDone]);
 
   // Effect to mark as read when entering support view
   useEffect(() => {
@@ -2303,7 +2310,7 @@ export default function CarHopApp() {
       
             // Host/Admin message responses (only if NOT on home view/login)
             const hostAdminMsgs = (booking.messages || []).filter((m: any) => (m.sender === 'admin' || m.sender === 'host') && !m.read);
-            if (view !== 'home') {
+            if (view !== 'home' && view !== 'bookings' && view !== 'host-dashboard' && !manageBookingId && !hostManageBookingId) {
               hostAdminMsgs.forEach((msg: any) => {
                 notifications.push({
                   id: `msg-response-${booking.id}-${msg.id}`,
@@ -11438,7 +11445,7 @@ export default function CarHopApp() {
                                   ? <><AlertCircle size={14}/> Check-In Disabled (Delivery Declined)</>
                                   : b.checkInStatus === 'completed' ? <><Check size={14}/> Check-in Verified</> : (
                                     <div className="flex items-center gap-1">
-                                      <span className="text-red-500 font-bold text-lg leading-none">*</span>
+                                      <span className={`font-bold text-lg leading-none ${b.checkInStatus === 'completed' ? 'text-zinc-500' : 'text-red-500'}`}>*</span>
                                       <span>Check In</span>
                                     </div>
                                   )}
