@@ -1740,7 +1740,7 @@ export default function CarHopApp() {
   };
   const handleImageClick = (src: string) => { setSelectedImage(src); };
 
-  const compressImage = async (base64: string, maxWidth = 1200, quality = 0.6): Promise<string> => {
+  const compressImage = async (base64: string, _maxWidth = 1200, quality = 0.6): Promise<string> => {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.src = base64;
@@ -1748,8 +1748,8 @@ export default function CarHopApp() {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
+        const maxSizeBytes = 2 * 1024 * 1024;
         
-        // Calculate best dimensions to keep size around 1-2MB while maintaining quality
         const maxDimension = 1600; 
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {
@@ -1761,13 +1761,30 @@ export default function CarHopApp() {
           }
         }
         
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
+        let currentWidth = width;
+        let currentHeight = height;
+        let currentQuality = quality;
+        let result = '';
         
-        // JPEG format with 0.6 quality usually yields ~500KB to 1.5MB for 1600px images
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        for (let attempt = 0; attempt < 10; attempt++) {
+          canvas.width = currentWidth;
+          canvas.height = currentHeight;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, currentWidth, currentHeight);
+          result = canvas.toDataURL('image/jpeg', currentQuality);
+          
+          if (result.length * 0.75 <= maxSizeBytes) break;
+          
+          if (currentQuality > 0.2) {
+            currentQuality -= 0.1;
+          } else {
+            currentWidth = Math.round(currentWidth * 0.8);
+            currentHeight = Math.round(currentHeight * 0.8);
+            currentQuality = 0.5;
+          }
+        }
+        
+        resolve(result);
       };
     });
   };
@@ -3543,9 +3560,10 @@ export default function CarHopApp() {
                             return;
                           }
                           const reader = new FileReader();
-                          reader.onload = (ev) => {
+                          reader.onload = async (ev) => {
                             if (ev.target?.result) {
-                              setClientChatImages(prev => [...prev, ev.target!.result as string]);
+                              const compressed = await compressImage(ev.target.result as string);
+                              setClientChatImages(prev => [...prev, compressed]);
                             }
                           };
                           reader.onerror = () => {
@@ -4180,7 +4198,10 @@ export default function CarHopApp() {
                           const file = e.target.files?.[0];
                           if (file) {
                             const reader = new FileReader();
-                            reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, licenseFrontImage: reader.result as string});
+                            reader.onloadend = async () => {
+                              const compressed = await compressImage(reader.result as string);
+                              setHostRegisterForm({...hostRegisterForm, licenseFrontImage: compressed});
+                            };
                             reader.readAsDataURL(file);
                           }
                         }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-front" />
@@ -4192,7 +4213,10 @@ export default function CarHopApp() {
                           const file = e.target.files?.[0];
                           if (file) {
                             const reader = new FileReader();
-                            reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, licenseBackImage: reader.result as string});
+                            reader.onloadend = async () => {
+                              const compressed = await compressImage(reader.result as string);
+                              setHostRegisterForm({...hostRegisterForm, licenseBackImage: compressed});
+                            };
                             reader.readAsDataURL(file);
                           }
                         }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-license-back" />
@@ -4205,7 +4229,10 @@ export default function CarHopApp() {
                         const file = e.target.files?.[0];
                         if (file) {
                           const reader = new FileReader();
-                          reader.onloadend = () => setHostRegisterForm({...hostRegisterForm, proofOfResidenceImage: reader.result as string});
+                          reader.onloadend = async () => {
+                            const compressed = await compressImage(reader.result as string);
+                            setHostRegisterForm({...hostRegisterForm, proofOfResidenceImage: compressed});
+                          };
                           reader.readAsDataURL(file);
                         }
                       }} className="w-full text-xs text-zinc-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700" data-testid="input-host-proof-residence" />
@@ -4768,8 +4795,9 @@ export default function CarHopApp() {
                               const file = e.target.files?.[0];
                               if (file) {
                                 const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                  setHostEditProfileForm({...hostEditProfileForm, licenseFrontImage: ev.target?.result as string});
+                                reader.onload = async (ev) => {
+                                  const compressed = await compressImage(ev.target?.result as string);
+                                  setHostEditProfileForm({...hostEditProfileForm, licenseFrontImage: compressed});
                                 };
                                 reader.readAsDataURL(file);
                               }
@@ -4809,8 +4837,9 @@ export default function CarHopApp() {
                               const file = e.target.files?.[0];
                               if (file) {
                                 const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                  setHostEditProfileForm({...hostEditProfileForm, licenseBackImage: ev.target?.result as string});
+                                reader.onload = async (ev) => {
+                                  const compressed = await compressImage(ev.target?.result as string);
+                                  setHostEditProfileForm({...hostEditProfileForm, licenseBackImage: compressed});
                                 };
                                 reader.readAsDataURL(file);
                               }
@@ -5509,9 +5538,9 @@ export default function CarHopApp() {
                               const file = e.target.files?.[0];
                               if (file) {
                                 const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const base64 = event.target?.result as string;
-                                  const newImages = formData.images[0] === '' ? [base64] : [...formData.images, base64];
+                                reader.onload = async (event) => {
+                                  const compressed = await compressImage(event.target?.result as string);
+                                  const newImages = formData.images[0] === '' ? [compressed] : [...formData.images, compressed];
                                   setFormData({...formData, images: newImages});
                                   e.target.value = '';
                                 };
@@ -6797,9 +6826,10 @@ export default function CarHopApp() {
                                   return;
                                 }
                                 const reader = new FileReader();
-                                reader.onload = (ev) => {
+                                reader.onload = async (ev) => {
                                   if (ev.target?.result) {
-                                    setHostChatImages(prev => [...prev, ev.target!.result as string]);
+                                    const compressed = await compressImage(ev.target.result as string);
+                                    setHostChatImages(prev => [...prev, compressed]);
                                   }
                                 };
                                 reader.onerror = () => {
@@ -7826,7 +7856,10 @@ export default function CarHopApp() {
                           const file = e.target.files?.[0];
                           if (file) {
                             const reader = new FileReader();
-                            reader.onloadend = () => setFormData(prev => ({...prev, images: [...prev.images.filter(i => i), reader.result as string]}));
+                            reader.onloadend = async () => {
+                              const compressed = await compressImage(reader.result as string);
+                              setFormData(prev => ({...prev, images: [...prev.images.filter(i => i), compressed]}));
+                            };
                             reader.readAsDataURL(file);
                           }
                           if (carImageInputRef.current) carImageInputRef.current.value = '';
@@ -8147,7 +8180,10 @@ export default function CarHopApp() {
                                   const file = e.target.files?.[0];
                                   if (file) {
                                     const reader = new FileReader();
-                                    reader.onloadend = () => setFormData(prev => ({...prev, images: [...(prev.images || []).filter(i => i), reader.result as string]}));
+                                    reader.onloadend = async () => {
+                                      const compressed = await compressImage(reader.result as string);
+                                      setFormData(prev => ({...prev, images: [...(prev.images || []).filter(i => i), compressed]}));
+                                    };
                                     reader.readAsDataURL(file);
                                   }
                                   if (editCarImageInputRef.current) editCarImageInputRef.current.value = '';
