@@ -9535,101 +9535,162 @@ export default function CarHopApp() {
                                         </div>
                                       </div>
 
-                                      {/* Quick Actions (Admin specific) */}
+                                      {/* Delivery Approval Section (Priority) */}
+                                      {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                                        <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
+                                            <Route size={14}/> Delivery Approval Required
+                                          </h4>
+                                          <p className="text-xs text-zinc-300 mb-3">
+                                            Requested to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
+                                          </p>
+                                          <div className="flex gap-2">
+                                            <button 
+                                              onClick={() => handleDeliveryApproval(b.id, 'approved')}
+                                              className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                              data-testid={`button-approve-delivery-${b.id}`}
+                                            >
+                                              Approve Delivery
+                                            </button>
+                                            <button 
+                                              onClick={() => handleDeliveryApproval(b.id, 'rejected')}
+                                              className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                              data-testid={`button-reject-delivery-${b.id}`}
+                                            >
+                                              Reject
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Client Extension/Reduction Requests (Priority) */}
+                                      {(() => {
+                                        const pendingRequests = (b.extensionRequests || []).filter(r => r.status === 'pending');
+                                        if (pendingRequests.length === 0) return null;
+                                        return (
+                                          <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                                            <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                                              <AlertCircle size={14}/> Client Requests
+                                            </h4>
+                                            <div className="space-y-3">
+                                              {pendingRequests.map(req => (
+                                                <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                      <span className={`text-[10px] font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                                        {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
+                                                      </span>
+                                                      <div className="text-xs text-zinc-300 mt-1 font-bold">
+                                                        New return: {req.requestedReturnDate} at {req.requestedReturnTime}
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex gap-2 mt-2">
+                                                    <button onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')} className="flex-1 py-1.5 bg-green-600 text-white text-[10px] font-bold rounded transition-colors">Approve</button>
+                                                    <button onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')} className="flex-1 py-1.5 bg-red-600 text-white text-[10px] font-bold rounded transition-colors">Reject</button>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
+
+                                      {/* Quick Actions (Host/Admin View) */}
                                       <div className="space-y-2">
                                         <div className="flex gap-2">
-                                          <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>Check In Host</Button>
-                                          <Button size="sm" variant="outline" className="flex-1 text-[10px]" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>Check Out Host</Button>
+                                          {b.hostCheckInStatus === 'completed' ? (
+                                            <Button size="sm" variant="outline" className="flex-1 text-[10px] bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
+                                              <Camera size={12} className="mr-1"/> View Host Check-in
+                                            </Button>
+                                          ) : (
+                                            <Button size="sm" variant="primary" className="flex-1 text-[10px] font-bold" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>Check In Host</Button>
+                                          )}
+                                          
+                                          {b.hostCheckOutStatus === 'completed' ? (
+                                            <Button size="sm" variant="outline" className="flex-1 text-[10px] bg-red-600 hover:bg-red-700 text-white border-red-600 font-bold" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
+                                              <Camera size={12} className="mr-1"/> View Host Check-out
+                                            </Button>
+                                          ) : (
+                                            <Button size="sm" variant="primary" className="flex-1 text-[10px] bg-red-600 hover:bg-red-700 font-bold" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>Check Out Host</Button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Customer Messages */}
+                                      <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 flex items-center gap-2 mb-4">
+                                          <MessageSquare size={14}/> Customer Messages
+                                        </h4>
+                                        <div className="max-h-40 overflow-y-auto space-y-3 mb-4 pr-2">
+                                          {messagesData.filter(m => m.bookingId === b.id).length > 0 ? (
+                                            messagesData.filter(m => m.bookingId === b.id).map((msg, idx) => (
+                                              <div key={idx} className={`flex flex-col ${msg.sender === 'host' || msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
+                                                <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs ${msg.sender === 'host' || msg.sender === 'admin' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 rounded-tl-none'}`}>
+                                                  {msg.content}
+                                                </div>
+                                              </div>
+                                            ))
+                                          ) : (
+                                            <p className="text-center text-[10px] text-zinc-500 py-4 italic">No messages yet</p>
+                                          )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <input type="text" placeholder="Type a message..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white" value={adminMessageText} onChange={(e) => setAdminMessageText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && adminMessageText.trim() && handleSendMessage(b, 'admin')} />
+                                          <button onClick={() => handleSendMessage(b, 'admin')} disabled={!adminMessageText.trim()} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"><Send size={14}/></button>
+                                        </div>
+                                      </div>
+
+                                      {/* Financial Details Section */}
+                                      <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
+                                          <DollarSign size={14}/> Financial Details
+                                        </h4>
+                                        <div className="space-y-2">
+                                          {(() => {
+                                            const carForReceipt = vehicles.find(v => v.id === b.vehicleId);
+                                            const cleaningFee = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
+                                            const rentalRate = b.details?.rate || 0;
+                                            const protection = b.details?.protection || 0;
+                                            const extras = b.details?.extras || 0;
+                                            const deliveryFee = (b.details as any)?.deliveryFee || 0;
+                                            const subtotal = rentalRate + protection + extras + cleaningFee + deliveryFee;
+                                            const taxes = subtotal * ((settings.taxes || 0) / 100);
+                                            const discount = b.details?.discount || 0;
+                                            const manualCharges = (b.details?.manualCharges || []).reduce((sum, c: any) => sum + c.amount, 0);
+                                            return (
+                                              <div className="space-y-1.5 text-xs">
+                                                <div className="flex justify-between text-zinc-500"><span>Rental Rate ({b.days} days)</span><span>${rentalRate.toFixed(2)}</span></div>
+                                                {protection > 0 && <div className="flex justify-between text-zinc-500"><span>Protection</span><span>+${protection.toFixed(2)}</span></div>}
+                                                {deliveryFee > 0 && <div className="flex justify-between text-zinc-500"><span>Delivery Fee</span><span>+${deliveryFee.toFixed(2)}</span></div>}
+                                                <div className="flex justify-between text-zinc-500"><span>Cleaning Fee</span><span>+${cleaningFee.toFixed(2)}</span></div>
+                                                <div className="flex justify-between text-zinc-500"><span>Taxes ({settings.taxes}%)</span><span>+${taxes.toFixed(2)}</span></div>
+                                                {discount > 0 && <div className="flex justify-between text-green-500 font-bold"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>}
+                                                {manualCharges > 0 && <div className="flex justify-between text-orange-500 font-bold"><span>Adjustments</span><span>+${manualCharges.toFixed(2)}</span></div>}
+                                                <div className="pt-2 mt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between font-bold text-sm text-zinc-900 dark:text-white"><span>Total Booking</span><span className="text-green-500">${b.total.toFixed(2)}</span></div>
+                                              </div>
+                                            );
+                                          })()}
                                         </div>
                                       </div>
 
                                       {/* Manage Charges & Adjustments */}
                                       <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                                         <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
-                                        
-                                        {/* Current Discount Display */}
-                                        {(b.details?.discount || 0) > 0 && (
-                                          <div className="mb-3 p-2 bg-green-900/20 rounded-lg border border-green-800/30 flex items-center justify-between">
-                                            <span className="text-xs text-green-400">Active Discount: <strong>-${(b.details.discount || 0).toFixed(2)}</strong></span>
-                                            <button onClick={() => handleRemoveDiscount(b)} className="text-[10px] text-red-400 hover:text-red-300 font-bold" data-testid={`button-admin-remove-discount-${b.id}`}>Remove</button>
-                                          </div>
-                                        )}
-
-                                        {/* Current Manual Charges Display */}
-                                        {(b.details?.manualCharges || []).length > 0 && (
-                                          <div className="mb-3 space-y-1">
-                                            {(b.details.manualCharges || []).map((charge: any, idx: number) => (
-                                              <div key={idx} className="p-2 bg-orange-900/20 rounded-lg border border-orange-800/30 flex items-center justify-between">
-                                                <span className="text-xs text-orange-400">{charge.type}: <strong>+${charge.amount.toFixed(2)}</strong></span>
-                                                <button onClick={() => handleRemoveCharge(b, idx)} className="text-[10px] text-red-400 hover:text-red-300 font-bold" data-testid={`button-admin-remove-charge-${b.id}-${idx}`}>Remove</button>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                        
                                         <div className="mb-4">
                                           <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
-                                          <div className="flex flex-col sm:flex-row gap-2">
-                                            <select 
-                                              value={adjustment.type} 
-                                              onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
-                                              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                              data-testid="select-admin-discount-type"
-                                            >
-                                              <option value="fixed">Fixed Value ($)</option>
-                                              <option value="percent">Percentage (%)</option>
-                                            </select>
-                                            <input 
-                                              placeholder="Value" 
-                                              type="number"
-                                              value={adjustment.value}
-                                              onChange={(e) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
-                                              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white" 
-                                              data-testid="input-admin-discount-value" 
-                                            />
-                                            <button 
-                                              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                              onClick={() => handleApplyDiscount(b)}
-                                              data-testid="button-admin-apply-discount"
-                                            >
-                                              Apply
-                                            </button>
+                                          <div className="flex gap-2">
+                                            <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="fixed">$</option><option value="percent">%</option></select>
+                                            <input placeholder="Value" type="number" value={adjustment.value} onChange={(e) => setAdjustment(prev => ({ ...prev, value: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+                                            <button className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded" onClick={() => handleApplyDiscount(b)}>Apply</button>
                                           </div>
                                         </div>
-
-                                        <div className="space-y-4">
-                                          <div>
-                                            <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
-                                            <div className="flex flex-col sm:flex-row gap-2">
-                                              <select 
-                                                value={extraCharge.type}
-                                                onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                                className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                                data-testid="select-admin-charge-type"
-                                              >
-                                                <option value="refuel">Refuel</option>
-                                                <option value="tolls">Tolls</option>
-                                                <option value="mileage">Extra Mileage</option>
-                                                <option value="damage">Damage</option>
-                                                <option value="cleaning">Extra Cleaning</option>
-                                                <option value="other">Other</option>
-                                              </select>
-                                              <input 
-                                                placeholder="Value ($)" 
-                                                type="number"
-                                                value={extraCharge.amount}
-                                                onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white" 
-                                                data-testid="input-admin-charge-value" 
-                                              />
-                                              <button 
-                                                className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                                onClick={() => handleAddCharge(b)}
-                                                data-testid="button-admin-charge"
-                                              >
-                                                Add Charge
-                                              </button>
-                                            </div>
+                                        <div>
+                                          <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
+                                          <div className="flex gap-2">
+                                            <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="refuel">Refuel</option><option value="mileage">Mileage</option><option value="damage">Damage</option><option value="other">Other</option></select>
+                                            <input placeholder="Value" type="number" value={extraCharge.amount} onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+                                            <button className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded" onClick={() => handleAddCharge(b)}>Add</button>
                                           </div>
                                         </div>
                                       </div>
@@ -9637,110 +9698,31 @@ export default function CarHopApp() {
                                       {/* Host & Guest Check-in/out Photos */}
                                       <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
                                         <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Check-in / Check-out Photos</h4>
-                                        
-                                        {/* Check-in Photos Row */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                          {/* Host Check-in Photos */}
+                                        <div className="grid grid-cols-2 gap-4">
                                           <div>
-                                            <p className="text-xs font-bold text-green-400 mb-2">Host Check-in</p>
-                                            {(() => {
-                                              const fullBooking = getBookingWithImages(b);
-                                              const allPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
-                                              const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                              if (validPhotos.length > 0) {
-                                                return <div className="flex gap-1 flex-wrap">{validPhotos.map((img: string, idx: number) => (<img key={idx} src={img} alt={`Host CI ${idx+1}`} className="w-10 h-10 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => openLightbox(validPhotos, idx)} data-testid={`img-admin-host-checkin-${idx}`}/>))}</div>;
-                                              }
-                                              return <p className="text-[10px] text-zinc-600">{b.hostCheckInStatus === 'completed' ? 'No photos' : 'Pending'}</p>;
-                                            })()}
+                                            <p className="text-[10px] font-bold text-green-400 mb-2">Host CI</p>
+                                            {(() => { const full = getBookingWithImages(b); const photos = [...((full.hostCheckInData as any)?.photosOutside || []), ...((full.hostCheckInData as any)?.photosInside || [])].filter(img => img && img.startsWith('data:')); return photos.length > 0 ? <div className="flex gap-1 flex-wrap">{photos.map((img, i) => <img key={i} src={img} className="w-8 h-8 rounded border border-green-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />)}</div> : <p className="text-[8px] text-zinc-600">No photos</p>; })()}
                                           </div>
-                                          {/* Guest Check-in Photos */}
                                           <div>
-                                            <p className="text-xs font-bold text-blue-400 mb-2">Guest Check-in</p>
-                                            {(() => {
-                                              const fullBooking = getBookingWithImages(b);
-                                              const allPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                                              const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                              if (validPhotos.length > 0) {
-                                                return <div className="flex gap-1 flex-wrap">{validPhotos.map((img: string, idx: number) => (<img key={idx} src={img} alt={`Guest CI ${idx+1}`} className="w-10 h-10 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => openLightbox(validPhotos, idx)} data-testid={`img-admin-guest-checkin-${idx}`}/>))}</div>;
-                                              }
-                                              return <p className="text-[10px] text-zinc-600">{b.checkInStatus === 'completed' ? 'No photos' : 'Pending'}</p>;
-                                            })()}
+                                            <p className="text-[10px] font-bold text-blue-400 mb-2">Guest CI</p>
+                                            {(() => { const full = getBookingWithImages(b); const photos = [...(full.checkInData?.photosOutside || []), ...(full.checkInData?.photosInside || [])].filter(img => img && img.startsWith('data:')); return photos.length > 0 ? <div className="flex gap-1 flex-wrap">{photos.map((img, i) => <img key={i} src={img} className="w-8 h-8 rounded border border-blue-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />)}</div> : <p className="text-[8px] text-zinc-600">No photos</p>; })()}
                                           </div>
-                                        </div>
-
-                                        {/* Check-out Photos Row */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                          {/* Host Check-out Photos */}
-                                          <div>
-                                            <p className="text-xs font-bold text-green-400 mb-2">Host Check-out</p>
-                                            {(() => {
-                                              const fullBooking = getBookingWithImages(b);
-                                              const allPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
-                                              const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                              if (validPhotos.length > 0) {
-                                                return <div className="flex gap-1 flex-wrap">{validPhotos.map((img: string, idx: number) => (<img key={idx} src={img} alt={`Host CO ${idx+1}`} className="w-10 h-10 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => openLightbox(validPhotos, idx)} data-testid={`img-admin-host-checkout-${idx}`}/>))}</div>;
-                                              }
-                                              return <p className="text-[10px] text-zinc-600">{b.hostCheckOutStatus === 'completed' ? 'No photos' : 'Pending'}</p>;
-                                            })()}
+                                          <div className="mt-2">
+                                            <p className="text-[10px] font-bold text-green-400 mb-2">Host CO</p>
+                                            {(() => { const full = getBookingWithImages(b); const photos = [...((full.hostCheckOutData as any)?.photosOutside || []), ...((full.hostCheckOutData as any)?.photosInside || [])].filter(img => img && img.startsWith('data:')); return photos.length > 0 ? <div className="flex gap-1 flex-wrap">{photos.map((img, i) => <img key={i} src={img} className="w-8 h-8 rounded border border-green-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />)}</div> : <p className="text-[8px] text-zinc-600">No photos</p>; })()}
                                           </div>
-                                          {/* Guest Check-out Photos */}
-                                          <div>
-                                            <p className="text-xs font-bold text-blue-400 mb-2">Guest Check-out</p>
-                                            {(() => {
-                                              const fullBooking = getBookingWithImages(b);
-                                              const allPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                                              const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                              if (validPhotos.length > 0) {
-                                                return <div className="flex gap-1 flex-wrap">{validPhotos.map((img: string, idx: number) => (<img key={idx} src={img} alt={`Guest CO ${idx+1}`} className="w-10 h-10 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => openLightbox(validPhotos, idx)} data-testid={`img-admin-guest-checkout-${idx}`}/>))}</div>;
-                                              }
-                                              return <p className="text-[10px] text-zinc-600">{b.checkOutStatus === 'completed' ? 'No photos' : 'Pending'}</p>;
-                                            })()}
+                                          <div className="mt-2">
+                                            <p className="text-[10px] font-bold text-blue-400 mb-2">Guest CO</p>
+                                            {(() => { const full = getBookingWithImages(b); const photos = [...(full.checkOutData?.photosOutside || []), ...(full.checkOutData?.photosInside || [])].filter(img => img && img.startsWith('data:')); return photos.length > 0 ? <div className="flex gap-1 flex-wrap">{photos.map((img, i) => <img key={i} src={img} className="w-8 h-8 rounded border border-blue-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />)}</div> : <p className="text-[8px] text-zinc-600">No photos</p>; })()}
                                           </div>
                                         </div>
                                       </div>
 
-                                      {/* Delivery Approval Section */}
-                                      {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
-                                        <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
-                                          <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
-                                            <Route size={14}/> Delivery Approval Required
-                                          </h4>
-                                          <p className="text-sm text-zinc-300 mb-1">
-                                            Customer requested delivery to: <span className="font-bold text-white">{formatAddressForDisplay((b.details as any)?.deliveryAddress || b.location)}</span>
-                                          </p>
-                                          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
-                                            <p className="text-xs text-zinc-500">
-                                              Delivery scheduled for: <span className="text-zinc-300">{formatDisplayDate(b.startDate, b.startTime)}</span>
-                                            </p>
-                                            {(b.details as any)?.deliveryDistance && (
-                                              <p className="text-xs text-zinc-500">
-                                                Distance: <span className="text-zinc-300">{(b.details as any).deliveryDistance.toFixed(1)} miles</span>
-                                              </p>
-                                            )}
-                                            {(b.details as any)?.deliveryFee !== undefined && (
-                                              <p className="text-xs text-zinc-500">
-                                                Delivery Fee: <span className="text-green-400 font-bold">${(b.details as any).deliveryFee.toFixed(2)}</span>
-                                              </p>
-                                            )}
-                                          </div>
-                                          <div className="flex gap-2">
-                                            <button 
-                                              onClick={() => handleDeliveryApproval(b.id, 'approved')}
-                                              className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
-                                              data-testid={`button-admin-approve-delivery-${b.id}`}
-                                            >
-                                              Approve Delivery
-                                            </button>
-                                            <button 
-                                              onClick={() => handleDeliveryApproval(b.id, 'rejected')}
-                                              className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
-                                              data-testid={`button-admin-reject-delivery-${b.id}`}
-                                            >
-                                              Decline (Pickup Only)
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
+                                      {/* Rental Agreement */}
+                                      <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Agreement</h4>
+                                        <button onClick={() => setViewingAgreementBookingId(b.id)} className="w-full flex items-center justify-between p-2 bg-zinc-800 rounded border border-zinc-700 transition-colors"><div className="flex items-center gap-2"><FileText size={14} className="text-blue-500"/><span className="text-[10px] font-bold uppercase">View Agreement</span></div><ChevronRight size={14} /></button>
+                                      </div>
 
                                       {/* Chat Messages */}
                                       {(b.messages || []).length > 0 && (
