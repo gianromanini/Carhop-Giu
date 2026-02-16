@@ -5807,7 +5807,14 @@ export default function CarHopApp() {
                                   )}
                                   <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                                 </div>
-                                <div className="text-xs text-zinc-400 font-medium">{(() => { const veh = vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; const hostLabel = host ? `| ${host.firstName} ${host.lastName}` : ''; return `${b.carName} ${veh?.year || ''} ${hostLabel}`; })()}</div>
+                                <div className="text-xs text-zinc-400 font-medium">
+                                  {(() => { 
+                                    const veh = (vehicles || []).find(vv => vv.id === b.vehicleId); 
+                                    const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null; 
+                                    const hostLabel = host ? `| ${host.firstName} ${host.lastName}` : ''; 
+                                    return `${b.carName} ${veh?.year || ''} ${hostLabel}`; 
+                                  })()}
+                                </div>
                                 <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
                               </div>
                               <div className="text-right">
@@ -9180,9 +9187,16 @@ export default function CarHopApp() {
                                 <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                               </div>
                               
-                              {/* Car Name + Guest Label */}
                               <div className="flex justify-between items-start gap-2 mb-0.5">
-                                <div className="text-xs text-zinc-300 font-medium leading-tight">{(() => { const veh = vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; const hostLabel = host ? `| ${host.firstName} ${host.lastName}` : ''; return `${b.carName} ${veh?.year || ''} ${hostLabel}`; })()}</div>
+                                <div className="text-xs text-zinc-300 font-medium leading-tight">
+                                  {(() => { 
+                                    const veh = (vehicles || []).find(vv => vv.id === b.vehicleId); 
+                                    const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null; 
+                                    const hostLabel = host ? `| ${host.firstName} ${host.lastName}` : ''; 
+                                    return `${b.carName} ${veh?.year || ''} ${hostLabel}`; 
+                                  })()}
+                                </div>
+                              </div>
                                 {b.status === 'Completed' && (() => {
                                   const bookingRating = ratingsData?.find(r => r.bookingId === b.id);
                                   return bookingRating?.stars ? (
@@ -10932,31 +10946,32 @@ export default function CarHopApp() {
                         </div>
                       )}
                             <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
-                              {b.carName} {(() => {
-                                const v = vehicles.find(veh => veh.id === b.vehicleId);
-                                return v?.year ? ` ${v.year}` : '';
-                              })()}
                               {(() => {
-                                const vehicle = vehicles.find(veh => veh.id === b.vehicleId);
-                                if (!vehicle?.hostId) return null;
-                                const host = hostsData.find((h: any) => String(h.id) === String(vehicle.hostId));
-                                const hName = host ? `${host.firstName} ${host.lastName}` : (vehicle.hostName || null);
-                                if (!hName) return null;
+                                const veh = vehicles.find(vv => vv.id === b.vehicleId);
+                                const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null;
+                                const hostLabel = host ? `by ${host.firstName} ${host.lastName}` : '';
                                 return (
-                                  <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                                    by <button 
-                                      onClick={(e) => { 
-                                        e.stopPropagation(); 
-                                        setViewHostProfile(vehicle.hostId!); 
-                                        setView('host-profile'); 
-                                        window.scrollTo(0, 0); 
-                                      }}
-                                      className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
-                                      data-testid={`link-host-profile-${b.id}`}
-                                    >
-                                      {hName}
-                                    </button>
-                                  </span>
+                                  <>
+                                    {b.carName} {veh?.year || ''}
+                                    {hostLabel && (
+                                      <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                                        {hostLabel.split('by')[0]} by <button 
+                                          onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            if (veh?.hostId) {
+                                              setViewHostProfile(veh.hostId); 
+                                              setView('host-profile'); 
+                                              window.scrollTo(0, 0); 
+                                            }
+                                          }}
+                                          className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
+                                          data-testid={`link-host-profile-${b.id}`}
+                                        >
+                                          {hostLabel.split('by')[1].trim()}
+                                        </button>
+                                      </span>
+                                    )}
+                                  </>
                                 );
                               })()}
                             </div>
