@@ -8,9 +8,9 @@ import {
   type Rating, type InsertRating,
   type SupportMessage, type InsertSupportMessage
 } from "@shared/schema";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, ilike, or, and, inArray, sql, desc } from "drizzle-orm";
-import { neon } from "@neondatabase/serverless";
+import pg from "pg";
 import bcrypt from "bcryptjs";
 
 const DEMO_PASSWORD_HASH = bcrypt.hashSync("demo123", 10);
@@ -1152,11 +1152,10 @@ export class DatabaseStorage implements IStorage {
       
       try {
         console.log("[Storage] Attempting to connect to database...");
-        const sqlClient = neon(connectionString);
-        this.db = drizzle(sqlClient);
+        const pool = new pg.Pool({ connectionString });
+        this.db = drizzle(pool);
         
-        // Test connection with a simple raw query
-        await sqlClient`SELECT 1`;
+        await pool.query("SELECT 1");
         
         this.initialized = true;
         console.log("[Storage] Database successfully initialized, connected, and verified");
