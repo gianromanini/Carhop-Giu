@@ -1372,6 +1372,17 @@ export default function CarHopApp() {
     }
   });
 
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: { bookingId: number; content: string; sender: string }) => {
+      const res = await apiRequest("POST", `/api/bookings/${message.bookingId}/messages`, message);
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings", variables.bookingId] });
+    }
+  });
+
   const removeHostPickupLocationMutation = useMutation({
     mutationFn: async ({ location, userId }: { location: string; userId: string }) => {
       const response = await apiRequest('DELETE', `/api/hosts/${userId}/pickup-locations`, { location });
