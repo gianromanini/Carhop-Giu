@@ -2405,7 +2405,7 @@ export default function CarHopApp() {
 
   const handleApplyDiscount = async (booking: Booking) => {
     if (!adjustment.value || parseFloat(adjustment.value) <= 0) {
-      alert("Please enter a valid discount value.");
+      toast({ description: 'Please enter a valid discount value.', variant: 'destructive' });
       return;
     }
     
@@ -2428,7 +2428,7 @@ export default function CarHopApp() {
     });
     
     setAdjustment({ type: 'fixed', value: '' });
-    alert(`Discount of $${discountAmount.toFixed(2)} applied successfully!`);
+    toast({ description: `Discount of $${discountAmount.toFixed(2)} applied successfully!` });
   };
 
   const handleDeleteBooking = (bookingId: string) => {
@@ -2437,13 +2437,17 @@ export default function CarHopApp() {
         setDeletingBookingId(null);
         setManageBookingId(null);
         queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+        toast({ description: 'Booking deleted successfully.' });
       })
-      .catch(err => console.error('Error deleting booking:', err));
+      .catch(err => {
+        console.error('Error deleting booking:', err);
+        toast({ description: 'Failed to delete booking. Please try again.', variant: 'destructive' });
+      });
   };
 
   const handleAddCharge = async (booking: Booking) => {
     if (!extraCharge.amount || parseFloat(extraCharge.amount) <= 0) {
-      alert("Please enter a valid charge amount.");
+      toast({ description: 'Please enter a valid charge amount.', variant: 'destructive' });
       return;
     }
     
@@ -2470,7 +2474,7 @@ export default function CarHopApp() {
     });
     
     setExtraCharge({ type: 'Refuel', amount: '' });
-    alert(`Charge of $${chargeAmount.toFixed(2)} (${chargeLabel}) added successfully!`);
+    toast({ description: `Charge of $${chargeAmount.toFixed(2)} (${chargeLabel}) added successfully!` });
   };
 
   const handleRemoveDiscount = (booking: Booking) => {
@@ -2508,7 +2512,7 @@ export default function CarHopApp() {
   const handleChargeExtraPayment = async (booking: Booking) => {
     const amount = parseFloat(extraPaymentAmount);
     if (!amount || amount <= 0) {
-      alert("Please enter a valid amount to charge.");
+      toast({ description: 'Please enter a valid amount to charge.', variant: 'destructive' });
       return;
     }
     
@@ -2522,10 +2526,10 @@ export default function CarHopApp() {
       if (response.ok) {
         queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
         setExtraPaymentAmount('');
-        alert(`Payment of $${amount.toFixed(2)} charged successfully to ${booking.paymentMethod || 'Credit Card'}!\n\nClient: ${booking.driver.name}\nBooking: ${booking.bookingCode}`);
+        toast({ description: `Payment of $${amount.toFixed(2)} charged successfully to ${booking.paymentMethod || 'Credit Card'}!` });
       }
     } catch (error) {
-      alert("Failed to process payment. Please try again.");
+      toast({ description: 'Failed to process payment. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -8798,7 +8802,7 @@ export default function CarHopApp() {
                                   queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
                                   setSelectedHost(null);
                                 })
-                                .catch(err => alert('Error deleting host'));
+                                .catch(err => toast({ description: 'Error deleting host. Please try again.', variant: 'destructive' }));
                             }
                           }} data-testid="button-delete-host">
                             <Trash2 size={14}/>
@@ -8822,9 +8826,9 @@ export default function CarHopApp() {
                               setSelectedHost(data.host || data);
                               toast({ title: data.message || 'Host updated successfully' });
                             } else {
-                              alert('Error updating host');
+                              toast({ description: 'Error updating host. Please try again.', variant: 'destructive' });
                             }
-                          } catch (err) { alert('Error updating host'); }
+                          } catch (err) { toast({ description: 'Error updating host. Please try again.', variant: 'destructive' }); }
                         }} className="space-y-4 p-4 bg-zinc-900 rounded-lg">
                           <div className="grid grid-cols-2 gap-3">
                             <input type="text" value={editingHost.firstName} onChange={(e) => setEditingHost({...editingHost, firstName: e.target.value})} placeholder="First Name" className="px-3 py-2 border border-zinc-700 rounded bg-zinc-800 text-white text-xs" />
@@ -11269,7 +11273,7 @@ export default function CarHopApp() {
                       toast({ description: 'Failed to cancel booking', variant: 'destructive' });
                     }
                   } catch (err) {
-                    alert('Error cancelling booking');
+                    toast({ description: 'Error cancelling booking. Please try again.', variant: 'destructive' });
                   }
                 }} className="flex-1 px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors" data-testid="button-confirm-cancel">Yes, Cancel It</button>
               </div>
