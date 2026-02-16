@@ -9040,7 +9040,7 @@ export default function CarHopApp() {
                                         return (
                                           <div className="mt-1 text-right">
                                             <p className="text-blue-500 dark:text-blue-400 text-[10px] font-bold">
-                                              {displayYear} | {hostName}
+                                              {selectedTripForView.carName} {displayYear} | Host: {hostName}
                                             </p>
                                           </div>
                                         );
@@ -11327,7 +11327,8 @@ export default function CarHopApp() {
 
                                 return (
                                   <>
-                                    {displayYear ? <span>{displayYear}</span> : null}
+                                    <span>{b.carName}</span>
+                                    {displayYear ? <span className="ml-1">{displayYear}</span> : null}
                                     {hostName ? (
                                       <span className="text-zinc-500 dark:text-zinc-400 font-normal text-xs ml-1">
                                         | <button 
@@ -11342,11 +11343,10 @@ export default function CarHopApp() {
                                           className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
                                           data-testid={`link-host-profile-${b.id}`}
                                         >
-                                          {hostName}
+                                          Host: {hostName}
                                         </button>
                                       </span>
                                     ) : null}
-                                    {(displayYear || hostName) ? ' - ' : ''}{b.carName}
                                   </>
                                 );
                               })()}
