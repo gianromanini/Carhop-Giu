@@ -11304,13 +11304,12 @@ export default function CarHopApp() {
                             <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
                               {(() => {
                                 const veh = (vehicles || []).find(vv => vv.id === b.vehicleId);
-                                const yearStr = veh?.year ? `${veh.year} ` : '';
                                 const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null;
                                 return (
                                   <>
-                                    {yearStr}
+                                    {veh?.year || ''}
                                     {host && (
-                                      <span className="mr-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                                      <span className="text-zinc-500 dark:text-zinc-400 font-normal text-xs ml-1">
                                         | <button 
                                           onClick={(e) => { 
                                             e.stopPropagation(); 
@@ -11323,10 +11322,9 @@ export default function CarHopApp() {
                                         >
                                           {host.firstName} {host.lastName}
                                         </button>
-                                        {' - '}
                                       </span>
                                     )}
-                                    {b.carName}
+                                    {' - '}{b.carName}
                                   </>
                                 );
                               })()}
