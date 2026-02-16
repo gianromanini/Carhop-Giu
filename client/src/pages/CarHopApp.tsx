@@ -975,6 +975,7 @@ export default function CarHopApp() {
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
+  const { data: messagesData = [] } = useQuery<any[]>({ queryKey: ['/api/messages'] });
   const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'] });
   const [hostTab, setHostTab] = useState<string | null>(null);
   const [showHostAddVehicleForm, setShowHostAddVehicleForm] = useState(false);
@@ -5842,7 +5843,7 @@ export default function CarHopApp() {
                                     </span>
                                   </span>
                                 </div>
-                                <div className="text-xs text-zinc-400 font-medium cursor-default" onClick={(e) => e.stopPropagation()}>
+                                <div className="text-xs text-zinc-400 font-medium">
                                   {(() => { 
                                     const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || (vehicles || []).find(vv => vv.id === b.vehicleId);
                                     const displayYear = veh?.year || (b.details as any)?.vehicleYear || '';
@@ -9461,8 +9462,7 @@ export default function CarHopApp() {
                                 <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
                               </div>
                               
-                              <div className="flex justify-between items-start gap-2 mb-0.5">
-                                <div className="text-xs text-zinc-300 font-medium leading-tight cursor-default" onClick={(e) => e.stopPropagation()}>
+                                <div className="text-xs text-zinc-300 font-medium leading-tight">
                                   {(() => { 
                                     const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || (vehicles || []).find(vv => vv.id === b.vehicleId);
                                     const displayYear = veh?.year || (b.details as any)?.vehicleYear || '';
