@@ -1356,6 +1356,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       // Sum everything up for the new total
       updateData.total = baseRate + protection + fees + newExtendedRate + newTax + deliveryFee - discount;
+      
+      // Preserve vehicle metadata
+      updateData.carName = booking.carName;
+      updateData.vehicleId = booking.vehicleId;
     }
     
     const updated = await storage.updateBooking(id, updateData);
