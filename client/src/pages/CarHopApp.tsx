@@ -789,6 +789,7 @@ export default function CarHopApp() {
   const [isHostCheckMode, setIsHostCheckMode] = useState(false);
   const [expandedCheckInPhotos, setExpandedCheckInPhotos] = useState(false);
   const [expandedCheckOutPhotos, setExpandedCheckOutPhotos] = useState(false);
+  const [viewingAgreementBookingId, setViewingAgreementBookingId] = useState<number | null>(null);
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
 
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
@@ -977,6 +978,17 @@ export default function CarHopApp() {
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const { data: messagesData = [] } = useQuery<any[]>({ queryKey: ['/api/messages'] });
   const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'] });
+  const [adminMessageText, setAdminMessageText] = useState("");
+  const handleSendMessage = (booking: any, role: string) => {
+    if (!adminMessageText.trim()) return;
+    sendMessageMutation.mutate({
+      bookingId: booking.id,
+      content: adminMessageText,
+      sender: role
+    });
+    setAdminMessageText("");
+  };
+
   const [hostTab, setHostTab] = useState<string | null>(null);
   const [showHostAddVehicleForm, setShowHostAddVehicleForm] = useState(false);
   const [editingHost, setEditingHost] = useState<any>(null);
