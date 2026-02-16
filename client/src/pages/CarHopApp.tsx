@@ -4914,7 +4914,7 @@ export default function CarHopApp() {
                 m.senderType === 'host' && 
                 (m.senderIdentifier === hostEmail || m.senderIdentifier === `@${hostUsername}` || m.senderEmail === hostEmail) && 
                 m.adminReply && !m.read
-              ).length : 0;
+              ).length : (tab === 'bookings' ? hostBookings.filter(b => b.unread || getUnreadMessagesCount(b, 'host') > 0 || getPendingRequestsCount(b) > 0).length : 0);
               return (
               <button key={tab} 
                 onClick={() => {
@@ -5751,7 +5751,7 @@ export default function CarHopApp() {
                                   )}
                                   <span className="font-bold text-sm text-white">{b.bookingCode}</span>
                                 </div>
-                                <div className="text-xs text-zinc-400 font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</div>
+                                <div className="text-xs text-zinc-400 font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}</div>
                                 <div className="text-xs text-zinc-500 mt-0.5">{b.driver.name}</div>
                               </div>
                               <div className="text-right">
@@ -5857,7 +5857,7 @@ export default function CarHopApp() {
                                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                                   <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <p className="font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</p>
+                                      <p className="font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}</p>
                                       {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                                           Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
@@ -9199,7 +9199,7 @@ export default function CarHopApp() {
                                   <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Rental Information</h4>
                                   <div className="text-sm text-zinc-900 dark:text-white space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1">
-                                      <p className="font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && `(${vehicles.find(v => v.id === b.vehicleId)?.year})`}</p>
+                                      <p className="font-medium">{b.carName} {vehicles.find(v => v.id === b.vehicleId)?.year && ` ${vehicles.find(v => v.id === b.vehicleId)?.year}`}</p>
                                       {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                                           Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
