@@ -1386,6 +1386,47 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json({ success: true });
   });
 
+  app.put("/api/bookings/:id/decline-pickup", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).send("Booking not found");
+    
+    // Update status to Cancelled
+    const updated = await storage.updateBooking(id, { 
+      status: 'Cancelled' 
+    });
+
+    // Notify host via email
+    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
+    const hostEmail = process.env.EMAIL_USER; // Admin/Host notification email
+    
+    if (hostEmail) {
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: hostEmail,
+          subject: `Booking Cancelled - Pickup Declined #${booking.bookingCode}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #ef4444;">Booking Cancelled by Guest</h2>
+              <p>The guest for booking <strong>#${booking.bookingCode}</strong> has declined the pickup method after delivery was rejected.</p>
+              <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                <p><strong>Vehicle:</strong> ${booking.carName}</p>
+                <p><strong>Guest:</strong> ${booking.driver?.name}</p>
+                <p><strong>Original Dates:</strong> ${booking.startDate} to ${booking.returnDate}</p>
+              </div>
+              <p style="margin-top: 20px; color: #6b7280; font-size: 12px;">This is an automated notification from CarHop.</p>
+            </div>
+          `
+        });
+      } catch (error) {
+        console.error("Error sending pickup decline email to host:", error);
+      }
+    }
+    
+    res.json({ success: true, booking: updated });
+  });
+
   app.put("/api/bookings/:id/delivery-approval", async (req, res) => {
     const id = parseInt(req.params.id);
     const booking = await storage.getBooking(id);

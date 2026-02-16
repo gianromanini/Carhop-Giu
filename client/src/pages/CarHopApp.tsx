@@ -10848,7 +10848,18 @@ export default function CarHopApp() {
                         <div className="flex items-center gap-2">
                           <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                           <div>
-                            <div className={`text-[10px] md:text-xs font-normal uppercase tracking-wider ${isCompleted ? 'text-green-600' : normalizedStatus === 'extended' ? 'text-yellow-600' : isCancelled ? 'text-red-600' : 'text-blue-400'}`}>{normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status}</div>
+                                  <div className={`text-[10px] md:text-xs font-normal uppercase tracking-wider ${
+                                    isCompleted ? 'text-green-600' : 
+                                    normalizedStatus === 'extended' ? 'text-yellow-600' : 
+                                    isCancelled ? 'text-red-600' : 
+                                    (b.status === 'Active' && (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted) ? 'text-orange-500' :
+                                    'text-blue-400'
+                                  }`}>
+                                    {(b.status === 'Active' && (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted) 
+                                      ? 'PENDING PICKUP APPROVAL' 
+                                      : (normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status)
+                                    }
+                                  </div>
                             {!isCollapsed && normalizedStatus === 'active' && b.checkInStatus !== 'completed' && (
                               <div className="text-xs text-green-600 font-semibold mt-1">*To start your trip you must complete the check in.</div>
                             )}
@@ -11056,9 +11067,9 @@ export default function CarHopApp() {
                             </div>
                           </div>
                           
-                          {/* Accept Pickup Button - Only if Delivery was Rejected and not yet accepted */}
+                          {/* Accept/Decline Pickup Button - Only if Delivery was Rejected and not yet accepted */}
                           {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && (
-                            <div className="mt-4">
+                            <div className="mt-4 flex gap-3">
                               <button 
                                 onClick={async () => {
                                   try {
@@ -11069,10 +11080,27 @@ export default function CarHopApp() {
                                     toast({ description: 'Error accepting pickup method', variant: 'destructive' });
                                   }
                                 }}
-                                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                                 data-testid={`button-accept-pickup-${b.id}`}
                               >
                                 Accept Pickup Method
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  if (window.confirm('Are you sure you want to decline the pickup and cancel this booking?')) {
+                                    try {
+                                      await apiRequest('PUT', `/api/bookings/${b.id}/decline-pickup`, {});
+                                      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                      toast({ description: 'Booking cancelled as pickup was declined.' });
+                                    } catch (error) {
+                                      toast({ description: 'Error declining pickup method', variant: 'destructive' });
+                                    }
+                                  }
+                                }}
+                                className="flex-1 py-3 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900 border border-red-200 dark:border-red-800 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                data-testid={`button-decline-pickup-${b.id}`}
+                              >
+                                Decline Pickup Method
                               </button>
                             </div>
                           )}
