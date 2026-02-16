@@ -8902,8 +8902,8 @@ export default function CarHopApp() {
                                 const extras = selectedTripForView.details?.extras || 0;
                                 const deliveryFeeForInitial = ((selectedTripForView.details as any)?.deliveryType === 'delivery' && (selectedTripForView.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((selectedTripForView.details as any)?.deliveryFee || 0) : 0;
                                 const initialSubtotal = rentalRate + protection + extras + cleaningFeeForReceipt + deliveryFeeForInitial;
-                                const initialTax = initialSubtotal > 0 ? initialSubtotal * ((settings.taxes || 0) / 100) : 0;
-                                const initialPayment = initialSubtotal + initialTax;
+                                const initialTax = Number((initialSubtotal * ((settings.taxes || 0) / 100)).toFixed(2));
+                                const initialPayment = Number((initialSubtotal + initialTax).toFixed(2));
                                 
                                 // Calculate additional charges
                                 const extendedRate = selectedTripForView.details?.extendedRate || 0;
@@ -8911,8 +8911,11 @@ export default function CarHopApp() {
                                 const extraPaymentsTotal = (selectedTripForView.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                 const discount = selectedTripForView.details?.discount || 0;
                                 const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
-                                const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * ((settings.taxes || 0) / 100) : 0;
-                                const additionalCharges = additionalChargesBeforeTax + additionalTax;
+                                const additionalTax = additionalChargesBeforeTax > 0 ? Number((additionalChargesBeforeTax * ((settings.taxes || 0) / 100)).toFixed(2)) : 0;
+                                const additionalCharges = Number((additionalChargesBeforeTax + additionalTax).toFixed(2));
+                                
+                                // Use the sum of breakdown for final total to avoid mismatch with b.total if it was calculated differently
+                                const finalTotalForReceipt = initialPayment + additionalCharges;
                                 
                                 return (
                                   <>
@@ -9016,15 +9019,19 @@ export default function CarHopApp() {
                                     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                                       <div className="flex justify-between items-center">
                                         <span className="text-lg font-bold text-green-900 dark:text-green-200">Total Amount</span>
-                                        <span className="text-2xl font-bold text-green-600 dark:text-green-400">${(initialPayment + additionalCharges).toFixed(2)}</span>
+                                        <span className="text-2xl font-bold text-green-600 dark:text-green-400">${finalTotalForReceipt.toFixed(2)}</span>
                                       </div>
                                       {(() => {
                                         const veh = vehicles?.find(v => v.id === selectedTripForView.vehicleId);
-                                        const host = veh?.hostId ? hostsData?.find((h: any) => String(h.id) === String(veh.hostId)) : null;
+                                        const hostId = veh?.hostId || (selectedTripForView.details as any)?.hostId;
+                                        const host = hostId ? hostsData?.find((h: any) => String(h.id) === String(hostId)) : null;
+                                        const hostName = host ? `${host.firstName} ${host.lastName}` : (selectedTripForView.details as any)?.hostName;
+                                        const displayYear = veh?.year || (selectedTripForView.details as any)?.vehicleYear || selectedTripForView.year || '';
+                                        
                                         return (
                                           <div className="mt-1 text-right">
                                             <p className="text-blue-500 dark:text-blue-400 text-[10px] font-bold">
-                                              {veh?.year || ''} | {host ? `${host.firstName} ${host.lastName}` : ''}
+                                              {displayYear} | {hostName || ''}
                                             </p>
                                           </div>
                                         );
@@ -11304,27 +11311,34 @@ export default function CarHopApp() {
                             <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
                               {(() => {
                                 const veh = (vehicles || []).find(vv => vv.id === b.vehicleId);
-                                const host = veh?.hostId ? (hostsData || []).find((h: any) => String(h.id) === String(veh.hostId)) : null;
+                                // Fallback to info stored in the booking if vehicle not found in list
+                                const displayYear = veh?.year || (b.details as any)?.vehicleYear || b.year || '';
+                                const hostId = veh?.hostId || (b.details as any)?.hostId;
+                                const host = hostId ? (hostsData || []).find((h: any) => String(h.id) === String(hostId)) : null;
+                                const hostName = host ? `${host.firstName} ${host.lastName}` : (b.details as any)?.hostName;
+
                                 return (
                                   <>
-                                    {veh?.year || ''}
-                                    {host && (
+                                    {displayYear && <span>{displayYear}</span>}
+                                    {hostName && (
                                       <span className="text-zinc-500 dark:text-zinc-400 font-normal text-xs ml-1">
                                         | <button 
                                           onClick={(e) => { 
                                             e.stopPropagation(); 
-                                            setViewHostProfile(veh.hostId!); 
-                                            setView('host-profile'); 
-                                            window.scrollTo(0, 0); 
+                                            if (hostId) {
+                                              setViewHostProfile(String(hostId)); 
+                                              setView('host-profile'); 
+                                              window.scrollTo(0, 0);
+                                            }
                                           }}
                                           className="text-cyan-600 dark:text-cyan-500 hover:text-cyan-500 dark:hover:text-cyan-400 underline underline-offset-2"
                                           data-testid={`link-host-profile-${b.id}`}
                                         >
-                                          {host.firstName} {host.lastName}
+                                          {hostName}
                                         </button>
                                       </span>
                                     )}
-                                    {' - '}{b.carName}
+                                    {(displayYear || hostName) ? ' - ' : ''}{b.carName}
                                   </>
                                 );
                               })()}
