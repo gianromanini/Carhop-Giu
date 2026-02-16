@@ -1185,6 +1185,15 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
 
     try {
+      // Enrich booking details with vehicle year and host info before saving
+      const vehicleForEnrich = result.data.vehicleId ? await storage.getVehicle(result.data.vehicleId).catch(() => null) : null;
+      if (vehicleForEnrich && result.data.details) {
+        const hostForEnrich = vehicleForEnrich.hostId ? await storage.getHost(parseInt(vehicleForEnrich.hostId)).catch(() => null) : null;
+        (result.data.details as any).vehicleYear = vehicleForEnrich.year || null;
+        (result.data.details as any).hostId = vehicleForEnrich.hostId || null;
+        (result.data.details as any).hostName = hostForEnrich ? `${hostForEnrich.firstName} ${hostForEnrich.lastName}` : (vehicleForEnrich.hostName || null);
+      }
+
       const booking = await storage.createBooking(result.data);
       console.log("[API] Booking created successfully:", booking.id);
       

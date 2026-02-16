@@ -925,6 +925,14 @@ export default function CarHopApp() {
     }
   });
 
+  const { data: allVehicles = [] } = useQuery<Vehicle[]>({ 
+    queryKey: ['/api/vehicles/all'],
+    queryFn: async () => {
+      const response = await fetch('/api/vehicles');
+      return response.json();
+    }
+  });
+
   const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState<boolean>(false);
   const [fleetSort, setFleetSort] = useState('brand-asc');
@@ -8667,7 +8675,7 @@ export default function CarHopApp() {
                 )}
 
                 {selectedTripForView && (() => {
-                  const vehicleForTrip = vehicles.find(v => v.id === selectedTripForView.vehicleId);
+                  const vehicleForTrip = (allVehicles || []).find(v => v.id === selectedTripForView.vehicleId) || vehicles.find(v => v.id === selectedTripForView.vehicleId);
                   return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                       <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -8692,7 +8700,8 @@ export default function CarHopApp() {
                             <div>
                               <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Vehicle Info</h3>
                               <div className="space-y-2">
-                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Model</span><p className="text-sm font-medium text-zinc-900 dark:text-white">{selectedTripForView.carName}</p></div>
+                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Model</span><p className="text-sm font-medium text-zinc-900 dark:text-white">{vehicleForTrip?.year || (selectedTripForView.details as any)?.vehicleYear || ''} {selectedTripForView.carName}</p></div>
+                                <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Host</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{(() => { const hId = vehicleForTrip?.hostId || (selectedTripForView.details as any)?.hostId; const h = hId ? hostsData?.find((hh: any) => String(hh.id) === String(hId)) : null; return h ? `${h.firstName} ${h.lastName}` : (vehicleForTrip?.hostName || (selectedTripForView.details as any)?.hostName || 'N/A'); })()}</p></div>
                                 {vehicleForTrip && (
                                   <>
                                     <div><span className="text-xs text-zinc-600 dark:text-zinc-400">Category</span><p className="text-sm text-zinc-700 dark:text-zinc-300">{vehicleForTrip.category}</p></div>
@@ -8893,7 +8902,7 @@ export default function CarHopApp() {
                           {selectedTripForView.details && (
                             <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-6">
                               {(() => {
-                                const carForReceipt = vehicles.find(v => v.id === selectedTripForView.vehicleId);
+                                const carForReceipt = (allVehicles || []).find(v => v.id === selectedTripForView.vehicleId) || vehicles.find(v => v.id === selectedTripForView.vehicleId);
                                 const cleaningFeeForReceipt = carForReceipt?.pricing?.cleaningFee || settings.cleaningFee;
                                 
                                 // Calculate initial payment
@@ -9022,16 +9031,16 @@ export default function CarHopApp() {
                                         <span className="text-2xl font-bold text-green-600 dark:text-green-400">${finalTotalForReceipt.toFixed(2)}</span>
                                       </div>
                                       {(() => {
-                                        const veh = vehicles?.find(v => v.id === selectedTripForView.vehicleId);
-                                        const hostId = veh?.hostId || (selectedTripForView.details as any)?.hostId;
-                                        const host = hostId ? hostsData?.find((h: any) => String(h.id) === String(hostId)) : null;
-                                        const hostName = host ? `${host.firstName} ${host.lastName}` : (selectedTripForView.details as any)?.hostName;
-                                        const displayYear = veh?.year || (selectedTripForView.details as any)?.vehicleYear || selectedTripForView.year || '';
+                                        const veh = (allVehicles || []).find(v => v.id === selectedTripForView.vehicleId) || vehicles?.find(v => v.id === selectedTripForView.vehicleId);
+                                        const displayYear = veh?.year || (selectedTripForView.details as any)?.vehicleYear || '';
+                                        const resolvedHostId = veh?.hostId || (selectedTripForView.details as any)?.hostId;
+                                        const hostFromList = resolvedHostId ? hostsData?.find((h: any) => String(h.id) === String(resolvedHostId)) : null;
+                                        const hostName = hostFromList ? `${hostFromList.firstName} ${hostFromList.lastName}` : (veh?.hostName || (selectedTripForView.details as any)?.hostName || '');
                                         
                                         return (
                                           <div className="mt-1 text-right">
                                             <p className="text-blue-500 dark:text-blue-400 text-[10px] font-bold">
-                                              {displayYear} | {hostName || ''}
+                                              {displayYear} | {hostName}
                                             </p>
                                           </div>
                                         );
@@ -11298,35 +11307,34 @@ export default function CarHopApp() {
                       <div className="text-xs text-zinc-500 flex items-center gap-1 mt-1"><Clock size={12} /> Grace period: +30 min</div>
                       
                       {/* Pickup Instructions for Guest */}
-                      {vehicles.find(v => v.id === b.vehicleId)?.pickupInstructions && (
+                      {((allVehicles || []).find(v => v.id === b.vehicleId) || vehicles.find(v => v.id === b.vehicleId))?.pickupInstructions && (
                         <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50">
                           <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                             <Info size={12}/> Pickup Instructions
                           </h4>
                           <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed italic">
-                            "{vehicles.find(v => v.id === b.vehicleId)?.pickupInstructions}"
+                            "{((allVehicles || []).find(v => v.id === b.vehicleId) || vehicles.find(v => v.id === b.vehicleId))?.pickupInstructions}"
                           </p>
                         </div>
                       )}
                             <div className="text-zinc-900 dark:text-white text-base md:text-lg font-bold mt-2">
                               {(() => {
-                                const veh = (vehicles || []).find(vv => vv.id === b.vehicleId);
-                                // Fallback to info stored in the booking if vehicle not found in list
-                                const displayYear = veh?.year || (b.details as any)?.vehicleYear || b.year || '';
-                                const hostId = veh?.hostId || (b.details as any)?.hostId;
-                                const host = hostId ? (hostsData || []).find((h: any) => String(h.id) === String(hostId)) : null;
-                                const hostName = host ? `${host.firstName} ${host.lastName}` : (b.details as any)?.hostName;
+                                const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || (vehicles || []).find(vv => vv.id === b.vehicleId);
+                                const displayYear = veh?.year || (b.details as any)?.vehicleYear || '';
+                                const resolvedHostId = veh?.hostId || (b.details as any)?.hostId;
+                                const hostFromList = resolvedHostId ? (hostsData || []).find((h: any) => String(h.id) === String(resolvedHostId)) : null;
+                                const hostName = hostFromList ? `${hostFromList.firstName} ${hostFromList.lastName}` : (veh?.hostName || (b.details as any)?.hostName || '');
 
                                 return (
                                   <>
-                                    {displayYear && <span>{displayYear}</span>}
-                                    {hostName && (
+                                    {displayYear ? <span>{displayYear}</span> : null}
+                                    {hostName ? (
                                       <span className="text-zinc-500 dark:text-zinc-400 font-normal text-xs ml-1">
                                         | <button 
                                           onClick={(e) => { 
                                             e.stopPropagation(); 
-                                            if (hostId) {
-                                              setViewHostProfile(String(hostId)); 
+                                            if (resolvedHostId) {
+                                              setViewHostProfile(String(resolvedHostId)); 
                                               setView('host-profile'); 
                                               window.scrollTo(0, 0);
                                             }
@@ -11337,7 +11345,7 @@ export default function CarHopApp() {
                                           {hostName}
                                         </button>
                                       </span>
-                                    )}
+                                    ) : null}
                                     {(displayYear || hostName) ? ' - ' : ''}{b.carName}
                                   </>
                                 );
