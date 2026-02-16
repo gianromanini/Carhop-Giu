@@ -6538,9 +6538,101 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* Financial Details */}
-                          <div>
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Financial Details</h4>
+                          {/* 1. Approval Requests (Priority) */}
+                          {(() => {
+                            const pendingExt = (b.extensionRequests || []).filter(r => r.status === 'pending');
+                            const isDeliveryPending = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending';
+                            
+                            if (pendingExt.length === 0 && !isDeliveryPending) return null;
+                            
+                            return (
+                              <div className="space-y-3 mb-4">
+                                {isDeliveryPending && (
+                                  <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                                    <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
+                                      <Route size={14}/> Delivery Approval Required
+                                    </h4>
+                                    <div className="flex gap-2">
+                                      <button onClick={() => handleDeliveryApproval(b.id, 'approved')} className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-approve-delivery-${b.id}`}>Approve</button>
+                                      <button onClick={() => handleDeliveryApproval(b.id, 'rejected')} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-reject-delivery-${b.id}`}>Reject</button>
+                                    </div>
+                                  </div>
+                                )}
+                                {pendingExt.map(req => (
+                                  <div key={req.id} className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                                    <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                                      <AlertCircle size={14}/> {req.type === 'extension' ? 'Extension' : 'Reduction'} Request
+                                    </h4>
+                                    <p className="text-xs text-zinc-300 mb-3">New return: <strong>{req.requestedReturnDate}</strong> at <strong>{req.requestedReturnTime}</strong></p>
+                                    <div className="flex gap-2">
+                                      <button onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')} className="flex-1 py-2 bg-green-600 text-white text-xs font-bold rounded">Approve</button>
+                                      <button onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')} className="flex-1 py-2 bg-red-600 text-white text-xs font-bold rounded">Reject</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
+                          {/* 2. Host Check-in/out Buttons (Guest style) */}
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            {b.hostCheckInStatus === 'completed' ? (
+                              <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
+                                <Camera size={12} className="mr-1"/> View Host CI
+                              </Button>
+                            ) : (
+                              <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
+                                Host Check-in
+                              </Button>
+                            )}
+                            {b.hostCheckOutStatus === 'completed' ? (
+                              <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
+                                <Camera size={12} className="mr-1"/> View Host CO
+                              </Button>
+                            ) : (
+                              <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
+                                Host Check-out
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* 3. Photos (Consolidated) */}
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-[10px] font-bold text-green-400 mb-2 uppercase">Host Check-in</p>
+                              {(() => {
+                                const full = getBookingWithImages(b);
+                                const photos = [...((full.hostCheckInData as any)?.photosOutside || []), ...((full.hostCheckInData as any)?.photosInside || [])].filter(img => img && img.startsWith('data:'));
+                                return photos.length > 0 ? (
+                                  <div className="flex gap-1 flex-wrap">
+                                    {photos.map((img: string, i: number) => (
+                                      <img key={i} src={img} className="w-10 h-10 rounded border border-green-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />
+                                    ))}
+                                  </div>
+                                ) : <p className="text-[10px] text-zinc-600">No photos</p>;
+                              })()}
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-orange-400 mb-2 uppercase">Host Check-out</p>
+                              {(() => {
+                                const full = getBookingWithImages(b);
+                                const photos = [...((full.hostCheckOutData as any)?.photosOutside || []), ...((full.hostCheckOutData as any)?.photosInside || [])].filter(img => img && img.startsWith('data:'));
+                                return photos.length > 0 ? (
+                                  <div className="flex gap-1 flex-wrap">
+                                    {photos.map((img: string, i: number) => (
+                                      <img key={i} src={img} className="w-10 h-10 rounded border border-orange-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />
+                                    ))}
+                                  </div>
+                                ) : <p className="text-[10px] text-zinc-600">No photos</p>;
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* 4. Financial Details */}
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
+                              <DollarSign size={14}/> Financial Details
+                            </h4>
                             <div className="space-y-4 text-sm">
                               {(() => {
                                 const rate = b.details.rate || 0;
@@ -6683,6 +6775,29 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
+                          {/* 5. Manage Charges & Adjustments */}
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Adjustments</h4>
+                            <div className="space-y-4">
+                              <div className="flex gap-2">
+                                <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="fixed">$</option><option value="percent">%</option></select>
+                                <input type="number" placeholder="Discount" value={adjustment.value} onChange={(e) => setAdjustment(prev => ({ ...prev, value: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+                                <button onClick={() => handleApplyDiscount(b)} className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">Apply</button>
+                              </div>
+                              <div className="flex gap-2">
+                                <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="refuel">Refuel</option><option value="mileage">Mileage</option><option value="damage">Damage</option></select>
+                                <input type="number" placeholder="Extra Charge" value={extraCharge.amount} onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
+                                <button onClick={() => handleAddCharge(b)} className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded">Add</button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 6. Rental Agreement */}
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Agreement</h4>
+                            <button onClick={() => setViewingAgreementBookingId(b.id)} className="w-full flex items-center justify-between p-2 bg-zinc-800 rounded border border-zinc-700 transition-colors"><div className="flex items-center gap-2"><FileText size={14} className="text-blue-500"/><span className="text-[10px] font-bold uppercase">View Agreement</span></div><ChevronRight size={14} /></button>
+                          </div>
+
                           {/* Rate Client Option */}
                           {b.status === 'Completed' && (() => {
                             const bookingRating = ratingsData.find(r => r.bookingId === b.id);
@@ -6692,72 +6807,6 @@ export default function CarHopApp() {
                               </button>
                             ) : null;
                           })()}
-
-                          {/* Host Check-in / Check-out Status */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className={`p-4 rounded-lg border ${b.hostCheckInStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
-                                <Unlock size={14}/> Host Check-In
-                              </h4>
-                              {b.hostCheckInStatus === 'completed' ? (
-                                <div className="space-y-2">
-                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
-                                  {b.hostCheckInData && (
-                                    <>
-                                      <p className="text-xs text-zinc-400">Miles: {b.hostCheckInData.miles}</p>
-                                      <p className="text-xs text-zinc-400">Gas: {b.hostCheckInData.gas}</p>
-                                      <p className="text-xs text-zinc-400">Photos: {((b.hostCheckInData as any).photosOutside?.length || 0) + ((b.hostCheckInData as any).photosInside?.length || 0)}</p>
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="space-y-3">
-                                  <p className="text-yellow-400 text-sm">Pending</p>
-                                  <Button 
-                                    variant="primary" 
-                                    className="w-full text-xs h-8"
-                                    onClick={() => handleStartWorkflow(b, 'checkin', true)}
-                                    disabled={(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'approved'}
-                                    data-testid={`button-host-checkin-${b.id}`}
-                                  >
-                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' 
-                                      ? 'Check-In Disabled (Delivery Declined)' 
-                                      : 'Check In Host'}
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                            <div className={`p-4 rounded-lg border ${b.hostCheckOutStatus === 'completed' ? 'bg-green-950/30 border-green-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
-                                <Lock size={14}/> Host Check-Out
-                              </h4>
-                              {b.hostCheckOutStatus === 'completed' ? (
-                                <div className="space-y-2">
-                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
-                                  {b.hostCheckOutData && (
-                                    <>
-                                      <p className="text-xs text-zinc-400">Miles: {b.hostCheckOutData.miles}</p>
-                                      <p className="text-xs text-zinc-400">Gas: {b.hostCheckOutData.gas}</p>
-                                      <p className="text-xs text-zinc-400">Photos: {((b.hostCheckOutData as any).photosOutside?.length || 0) + ((b.hostCheckOutData as any).photosInside?.length || 0)}</p>
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="space-y-3">
-                                  <p className="text-yellow-400 text-sm">Pending</p>
-                                  <Button 
-                                    variant="orange" 
-                                    className={`w-full text-xs h-8 ${b.hostCheckInStatus === 'completed' ? '' : 'opacity-50 cursor-not-allowed'}`}
-                                    disabled={b.hostCheckInStatus !== 'completed'}
-                                    onClick={() => handleStartWorkflow(b, 'checkout', true)}
-                                    data-testid={`button-host-checkout-${b.id}`}
-                                  >
-                                    Check Out Host
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
 
                           {/* Guest Check-in / Check-out Status */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
