@@ -791,9 +791,10 @@ export default function CarHopApp() {
   const [expandedCheckOutPhotos, setExpandedCheckOutPhotos] = useState(false);
   const [viewingAgreementBookingId, setViewingAgreementBookingId] = useState<number | null>(null);
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
+  const [viewingHostCheckData, setViewingHostCheckData] = useState<{ bookingId: number; mode: 'checkin' | 'checkout' } | null>(null);
 
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
-  const [extraCharge, setExtraCharge] = useState({ type: 'Refuel', amount: '' });
+  const [extraCharge, setExtraCharge] = useState({ type: 'refuel', amount: '' });
   const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
   const [checkingOutByAdminBookingId, setCheckingOutByAdminBookingId] = useState<number | null>(null);
 
@@ -6625,11 +6626,11 @@ export default function CarHopApp() {
                             );
                           })()}
 
-                          {/* 2. Host Check-in/out Buttons (Guest style) */}
+                          {/* 2. Host Check-in/out Buttons */}
                           <div className="grid grid-cols-2 gap-2 mb-4">
                             {b.hostCheckInStatus === 'completed' ? (
-                              <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
-                                <Camera size={12} className="mr-1"/> View Host CI
+                              <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkin' }); }}>
+                                <Camera size={12} className="mr-1"/> View Check-in
                               </Button>
                             ) : (
                               <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
@@ -6637,46 +6638,14 @@ export default function CarHopApp() {
                               </Button>
                             )}
                             {b.hostCheckOutStatus === 'completed' ? (
-                              <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
-                                <Camera size={12} className="mr-1"/> View Host CO
+                              <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkout' }); }}>
+                                <Camera size={12} className="mr-1"/> View Check-out
                               </Button>
                             ) : (
                               <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
                                 Host Check-out
                               </Button>
                             )}
-                          </div>
-
-                          {/* 3. Photos (Consolidated) */}
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p className="text-[10px] font-bold text-green-400 mb-2 uppercase">Host Check-in</p>
-                              {(() => {
-                                const full = getBookingWithImages(b);
-                                const photos = [...((full.hostCheckInData as any)?.photosOutside || []), ...((full.hostCheckInData as any)?.photosInside || [])].filter(img => img && img.startsWith('data:'));
-                                return photos.length > 0 ? (
-                                  <div className="flex gap-1 flex-wrap">
-                                    {photos.map((img: string, i: number) => (
-                                      <img key={i} src={img} className="w-10 h-10 rounded border border-green-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />
-                                    ))}
-                                  </div>
-                                ) : <p className="text-[10px] text-zinc-600">No photos</p>;
-                              })()}
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-orange-400 mb-2 uppercase">Host Check-out</p>
-                              {(() => {
-                                const full = getBookingWithImages(b);
-                                const photos = [...((full.hostCheckOutData as any)?.photosOutside || []), ...((full.hostCheckOutData as any)?.photosInside || [])].filter(img => img && img.startsWith('data:'));
-                                return photos.length > 0 ? (
-                                  <div className="flex gap-1 flex-wrap">
-                                    {photos.map((img: string, i: number) => (
-                                      <img key={i} src={img} className="w-10 h-10 rounded border border-orange-700 object-cover cursor-pointer" onClick={() => openLightbox(photos, i)} />
-                                    ))}
-                                  </div>
-                                ) : <p className="text-[10px] text-zinc-600">No photos</p>;
-                              })()}
-                            </div>
                           </div>
 
                           {/* 4. Financial Details */}
@@ -9688,11 +9657,11 @@ export default function CarHopApp() {
                                         );
                                       })()}
 
-                                      {/* 2. Host Check-in/out Buttons (Guest style) */}
+                                      {/* 2. Host Check-in/out Buttons */}
                                       <div className="grid grid-cols-2 gap-2 mb-4">
                                         {b.hostCheckInStatus === 'completed' ? (
-                                          <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
-                                            <Camera size={12} className="mr-1"/> View Host CI
+                                          <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkin' }); }}>
+                                            <Camera size={12} className="mr-1"/> View Check-in
                                           </Button>
                                         ) : (
                                           <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
@@ -9700,8 +9669,8 @@ export default function CarHopApp() {
                                           </Button>
                                         )}
                                         {b.hostCheckOutStatus === 'completed' ? (
-                                          <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingReceiptBookingId(b.id); }}>
-                                            <Camera size={12} className="mr-1"/> View Host CO
+                                          <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkout' }); }}>
+                                            <Camera size={12} className="mr-1"/> View Check-out
                                           </Button>
                                         ) : (
                                           <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
@@ -9710,48 +9679,132 @@ export default function CarHopApp() {
                                         )}
                                       </div>
 
-                                      {/* 3. Customer Messages */}
-                                      <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                                        <h4 className="text-xs font-bold uppercase text-zinc-400 flex items-center gap-2 mb-4">
-                                          <MessageSquare size={14}/> Customer Messages
-                                        </h4>
-                                        <div className="max-h-40 overflow-y-auto space-y-3 mb-4 pr-2">
-                                          {messagesData.filter(m => m.bookingId === b.id).map((msg, idx) => (
-                                            <div key={idx} className={`flex flex-col ${msg.sender === 'host' || msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
-                                              <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-xs ${msg.sender === 'host' || msg.sender === 'admin' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 rounded-tl-none'}`}>
-                                                {msg.content}
-                                              </div>
-                                            </div>
-                                          ))}
-                                          {messagesData.filter(m => m.bookingId === b.id).length === 0 && (
-                                            <p className="text-center text-[10px] text-zinc-500 py-4 italic">No messages yet</p>
-                                          )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                          <input type="text" placeholder="Type a message..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white" value={adminMessageText} onChange={(e) => setAdminMessageText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(b, 'admin')} />
-                                          <button onClick={() => handleSendMessage(b, 'admin')} className="p-2 bg-blue-600 text-white rounded-lg"><Send size={14}/></button>
-                                        </div>
-                                      </div>
-
                                       {/* 4. Financial Details */}
                                       <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
                                         <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
                                           <DollarSign size={14}/> Financial Details
                                         </h4>
-                                        <div className="space-y-1.5 text-xs">
+                                        <div className="space-y-4 text-sm">
                                           {(() => {
-                                            const v = vehicles.find(vv => vv.id === b.vehicleId);
-                                            const clean = v?.pricing?.cleaningFee || settings.cleaningFee;
-                                            const sub = (b.details?.rate || 0) + (b.details?.protection || 0) + (b.details?.extras || 0) + clean + ((b.details as any)?.deliveryFee || 0);
-                                            const tax = sub * ((settings.taxes || 0) / 100);
+                                            const rate = b.details?.rate || 0;
+                                            const extras = b.details?.extras || 0;
+                                            const protection = b.details?.protection || 0;
+                                            const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
+                                            const deliveryFee = (b.details as any)?.deliveryFee || 0;
+                                            const discount = b.details?.discount || 0;
+                                            const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
+                                            const carForTax = vehicles.find(v => v.id === b.vehicleId);
+                                            const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                            const originalTax = subtotalBeforeTax > 0 ? subtotalBeforeTax * (taxRate / 100) : 0;
+                                            const originalBookingAmount = subtotalBeforeTax + originalTax;
+                                            const extendedRate = b.details?.extendedRate || 0;
+                                            const manualChargesTotal = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
+                                            const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                                             return (
                                               <>
-                                                <div className="flex justify-between text-zinc-500"><span>Base Rate ({b.days} days)</span><span>${(b.details?.rate || 0).toFixed(2)}</span></div>
-                                                <div className="flex justify-between text-zinc-500"><span>Protection Plan</span><span>+${(b.details?.protection || 0).toFixed(2)}</span></div>
-                                                <div className="flex justify-between text-zinc-500"><span>Extras</span><span>+${(b.details?.extras || 0).toFixed(2)}</span></div>
-                                                <div className="flex justify-between text-zinc-500"><span>Cleaning Fee</span><span>+${clean.toFixed(2)}</span></div>
-                                                <div className="flex justify-between text-zinc-500"><span>Taxes ({settings.taxes}%)</span><span>+${tax.toFixed(2)}</span></div>
-                                                <div className="pt-2 mt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between font-bold text-sm text-green-500"><span>Total Booking</span><span>${b.total.toFixed(2)}</span></div>
+                                                <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
+                                                  <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
+                                                  <div className="space-y-1 mb-2">
+                                                    <div className="flex justify-between text-zinc-300 text-xs">
+                                                      <span>Base Rate - {b.days} Days</span>
+                                                      <span>${rate.toFixed(2)}</span>
+                                                    </div>
+                                                    {extras > 0 && (
+                                                      <div className="flex justify-between text-zinc-300 text-xs">
+                                                        <span>{(b.details as any)?.childSeatSelected ? 'Child Chair' : 'Extras'}</span>
+                                                        <span>+${extras.toFixed(2)}</span>
+                                                      </div>
+                                                    )}
+                                                    {protection > 0 && (
+                                                      <div className="flex justify-between text-zinc-300 text-xs">
+                                                        <span>Protection - {b.details?.protectionType || 'Standard'}</span>
+                                                        <span>+${protection.toFixed(2)}</span>
+                                                      </div>
+                                                    )}
+                                                    <div className="flex justify-between text-zinc-300 text-xs">
+                                                      <span>Cleaning Fee</span>
+                                                      <span>+${cleaningFee.toFixed(2)}</span>
+                                                    </div>
+                                                    {deliveryFee > 0 && (
+                                                      <div className="flex justify-between text-zinc-300 text-xs">
+                                                        <span>Delivery Fee Service</span>
+                                                        <span>+${deliveryFee.toFixed(2)}</span>
+                                                      </div>
+                                                    )}
+                                                    {discount > 0 && (
+                                                      <div className="flex justify-between text-green-400 text-xs">
+                                                        <span className="flex items-center gap-1">
+                                                          Discount Applied
+                                                          <button onClick={() => handleRemoveDiscount(b)} className="text-red-400 hover:text-red-300" data-testid="button-admin-remove-discount"><X size={10}/></button>
+                                                        </span>
+                                                        <span>-${discount.toFixed(2)}</span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <div className="flex justify-between text-zinc-400 text-xs border-t border-zinc-600 pt-2 mb-2">
+                                                    <span>Subtotal</span>
+                                                    <span>${subtotalBeforeTax.toFixed(2)}</span>
+                                                  </div>
+                                                  {originalTax > 0 && (
+                                                    <div className="flex justify-between text-purple-300 text-xs mb-2">
+                                                      <span>Tax</span>
+                                                      <span>+${originalTax.toFixed(2)}</span>
+                                                    </div>
+                                                  )}
+                                                  <div className="flex justify-between text-white font-bold border-t border-zinc-600 pt-2">
+                                                    <span>Initial Payment</span>
+                                                    <span>${originalBookingAmount.toFixed(2)}</span>
+                                                  </div>
+                                                </div>
+
+                                                {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
+                                                  <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
+                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Additional Charges</div>
+                                                    <div className="space-y-1">
+                                                      {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
+                                                        <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
+                                                          <span>Vehicle Replacement: {r.oldVehicleModel} → {b.carName}</span>
+                                                          <span className={r.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>
+                                                            {r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}
+                                                          </span>
+                                                        </div>
+                                                      ))}
+                                                      {extendedRate > 0 && (
+                                                        <div className="flex justify-between text-blue-300 text-xs">
+                                                          <span>Extended Days</span>
+                                                          <span>+${extendedRate.toFixed(2)}</span>
+                                                        </div>
+                                                      )}
+                                                      {b.details?.manualCharges && b.details.manualCharges.map((c, i) => (
+                                                        <div key={i} className="flex justify-between text-orange-300 text-xs">
+                                                          <span className="flex items-center gap-1">
+                                                            {c.type}
+                                                            <button onClick={() => handleRemoveCharge(b, i)} className="text-red-400 hover:text-red-300" data-testid={`button-admin-remove-charge-${i}`}><X size={10}/></button>
+                                                          </span>
+                                                          <span>+${c.amount.toFixed(2)}</span>
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                <div className="bg-green-900/30 rounded-lg p-3 border border-green-700">
+                                                  <div className="flex justify-between text-green-400 font-bold">
+                                                    <span>TOTAL</span>
+                                                    <span>${b.total.toFixed(2)}</span>
+                                                  </div>
+                                                </div>
+
+                                                <div className="mt-4 pt-4 border-t border-zinc-600">
+                                                  <label className="text-xs text-zinc-500 mb-2 block font-bold uppercase">Charge Extras by Original Payment Method</label>
+                                                  <div className="flex gap-2">
+                                                    <div className="relative flex-1">
+                                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                                      <input type="number" value={extraPaymentAmount} onChange={(e) => setExtraPaymentAmount(e.target.value)} placeholder="0.00" className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white" data-testid="input-extra-payment-amount-admin"/>
+                                                    </div>
+                                                    <button onClick={() => handleChargeExtraPayment(b)} className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap" data-testid="button-charge-extra-payment-admin">Charge Extra Payment Trip</button>
+                                                  </div>
+                                                </div>
                                               </>
                                             );
                                           })()}
@@ -9760,17 +9813,33 @@ export default function CarHopApp() {
 
                                       {/* 5. Manage Charges & Adjustments */}
                                       <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Adjustments</h4>
-                                        <div className="space-y-4">
-                                          <div className="flex gap-2">
-                                            <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="fixed">$</option><option value="percent">%</option></select>
-                                            <input type="number" placeholder="Discount" value={adjustment.value} onChange={(e) => setAdjustment(prev => ({ ...prev, value: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
-                                            <button onClick={() => handleApplyDiscount(b)} className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">Apply</button>
+                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
+                                        <div className="mb-4">
+                                          <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
+                                          <div className="flex flex-col sm:flex-row gap-2">
+                                            <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" data-testid="select-admin-discount-type">
+                                              <option value="fixed">Fixed Value ($)</option>
+                                              <option value="percent">Percentage (%)</option>
+                                            </select>
+                                            <Input placeholder="Value" type="number" value={adjustment.value} onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))} className="flex-1 mb-0 text-xs" data-testid="input-admin-discount-value" />
+                                            <button className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" onClick={() => handleApplyDiscount(b)} data-testid="button-admin-apply-discount">Apply</button>
                                           </div>
-                                          <div className="flex gap-2">
-                                            <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="refuel">Refuel</option><option value="mileage">Mileage</option><option value="damage">Damage</option></select>
-                                            <input type="number" placeholder="Extra Charge" value={extraCharge.amount} onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
-                                            <button onClick={() => handleAddCharge(b)} className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded">Add</button>
+                                        </div>
+                                        <div className="space-y-4">
+                                          <div>
+                                            <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
+                                            <div className="flex flex-col sm:flex-row gap-2">
+                                              <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" data-testid="select-admin-charge-type">
+                                                <option value="refuel">Refuel</option>
+                                                <option value="tolls">Tolls</option>
+                                                <option value="mileage">Extra Mileage</option>
+                                                <option value="damage">Damage</option>
+                                                <option value="cleaning">Extra Cleaning</option>
+                                                <option value="other">Other</option>
+                                              </select>
+                                              <Input placeholder="Value ($)" type="number" value={extraCharge.amount} onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 mb-0 text-xs" data-testid="input-admin-charge-value" />
+                                              <button className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" onClick={() => handleAddCharge(b)} data-testid="button-admin-charge">Add Charge</button>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
@@ -10828,6 +10897,106 @@ export default function CarHopApp() {
           </div>
         )}
 
+        {viewingAgreementBookingId && (() => {
+          const agBooking = bookings.find(b => b.id === viewingAgreementBookingId);
+          if (!agBooking) return null;
+          const agVehicle = vehicles.find(v => v.id === agBooking.vehicleId);
+          const agHost = agVehicle?.hostId ? hostsData.find((h: any) => String(h.id) === String(agVehicle.hostId)) : null;
+          return (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+                <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Car Rental Agreement</h2>
+                  <button onClick={() => setViewingAgreementBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" data-testid="button-close-agreement"><X size={24}/></button>
+                </div>
+                <div className="printable-agreement p-8 space-y-6">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                    <h4 className="font-bold text-blue-900 dark:text-blue-200">{agBooking.driver?.name}'s (Guest) trip with CarHopGo</h4>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Vehicle</p>
+                        <p className="text-blue-900 dark:text-blue-200">{agBooking.carName}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Protection Plan</p>
+                        <p className="text-blue-900 dark:text-blue-200">{agBooking.details?.protectionType || 'Standard'}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Host</p>
+                        <p className="text-blue-900 dark:text-blue-200">{agHost ? `${agHost.firstName} ${agHost.lastName}` : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Duration</p>
+                        <p className="text-blue-900 dark:text-blue-200">{agBooking.days} day(s)</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Pick-up</p>
+                        <p className="text-blue-900 dark:text-blue-200">{formatDisplayDate(agBooking.startDate, agBooking.startTime)}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">Return</p>
+                        <p className="text-blue-900 dark:text-blue-200">{formatDisplayDate(agBooking.returnDate, agBooking.returnTime)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="prose dark:prose-invert max-w-none">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOPGO CAR SHARING AGREEMENT</h3>
+                    <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">The person identified as "Guest" on the Trip Summary above was connected through CarHopGo.com. The Guest agrees to be bound by the CarHopGo Terms of Service and incorporated policies.</p>
+                      <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-xs">
+                        <p className="font-bold mb-2 text-zinc-900 dark:text-white">Trip Details:</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip Start:</strong> {formatDisplayDate(agBooking.startDate, agBooking.startTime)}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip End:</strong> {formatDisplayDate(agBooking.returnDate, agBooking.returnTime)}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Pickup Location:</strong> {formatAddressForDisplay(agBooking.location)}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Vehicle:</strong> {agBooking.carName}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Booking Code:</strong> {agBooking.bookingCode}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white mt-4">DEFINITIONS</h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Guest:</strong> {agBooking.driver?.name}</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> {agBooking.carName}</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white mt-4">TERMS OF SERVICE</h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Vehicle Ownership & Condition:</strong> Vehicle is provided "as-is". Guest accepts Vehicle in current condition and has inspected it.</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Personal Property:</strong> CarHopGo is not responsible for loss or damage to Guest's personal property.</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle Return:</strong> Guest must return Vehicle in same condition as received, ordinary wear and tear excepted.</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Financial Responsibility:</strong> Guest is financially responsible for all damage during Reservation Period, regardless of fault.</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GUEST PROTECTION PLANS & INSURANCE</h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Selected Plan:</strong> {agBooking.details?.protectionType || 'Standard'}</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Protection Amount:</strong> ${(agBooking.details?.protection || 0).toFixed(2)}</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Exclusions:</strong> Protection plan is VOID if Guest violates terms (drunk driving, unauthorized drivers, commercial use)</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white mt-4">PROHIBITED USES</h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Strictly prohibited: (a) Commercial use, (b) Off-road driving, (c) Towing, (d) Unauthorized drivers, (e) Criminal activity</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GPS TRACKING & SAFETY</h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Guest consents to GPS tracking for vehicle recovery and emergency assistance.</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GOVERNING LAW & DISPUTES</h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Governing Law:</strong> Connecticut law governs this Agreement.</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Binding Arbitration:</strong> All disputes shall be resolved by binding arbitration in Connecticut.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3 no-print">
+                    <button onClick={() => window.print()} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-agreement">
+                      <FileText size={18}/> Print
+                    </button>
+                    <button onClick={() => setViewingAgreementBookingId(null)} className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors" data-testid="button-close-agreement-bottom">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {viewingReceiptBookingId && bookings.find(b => b.id === viewingReceiptBookingId) && (() => {
           const receiptBooking = bookings.find(b => b.id === viewingReceiptBookingId)!;
           return (
@@ -11158,6 +11327,75 @@ export default function CarHopApp() {
                     </button>
                     <button onClick={() => setViewingReceiptBookingId(null)} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors" data-testid="button-close-receipt">Close Receipt</button>
                   </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {viewingHostCheckData && (() => {
+          const hcBooking = bookings.find(b => b.id === viewingHostCheckData.bookingId);
+          if (!hcBooking) return null;
+          const fullHcBooking = getBookingWithImages(hcBooking);
+          const isCheckIn = viewingHostCheckData.mode === 'checkin';
+          const checkData = isCheckIn ? (fullHcBooking.hostCheckInData as any) : (fullHcBooking.hostCheckOutData as any);
+          if (!checkData) return null;
+          const outsidePhotos = (checkData.photosOutside || []).filter((img: string) => img && img.startsWith('data:'));
+          const insidePhotos = (checkData.photosInside || []).filter((img: string) => img && img.startsWith('data:'));
+          const allPhotos = [...outsidePhotos, ...insidePhotos];
+          return (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+                <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 flex justify-between items-center">
+                  <h2 className={`text-lg font-bold ${isCheckIn ? 'text-green-400' : 'text-orange-400'}`}>
+                    Host {isCheckIn ? 'Check-in' : 'Check-out'} Data
+                  </h2>
+                  <button onClick={() => setViewingHostCheckData(null)} className="text-zinc-400 hover:text-zinc-200" data-testid="button-close-host-check"><X size={20}/></button>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Mileage</p>
+                      <p className="text-white font-bold text-lg">{checkData.miles || 'N/A'} mi</p>
+                    </div>
+                    <div className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Gas Level</p>
+                      <p className="text-white font-bold text-lg">{checkData.gas || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {checkData.notes && (
+                    <div className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Notes</p>
+                      <p className="text-white text-sm">{checkData.notes}</p>
+                    </div>
+                  )}
+                  {outsidePhotos.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-zinc-400 uppercase mb-2">Outside Photos ({outsidePhotos.length})</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {outsidePhotos.map((img: string, i: number) => (
+                          <div key={i} className="aspect-video rounded-lg overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(allPhotos, i)}>
+                            <img src={img} alt={`Outside ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {insidePhotos.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-zinc-400 uppercase mb-2">Inside Photos ({insidePhotos.length})</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {insidePhotos.map((img: string, i: number) => (
+                          <div key={i} className="aspect-video rounded-lg overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => openLightbox(allPhotos, outsidePhotos.length + i)}>
+                            <img src={img} alt={`Inside ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {allPhotos.length === 0 && (
+                    <p className="text-center text-zinc-500 py-4">No photos available</p>
+                  )}
                 </div>
               </div>
             </div>
