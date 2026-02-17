@@ -4,6 +4,11 @@ import { apiRequest } from '@/lib/queryClient';
 import { 
   Car, Settings, Plus, Trash2, Check, Calendar, Leaf, DollarSign, ArrowLeft, Shield, Mountain, Smartphone, Gauge, Zap, Edit, X, Image, ChevronRight, ChevronLeft, Info, Search, MapPin, User, Menu, Users, Activity, Phone, Sun, Moon, Clock, LogOut, Map, Bluetooth, Camera, Route, Upload, Mail, FileText, Download, CreditCard, AlertTriangle, AlertCircle, CalendarClock, Lock, Fuel, Loader, Briefcase, List, Eye, EyeOff, Maximize2, ZoomIn, ZoomOut, Move, Thermometer, Unlock, BatteryCharging, Armchair, Navigation, BarChart3, TrendingUp, Wallet, Receipt, MoreHorizontal, MessageCircle, MessageSquare, Send, Bell, MoreVertical, Building2, Truck, Reply, ChevronDown, CheckCircle, PlusCircle
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { Vehicle, Booking } from '@shared/schema';
@@ -607,6 +612,8 @@ export default function CarHopApp() {
   const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuth();
   const proceedButtonRef = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState('home');
+  const [checkingInBooking, setCheckingInBooking] = useState<Booking | null>(null);
+  const [checkingOutBooking, setCheckingOutBooking] = useState<Booking | null>(null);
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
   const [adminTab, setAdminTab] = useState<string | null>(null);
