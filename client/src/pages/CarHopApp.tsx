@@ -6041,6 +6041,7 @@ export default function CarHopApp() {
                                     className={`text-blue-400 hover:underline text-xs block ${(b.details as any)?.deliveryApprovalStatus === 'rejected' ? '' : ''}`}
                                   >
                                     {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}
+                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryDistance && ` - ${(b.details as any).deliveryDistance.toFixed(1)} miles`}
                                   </a>
                                   {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
                                     <div className="mt-1">
@@ -6159,6 +6160,24 @@ export default function CarHopApp() {
                                         </span>
                                         <div className="text-sm text-zinc-300 mt-1">
                                           New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                          {(() => {
+                                            try {
+                                              const oldReturn = new Date(`${b.returnDate}T${convertTo24Hour(b.returnTime)}:00`);
+                                              const newReturn = new Date(`${req.requestedReturnDate}T${convertTo24Hour(req.requestedReturnTime)}:00`);
+                                              const diffMs = newReturn.getTime() - oldReturn.getTime();
+                                              const absDiffMs = Math.abs(diffMs);
+                                              const diffHoursTotal = absDiffMs / (1000 * 60 * 60);
+                                              const days = Math.floor(diffHoursTotal / 24);
+                                              const hours = Math.round(diffHoursTotal % 24);
+                                              const parts = [];
+                                              if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+                                              if (hours > 0) parts.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+                                              const duration = parts.length > 0 ? parts.join(' and ') : '0 hours';
+                                              return <span className="ml-1 text-blue-400">({diffMs > 0 ? '+' : '-'}{duration})</span>;
+                                            } catch (e) {
+                                              return null;
+                                            }
+                                          })()}
                                         </div>
                                         {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
                                       </div>
@@ -9628,6 +9647,7 @@ export default function CarHopApp() {
                                                 className="text-blue-400 hover:underline text-[10px] block"
                                               >
                                                 {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}
+                                                {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryDistance && ` - ${(b.details as any).deliveryDistance.toFixed(1)} miles`}
                                               </a>
                                             </div>
                                           </div>
@@ -9999,6 +10019,24 @@ export default function CarHopApp() {
                                                     </span>
                                                     <div className="text-sm text-zinc-300 mt-1">
                                                       New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                                      {(() => {
+                                                        try {
+                                                          const oldReturn = new Date(`${b.returnDate}T${convertTo24Hour(b.returnTime)}:00`);
+                                                          const newReturn = new Date(`${req.requestedReturnDate}T${convertTo24Hour(req.requestedReturnTime)}:00`);
+                                                          const diffMs = newReturn.getTime() - oldReturn.getTime();
+                                                          const absDiffMs = Math.abs(diffMs);
+                                                          const diffHoursTotal = absDiffMs / (1000 * 60 * 60);
+                                                          const days = Math.floor(diffHoursTotal / 24);
+                                                          const hours = Math.round(diffHoursTotal % 24);
+                                                          const parts = [];
+                                                          if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+                                                          if (hours > 0) parts.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+                                                          const duration = parts.length > 0 ? parts.join(' and ') : '0 hours';
+                                                          return <span className="ml-1 text-blue-400">({diffMs > 0 ? '+' : '-'}{duration})</span>;
+                                                        } catch (e) {
+                                                          return null;
+                                                        }
+                                                      })()}
                                                     </div>
                                                     {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
                                                   </div>
