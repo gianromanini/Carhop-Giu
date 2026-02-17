@@ -5950,7 +5950,11 @@ export default function CarHopApp() {
                               <div>Return: {b.returnDate} at {b.returnTime}</div>
                               {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
-                                  {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'Delivery' : 'Pickup'} {pickupIsToday ? 'TODAY' : 'TOMORROW'}
+                                  {((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'approved') ? (
+                                    <span className="text-blue-400">Delivery {pickupIsToday ? 'TODAY' : 'TOMORROW'}</span>
+                                  ) : (
+                                    <>{pickupIsToday ? 'Pickup TODAY' : 'Pickup TOMORROW'}</>
+                                  )}
                                 </div>
                               )}
                               {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
