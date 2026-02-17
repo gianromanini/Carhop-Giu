@@ -5870,9 +5870,6 @@ export default function CarHopApp() {
                                   )}
                                   <span className="font-bold text-sm text-white flex items-center gap-2">
                                     {b.bookingCode}
-                                    <span className="text-green-500 font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                                      ${b.total?.toFixed(2) || '0.00'}
-                                    </span>
                                   </span>
                                 </div>
                                 <div className="text-xs text-zinc-400 font-medium">
@@ -5942,11 +5939,11 @@ export default function CarHopApp() {
                               </div>
                             </div>
                             <div className="text-[10px] text-zinc-400">
-                              <div>Pickup: {b.startDate} at {b.startTime}</div>
+                              <div>{(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'Delivery' : 'Pickup'}: {b.startDate} at {b.startTime}</div>
                               <div>Return: {b.returnDate} at {b.returnTime}</div>
                               {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow) && (
                                 <div className={`text-[9px] font-bold ${pickupIsToday ? 'text-red-400' : 'text-yellow-400'}`}>
-                                  Pickup {pickupIsToday ? 'TODAY' : 'TOMORROW'}
+                                  {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'Delivery' : 'Pickup'} {pickupIsToday ? 'TODAY' : 'TOMORROW'}
                                 </div>
                               )}
                               {b.status !== 'Cancelled' && (returnIsToday || returnIsTomorrow) && (
@@ -6652,18 +6649,44 @@ export default function CarHopApp() {
                                 <Camera size={12} className="mr-1"/> View Check-in
                               </Button>
                             ) : (
-                              <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
-                                Host Check-in
-                              </Button>
+                              <Dialog open={checkingInBooking?.id === b.id} onOpenChange={(open) => !open && setCheckingInBooking(null)}>
+                                <DialogTrigger asChild>
+                                  <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setCheckingInBooking(b); }}>
+                                    Host Check-in
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent">
+                                  <HostCheckIn 
+                                    booking={b} 
+                                    onClose={() => {
+                                      setCheckingInBooking(null);
+                                      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                    }} 
+                                  />
+                                </DialogContent>
+                              </Dialog>
                             )}
                             {b.hostCheckOutStatus === 'completed' ? (
                               <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkout' }); }}>
                                 <Camera size={12} className="mr-1"/> View Check-out
                               </Button>
                             ) : (
-                              <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
-                                Host Check-out
-                              </Button>
+                              <Dialog open={checkingOutBooking?.id === b.id} onOpenChange={(open) => !open && setCheckingOutBooking(null)}>
+                                <DialogTrigger asChild>
+                                  <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setCheckingOutBooking(b); }}>
+                                    Host Check-out
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent">
+                                  <HostCheckOut 
+                                    booking={b} 
+                                    onClose={() => {
+                                      setCheckingOutBooking(null);
+                                      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                    }} 
+                                  />
+                                </DialogContent>
+                              </Dialog>
                             )}
                           </div>
 
@@ -9486,9 +9509,6 @@ export default function CarHopApp() {
                                   {hasNotifications && (<span className="text-yellow-500 animate-pulse"><AlertCircle size={12}/></span>)}
                                   <span className="font-bold text-sm text-white flex items-center gap-2">
                                     {b.bookingCode}
-                                    <span className="text-green-500 font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                                      ${b.total?.toFixed(2) || '0.00'}
-                                    </span>
                                   </span>
                                 </div>
                                 <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
