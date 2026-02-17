@@ -796,6 +796,7 @@ export default function CarHopApp() {
   const [isHostCheckMode, setIsHostCheckMode] = useState(false);
   const [expandedCheckInPhotos, setExpandedCheckInPhotos] = useState(false);
   const [expandedCheckOutPhotos, setExpandedCheckOutPhotos] = useState(false);
+  const [expandedCheckSections, setExpandedCheckSections] = useState<Record<string, boolean>>({});
   const [viewingAgreementBookingId, setViewingAgreementBookingId] = useState<number | null>(null);
   const [viewingReceiptBookingId, setViewingReceiptBookingId] = useState<number | null>(null);
   const [viewingHostCheckData, setViewingHostCheckData] = useState<{ bookingId: number; mode: 'checkin' | 'checkout' } | null>(null);
@@ -6498,124 +6499,222 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* Vehicle & License Evidence */}
-                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Vehicle & License Evidence</h4>
-                            <div className="grid grid-cols-3 gap-4">
-                              {/* Driver's License */}
-                              <div>
-                                <p className="text-xs font-bold text-zinc-400 mb-2">Driver's License</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(() => {
-                                    const fullBooking = getBookingWithImages(b);
-                                    const licenseImages = fullBooking.driver?.licenseImages || [];
-                                    const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                    if (validImages.length > 0) {
-                                      return validImages.map((img: string, idx: number) => (
-                                        <div key={idx} className="relative group">
-                                          <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-driver-license-${idx}`}/>
-                                          <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                        </div>
-                                      ));
-                                    } else if (licenseImages.some((img: string) => img === '[IMAGE]')) {
-                                      return <span className="text-xs text-zinc-500">Loading...</span>;
-                                    }
-                                    return null;
-                                  })()}
-                                </div>
-                              </div>
-
-                              {/* Host Check-in Photos */}
-                              <div>
-                                <p className="text-xs font-bold text-green-400 mb-2">Host Check-in</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(() => {
-                                    const fullBooking = getBookingWithImages(b);
-                                    const allPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
-                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                    if (validPhotos.length > 0) {
-                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
-                                        <div key={idx} className="relative group">
-                                          <img src={img} alt={`Host check-in ${idx + 1}`} className="w-12 h-12 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-host-checkin-${idx}`}/>
-                                          <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                        </div>
-                                      ));
-                                    }
-                                    return <span className="text-xs text-zinc-500">Pending</span>;
-                                  })()}
-                                </div>
-                              </div>
-
-                              {/* Guest Check-in Photos */}
-                              <div>
-                                <p className="text-xs font-bold text-blue-400 mb-2">Guest Check-in</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(() => {
-                                    const fullBooking = getBookingWithImages(b);
-                                    const allPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                    if (validPhotos.length > 0) {
-                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
-                                        <div key={idx} className="relative group">
-                                          <img src={img} alt={`Guest check-in ${idx + 1}`} className="w-12 h-12 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-guest-checkin-${idx}`}/>
-                                          <div className="absolute inset-0 rounded border border-blue-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                        </div>
-                                      ));
-                                    } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
-                                      return <span className="text-xs text-zinc-500">Loading...</span>;
-                                    }
-                                    return <span className="text-xs text-zinc-500">Pending</span>;
-                                  })()}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Check-out Photos Row */}
-                            <div className="grid grid-cols-3 gap-4 mt-4">
-                              {/* Host Check-out Photos */}
-                              <div>
-                                <p className="text-xs font-bold text-green-400 mb-2">Host Check-out</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(() => {
-                                    const fullBooking = getBookingWithImages(b);
-                                    const allPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
-                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                    if (validPhotos.length > 0) {
-                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
-                                        <div key={idx} className="relative group">
-                                          <img src={img} alt={`Host check-out ${idx + 1}`} className="w-12 h-12 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-host-checkout-${idx}`}/>
-                                          <div className="absolute inset-0 rounded border border-green-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                        </div>
-                                      ));
-                                    }
-                                    return <span className="text-xs text-zinc-500">Pending</span>;
-                                  })()}
-                                </div>
-                              </div>
-
-                              {/* Guest Check-out Photos */}
-                              <div>
-                                <p className="text-xs font-bold text-blue-400 mb-2">Guest Check-out</p>
-                                <div className="flex gap-2 flex-wrap">
-                                  {(() => {
-                                    const fullBooking = getBookingWithImages(b);
-                                    const allPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                                    const validPhotos = allPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                    if (validPhotos.length > 0) {
-                                      return validPhotos.slice(0, 2).map((img: string, idx: number) => (
-                                        <div key={idx} className="relative group">
-                                          <img src={img} alt={`Guest check-out ${idx + 1}`} className="w-12 h-12 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-guest-checkout-${idx}`}/>
-                                        </div>
-                                      ));
-                                    } else if (allPhotos.some((img: string) => img === '[IMAGE]')) {
-                                      return <span className="text-xs text-zinc-500">Loading...</span>;
-                                    }
-                                    return null;
-                                  })()}
-                                </div>
-                              </div>
+                          {/* Driver's License */}
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Driver's License</h4>
+                            <div className="flex gap-2 flex-wrap">
+                              {(() => {
+                                const fullBooking = getBookingWithImages(b);
+                                const licenseImages = fullBooking.driver?.licenseImages || [];
+                                const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                if (validImages.length > 0) {
+                                  return validImages.map((img: string, idx: number) => (
+                                    <div key={idx} className="relative group">
+                                      <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-driver-license-${idx}`}/>
+                                    </div>
+                                  ));
+                                } else if (licenseImages.some((img: string) => img === '[IMAGE]')) {
+                                  return <span className="text-xs text-zinc-500">Loading...</span>;
+                                }
+                                return <span className="text-xs text-zinc-500">No license photos</span>;
+                              })()}
                             </div>
                           </div>
+
+                          {/* CHECK-IN Section - Collapsible */}
+                          {(() => {
+                            const fullBooking = getBookingWithImages(b);
+                            const hostCheckInAllPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
+                            const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckInLoading = hostCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
+                            const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const hostCheckInDone = b.hostCheckInStatus === 'completed';
+                            const guestCheckInDone = b.checkInStatus === 'completed';
+                            const hasHostData = !!(fullBooking.hostCheckInData as any);
+                            const hasGuestData = !!fullBooking.checkInData;
+                            const totalCheckInPhotos = hostCheckInPhotos.length + guestCheckInPhotos.length;
+                            const checkInKey = `checkin-${b.id}`;
+                            const regionId = `checkin-region-${b.id}`;
+                            const isExpanded = expandedCheckSections[checkInKey] || false;
+
+                            return (
+                              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
+                                <button
+                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkInKey]: !prev[checkInKey] }))}
+                                  className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={regionId}
+                                  data-testid={`button-toggle-checkin-${b.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Unlock size={14} className="text-green-500"/>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-In</span>
+                                    {totalCheckInPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckInPhotos} photos)</span>}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {hostCheckInDone && guestCheckInDone ? (
+                                      <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-yellow-500">
+                                        {!hostCheckInDone && !guestCheckInDone ? 'Pending' : hostCheckInDone ? 'Guest Pending' : 'Host Pending'}
+                                      </span>
+                                    )}
+                                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </div>
+                                </button>
+                                {isExpanded && (
+                                  <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                    <div className={`p-3 rounded-lg border ${hostCheckInDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-green-400 uppercase">Host Check-in</p>
+                                        {hostCheckInDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasHostData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {(fullBooking.hostCheckInData as any)?.miles} | Gas: {(fullBooking.hostCheckInData as any)?.gas}</p>
+                                          {hostCheckInPhotos.length > 0 ? (
+                                            <div className="flex gap-2 flex-wrap mt-2">
+                                              {hostCheckInPhotos.map((img: string, idx: number) => (
+                                                <div key={idx} className="relative group">
+                                                  <img src={img} alt={`Host check-in ${idx + 1}`} className="w-14 h-14 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => openLightbox(hostCheckInPhotos, idx)} data-testid={`img-host-checkin-${idx}`}/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : hostCheckInLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className={`p-3 rounded-lg border ${guestCheckInDone || hasGuestData ? 'bg-blue-950/20 border-blue-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-blue-400 uppercase">Guest Check-in</p>
+                                        {guestCheckInDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasGuestData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {fullBooking.checkInData?.miles} | Gas: {fullBooking.checkInData?.gas}</p>
+                                          {guestCheckInPhotos.length > 0 ? (
+                                            <div className="flex gap-2 flex-wrap mt-2">
+                                              {guestCheckInPhotos.map((img: string, idx: number) => (
+                                                <div key={idx} className="relative group">
+                                                  <img src={img} alt={`Guest check-in ${idx + 1}`} className="w-14 h-14 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => openLightbox(guestCheckInPhotos, idx)} data-testid={`img-guest-checkin-${idx}`}/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : guestCheckInLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                      {!guestCheckInDone && !hasGuestData && (b.status === 'Active' || b.status === 'Extended') && (
+                                        <div className="mt-2 p-2 bg-red-950/30 border border-red-900/50 rounded">
+                                          <p className="text-[10px] text-red-400 font-bold flex items-center gap-1"><AlertTriangle size={10}/> Guest must complete check-in to start the trip</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                          {/* CHECK-OUT Section - Collapsible */}
+                          {(() => {
+                            const fullBooking = getBookingWithImages(b);
+                            const hostCheckOutAllPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
+                            const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckOutLoading = hostCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
+                            const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const hostCheckOutDone = b.hostCheckOutStatus === 'completed';
+                            const guestCheckOutDone = b.checkOutStatus === 'completed';
+                            const hasHostData = !!(fullBooking.hostCheckOutData as any);
+                            const hasGuestData = !!fullBooking.checkOutData;
+                            const totalCheckOutPhotos = hostCheckOutPhotos.length + guestCheckOutPhotos.length;
+                            const checkOutKey = `checkout-${b.id}`;
+                            const regionId = `checkout-region-${b.id}`;
+                            const isExpanded = expandedCheckSections[checkOutKey] || false;
+
+                            return (
+                              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
+                                <button
+                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkOutKey]: !prev[checkOutKey] }))}
+                                  className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={regionId}
+                                  data-testid={`button-toggle-checkout-${b.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Lock size={14} className="text-orange-500"/>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-Out</span>
+                                    {totalCheckOutPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckOutPhotos} photos)</span>}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {hostCheckOutDone && guestCheckOutDone ? (
+                                      <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-yellow-500">
+                                        {!hostCheckOutDone && !guestCheckOutDone ? 'Pending' : hostCheckOutDone ? 'Guest Pending' : 'Host Pending'}
+                                      </span>
+                                    )}
+                                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </div>
+                                </button>
+                                {isExpanded && (
+                                  <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                    <div className={`p-3 rounded-lg border ${hostCheckOutDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-green-400 uppercase">Host Check-out</p>
+                                        {hostCheckOutDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasHostData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {(fullBooking.hostCheckOutData as any)?.miles} | Gas: {(fullBooking.hostCheckOutData as any)?.gas}</p>
+                                          {hostCheckOutPhotos.length > 0 ? (
+                                            <div className="flex gap-2 flex-wrap mt-2">
+                                              {hostCheckOutPhotos.map((img: string, idx: number) => (
+                                                <div key={idx} className="relative group">
+                                                  <img src={img} alt={`Host check-out ${idx + 1}`} className="w-14 h-14 rounded border border-green-700 object-cover cursor-pointer hover:border-green-500 transition-colors" onClick={() => openLightbox(hostCheckOutPhotos, idx)} data-testid={`img-host-checkout-${idx}`}/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : hostCheckOutLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className={`p-3 rounded-lg border ${guestCheckOutDone || hasGuestData ? 'bg-blue-950/20 border-blue-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-blue-400 uppercase">Guest Check-out</p>
+                                        {guestCheckOutDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasGuestData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {fullBooking.checkOutData?.miles} | Gas: {fullBooking.checkOutData?.gas}</p>
+                                          {guestCheckOutPhotos.length > 0 ? (
+                                            <div className="flex gap-2 flex-wrap mt-2">
+                                              {guestCheckOutPhotos.map((img: string, idx: number) => (
+                                                <div key={idx} className="relative group">
+                                                  <img src={img} alt={`Guest check-out ${idx + 1}`} className="w-14 h-14 rounded border border-blue-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => openLightbox(guestCheckOutPhotos, idx)} data-testid={`img-guest-checkout-${idx}`}/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : guestCheckOutLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                           {/* 1. Approval Requests (Priority) */}
                           {(() => {
@@ -6894,47 +6993,16 @@ export default function CarHopApp() {
                             ) : null;
                           })()}
 
-                          {/* Guest Check-in / Check-out Status */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className={`p-4 rounded-lg border ${b.checkInStatus === 'completed' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
-                                <Unlock size={14}/> Guest Check-In
-                              </h4>
-                              {b.checkInStatus === 'completed' ? (
-                                <div className="space-y-2">
-                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
-                                  {b.checkInData && (
-                                    <>
-                                      <p className="text-xs text-zinc-400">Miles: {b.checkInData.miles}</p>
-                                      <p className="text-xs text-zinc-400">Gas: {b.checkInData.gas}</p>
-                                      <p className="text-xs text-zinc-400">Photos: {(b.checkInData.photosOutside?.length || 0) + (b.checkInData.photosInside?.length || 0)}</p>
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-yellow-400 text-sm">Pending (Guest)</p>
-                              )}
+                          {/* Guest Check-in Mandatory Notice */}
+                          {(b.status === 'Active' || b.status === 'Extended') && b.checkInStatus !== 'completed' && (
+                            <div className="p-4 rounded-lg border bg-red-950/30 border-red-900/50 mb-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertTriangle size={16} className="text-red-400"/>
+                                <h4 className="text-xs font-bold uppercase text-red-400">Guest Check-In Required</h4>
+                              </div>
+                              <p className="text-xs text-red-300">The trip cannot start until the Guest completes their Check-In. The guest has been notified.</p>
                             </div>
-                            <div className={`p-4 rounded-lg border ${b.checkOutStatus === 'completed' ? 'bg-blue-950/30 border-blue-900/50' : 'bg-zinc-900 border-zinc-800'}`}>
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-zinc-500">
-                                <Lock size={14}/> Guest Check-Out
-                              </h4>
-                              {b.checkOutStatus === 'completed' ? (
-                                <div className="space-y-2">
-                                  <p className="text-green-400 text-sm font-bold flex items-center gap-1"><Check size={14}/> Completed</p>
-                                  {b.checkOutData && (
-                                    <>
-                                      <p className="text-xs text-zinc-400">Miles: {b.checkOutData.miles}</p>
-                                      <p className="text-xs text-zinc-400">Gas: {b.checkOutData.gas}</p>
-                                      <p className="text-xs text-zinc-400">Photos: {(b.checkOutData.photosOutside?.length || 0) + (b.checkOutData.photosInside?.length || 0)}</p>
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-yellow-400 text-sm">Pending (Guest)</p>
-                              )}
-                            </div>
-                          </div>
+                          )}
 
                         </div>
                       );
@@ -8836,115 +8904,195 @@ export default function CarHopApp() {
                             <p className="text-sm text-zinc-700 dark:text-zinc-300 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">{formatAddressForDisplay(selectedTripForView.location)}</p>
                           </div>
 
-                          {/* Host Check-in/out Data */}
-                          {(selectedTripForView.hostCheckInData || selectedTripForView.hostCheckOutData) && (
-                            <div className="space-y-3">
-                              <p className="text-sm font-bold text-green-500 uppercase tracking-wider">Host Check-in / Check-out</p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {selectedTripForView.hostCheckInData && (
-                                  <div className="p-3 bg-green-950/20 rounded-lg border border-green-900/30">
-                                    <p className="text-xs font-bold text-green-400 uppercase mb-2">Host Check-In</p>
-                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.hostCheckInData.miles}</p>
-                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.hostCheckInData.gas}</p>
-                                    {(() => {
-                                      const fullBooking = getBookingWithImages(selectedTripForView);
-                                      const photos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                      return photos.length > 0 ? (
-                                        <div className="mt-2">
-                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
-                                          <div className="grid grid-cols-3 gap-1">
-                                            {photos.map((photo: string, idx: number) => (
-                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
-                                                <img src={photo} alt={`Host check-in ${idx + 1}`} className="w-full h-16 object-cover"/>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ) : null;
-                                    })()}
-                                  </div>
-                                )}
-                                {selectedTripForView.hostCheckOutData && (
-                                  <div className="p-3 bg-green-950/20 rounded-lg border border-green-900/30">
-                                    <p className="text-xs font-bold text-green-400 uppercase mb-2">Host Check-Out</p>
-                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.hostCheckOutData.miles}</p>
-                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.hostCheckOutData.gas}</p>
-                                    {(() => {
-                                      const fullBooking = getBookingWithImages(selectedTripForView);
-                                      const photos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                      return photos.length > 0 ? (
-                                        <div className="mt-2">
-                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
-                                          <div className="grid grid-cols-3 gap-1">
-                                            {photos.map((photo: string, idx: number) => (
-                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
-                                                <img src={photo} alt={`Host check-out ${idx + 1}`} className="w-full h-16 object-cover"/>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ) : null;
-                                    })()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                          {/* CHECK-IN Section - Collapsible (Admin Trip Detail) */}
+                          {(() => {
+                            const fullBooking = getBookingWithImages(selectedTripForView);
+                            const hostCheckInAllPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
+                            const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckInLoading = hostCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
+                            const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const hostDone = selectedTripForView.hostCheckInStatus === 'completed';
+                            const guestDone = selectedTripForView.checkInStatus === 'completed';
+                            const hasHostData = !!(fullBooking.hostCheckInData as any);
+                            const hasGuestData = !!fullBooking.checkInData;
+                            const totalPhotos = hostCheckInPhotos.length + guestCheckInPhotos.length;
+                            const sectionKey = `admin-checkin-${selectedTripForView.id}`;
+                            const regionId = `admin-checkin-region-${selectedTripForView.id}`;
+                            const isExpanded = expandedCheckSections[sectionKey] || false;
 
-                          {/* Guest Check-in/out Data */}
-                          {(selectedTripForView.checkInData || selectedTripForView.checkOutData) && (
-                            <div className="space-y-3">
-                              <p className="text-sm font-bold text-blue-500 uppercase tracking-wider">Guest Check-in / Check-out</p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {selectedTripForView.checkInData && (
-                                  <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
-                                    <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-In</p>
-                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.checkInData.miles}</p>
-                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.checkInData.gas}</p>
-                                    {(() => {
-                                      const fullBooking = getBookingWithImages(selectedTripForView);
-                                      const photos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                      return photos.length > 0 ? (
-                                        <div className="mt-2">
-                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
-                                          <div className="grid grid-cols-3 gap-1">
-                                            {photos.map((photo: string, idx: number) => (
-                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
-                                                <img src={photo} alt={`Guest check-in ${idx + 1}`} className="w-full h-16 object-cover"/>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ) : null;
-                                    })()}
+                            return (
+                              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                                <button
+                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                                  className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={regionId}
+                                  data-testid={`button-admin-toggle-checkin-${selectedTripForView.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Unlock size={14} className="text-green-500"/>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-In (Host + Guest)</span>
+                                    {totalPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalPhotos} photos)</span>}
                                   </div>
-                                )}
-                                {selectedTripForView.checkOutData && (
-                                  <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
-                                    <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-Out</p>
-                                    <p className="text-xs text-zinc-400">Miles: {selectedTripForView.checkOutData.miles}</p>
-                                    <p className="text-xs text-zinc-400">Gas: {selectedTripForView.checkOutData.gas}</p>
-                                    {(() => {
-                                      const fullBooking = getBookingWithImages(selectedTripForView);
-                                      const photos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                      return photos.length > 0 ? (
-                                        <div className="mt-2">
-                                          <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
-                                          <div className="grid grid-cols-3 gap-1">
-                                            {photos.map((photo: string, idx: number) => (
-                                              <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
-                                                <img src={photo} alt={`Guest check-out ${idx + 1}`} className="w-full h-16 object-cover"/>
-                                              </div>
-                                            ))}
-                                          </div>
+                                  <div className="flex items-center gap-2">
+                                    {hostDone && guestDone ? (
+                                      <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-yellow-500">
+                                        {!hostDone && !guestDone ? 'Pending' : hostDone ? 'Guest Pending' : 'Host Pending'}
+                                      </span>
+                                    )}
+                                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </div>
+                                </button>
+                                {isExpanded && (
+                                  <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                    <div className={`p-3 rounded-lg border ${hostDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-green-400 uppercase">Host Check-in</p>
+                                        {hostDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasHostData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {selectedTripForView.hostCheckInData?.miles} | Gas: {selectedTripForView.hostCheckInData?.gas}</p>
+                                          {hostCheckInPhotos.length > 0 ? (
+                                            <div className="grid grid-cols-3 gap-1 mt-2">
+                                              {hostCheckInPhotos.map((photo: string, idx: number) => (
+                                                <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(hostCheckInPhotos, idx)}>
+                                                  <img src={photo} alt={`Host check-in ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : hostCheckInLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
                                         </div>
-                                      ) : null;
-                                    })()}
+                                      )}
+                                    </div>
+                                    <div className={`p-3 rounded-lg border ${guestDone || hasGuestData ? 'bg-blue-950/20 border-blue-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-blue-400 uppercase">Guest Check-in</p>
+                                        {guestDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasGuestData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {selectedTripForView.checkInData?.miles} | Gas: {selectedTripForView.checkInData?.gas}</p>
+                                          {guestCheckInPhotos.length > 0 ? (
+                                            <div className="grid grid-cols-3 gap-1 mt-2">
+                                              {guestCheckInPhotos.map((photo: string, idx: number) => (
+                                                <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(guestCheckInPhotos, idx)}>
+                                                  <img src={photo} alt={`Guest check-in ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : guestCheckInLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
+
+                          {/* CHECK-OUT Section - Collapsible (Admin Trip Detail) */}
+                          {(() => {
+                            const fullBooking = getBookingWithImages(selectedTripForView);
+                            const hostCheckOutAllPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
+                            const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckOutLoading = hostCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
+                            const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
+                            const hostDone = selectedTripForView.hostCheckOutStatus === 'completed';
+                            const guestDone = selectedTripForView.checkOutStatus === 'completed';
+                            const hasHostData = !!(fullBooking.hostCheckOutData as any);
+                            const hasGuestData = !!fullBooking.checkOutData;
+                            const totalPhotos = hostCheckOutPhotos.length + guestCheckOutPhotos.length;
+                            const sectionKey = `admin-checkout-${selectedTripForView.id}`;
+                            const regionId = `admin-checkout-region-${selectedTripForView.id}`;
+                            const isExpanded = expandedCheckSections[sectionKey] || false;
+
+                            return (
+                              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                                <button
+                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                                  className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={regionId}
+                                  data-testid={`button-admin-toggle-checkout-${selectedTripForView.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Lock size={14} className="text-orange-500"/>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-Out (Host + Guest)</span>
+                                    {totalPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalPhotos} photos)</span>}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {hostDone && guestDone ? (
+                                      <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-yellow-500">
+                                        {!hostDone && !guestDone ? 'Pending' : hostDone ? 'Guest Pending' : 'Host Pending'}
+                                      </span>
+                                    )}
+                                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </div>
+                                </button>
+                                {isExpanded && (
+                                  <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                    <div className={`p-3 rounded-lg border ${hostDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-green-400 uppercase">Host Check-out</p>
+                                        {hostDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasHostData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {selectedTripForView.hostCheckOutData?.miles} | Gas: {selectedTripForView.hostCheckOutData?.gas}</p>
+                                          {hostCheckOutPhotos.length > 0 ? (
+                                            <div className="grid grid-cols-3 gap-1 mt-2">
+                                              {hostCheckOutPhotos.map((photo: string, idx: number) => (
+                                                <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(hostCheckOutPhotos, idx)}>
+                                                  <img src={photo} alt={`Host check-out ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : hostCheckOutLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className={`p-3 rounded-lg border ${guestDone || hasGuestData ? 'bg-blue-950/20 border-blue-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-xs font-bold text-blue-400 uppercase">Guest Check-out</p>
+                                        {guestDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                      </div>
+                                      {hasGuestData && (
+                                        <div>
+                                          <p className="text-xs text-zinc-400">Miles: {selectedTripForView.checkOutData?.miles} | Gas: {selectedTripForView.checkOutData?.gas}</p>
+                                          {guestCheckOutPhotos.length > 0 ? (
+                                            <div className="grid grid-cols-3 gap-1 mt-2">
+                                              {guestCheckOutPhotos.map((photo: string, idx: number) => (
+                                                <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(guestCheckOutPhotos, idx)}>
+                                                  <img src={photo} alt={`Guest check-out ${idx + 1}`} className="w-full h-16 object-cover"/>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : guestCheckOutLoading ? (
+                                            <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                          ) : null}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                           {/* Mileage Info */}
                           {selectedTripForView.checkInData?.miles && selectedTripForView.checkOutData?.miles && (
@@ -9743,74 +9891,104 @@ export default function CarHopApp() {
                                         )}
                                       </div>
 
-                                      {/* Guest Check-in/Check-out Photos */}
-                                      {(b.checkInData || b.checkOutData) && (
-                                        <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                                          <h4 className="text-xs font-bold uppercase text-blue-400 mb-3 flex items-center gap-2">
-                                            <Camera size={14}/> Guest Check-in / Check-out Photos
-                                          </h4>
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {b.checkInData && (
-                                              <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
-                                                <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-In</p>
-                                                <p className="text-xs text-zinc-400">Miles: {b.checkInData.miles}</p>
-                                                <p className="text-xs text-zinc-400">Gas: {b.checkInData.gas}</p>
-                                                {(() => {
-                                                  const fullBooking = getBookingWithImages(b);
-                                                  const photos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                                  const isLoading = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])].some((img: string) => img === '[IMAGE]');
-                                                  if (photos.length > 0) {
-                                                    return (
-                                                      <div className="mt-2">
-                                                        <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
-                                                        <div className="grid grid-cols-3 gap-1">
-                                                          {photos.map((photo: string, idx: number) => (
-                                                            <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                      {/* Guest Check-in/Check-out - Collapsible */}
+                                      {(() => {
+                                        const fullBooking = getBookingWithImages(b);
+                                        const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
+                                        const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
+                                        const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
+                                        const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
+                                        const guestInDone = b.checkInStatus === 'completed';
+                                        const guestOutDone = b.checkOutStatus === 'completed';
+                                        const hasGuestInData = !!fullBooking.checkInData;
+                                        const hasGuestOutData = !!fullBooking.checkOutData;
+                                        const totalPhotos = guestCheckInPhotos.length + guestCheckOutPhotos.length;
+                                        const sectionKey = `adminlist-guest-${b.id}`;
+                                        const regionId = `adminlist-guest-region-${b.id}`;
+                                        const isExpanded = expandedCheckSections[sectionKey] || false;
+
+                                        return (
+                                          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
+                                            <button
+                                              onClick={() => setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                                              className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                              aria-expanded={isExpanded}
+                                              aria-controls={regionId}
+                                              data-testid={`button-adminlist-toggle-guest-${b.id}`}
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <Camera size={14} className="text-blue-500"/>
+                                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Guest Check-in / Check-out</span>
+                                                {totalPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalPhotos} photos)</span>}
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                {guestInDone && guestOutDone ? (
+                                                  <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
+                                                ) : (
+                                                  <span className="text-[10px] font-bold text-yellow-500">
+                                                    {!guestInDone ? 'Check-in Pending' : 'Check-out Pending'}
+                                                  </span>
+                                                )}
+                                                <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                              </div>
+                                            </button>
+                                            {isExpanded && (
+                                              <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                <div className={`p-3 rounded-lg border ${guestInDone || hasGuestInData ? 'bg-blue-950/20 border-blue-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                                  <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-xs font-bold text-blue-400 uppercase">Guest Check-In</p>
+                                                    {guestInDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                                  </div>
+                                                  {hasGuestInData && (
+                                                    <div>
+                                                      <p className="text-xs text-zinc-400">Miles: {b.checkInData?.miles} | Gas: {b.checkInData?.gas}</p>
+                                                      {guestCheckInPhotos.length > 0 ? (
+                                                        <div className="grid grid-cols-3 gap-1 mt-2">
+                                                          {guestCheckInPhotos.map((photo: string, idx: number) => (
+                                                            <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(guestCheckInPhotos, idx)}>
                                                               <img src={photo} alt={`Guest check-in ${idx + 1}`} className="w-full h-16 object-cover" loading="lazy"/>
                                                             </div>
                                                           ))}
                                                         </div>
-                                                      </div>
-                                                    );
-                                                  } else if (isLoading) {
-                                                    return <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>;
-                                                  }
-                                                  return <p className="text-xs text-zinc-500 mt-2">No photos</p>;
-                                                })()}
-                                              </div>
-                                            )}
-                                            {b.checkOutData && (
-                                              <div className="p-3 bg-blue-950/20 rounded-lg border border-blue-900/30">
-                                                <p className="text-xs font-bold text-blue-400 uppercase mb-2">Guest Check-Out</p>
-                                                <p className="text-xs text-zinc-400">Miles: {b.checkOutData.miles}</p>
-                                                <p className="text-xs text-zinc-400">Gas: {b.checkOutData.gas}</p>
-                                                {(() => {
-                                                  const fullBooking = getBookingWithImages(b);
-                                                  const photos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])].filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
-                                                  const isLoading = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])].some((img: string) => img === '[IMAGE]');
-                                                  if (photos.length > 0) {
-                                                    return (
-                                                      <div className="mt-2">
-                                                        <p className="text-xs text-zinc-500 mb-1">Photos ({photos.length})</p>
-                                                        <div className="grid grid-cols-3 gap-1">
-                                                          {photos.map((photo: string, idx: number) => (
-                                                            <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(photos, idx)}>
+                                                      ) : guestCheckInLoading ? (
+                                                        <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                                      ) : (
+                                                        <p className="text-xs text-zinc-500 mt-2">No photos</p>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <div className={`p-3 rounded-lg border ${guestOutDone || hasGuestOutData ? 'bg-blue-950/20 border-blue-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
+                                                  <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-xs font-bold text-blue-400 uppercase">Guest Check-Out</p>
+                                                    {guestOutDone ? <span className="text-[10px] text-green-500 flex items-center gap-1"><Check size={10}/> Done</span> : <span className="text-[10px] text-yellow-500 font-bold">Pending</span>}
+                                                  </div>
+                                                  {hasGuestOutData && (
+                                                    <div>
+                                                      <p className="text-xs text-zinc-400">Miles: {b.checkOutData?.miles} | Gas: {b.checkOutData?.gas}</p>
+                                                      {guestCheckOutPhotos.length > 0 ? (
+                                                        <div className="grid grid-cols-3 gap-1 mt-2">
+                                                          {guestCheckOutPhotos.map((photo: string, idx: number) => (
+                                                            <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(guestCheckOutPhotos, idx)}>
                                                               <img src={photo} alt={`Guest check-out ${idx + 1}`} className="w-full h-16 object-cover" loading="lazy"/>
                                                             </div>
                                                           ))}
                                                         </div>
-                                                      </div>
-                                                    );
-                                                  } else if (isLoading) {
-                                                    return <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>;
-                                                  }
-                                                  return <p className="text-xs text-zinc-500 mt-2">No photos</p>;
-                                                })()}
+                                                      ) : guestCheckOutLoading ? (
+                                                        <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
+                                                      ) : (
+                                                        <p className="text-xs text-zinc-500 mt-2">No photos</p>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
                                               </div>
                                             )}
                                           </div>
-                                        </div>
-                                      )}
+                                        );
+                                      })()}
 
                                     {/* 4. Financial Details */}
                                     <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
