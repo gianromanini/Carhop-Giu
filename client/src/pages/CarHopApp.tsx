@@ -948,7 +948,7 @@ export default function CarHopApp() {
   const [fleetSort, setFleetSort] = useState('brand-asc');
 
   const filteredAndSortedFleet = useMemo(() => {
-    let result = [...vehicles];
+    let result = [...(allVehicles.length > 0 ? allVehicles : vehicles)];
     
     // Sort logic
     result.sort((a: any, b: any) => {
@@ -962,7 +962,7 @@ export default function CarHopApp() {
     });
 
     return result;
-  }, [vehicles, fleetSort]);
+  }, [vehicles, allVehicles, fleetSort]);
   const { data: bookings = [], isLoading: bookingsLoading, refetch: refetchBookings } = useQuery<Booking[]>({ 
     queryKey: ['/api/bookings'],
     staleTime: 0,
@@ -5065,7 +5065,7 @@ export default function CarHopApp() {
           </div>
 
           {hostTab === 'fleet' && (() => {
-            const hostVehicles = vehicles.filter(v => String(v.hostId) === String(currentHost.id));
+            const hostVehicles = (allVehicles.length > 0 ? allVehicles : vehicles).filter(v => String(v.hostId) === String(currentHost.id));
             const pendingTransfers = vehicles
               .filter(v => v.hostId === String(currentHost.id) && (v as any).transferRequests?.length > 0)
               .flatMap(v => ((v as any).transferRequests || [])
@@ -6032,10 +6032,7 @@ export default function CarHopApp() {
                                         <div 
                                           key={idx} 
                                           className="w-16 h-12 bg-zinc-800 rounded border border-zinc-700 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors flex-shrink-0"
-                                          onClick={() => setLightboxImages({ 
-                                            images: (b.driver as any).licensePhotos, 
-                                            currentIndex: idx 
-                                          })}
+                                          onClick={() => openLightbox((b.driver as any).licensePhotos, idx)}
                                         >
                                           <img src={photo} alt={`License ${idx + 1}`} className="w-full h-full object-cover" />
                                         </div>
@@ -9797,9 +9794,9 @@ export default function CarHopApp() {
                                       })()}
                                     </span></p>
                                     <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                            <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
+                                            <p className="text-zinc-500 font-bold">{ ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? 'Delivery' : 'Pickup' }</p>
                                             <div className="mt-0.5 mb-1">
-                                              <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
+                                              <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? 'Delivery Address:' : 'Pickup Address:' }</span>
                                               <a 
                                                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}`}
                                                 target="_blank"
@@ -9807,7 +9804,7 @@ export default function CarHopApp() {
                                                 className="text-blue-400 hover:underline text-[10px] block"
                                               >
                                                 {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}
-                                                {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryDistance && ` - ${(b.details as any).deliveryDistance.toFixed(1)} miles`}
+                                                {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (b.details as any)?.deliveryDistance && ` - ${(b.details as any).deliveryDistance.toFixed(1)} miles`}
                                               </a>
                                             </div>
                                           </div>
