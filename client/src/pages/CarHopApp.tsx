@@ -6054,8 +6054,8 @@ export default function CarHopApp() {
                                   </a>
                                   {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
                                     <div className="mt-1">
-                                      <span className="text-[10px] text-red-500 uppercase font-bold block line-through opacity-60">Original Delivery Request:</span>
-                                      <span className="text-zinc-500 text-[10px] line-through opacity-60">{formatAddressForDisplay((b.details as any)?.deliveryAddress)}</span>
+                                      <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase font-bold block line-through opacity-60">Original Delivery Request:</span>
+                                      <span className="text-zinc-400 dark:text-zinc-600 text-[10px] line-through opacity-50">{formatAddressForDisplay((b.details as any)?.deliveryAddress)}</span>
                                     </div>
                                   )}
                                 </div>
@@ -11939,12 +11939,16 @@ export default function CarHopApp() {
                           const deliveryAddr = (b.details as any)?.deliveryAddress;
                           const isDeclined = (b.details as any)?.deliveryApprovalStatus === 'rejected';
                           const displayAddr = isDelivery && deliveryAddr ? deliveryAddr : b.location;
-                          return (
+                          return isDeclined ? (
+                            <span className="text-zinc-400 dark:text-zinc-600 line-through opacity-50">
+                              {formatAddressForDisplay(displayAddr)}
+                            </span>
+                          ) : (
                             <a 
                               href={`https://maps.google.com/?q=${encodeURIComponent(displayAddr)}`} 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className={`text-blue-400 hover:text-blue-300 transition-colors underline underline-offset-2 ${isDeclined ? 'line-through opacity-60' : ''}`}
+                              className="text-blue-400 hover:text-blue-300 transition-colors underline underline-offset-2"
                               data-testid={`link-map-${b.id}`}
                             >
                               {formatAddressForDisplay(displayAddr)}
