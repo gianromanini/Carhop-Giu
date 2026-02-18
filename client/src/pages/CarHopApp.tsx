@@ -6719,23 +6719,11 @@ export default function CarHopApp() {
                           {/* 1. Approval Requests (Priority) */}
                           {(() => {
                             const pendingExt = (b.extensionRequests || []).filter(r => r.status === 'pending');
-                            const isDeliveryPending = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending';
                             
-                            if (pendingExt.length === 0 && !isDeliveryPending) return null;
+                            if (pendingExt.length === 0) return null;
                             
                             return (
                               <div className="space-y-3 mb-4">
-                                {isDeliveryPending && (
-                                  <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
-                                    <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
-                                      <Route size={14}/> Delivery Approval Required
-                                    </h4>
-                                    <div className="flex gap-2">
-                                      <button onClick={() => handleDeliveryApproval(b.id, 'approved')} className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-approve-delivery-${b.id}`}>Approve</button>
-                                      <button onClick={() => handleDeliveryApproval(b.id, 'rejected')} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-reject-delivery-${b.id}`}>Reject</button>
-                                    </div>
-                                  </div>
-                                )}
                                 {pendingExt.map(req => (
                                   <div key={req.id} className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
                                     <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
