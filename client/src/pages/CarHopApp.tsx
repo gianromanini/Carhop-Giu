@@ -6759,44 +6759,18 @@ export default function CarHopApp() {
                                 <Camera size={12} className="mr-1"/> View Check-in
                               </Button>
                             ) : (
-                              <Dialog open={checkingInBooking?.id === b.id} onOpenChange={(open) => !open && setCheckingInBooking(null)}>
-                                <DialogTrigger asChild>
-                                  <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setCheckingInBooking(b); }}>
-                                    Host Check-in
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent">
-                                  <HostCheckIn 
-                                    booking={b} 
-                                    onClose={() => {
-                                      setCheckingInBooking(null);
-                                      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-                                    }} 
-                                  />
-                                </DialogContent>
-                              </Dialog>
+                              <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
+                                Host Check-in
+                              </Button>
                             )}
                             {b.hostCheckOutStatus === 'completed' ? (
                               <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkout' }); }}>
                                 <Camera size={12} className="mr-1"/> View Check-out
                               </Button>
                             ) : (
-                              <Dialog open={checkingOutBooking?.id === b.id} onOpenChange={(open) => !open && setCheckingOutBooking(null)}>
-                                <DialogTrigger asChild>
-                                  <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setCheckingOutBooking(b); }}>
-                                    Host Check-out
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent">
-                                  <HostCheckOut 
-                                    booking={b} 
-                                    onClose={() => {
-                                      setCheckingOutBooking(null);
-                                      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-                                    }} 
-                                  />
-                                </DialogContent>
-                              </Dialog>
+                              <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
+                                Host Check-out
+                              </Button>
                             )}
                           </div>
 
