@@ -6072,44 +6072,219 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* Chat Messages */}
-                          {(b.messages || []).length > 0 && (
-                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
-                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                <MessageCircle size={14}/> Customer Messages
-                              </h4>
-                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'host')}>
-                                {(b.messages || []).map(msg => (
-                                  <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'host' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className={`text-[10px] font-bold uppercase ${msg.sender === 'host' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
-                                      <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                          <div className="space-y-4">
+                            {/* Client Requests */}
+                            {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
+                              <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                                <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-yellow-400">
+                                  <AlertCircle size={14}/> Client Requests
+                                </h4>
+                                <div className="space-y-3">
+                                  {(b.extensionRequests || []).filter(r => r.status === 'pending').map(req => (
+                                    <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <span className={`text-xs font-bold uppercase ${req.type === 'extension' ? 'text-blue-400' : 'text-orange-400'}`}>
+                                            {req.type === 'extension' ? 'Extension Request' : 'Reduction Request'}
+                                          </span>
+                                          <div className="text-sm text-zinc-300 mt-1">
+                                            New return: <span className="font-bold">{req.requestedReturnDate}</span> at <span className="font-bold">{req.requestedReturnTime}</span>
+                                            {(() => {
+                                              try {
+                                                const oldReturn = new Date(`${b.returnDate}T${convertTo24Hour(b.returnTime)}:00`);
+                                                const newReturn = new Date(`${req.requestedReturnDate}T${convertTo24Hour(req.requestedReturnTime)}:00`);
+                                                const diffMs = newReturn.getTime() - oldReturn.getTime();
+                                                const absDiffMs = Math.abs(diffMs);
+                                                const diffHoursTotal = absDiffMs / (1000 * 60 * 60);
+                                                const days = Math.floor(diffHoursTotal / 24);
+                                                const hours = Math.round(diffHoursTotal % 24);
+                                                const parts = [];
+                                                if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+                                                if (hours > 0) parts.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+                                                const duration = parts.length > 0 ? parts.join(' and ') : '0 hours';
+                                                return <span className="ml-1 text-blue-400">({diffMs > 0 ? '+' : '-'}{duration})</span>;
+                                              } catch (e) {
+                                                return null;
+                                              }
+                                            })()}
+                                          </div>
+                                          {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                        </div>
+                                        <div className="text-[10px] text-zinc-500">{new Date(req.createdAt).toLocaleDateString()}</div>
+                                      </div>
+                                      <div className="flex gap-2 mt-3">
+                                        <button 
+                                          onClick={() => handleExtensionRequestResponse(b.id, req.id, 'approved')}
+                                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                          data-testid={`button-host-approve-${req.id}`}
+                                        >
+                                          Approve
+                                        </button>
+                                        <button 
+                                          onClick={() => handleExtensionRequestResponse(b.id, req.id, 'rejected')}
+                                          className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                          data-testid={`button-host-reject-${req.id}`}
+                                        >
+                                          Reject
+                                        </button>
+                                      </div>
                                     </div>
-                                    <p className="text-zinc-300">{msg.text}</p>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={chatMessage}
-                                  onChange={(e) => setChatMessage(e.target.value)}
-                                  placeholder="Type a message..."
-                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                  data-testid="input-host-message"
-                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'host')}
-                                />
-                                <button 
-                                  onClick={() => sendChatMessage(b.id, 'host')}
-                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                  data-testid="button-send-host-message"
-                                >
-                                  <Send size={16}/>
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                            )}
 
+                            {/* Vehicle Replacement Requests from Client */}
+                            {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'pending').length > 0 && (
+                              <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
+                                <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-orange-400">
+                                  <Car size={14}/> Vehicle Replacement Requests
+                                </h4>
+                                <div className="space-y-3">
+                                  {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'pending').map((req: any) => {
+                                    const hostVehiclesForReplace = vehicles.filter(v => String(v.hostId) === String(currentHost?.id) && v.id !== b.vehicleId);
+                                    return (
+                                      <div key={req.id} className="p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                                        <div className="mb-2">
+                                          <span className="text-xs font-bold uppercase text-orange-400">
+                                            {req.requestedBy === 'client' ? 'Client Request' : req.requestedBy === 'admin' ? 'Admin Request' : 'Your Offer'}
+                                          </span>
+                                          <div className="text-sm text-zinc-300 mt-1">Current: <span className="font-bold">{req.oldVehicleModel}</span> (${req.oldDailyRate}/day)</div>
+                                          {req.reason && <div className="text-xs text-zinc-500 mt-1">Reason: {req.reason}</div>}
+                                        </div>
+                                        
+                                        <div className="mt-3 space-y-2">
+                                          <label className="text-xs text-zinc-400 block">Select replacement vehicle:</label>
+                                          <select
+                                            value={hostReplaceVehicleId || ''}
+                                            onChange={(e) => setHostReplaceVehicleId(Number(e.target.value) || null)}
+                                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                            data-testid="select-host-replace-vehicle"
+                                          >
+                                            <option value="">Choose a vehicle...</option>
+                                            {hostVehiclesForReplace.map(v => (
+                                              <option key={v.id} value={v.id}>{v.model} - ${v.price}/day</option>
+                                            ))}
+                                          </select>
+                                          
+                                          {hostReplaceVehicleId && (() => {
+                                            const selectedV = vehicles.find(v => v.id === hostReplaceVehicleId);
+                                            if (!selectedV) return null;
+                                            const priceDiff = selectedV.price - req.oldDailyRate;
+                                            const today = new Date();
+                                            const returnDate = new Date(b.returnDate);
+                                            const remainingDays = Math.max(1, Math.ceil((returnDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+                                            const totalDiff = priceDiff * remainingDays;
+                                            return (
+                                              <div className="p-2 bg-zinc-800 rounded text-xs text-zinc-300 space-y-1">
+                                                <p>New rate: <span className="font-bold text-white">${selectedV.price}/day</span></p>
+                                                <p>Remaining days: <span className="font-bold text-white">{remainingDays}</span></p>
+                                                <p>Price difference: <span className={`font-bold ${totalDiff > 0 ? 'text-red-400' : totalDiff < 0 ? 'text-green-400' : 'text-white'}`}>{totalDiff > 0 ? '+' : ''}${totalDiff.toFixed(2)}</span></p>
+                                              </div>
+                                            );
+                                          })()}
+                                          
+                                          <div className="flex gap-2 mt-2">
+                                            <button
+                                              onClick={async () => {
+                                                if (!hostReplaceVehicleId) {
+                                                  toast({ description: 'Please select a replacement vehicle', variant: 'destructive' });
+                                                  return;
+                                                }
+                                                try {
+                                                  await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                    requestId: req.id,
+                                                    status: 'approved',
+                                                    newVehicleId: hostReplaceVehicleId,
+                                                    respondedBy: 'host',
+                                                  });
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                  setHostReplaceVehicleId(null);
+                                                  toast({ description: 'Vehicle replacement approved!' });
+                                                } catch (error) {
+                                                  toast({ description: 'Error approving replacement', variant: 'destructive' });
+                                                }
+                                              }}
+                                              className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                                              data-testid={`button-host-approve-replace-${req.id}`}
+                                            >
+                                              Approve & Replace
+                                            </button>
+                                            <button
+                                              onClick={async () => {
+                                                try {
+                                                  await apiRequest('POST', `/api/bookings/${b.id}/replace-vehicle/respond`, {
+                                                    requestId: req.id,
+                                                    status: 'rejected',
+                                                    respondedBy: 'host',
+                                                  });
+                                                  queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+                                                  toast({ description: 'Replacement request declined' });
+                                                } catch (error) {
+                                                  toast({ description: 'Error declining request', variant: 'destructive' });
+                                                }
+                                              }}
+                                              className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors"
+                                              data-testid={`button-host-reject-replace-${req.id}`}
+                                            >
+                                              Decline
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Chat Messages */}
+                            {(b.messages || []).length > 0 && (
+                              <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
+                                <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                  <MessageCircle size={14}/> Customer Messages
+                                </h4>
+                                <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'host')}>
+                                  {(b.messages || []).map(msg => (
+                                    <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'host' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
+                                      <div className="flex justify-between items-start mb-1">
+                                        <span className={`text-[10px] font-bold uppercase ${msg.sender === 'host' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
+                                        <span className="text-[10px] text-zinc-500">{new Date(msg.createdAt).toLocaleString()}</span>
+                                      </div>
+                                      <p className="text-zinc-300">{msg.text}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={chatMessage}
+                                    onChange={(e) => setChatMessage(e.target.value)}
+                                    placeholder="Type a message..."
+                                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                    data-testid="input-host-message"
+                                    onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'host')}
+                                  />
+                                  <button 
+                                    onClick={() => sendChatMessage(b.id, 'host')}
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                    data-testid="button-send-host-message"
+                                  >
+                                    <Send size={16}/>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-zinc-500 py-20">
+                        <List size={48} className="mb-4 opacity-30"/>
+                        <p>Select a booking from the list to view details.</p>
+                      </div>
+                    )}
+                  </Card>
                           {/* Client Requests */}
                           {(b.extensionRequests || []).filter(r => r.status === 'pending').length > 0 && (
                             <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
@@ -11858,10 +12033,10 @@ export default function CarHopApp() {
 
                       <div className={`${isCollapsed ? 'hidden md:block' : 'block'}`}>
                         <div className="flex-1 w-full mt-3 md:mt-0">
-                      {(b.details as any)?.deliveryType === 'delivery' ? (
+                      {((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? (
                         <div className="text-xs md:text-sm font-normal text-green-600">Delivery: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       ) : (
-                        <div className="text-xs md:text-sm font-normal text-cyan-600">Pick-up: {formatDisplayDate(b.startDate, b.startTime)}</div>
+                        <div className="text-xs md:text-sm font-normal text-green-600">Pickup: {formatDisplayDate(b.startDate, b.startTime)}</div>
                       )}
                       {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                         <div className="text-xs font-bold text-yellow-500 mt-1 flex items-center gap-1">
@@ -11878,8 +12053,8 @@ export default function CarHopApp() {
                           <div className="text-xs font-bold text-red-500 flex items-center gap-1">
                             <X size={12}/> Delivery Declined - Pick up at location
                           </div>
-                          <div className="text-xs text-red-500 mt-0.5">
-                            <a href={`https://maps.google.com/?q=${encodeURIComponent((b.details as any)?.pickupAddress || b.location)}`} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors underline" data-testid={`link-pickup-map-${b.id}`}>{formatAddressForDisplay((b.details as any)?.pickupAddress || b.location)}</a>
+                          <div className="text-xs text-blue-500 mt-0.5">
+                            <a href={`https://maps.google.com/?q=${encodeURIComponent((b.details as any)?.pickupAddress || b.location)}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors underline" data-testid={`link-pickup-map-${b.id}`}>{formatAddressForDisplay((b.details as any)?.pickupAddress || b.location)}</a>
                           </div>
                         </div>
                       )}
