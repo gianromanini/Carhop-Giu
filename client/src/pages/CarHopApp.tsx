@@ -3750,7 +3750,6 @@ export default function CarHopApp() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center space-y-2">
-              <button onClick={() => { setShowLoginModal(false); setShowEmailLookupModal(true); }} className="text-[10px] sm:text-xs text-blue-500 hover:text-blue-400 flex items-center justify-center gap-1 mx-auto font-bold" data-testid="button-find-bookings"><Mail size={10}/> Find My Bookings (No Password)</button>
               <button onClick={() => { setShowLoginModal(false); setShowAdminLoginModal(true); }} className="text-[10px] sm:text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center gap-1 mx-auto" data-testid="button-admin-login"><Settings size={10}/> Admin / Host Login</button>
               <button onClick={() => { setShowLoginModal(false); setShowHostRegisterModal(true); }} className="text-[10px] sm:text-xs text-green-500 hover:text-green-400 flex items-center justify-center gap-1 mx-auto font-bold" data-testid="button-become-host"><Building2 size={10}/> Become a Host</button>
             </div>
@@ -6025,6 +6024,27 @@ export default function CarHopApp() {
                                 <p className="font-medium">{b.driver.name}</p>
                                 <p className="text-zinc-500">{b.driver.phone}</p>
                                 <p className="text-zinc-500">{b.driver.email}</p>
+                                <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                                  <p className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Driver's License</p>
+                                  <div className="flex gap-2 overflow-x-auto pb-1">
+                                    {(b.driver as any)?.licensePhotos && Array.isArray((b.driver as any).licensePhotos) ? (
+                                      (b.driver as any).licensePhotos.map((photo: string, idx: number) => (
+                                        <div 
+                                          key={idx} 
+                                          className="w-16 h-12 bg-zinc-800 rounded border border-zinc-700 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors flex-shrink-0"
+                                          onClick={() => setLightboxImages({ 
+                                            images: (b.driver as any).licensePhotos, 
+                                            currentIndex: idx 
+                                          })}
+                                        >
+                                          <img src={photo} alt={`License ${idx + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-[10px] text-zinc-500 italic">No license photos uploaded</p>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                                 <div>
@@ -6040,17 +6060,17 @@ export default function CarHopApp() {
                                     </div>
                                     <p className="text-zinc-500 font-bold">Trip Total: <span className="text-green-500">${b.total.toFixed(2)}</span></p>
                                     <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
-                                <p className="text-zinc-500 font-bold">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery' : 'Pickup' }</p>
+                                <p className="text-zinc-500 font-bold">{ ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? 'Delivery' : 'Pickup' }</p>
                                 <div className="mt-0.5 mb-1">
-                                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ (b.details as any)?.deliveryType === 'delivery' ? 'Delivery Address:' : 'Location:' }</span>
+                                  <span className="text-[10px] text-zinc-500 uppercase font-bold block">{ ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? 'Delivery Address:' : 'Pickup Address:' }</span>
                                   <a 
                                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`text-blue-400 hover:underline text-xs block ${(b.details as any)?.deliveryApprovalStatus === 'rejected' ? '' : ''}`}
+                                    className="text-blue-400 hover:underline text-xs block"
                                   >
                                     {formatAddressForDisplay(((b.details as any)?.deliveryApprovalStatus === 'rejected' ? (b.details as any)?.pickupAddress : (b.details as any)?.deliveryAddress) || b.location)}
-                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryDistance && ` - ${(b.details as any).deliveryDistance.toFixed(1)} miles`}
+                                    {(b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (b.details as any)?.deliveryDistance && ` - ${(b.details as any).deliveryDistance.toFixed(1)} miles`}
                                   </a>
                                   {(b.details as any)?.deliveryApprovalStatus === 'rejected' && (
                                     <div className="mt-1">
