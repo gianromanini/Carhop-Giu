@@ -6533,7 +6533,6 @@ export default function CarHopApp() {
                                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-In</span>
                                     {totalCheckInPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckInPhotos} photos)</span>}
                                   </div>
-                                  </div>
                                 </div>
                                 {isExpanded && (
                                   <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
@@ -6620,7 +6619,6 @@ export default function CarHopApp() {
                                     <Lock size={14} className="text-orange-500"/>
                                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-Out</span>
                                     {totalCheckOutPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckOutPhotos} photos)</span>}
-                                  </div>
                                   </div>
                                 </div>
                                 {isExpanded && (
