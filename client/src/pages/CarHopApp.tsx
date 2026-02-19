@@ -2090,10 +2090,17 @@ export default function CarHopApp() {
        }
      }
 
-     if (checkData.photosOutside.length < 1) { alert("Please upload at least 1 outside photo."); return; }
-     if (checkData.photosInside.length < 1) { alert("Please upload at least 1 inside photo."); return; }
+    if (isHostCheckMode) {
+      if ((checkData.photosOutside?.length || 0) + (checkData.photosInside?.length || 0) < 5) {
+        alert("Host check-in/out requires at least 5 photos total.");
+        return;
+      }
+    } else {
+      if (checkData.photosOutside.length < 1) { alert("Please upload at least 1 outside photo."); return; }
+      if (checkData.photosInside.length < 1) { alert("Please upload at least 1 inside photo."); return; }
+    }
 
-     if (!activeBooking) return;
+    if (!activeBooking) return;
 
      let updateData: any = {};
      if (isHostCheckMode) {
@@ -9817,25 +9824,93 @@ export default function CarHopApp() {
 
                                       {/* 2. Host Check-in/out Buttons */}
                                       <div className="grid grid-cols-2 gap-2 mb-4">
-                                        {b.hostCheckInStatus === 'completed' ? (
-                                          <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkin' }); }}>
-                                            <Camera size={12} className="mr-1"/> View Check-in
-                                          </Button>
-                                        ) : (
-                                          <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
-                                            Host Check-in
-                                          </Button>
-                                        )}
-                                        {b.hostCheckOutStatus === 'completed' ? (
-                                          <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkout' }); }}>
-                                            <Camera size={12} className="mr-1"/> View Check-out
-                                          </Button>
-                                        ) : (
-                                          <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
-                                            Host Check-out
-                                          </Button>
-                                        )}
+                                        <Button 
+                                          variant={b.hostCheckInStatus === 'completed' ? "outline" : "primary"} 
+                                          size="sm" 
+                                          className={`font-bold text-[10px] ${b.hostCheckInStatus === 'completed' ? 'bg-green-600/10 text-green-500 border-green-600/30' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                                          disabled={b.hostCheckInStatus === 'completed'}
+                                          onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}
+                                        >
+                                          {b.hostCheckInStatus === 'completed' ? <><Check size={12} className="mr-1"/> Check-in Verified</> : 'Host Check-in'}
+                                        </Button>
+                                        <Button 
+                                          variant={b.hostCheckOutStatus === 'completed' ? "outline" : "primary"} 
+                                          size="sm" 
+                                          className={`font-bold text-[10px] ${b.hostCheckOutStatus === 'completed' ? 'bg-orange-600/10 text-orange-500 border-orange-600/30' : 'bg-orange-600 hover:bg-orange-700 text-white'}`}
+                                          disabled={b.hostCheckOutStatus === 'completed' || b.hostCheckInStatus !== 'completed'}
+                                          onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}
+                                        >
+                                          {b.hostCheckOutStatus === 'completed' ? <><Check size={12} className="mr-1"/> Check-out Verified</> : 'Host Check-out'}
+                                        </Button>
                                       </div>
+
+                                      {/* Host Check-in/Check-out Data - Collapsible */}
+                                      {(() => {
+                                        const fullBooking = getBookingWithImages(b);
+                                        const hostCheckInPhotos = (fullBooking.hostCheckInData?.photosOutside || []).concat(fullBooking.hostCheckInData?.photosInside || []).filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const hostCheckOutPhotos = (fullBooking.hostCheckOutData?.photosOutside || []).concat(fullBooking.hostCheckOutData?.photosInside || []).filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const hasHostInData = !!fullBooking.hostCheckInData;
+                                        const hasHostOutData = !!fullBooking.hostCheckOutData;
+                                        const totalHostPhotos = hostCheckInPhotos.length + hostCheckOutPhotos.length;
+                                        const hostSectionKey = `adminlist-host-${b.id}`;
+                                        const hostRegionId = `adminlist-host-region-${b.id}`;
+                                        const isHostExpanded = expandedCheckSections[hostSectionKey] || false;
+
+                                        if (!hasHostInData && !hasHostOutData) return null;
+
+                                        return (
+                                          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
+                                            <button
+                                              onClick={() => setExpandedCheckSections(prev => ({ ...prev, [hostSectionKey]: !prev[hostSectionKey] }))}
+                                              className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                              aria-expanded={isHostExpanded}
+                                              aria-controls={hostRegionId}
+                                              data-testid={`button-adminlist-toggle-host-${b.id}`}
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <Camera size={14} className="text-green-500"/>
+                                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Host Verification</span>
+                                                {totalHostPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalHostPhotos} photos)</span>}
+                                              </div>
+                                              <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isHostExpanded ? 'rotate-180' : ''}`} />
+                                            </button>
+                                            {isHostExpanded && (
+                                              <div id={hostRegionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                {hasHostInData && (
+                                                  <div className="p-3 rounded-lg border bg-green-950/10 border-green-900/20">
+                                                    <p className="text-xs font-bold text-green-500 uppercase mb-2">Host Check-In</p>
+                                                    <p className="text-xs text-zinc-400">Miles: {b.hostCheckInData?.miles} | Gas: {b.hostCheckInData?.gas}</p>
+                                                    {hostCheckInPhotos.length > 0 && (
+                                                      <div className="grid grid-cols-3 gap-1 mt-2">
+                                                        {hostCheckInPhotos.map((photo: string, idx: number) => (
+                                                          <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(hostCheckInPhotos, idx)}>
+                                                            <img src={photo} alt={`Host check-in ${idx + 1}`} className="w-full h-16 object-cover" loading="lazy"/>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                                {hasHostOutData && (
+                                                  <div className="p-3 rounded-lg border bg-orange-950/10 border-orange-900/20">
+                                                    <p className="text-xs font-bold text-orange-500 uppercase mb-2">Host Check-Out</p>
+                                                    <p className="text-xs text-zinc-400">Miles: {b.hostCheckOutData?.miles} | Gas: {b.hostCheckOutData?.gas}</p>
+                                                    {hostCheckOutPhotos.length > 0 && (
+                                                      <div className="grid grid-cols-3 gap-1 mt-2">
+                                                        {hostCheckOutPhotos.map((photo: string, idx: number) => (
+                                                          <div key={idx} className="rounded overflow-hidden border border-zinc-700 cursor-pointer hover:opacity-80" onClick={() => openLightbox(hostCheckOutPhotos, idx)}>
+                                                            <img src={photo} alt={`Host check-out ${idx + 1}`} className="w-full h-16 object-cover" loading="lazy"/>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
 
                                       {/* Guest Check-in/Check-out - Collapsible */}
                                       {(() => {
