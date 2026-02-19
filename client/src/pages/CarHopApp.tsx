@@ -6513,15 +6513,12 @@ export default function CarHopApp() {
                             const totalCheckInPhotos = hostCheckInPhotos.length + guestCheckInPhotos.length;
                             const checkInKey = `checkin-${b.id}`;
                             const regionId = `checkin-region-${b.id}`;
-                            const isExpanded = expandedCheckSections[checkInKey] || false;
+                            const isExpanded = true;
 
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
-                                <button
-                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkInKey]: !prev[checkInKey] }))}
+                                <div
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
-                                  aria-expanded={isExpanded}
-                                  aria-controls={regionId}
                                   data-testid={`button-toggle-checkin-${b.id}`}
                                 >
                                   <div className="flex items-center gap-2">
@@ -6529,17 +6526,8 @@ export default function CarHopApp() {
                                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-In</span>
                                     {totalCheckInPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckInPhotos} photos)</span>}
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    {hostCheckInDone && guestCheckInDone ? (
-                                      <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
-                                    ) : (
-                                      <span className="text-[10px] font-bold text-yellow-500">
-                                        {!hostCheckInDone && !guestCheckInDone ? 'Pending' : hostCheckInDone ? 'Guest Pending' : 'Host Pending'}
-                                      </span>
-                                    )}
-                                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                                   </div>
-                                </button>
+                                </div>
                                 {isExpanded && (
                                   <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
                                     <div className={`p-3 rounded-lg border ${hostCheckInDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
@@ -6613,15 +6601,12 @@ export default function CarHopApp() {
                             const totalCheckOutPhotos = hostCheckOutPhotos.length + guestCheckOutPhotos.length;
                             const checkOutKey = `checkout-${b.id}`;
                             const regionId = `checkout-region-${b.id}`;
-                            const isExpanded = expandedCheckSections[checkOutKey] || false;
+                            const isExpanded = true;
 
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
-                                <button
-                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkOutKey]: !prev[checkOutKey] }))}
+                                <div
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
-                                  aria-expanded={isExpanded}
-                                  aria-controls={regionId}
                                   data-testid={`button-toggle-checkout-${b.id}`}
                                 >
                                   <div className="flex items-center gap-2">
@@ -6629,17 +6614,8 @@ export default function CarHopApp() {
                                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-Out</span>
                                     {totalCheckOutPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckOutPhotos} photos)</span>}
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    {hostCheckOutDone && guestCheckOutDone ? (
-                                      <span className="text-[10px] font-bold text-green-500 flex items-center gap-1"><Check size={10}/> Complete</span>
-                                    ) : (
-                                      <span className="text-[10px] font-bold text-yellow-500">
-                                        {!hostCheckOutDone && !guestCheckOutDone ? 'Pending' : hostCheckOutDone ? 'Guest Pending' : 'Host Pending'}
-                                      </span>
-                                    )}
-                                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                                   </div>
-                                </button>
+                                </div>
                                 {isExpanded && (
                                   <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
                                     <div className={`p-3 rounded-lg border ${hostCheckOutDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
@@ -6716,27 +6692,19 @@ export default function CarHopApp() {
                             );
                           })()}
 
-                          {/* 2. Host Check-in/out Buttons */}
-                          <div className="grid grid-cols-2 gap-2 mb-4">
-                            {b.hostCheckInStatus === 'completed' ? (
-                              <Button variant="outline" size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkin' }); }}>
-                                <Camera size={12} className="mr-1"/> View Check-in
-                              </Button>
-                            ) : (
-                              <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
-                                Host Check-in
-                              </Button>
-                            )}
-                            {b.hostCheckOutStatus === 'completed' ? (
-                              <Button variant="outline" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); setViewingHostCheckData({ bookingId: b.id, mode: 'checkout' }); }}>
-                                <Camera size={12} className="mr-1"/> View Check-out
-                              </Button>
-                            ) : (
-                              <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
-                                Host Check-out
-                              </Button>
-                            )}
-                          </div>
+                            {/* 2. Host Check-in/out Buttons */}
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                              {b.hostCheckInStatus !== 'completed' && (
+                                <Button variant="primary" size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkin', true); }}>
+                                  Host Check-in
+                                </Button>
+                              )}
+                              {b.hostCheckOutStatus !== 'completed' && (
+                                <Button variant="primary" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px]" onClick={(e: any) => { e.stopPropagation(); handleStartWorkflow(b, 'checkout', true); }}>
+                                  Host Check-out
+                                </Button>
+                              )}
+                            </div>
 
                           {/* 4. Financial Details */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
