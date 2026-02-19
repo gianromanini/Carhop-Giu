@@ -13158,7 +13158,7 @@ export default function CarHopApp() {
                         type="text"
                         value={driverDetails.licenseNumber} 
                         onChange={(e: any) => setDriverDetails({...driverDetails, licenseNumber: e.target.value})} 
-                        placeholder="CNH-12345678"
+                        placeholder=""
                         className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
                         data-testid="input-driver-license" 
                       />
@@ -13188,7 +13188,7 @@ export default function CarHopApp() {
                           data-testid="button-upload-license"
                         >
                           <Plus size={20}/>
-                          <span className="text-[10px] mt-1">Add {driverDetails.licenseImages.length === 0 ? 'Front' : 'Back'}</span>
+                          <span className="text-[10px] mt-1">{driverDetails.licenseImages.length === 0 ? 'Add Front' : 'Selfie Hold Your Drivers License'}</span>
                         </button>
                       )}
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLicenseUpload} />
