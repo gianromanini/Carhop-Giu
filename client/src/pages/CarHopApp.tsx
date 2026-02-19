@@ -12775,7 +12775,13 @@ export default function CarHopApp() {
                             name="deliveryType" 
                             value="delivery" 
                             checked={selectedDeliveryType === 'delivery'}
-                            onChange={() => setSelectedDeliveryType('delivery')}
+                            onChange={() => {
+                              setSelectedDeliveryType('delivery');
+                              // Automatically set pickup address to the car's first available location if not set
+                              if (cart.car?.availableLocations && cart.car.availableLocations.length > 0) {
+                                setPickupAddress(cart.car.availableLocations[0]);
+                              }
+                            }}
                             className="w-5 h-5 cursor-pointer"
                             data-testid="radio-delivery"
                           />
@@ -12793,7 +12799,10 @@ export default function CarHopApp() {
                             name="deliveryType" 
                             value="pickup" 
                             checked={selectedDeliveryType === 'pickup'}
-                            onChange={() => setSelectedDeliveryType('pickup')}
+                            onChange={() => {
+                              setSelectedDeliveryType('pickup');
+                              setPickupAddress(''); // Clear pickup address to force selection
+                            }}
                             className="w-5 h-5 cursor-pointer"
                             data-testid="radio-pickup"
                           />
@@ -12805,51 +12814,24 @@ export default function CarHopApp() {
                       </div>
                     </div>
 
-                    {/* Pickup Location Selection - REQUIRED FIRST for Delivery, optional for Pickup */}
+                    {/* Delivery Address Section - Show only if Delivery is selected */}
                     {selectedDeliveryType === 'delivery' && (
                       <div className="pt-4 border-t border-zinc-700 space-y-3">
-                        <label className="block text-xs text-zinc-500 uppercase tracking-wider">STEP 1: SELECT PICKUP LOCATION *</label>
-                        <p className="text-xs text-zinc-400 mb-2">Choose where to pick up the car - this is the starting point for delivery distance calculation</p>
-                        {cart.car?.availableLocations && cart.car.availableLocations.length > 0 ? (
-                          <div className="space-y-2">
-                            {Array.from(new Set(cart.car.availableLocations)).map((location) => (
-                              <label key={location} className="flex items-center gap-3 cursor-pointer p-3 border border-zinc-700 rounded-lg hover:border-green-500 hover:bg-zinc-800/50 transition-colors" style={{borderColor: pickupAddress === location ? '#22c55e' : undefined, backgroundColor: pickupAddress === location ? 'rgba(34, 197, 94, 0.1)' : undefined}}>
-                                <input 
-                                  type="checkbox" 
-                                  name="pickupLocation" 
-                                  value={location} 
-                                  checked={pickupAddress === location}
-                                  onChange={() => setPickupAddress(location)}
-                                  className="w-5 h-5 cursor-pointer"
-                                  data-testid={`checkbox-pickup-${location}`}
-                                />
-                                <span className="text-sm text-white flex-1">{formatAddressForDisplay(location)}</span>
-                                {pickupAddress === location && <Check size={16} className="text-green-400 flex-shrink-0" />}
-                              </label>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-zinc-400">No pickup locations available</p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Delivery Address Section - Show only if Delivery is selected AND pickup location is chosen */}
-                    {selectedDeliveryType === 'delivery' && pickupAddress && (
-                      <div className="pt-4 border-t border-zinc-700 space-y-3">
                         <div>
-                          <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">STEP 2: ENTER YOUR DELIVERY ADDRESS *</label>
-                          <p className="text-xs text-zinc-400 mb-3">We'll calculate the distance from {formatAddressForDisplay(pickupAddress)}</p>
+                          <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">ENTER YOUR DELIVERY ADDRESS *</label>
                           <LocationAutocomplete 
                             value={deliveryAddressBooking}
                             onChange={(val, coords) => {
                               setDeliveryAddressBooking(val);
-                              if (val && coords && pickupAddress && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
+                              // Use the car's primary location (first available) for calculation if not already set or if switching to delivery
+                              const baseLocation = pickupAddress || (cart.car?.availableLocations && cart.car.availableLocations[0]);
+                              
+                              if (val && coords && baseLocation && cart.car?.minDeliveryFee !== null && cart.car?.minDeliveryFee !== undefined && cart.car?.minDeliveryFeeMiles !== null && cart.car?.minDeliveryFeeMiles !== undefined) {
                                 const deliveryLat = parseFloat(coords.lat);
                                 const deliveryLon = parseFloat(coords.lon);
                                 
-                                // Geocodify pickup address to get its coordinates
-                                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickupAddress)}&countrycodes=us&limit=1`)
+                                // Geocodify base pickup location to get its coordinates
+                                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(baseLocation)}&countrycodes=us&limit=1`)
                                   .then(res => res.json())
                                   .then(data => {
                                     if (data && data.length > 0) {
@@ -12931,7 +12913,7 @@ export default function CarHopApp() {
                       </div>
                     )}
 
-                    {/* Pickup Location Selection - Show when Pickup is selected (not Delivery) */}
+                    {/* Pickup Location Selection - Show only when Pickup is selected */}
                     {selectedDeliveryType === 'pickup' && (
                       <div className="pt-4 border-t border-zinc-700 space-y-3">
                         <label className="block text-xs text-zinc-500 uppercase tracking-wider">SELECT YOUR PICKUP LOCATION *</label>
@@ -12940,13 +12922,13 @@ export default function CarHopApp() {
                             {Array.from(new Set(cart.car.availableLocations)).map((location) => (
                               <label key={location} className="flex items-center gap-3 cursor-pointer p-3 border border-zinc-700 rounded-lg hover:border-green-500 hover:bg-zinc-800/50 transition-colors" style={{borderColor: pickupAddress === location ? '#22c55e' : undefined, backgroundColor: pickupAddress === location ? 'rgba(34, 197, 94, 0.1)' : undefined}}>
                                 <input 
-                                  type="checkbox" 
+                                  type="radio" 
                                   name="pickupLocation" 
                                   value={location} 
                                   checked={pickupAddress === location}
                                   onChange={() => setPickupAddress(location)}
                                   className="w-5 h-5 cursor-pointer"
-                                  data-testid={`checkbox-pickup-${location}`}
+                                  data-testid={`radio-pickup-${location}`}
                                 />
                                 <span className="text-sm text-white flex-1">{formatAddressForDisplay(location)}</span>
                                 {pickupAddress === location && <Check size={16} className="text-green-400 flex-shrink-0" />}
