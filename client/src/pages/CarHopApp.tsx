@@ -2161,7 +2161,12 @@ export default function CarHopApp() {
          title: isCheckOutMode ? "Check-out do Host Concluído" : "Check-in do Host Concluído",
          description: "Os dados foram salvos com sucesso.",
        });
-       setView('dashboard');
+       // Stay in the same booking view
+       if (hostManageBookingId) {
+         setHostManageBookingId(activeBooking.id);
+       } else if (manageBookingId) {
+         setManageBookingId(activeBooking.id);
+       }
      } else {
        setView('workflow-success');
      }
@@ -6010,6 +6015,22 @@ export default function CarHopApp() {
                             <div>
                               <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-host-booking-code">Booking {b.bookingCode}</h2>
                               <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
+                              {((b.details as any)?.deliveryApprovalStatus === 'pending' || (b.details as any)?.deliveryType === 'delivery') && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (
+                                <div className="mt-2 flex gap-2">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeliveryApproval(b.id, 'approved'); }}
+                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold rounded transition-colors"
+                                  >
+                                    Approve Delivery
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeliveryApproval(b.id, 'rejected'); }}
+                                    className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-bold rounded transition-colors"
+                                  >
+                                    Offer Pickup
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-col items-end gap-2">
                               <div className="text-left sm:text-right text-[10px] sm:text-xs text-zinc-500">
@@ -6800,9 +6821,8 @@ export default function CarHopApp() {
 
                                     {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
-                                        <div className="text-xs font-bold uppercase text-zinc-400 mb-2">ADDITIONAL CHARGES AND DISCOUNTS</div>
-                                        <div className="space-y-1">
-                                          {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
+                                      <div className="space-y-1">
+                                        {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                             <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
                                               <span>Substituição Veículo: {r.oldVehicleModel} → {b.carName}</span>
                                               <span className={r.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>
@@ -6873,7 +6893,6 @@ export default function CarHopApp() {
 
                           {/* 5. Manage Charges & Adjustments */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">ADDITIONAL CHARGES AND DISCOUNTS</h4>
                             <div className="space-y-4">
                               <div className="flex gap-2">
                                 <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="fixed">$</option><option value="percent">%</option></select>
@@ -10071,7 +10090,6 @@ export default function CarHopApp() {
                                             return (
                                               <>
                                                 <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
-                                                  <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
                                                   <div className="space-y-1 mb-2">
                                                     <div className="flex justify-between text-zinc-300 text-xs">
                                                       <span>Base Rate - {b.days} Days</span>
@@ -10127,7 +10145,7 @@ export default function CarHopApp() {
 
                                                 {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                                   <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
-                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">ADDITIONAL CHARGES AND DISCOUNTS</div>
+                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">LOGS</div>
                                                     <div className="space-y-1">
                                                       {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                                         <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
@@ -10193,7 +10211,6 @@ export default function CarHopApp() {
 
                                       {/* 5. Manage Charges & Adjustments */}
                                       <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                                        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">ADDITIONAL CHARGES AND DISCOUNTS</h4>
                                         <div className="mb-4">
                                           <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
                                           <div className="flex flex-col sm:flex-row gap-2">

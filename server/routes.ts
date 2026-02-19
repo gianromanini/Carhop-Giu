@@ -536,8 +536,10 @@ async function calculateCorrectTotal(booking: any): Promise<number> {
   settings.forEach(s => { settingsObj[s.key] = s.value; });
   const taxRate = (settingsObj.taxes || 0) / 100;
   
-  // Initial Payment = rate + protection + extras + cleaningFee
-  const initialSubtotal = (booking.details?.rate || 0) + (booking.details?.protection || 0) + (booking.details?.extras || 0) + (booking.details?.fees || 0);
+  const deliveryFee = (booking.details as any)?.deliveryApprovalStatus === 'rejected' ? 0 : ((booking.details as any)?.deliveryFee || 0);
+  
+  // Initial Payment = rate + protection + extras + cleaningFee + deliveryFee
+  const initialSubtotal = (booking.details?.rate || 0) + (booking.details?.protection || 0) + (booking.details?.extras || 0) + (booking.details?.fees || 0) + deliveryFee;
   const initialTax = initialSubtotal > 0 ? initialSubtotal * taxRate : 0;
   
   // Additional Charges = extendedRate + manualCharges + extraPayments - discount
