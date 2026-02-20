@@ -6007,11 +6007,33 @@ export default function CarHopApp() {
                       return (
                         <div className="space-y-4 sm:space-y-6">
                           {/* Header */}
-                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
-                            <div>
-                              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-host-booking-code">Booking {b.bookingCode}</h2>
-                              <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">${b.total.toFixed(2)}</span></p>
-                              {((b.details as any)?.deliveryApprovalStatus === 'pending' || (b.details as any)?.deliveryType === 'delivery') && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (
+                              <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
+                                <div>
+                                  <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white" data-testid="text-host-booking-code">Booking {b.bookingCode}</h2>
+                                  <p className="text-xs sm:text-sm text-zinc-500">Total: <span className="text-green-500 font-bold">
+                                    {(() => {
+                                      const cleaningFee = ((allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId))?.pricing?.cleaningFee || settings.cleaningFee;
+                                      const rentalRate = b.details?.rate || 0;
+                                      const protection = b.details?.protection || 0;
+                                      const extras = b.details?.extras || 0;
+                                      const deliveryFeeForInitial = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
+                                      const discount = b.details?.discount || 0;
+                                      const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial - discount;
+                                      const carForTax = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId);
+                                      const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                      const initialTax = initialSubtotal > 0 ? initialSubtotal * (taxRate / 100) : 0;
+                                      const initialPayment = initialSubtotal + initialTax;
+                                      const extendedRate = b.details?.extendedRate || 0;
+                                      const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
+                                      const manualCharges = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges : [];
+                                      const manualChargesTotal = manualCharges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+                                      const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                      const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRate / 100) : 0;
+                                      const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
+                                      return `$${total.toFixed(2)}`;
+                                    })()}
+                                  </span></p>
+                                  {((b.details as any)?.deliveryApprovalStatus === 'pending' || (b.details as any)?.deliveryType === 'delivery') && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (
                                 <div className="mt-2 flex gap-2">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleDeliveryApproval(b.id, 'approved'); }}
@@ -6079,7 +6101,29 @@ export default function CarHopApp() {
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-zinc-500 font-bold">Trip Total: <span className="text-green-500">${b.total.toFixed(2)}</span></p>
+                                    <p className="text-zinc-500 font-bold">Trip Total: <span className="text-green-500">
+                                      {(() => {
+                                        const cleaningFee = ((allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId))?.pricing?.cleaningFee || settings.cleaningFee;
+                                        const rentalRate = b.details?.rate || 0;
+                                        const protection = b.details?.protection || 0;
+                                        const extras = b.details?.extras || 0;
+                                        const deliveryFeeForInitial = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
+                                        const discount = b.details?.discount || 0;
+                                        const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial - discount;
+                                        const carForTax = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId);
+                                        const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                        const initialTax = initialSubtotal > 0 ? initialSubtotal * (taxRate / 100) : 0;
+                                        const initialPayment = initialSubtotal + initialTax;
+                                        const extendedRate = b.details?.extendedRate || 0;
+                                        const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
+                                        const manualCharges = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges : [];
+                                        const manualChargesTotal = manualCharges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+                                        const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                        const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRate / 100) : 0;
+                                        const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
+                                        return `$${total.toFixed(2)}`;
+                                      })()}
+                                    </span></p>
                                     <p className="text-zinc-500">{formatDisplayDate(b.startDate, b.startTime)} to {formatDisplayDate(b.returnDate, b.returnTime)}</p>
                                 <p className="text-zinc-500 font-bold">{ ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? 'Delivery' : 'Pickup' }</p>
                                 <div className="mt-0.5 mb-1">
@@ -9589,14 +9633,39 @@ export default function CarHopApp() {
                                 <div className="flex items-center gap-1 flex-1">
                             {b.status === 'Completed' && !hasRated && (<span className="text-red-500 text-lg" title="Pending Rating">!</span>)}
                                   {b.status !== 'Cancelled' && (pickupIsToday || pickupIsTomorrow || returnIsToday || returnIsTomorrow) && (
-                                    <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-500' : 'text-yellow-500'}`}><AlertTriangle size={12}/></span>
+                                    <span className={`animate-pulse ${pickupIsToday || returnIsToday ? 'text-red-400' : 'text-yellow-400'}`}><AlertTriangle size={12}/></span>
                                   )}
-                                  {hasNotifications && (<span className="text-yellow-500 animate-pulse"><AlertCircle size={12}/></span>)}
+                                  {hasNotifications && (<span className="text-yellow-400 animate-pulse"><AlertCircle size={12}/></span>)}
                                   <span className="font-bold text-sm text-white flex items-center gap-2">
                                     {b.bookingCode}
                                   </span>
                                 </div>
-                                <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className={`text-[8px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}`}>{statusText}</span>
+                                  <span className="text-[10px] font-bold text-white">
+                                    {(() => {
+                                      const cleaningFee = ((allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId))?.pricing?.cleaningFee || settings.cleaningFee;
+                                      const rentalRate = b.details?.rate || 0;
+                                      const protection = b.details?.protection || 0;
+                                      const extras = b.details?.extras || 0;
+                                      const deliveryFeeForInitial = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
+                                      const discount = b.details?.discount || 0;
+                                      const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial - discount;
+                                      const carForTax = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId);
+                                      const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                      const initialTax = initialSubtotal > 0 ? initialSubtotal * (taxRate / 100) : 0;
+                                      const initialPayment = initialSubtotal + initialTax;
+                                      const extendedRate = b.details?.extendedRate || 0;
+                                      const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
+                                      const manualCharges = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges : [];
+                                      const manualChargesTotal = manualCharges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+                                      const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                      const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRate / 100) : 0;
+                                      const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
+                                      return `$${total.toFixed(2)}`;
+                                    })()}
+                                  </span>
+                                </div>
                               </div>
                               
                               <div className="flex justify-between items-start gap-2 mb-0.5">
@@ -9704,31 +9773,33 @@ export default function CarHopApp() {
                                   return (
                                     <div className="space-y-4">
                                       {/* Header */}
-                                      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
-                                        <div>
-                                          <h2 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
-                                          <p className="text-xs text-zinc-500">Total: <span className="text-green-500 font-bold">
-                                            {(() => {
-                                              const cleaningFee = ((allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId))?.pricing?.cleaningFee || settings.cleaningFee;
-                                              const rentalRate = b.details?.rate || 0;
-                                              const protection = b.details?.protection || 0;
-                                              const extras = b.details?.extras || 0;
-                                              const deliveryFeeForInitial = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
-                                              const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial;
-                                              const initialTax = initialSubtotal > 0 ? initialSubtotal * ((settings.taxes || 0) / 100) : 0;
-                                              const initialPayment = initialSubtotal + initialTax;
-                                              const extendedRate = b.details?.extendedRate || 0;
-                                              const extensionTax = extendedRate > 0 ? extendedRate * ((settings.taxes || 0) / 100) : 0;
-                                              const manualCharges = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges : [];
-                                              const manualChargesTotal = manualCharges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
-                                              const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                                              const discount = b.details?.discount || 0;
-                                              const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * ((settings.taxes || 0) / 100) : 0;
-                                              const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal - discount;
-                                              return `$${total.toFixed(2)}`;
-                                            })()}
-                                          </span></p>
-                                        </div>
+                                              <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
+                                                <div>
+                                                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-booking-code">Booking {b.bookingCode}</h2>
+                                                  <p className="text-xs text-zinc-500">Total: <span className="text-green-500 font-bold">
+                                                    {(() => {
+                                                      const cleaningFee = ((allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId))?.pricing?.cleaningFee || settings.cleaningFee;
+                                                      const rentalRate = b.details?.rate || 0;
+                                                      const protection = b.details?.protection || 0;
+                                                      const extras = b.details?.extras || 0;
+                                                      const deliveryFeeForInitial = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
+                                                      const discount = b.details?.discount || 0;
+                                                      const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial - discount;
+                                                      const carForTax = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId);
+                                                      const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                                      const initialTax = initialSubtotal > 0 ? initialSubtotal * (taxRate / 100) : 0;
+                                                      const initialPayment = initialSubtotal + initialTax;
+                                                      const extendedRate = b.details?.extendedRate || 0;
+                                                      const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
+                                                      const manualCharges = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges : [];
+                                                      const manualChargesTotal = manualCharges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+                                                      const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                                      const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRate / 100) : 0;
+                                                      const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
+                                                      return `$${total.toFixed(2)}`;
+                                                    })()}
+                                                  </span></p>
+                                                </div>
                                         <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
                                           <div className="text-left sm:text-right text-[10px] text-zinc-500">
                                             <div>{b.date}</div>
@@ -9767,17 +9838,19 @@ export default function CarHopApp() {
                                         const protection = b.details?.protection || 0;
                                         const extras = b.details?.extras || 0;
                                         const deliveryFeeForInitial = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
-                                        const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial;
-                                        const initialTax = initialSubtotal > 0 ? initialSubtotal * ((settings.taxes || 0) / 100) : 0;
+                                        const discount = b.details?.discount || 0;
+                                        const initialSubtotal = rentalRate + protection + extras + cleaningFee + deliveryFeeForInitial - discount;
+                                        const carForTax = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId);
+                                        const taxRate = carForTax?.pricing?.taxes || settings.taxes || 0;
+                                        const initialTax = initialSubtotal > 0 ? initialSubtotal * (taxRate / 100) : 0;
                                         const initialPayment = initialSubtotal + initialTax;
                                         const extendedRate = b.details?.extendedRate || 0;
-                                        const extensionTax = extendedRate > 0 ? extendedRate * ((settings.taxes || 0) / 100) : 0;
+                                        const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
                                         const manualCharges = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges : [];
                                         const manualChargesTotal = manualCharges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
                                         const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
-                                        const discount = b.details?.discount || 0;
-                                        const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * ((settings.taxes || 0) / 100) : 0;
-                                        const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal - discount;
+                                        const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRate / 100) : 0;
+                                        const total = initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
                                         return `$${total.toFixed(2)}`;
                                       })()}
                                     </span></p>
@@ -10149,7 +10222,7 @@ export default function CarHopApp() {
                                             const extras = b.details?.extras || 0;
                                             const protection = b.details?.protection || 0;
                                             const cleaningFee = vehicles.find(v => v.id === b.vehicleId)?.pricing?.cleaningFee || settings.cleaningFee || 0;
-                                            const deliveryFee = (b.details as any)?.deliveryFee || 0;
+                                            const deliveryFee = ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((b.details as any)?.deliveryFee || 0) : 0;
                                             const discount = b.details?.discount || 0;
                                             const subtotalBeforeTax = rate + extras + protection + cleaningFee + deliveryFee - discount;
                                             const carForTax = vehicles.find(v => v.id === b.vehicleId);
@@ -10160,6 +10233,8 @@ export default function CarHopApp() {
                                             const extensionTax = extendedRate > 0 ? extendedRate * (taxRate / 100) : 0;
                                             const manualChargesTotal = Array.isArray(b.details?.manualCharges) ? b.details.manualCharges.reduce((sum, c) => sum + c.amount, 0) : 0;
                                             const extraPaymentsTotal = (b.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
+                                            const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRate / 100) : 0;
+                                            const total = originalBookingAmount + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
                                             return (
                                               <>
                                                 <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
