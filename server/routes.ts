@@ -534,23 +534,27 @@ async function calculateCorrectTotal(booking: any): Promise<number> {
   const settings = await storage.getAllSettings();
   const settingsObj: Record<string, any> = {};
   settings.forEach(s => { settingsObj[s.key] = s.value; });
-  const taxRate = (settingsObj.taxes || 0) / 100;
   
-  const deliveryFee = (booking.details as any)?.deliveryApprovalStatus === 'rejected' ? 0 : ((booking.details as any)?.deliveryFee || 0);
+  const vehicle = await storage.getVehicle(booking.vehicleId).catch(() => null);
+  const cleaningFee = vehicle?.pricing?.cleaningFee || settingsObj.cleaningFee || 0;
+  const taxRatePercent = vehicle?.pricing?.taxes || settingsObj.taxes || 0;
   
-  // Initial Payment = rate + protection + extras + cleaningFee + deliveryFee
-  const initialSubtotal = (booking.details?.rate || 0) + (booking.details?.protection || 0) + (booking.details?.extras || 0) + (booking.details?.fees || 0) + deliveryFee;
-  const initialTax = initialSubtotal > 0 ? initialSubtotal * taxRate : 0;
-  
-  // Additional Charges = extendedRate + manualCharges + extraPayments - discount
-  const extendedRate = booking.details?.extendedRate || 0;
-  const manualChargesTotal = Array.isArray(booking.details?.manualCharges) ? (booking.details.manualCharges as any[]).reduce((sum: number, c: any) => sum + (c.amount || 0), 0) : 0;
-  const extraPaymentsTotal = (booking.extraPayments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
+  const deliveryFee = ((booking.details as any)?.deliveryType === 'delivery' && (booking.details as any)?.deliveryApprovalStatus !== 'rejected') ? ((booking.details as any)?.deliveryFee || 0) : 0;
   const discount = booking.details?.discount || 0;
-  const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
-  const additionalTax = additionalChargesBeforeTax > 0 ? additionalChargesBeforeTax * taxRate : 0;
   
-  return initialSubtotal + initialTax + additionalChargesBeforeTax + additionalTax;
+  const initialSubtotal = (booking.details?.rate || 0) + (booking.details?.protection || 0) + (booking.details?.extras || 0) + cleaningFee + deliveryFee - discount;
+  const initialTax = initialSubtotal > 0 ? initialSubtotal * (taxRatePercent / 100) : 0;
+  const initialPayment = initialSubtotal + initialTax;
+  
+  const extendedRate = booking.details?.extendedRate || 0;
+  const extensionTax = extendedRate > 0 ? extendedRate * (taxRatePercent / 100) : 0;
+  
+  const manualChargesTotal = Array.isArray(booking.details?.manualCharges) ? (booking.details.manualCharges as any[]).reduce((sum: number, c: any) => sum + (c.amount || 0), 0) : 0;
+  const manualChargesTax = manualChargesTotal > 0 ? manualChargesTotal * (taxRatePercent / 100) : 0;
+  
+  const extraPaymentsTotal = (booking.extraPayments || []).reduce((sum: number, p: any) => sum + p.amount, 0);
+  
+  return initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
 }
 
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
