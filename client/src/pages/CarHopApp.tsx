@@ -6337,13 +6337,13 @@ export default function CarHopApp() {
                             )}
 
                             {/* Chat Messages */}
-                            {(b.messages || []).length > 0 && (
-                              <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
-                                <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
-                                  <MessageCircle size={14}/> Customer Messages
-                                </h4>
-                                <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'host')}>
-                                  {(b.messages || []).map(msg => (
+                            <div className="p-4 rounded-lg border bg-zinc-900/50 border-zinc-800">
+                              <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-4 text-zinc-400">
+                                <MessageCircle size={14}/> Customer Messages
+                              </h4>
+                              <div className="max-h-48 overflow-y-auto space-y-2 mb-4" onClick={() => markMessagesAsRead(b.id, 'host')}>
+                                {(b.messages || []).length > 0 ? (
+                                  (b.messages || []).map(msg => (
                                     <div key={msg.id} className={`p-2 rounded-lg text-sm ${msg.sender === 'host' ? 'bg-green-900/30 border-l-2 border-green-500 ml-4' : 'bg-zinc-800 border-l-2 border-blue-500 mr-4'}`}>
                                       <div className="flex justify-between items-start mb-1">
                                         <span className={`text-[10px] font-bold uppercase ${msg.sender === 'host' ? 'text-green-400' : 'text-blue-400'}`}>{msg.sender}</span>
@@ -6351,28 +6351,32 @@ export default function CarHopApp() {
                                       </div>
                                       <p className="text-zinc-300">{msg.text}</p>
                                     </div>
-                                  ))}
-                                </div>
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={chatMessage}
-                                    onChange={(e) => setChatMessage(e.target.value)}
-                                    placeholder="Type a message..."
-                                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
-                                    data-testid="input-host-message"
-                                    onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'host')}
-                                  />
-                                  <button 
-                                    onClick={() => sendChatMessage(b.id, 'host')}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                    data-testid="button-send-host-message"
-                                  >
-                                    <Send size={16}/>
-                                  </button>
-                                </div>
+                                  ))
+                                ) : (
+                                  <div className="text-center py-4 text-xs text-zinc-500 italic">
+                                    No messages yet. Send a message to start the conversation.
+                                  </div>
+                                )}
                               </div>
-                            )}
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={chatMessage}
+                                  onChange={(e) => setChatMessage(e.target.value)}
+                                  placeholder="Type a message..."
+                                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+                                  data-testid="input-host-message"
+                                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage(b.id, 'host')}
+                                />
+                                <button 
+                                  onClick={() => sendChatMessage(b.id, 'host')}
+                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                  data-testid="button-send-host-message"
+                                >
+                                  <Send size={16}/>
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Host: Offer Vehicle Replacement */}
