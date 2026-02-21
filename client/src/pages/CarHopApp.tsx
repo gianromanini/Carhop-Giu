@@ -617,6 +617,7 @@ export default function CarHopApp() {
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
   const [adminTab, setAdminTab] = useState<string | null>(null);
+  const [adminChatBookingId, setAdminChatBookingId] = useState<number | null>(null);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
   const [selectedSupportMessage, setSelectedSupportMessage] = useState<any>(null);
@@ -802,7 +803,7 @@ export default function CarHopApp() {
   const [viewingHostCheckData, setViewingHostCheckData] = useState<{ bookingId: number; mode: 'checkin' | 'checkout' } | null>(null);
 
   const [adjustment, setAdjustment] = useState({ type: 'fixed', value: '' });
-  const [extraCharge, setExtraCharge] = useState({ type: 'refuel', amount: '' });
+  const [extraCharge, setExtraCharge] = useState({ type: 'Toll', amount: '' });
   const [extraPaymentAmount, setExtraPaymentAmount] = useState('');
   const [checkingOutByAdminBookingId, setCheckingOutByAdminBookingId] = useState<number | null>(null);
 
@@ -2563,7 +2564,12 @@ export default function CarHopApp() {
     
     const chargeAmount = parseFloat(extraCharge.amount);
     const chargeTypeLabels: Record<string, string> = {
+      'Toll': 'Toll',
+      'Damages': 'Damages',
+      'Smoke Fee Cleaning': 'Smoke Fee Cleaning',
+      'Pet Fee Cleaning': 'Pet Fee Cleaning',
       'refuel': 'Refuel',
+      'tolls': 'Tolls',
       'mileage': 'Extra Mileage',
       'damage': 'Damage',
       'cleaning': 'Extra Cleaning',
@@ -6773,11 +6779,10 @@ export default function CarHopApp() {
                                     className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
                                     data-testid="select-host-charge-type"
                                   >
-                                    <option value="refuel">Refuel</option>
-                                    <option value="tolls">Tolls</option>
-                                    <option value="mileage">Extra Mileage</option>
-                                    <option value="damage">Damage</option>
-                                    <option value="cleaning">Extra Cleaning</option>
+                                    <option value="Toll">Toll</option>
+                                    <option value="Damages">Damages</option>
+                                    <option value="Smoke Fee Cleaning">Smoke Fee Cleaning</option>
+                                    <option value="Pet Fee Cleaning">Pet Fee Cleaning</option>
                                     <option value="other">Other</option>
                                   </select>
                                   <Input 
@@ -6892,6 +6897,7 @@ export default function CarHopApp() {
                                     {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                       <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
                                       <div className="space-y-1">
+                                      <div className="text-xs font-bold uppercase text-zinc-400 mb-2">EXTRA EXPENSES</div>
                                         {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                             <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
                                               <span>Substituição Veículo: {r.oldVehicleModel} → {b.carName}</span>
@@ -7911,7 +7917,7 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex justify-start gap-0.5 sm:gap-1 md:gap-2 mb-6 overflow-x-auto pb-2 px-0 sm:px-2">
-              {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'support'].map(tab => {
+              {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'chat', 'support'].map(tab => {
                 const unreadSupportCount = tab === 'support' ? supportMessagesData.filter((m: any) => !m.read).length : 0;
                 return (
                 <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-2 sm:px-3 py-2 rounded-lg font-bold text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
@@ -7921,6 +7927,7 @@ export default function CarHopApp() {
                     {tab === 'clients' && <Users size={18} />}
                     {tab === 'hosts' && <Building2 size={18} />}
                     {tab === 'earnings' && <TrendingUp size={18} />}
+                    {tab === 'chat' && <MessageCircle size={18} />}
                     {tab === 'support' && <MessageSquare size={18} />}
                   </div>
                   <div className="md:hidden">
@@ -7929,10 +7936,11 @@ export default function CarHopApp() {
                     {tab === 'clients' && <Users size={14} />}
                     {tab === 'hosts' && <Building2 size={14} />}
                     {tab === 'earnings' && <TrendingUp size={14} />}
+                    {tab === 'chat' && <MessageCircle size={14} />}
                     {tab === 'support' && <MessageSquare size={14} />}
                   </div>
                   <div className="relative">
-                    <span>{tab === 'support' ? 'Chat' : tab}</span>
+                    <span>{tab === 'support' ? 'Support' : tab === 'chat' ? 'Customer Chat' : tab}</span>
                     {tab === 'support' && supportMessagesData.filter((m: any) => !m.read && !m.adminReply).length > 0 && (
                       <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         !
@@ -7943,6 +7951,14 @@ export default function CarHopApp() {
                         {getAdminBookingsAlertCount() > 9 ? '9+' : getAdminBookingsAlertCount()}
                       </span>
                     )}
+                    {tab === 'chat' && (() => {
+                      const totalUnread = bookings.reduce((acc, b) => acc + getUnreadMessagesCount(b, 'admin'), 0);
+                      return totalUnread > 0 ? (
+                        <span className="absolute -top-4 -right-3 w-5 h-5 bg-green-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                          {totalUnread > 9 ? '9+' : totalUnread}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                 </button>
               );})}
@@ -10866,6 +10882,102 @@ export default function CarHopApp() {
                     )}
                   </div>
                 </Card>
+              </div>
+            )}
+
+            {adminTab === 'chat' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[600px]">
+                  <div className="bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden">
+                    <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 font-bold flex items-center gap-2 text-zinc-900 dark:text-white">
+                      <MessageSquare size={18} className="text-green-500"/>
+                      Conversations
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                      {bookings.filter(b => b.status !== 'Cancelled').map(b => (
+                        <button
+                          key={b.id}
+                          onClick={() => { setAdminChatBookingId(b.id); markMessagesAsRead(b.id, 'admin'); }}
+                          className={`w-full p-3 rounded-lg text-left transition-colors flex items-center justify-between ${adminChatBookingId === b.id ? 'bg-green-600/20 border border-green-500/50' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent'}`}
+                          data-testid={`button-admin-chat-${b.id}`}
+                        >
+                          <div>
+                            <div className="text-sm font-bold text-zinc-900 dark:text-white">{b.driver.name}</div>
+                            <div className="text-xs text-zinc-500">{b.carName} - {b.bookingCode}</div>
+                          </div>
+                          {getUnreadMessagesCount(b, 'admin') > 0 && (
+                            <span className="bg-green-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                              {getUnreadMessagesCount(b, 'admin')}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="md:col-span-2 bg-white dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden relative">
+                    {adminChatBookingId ? (
+                      (() => {
+                        const chatBooking = bookings.find(b => b.id === adminChatBookingId);
+                        if (!chatBooking) return null;
+                        return (
+                          <>
+                            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-white/80 dark:bg-zinc-900/80 backdrop-blur">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold">
+                                  {chatBooking.driver.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-bold text-zinc-900 dark:text-white">{chatBooking.driver.name}</div>
+                                  <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{chatBooking.carName} - {chatBooking.bookingCode}</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                              {(chatBooking.messages || []).map((msg: any) => (
+                                <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'admin' ? 'bg-green-600 text-white rounded-tr-none' : msg.sender === 'host' ? 'bg-blue-600 text-white rounded-tl-none' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 rounded-tl-none border border-zinc-300 dark:border-zinc-700'}`}>
+                                    {msg.sender === 'host' && <div className="text-[10px] font-bold text-blue-200 mb-1">Host</div>}
+                                    {msg.text}
+                                    {msg.imageUrl && <img src={msg.imageUrl} alt="attachment" className="mt-2 max-w-full rounded-lg max-h-48 object-cover" />}
+                                    <div className={`text-[10px] mt-1 ${msg.sender === 'admin' ? 'text-green-100' : msg.sender === 'host' ? 'text-blue-200' : 'text-zinc-500'}`}>
+                                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur">
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Type a message..."
+                                  value={chatMessage}
+                                  onChange={(e: any) => setChatMessage(e.target.value)}
+                                  onKeyPress={(e: any) => e.key === 'Enter' && sendChatMessage(chatBooking.id, 'admin')}
+                                  className="flex-1 mb-0"
+                                  data-testid="input-admin-chat-message"
+                                />
+                                <button
+                                  onClick={() => sendChatMessage(chatBooking.id, 'admin')}
+                                  className="p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                  data-testid="button-admin-send-chat"
+                                >
+                                  <Send size={18}/>
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800/50 flex items-center justify-center">
+                          <MessageCircle size={32} className="text-zinc-400 dark:text-zinc-600"/>
+                        </div>
+                        <p>Select a conversation to start chatting</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
