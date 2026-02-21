@@ -1787,6 +1787,15 @@ export default function CarHopApp() {
   const handleImageClick = (src: string) => { setSelectedImage(src); };
 
   const compressImage = async (base64: string, _maxWidth = 1200, quality = 0.6): Promise<string> => {
+    // Check size of base64 string (approximate bytes = length * 0.75)
+    const sizeInBytes = base64.length * 0.75;
+    const oneMb = 1024 * 1024;
+
+    // If already under 1MB, don't adjust
+    if (sizeInBytes <= oneMb) {
+      return base64;
+    }
+
     return new Promise((resolve) => {
       const img = new window.Image();
       img.src = base64;
@@ -1794,7 +1803,6 @@ export default function CarHopApp() {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxSizeBytes = 2 * 1024 * 1024;
         
         const maxDimension = 1600; 
         if (width > maxDimension || height > maxDimension) {
@@ -1812,6 +1820,9 @@ export default function CarHopApp() {
         let currentQuality = quality;
         let result = '';
         
+        // Target size is 1MB
+        const targetSizeBytes = oneMb;
+        
         for (let attempt = 0; attempt < 10; attempt++) {
           canvas.width = currentWidth;
           canvas.height = currentHeight;
@@ -1819,7 +1830,7 @@ export default function CarHopApp() {
           ctx?.drawImage(img, 0, 0, currentWidth, currentHeight);
           result = canvas.toDataURL('image/jpeg', currentQuality);
           
-          if (result.length * 0.75 <= maxSizeBytes) break;
+          if (result.length * 0.75 <= targetSizeBytes) break;
           
           if (currentQuality > 0.2) {
             currentQuality -= 0.1;
@@ -10327,7 +10338,7 @@ export default function CarHopApp() {
 
                                                 {(extendedRate > 0 || manualChargesTotal > 0 || extraPaymentsTotal > 0) && (
                                                   <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700">
-                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">LOGS</div>
+                                                    <div className="text-xs font-bold uppercase text-zinc-400 mb-2">EXTRA EXPENSES</div>
                                                     <div className="space-y-1">
                                                       {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                                         <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
@@ -10409,11 +10420,10 @@ export default function CarHopApp() {
                                             <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
                                             <div className="flex flex-col sm:flex-row gap-2">
                                               <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" data-testid="select-admin-charge-type">
-                                                <option value="refuel">Refuel</option>
-                                                <option value="tolls">Tolls</option>
-                                                <option value="mileage">Extra Mileage</option>
-                                                <option value="damage">Damage</option>
-                                                <option value="cleaning">Extra Cleaning</option>
+                                                <option value="Toll">Toll</option>
+                                                <option value="Damages">Damages</option>
+                                                <option value="Smoke Fee Cleaning">Smoke Fee Cleaning</option>
+                                                <option value="Pet Fee Cleaning">Pet Fee Cleaning</option>
                                                 <option value="discount">Discount</option>
                                                 <option value="other">Other</option>
                                               </select>
@@ -13405,7 +13415,7 @@ export default function CarHopApp() {
                           <span className="text-[10px] mt-1">{driverDetails.licenseImages.length === 0 ? 'Add Front' : 'Selfie Hold Your Drivers License'}</span>
                         </button>
                       )}
-                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLicenseUpload} />
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleLicenseUpload} />
                     </div>
                   </div>
 
@@ -14240,7 +14250,7 @@ export default function CarHopApp() {
                         <Camera size={20}/>
                       </button>
                     )}
-                    <input id="check-input-outside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'outside')} />
+                    <input id="check-input-outside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} />
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
                 </div>
@@ -14266,7 +14276,7 @@ export default function CarHopApp() {
                         <Camera size={20}/>
                       </button>
                     )}
-                    <input id="check-input-inside" type="file" className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'inside')} />
+                    <input id="check-input-inside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} />
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
                 </div>
