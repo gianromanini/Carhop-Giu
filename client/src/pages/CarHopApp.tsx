@@ -6489,77 +6489,6 @@ export default function CarHopApp() {
                             );
                           })()}
 
-                          {/* Manage Charges & Adjustments */}
-                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
-                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
-                            
-                            <div className="mb-4">
-                              <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <select 
-                                  value={adjustment.type} 
-                                  onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
-                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                  data-testid="select-host-discount-type"
-                                >
-                                  <option value="fixed">Fixed Value ($)</option>
-                                  <option value="percent">Percentage (%)</option>
-                                </select>
-                                <Input 
-                                  placeholder="Value" 
-                                  type="number"
-                                  value={adjustment.value}
-                                  onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
-                                  className="flex-1 mb-0 text-xs" 
-                                  data-testid="input-host-discount-value" 
-                                />
-                                <button 
-                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                  onClick={() => handleApplyDiscount(b)}
-                                  data-testid="button-host-apply-discount"
-                                >
-                                  Apply
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="space-y-4">
-                              <div>
-                                <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <select 
-                                    value={extraCharge.type}
-                                    onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
-                                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
-                                    data-testid="select-host-charge-type"
-                                  >
-                                    <option value="refuel">Refuel</option>
-                                    <option value="tolls">Tolls</option>
-                                    <option value="mileage">Extra Mileage</option>
-                                    <option value="damage">Damage</option>
-                                    <option value="cleaning">Extra Cleaning</option>
-                                    <option value="other">Other</option>
-                                  </select>
-                                  <Input 
-                                    placeholder="Value ($)" 
-                                    type="number"
-                                    value={extraCharge.amount}
-                                    onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
-                                    className="flex-1 mb-0 text-xs" 
-                                    data-testid="input-host-charge-value" 
-                                  />
-                                  <button 
-                                    className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
-                                    onClick={() => handleAddCharge(b)}
-                                    data-testid="button-host-charge"
-                                  >
-                                    Add Charge
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
                           {/* Driver's License */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Driver's License</h4>
@@ -6789,6 +6718,77 @@ export default function CarHopApp() {
                               )}
                             </div>
 
+                          {/* Manage Charges & Adjustments */}
+                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
+                            <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
+                            
+                            <div className="mb-4">
+                              <label className="text-xs text-zinc-500 mb-2 block">Apply Discount</label>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <select 
+                                  value={adjustment.type} 
+                                  onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))}
+                                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
+                                  data-testid="select-host-discount-type"
+                                >
+                                  <option value="fixed">Fixed Value ($)</option>
+                                  <option value="percent">Percentage (%)</option>
+                                </select>
+                                <Input 
+                                  placeholder="Value" 
+                                  type="number"
+                                  value={adjustment.value}
+                                  onChange={(e: any) => setAdjustment(prev => ({ ...prev, value: e.target.value }))}
+                                  className="flex-1 mb-0 text-xs" 
+                                  data-testid="input-host-discount-value" 
+                                />
+                                <button 
+                                  className="px-3 h-[38px] bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
+                                  onClick={() => handleApplyDiscount(b)}
+                                  data-testid="button-host-apply-discount"
+                                >
+                                  Apply
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-xs text-zinc-500 mb-2 block">Add Extra Charge</label>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <select 
+                                    value={extraCharge.type}
+                                    onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))}
+                                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white sm:w-40" 
+                                    data-testid="select-host-charge-type"
+                                  >
+                                    <option value="refuel">Refuel</option>
+                                    <option value="tolls">Tolls</option>
+                                    <option value="mileage">Extra Mileage</option>
+                                    <option value="damage">Damage</option>
+                                    <option value="cleaning">Extra Cleaning</option>
+                                    <option value="other">Other</option>
+                                  </select>
+                                  <Input 
+                                    placeholder="Value ($)" 
+                                    type="number"
+                                    value={extraCharge.amount}
+                                    onChange={(e: any) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))}
+                                    className="flex-1 mb-0 text-xs" 
+                                    data-testid="input-host-charge-value" 
+                                  />
+                                  <button 
+                                    className="px-3 h-[38px] bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap" 
+                                    onClick={() => handleAddCharge(b)}
+                                    data-testid="button-host-charge"
+                                  >
+                                    Add Charge
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
                           {/* 4. Financial Details */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
@@ -6950,23 +6950,7 @@ export default function CarHopApp() {
                             </div>
                           </div>
 
-                          {/* 5. Manage Charges & Adjustments */}
-                          <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
-                            <div className="space-y-4">
-                              <div className="flex gap-2">
-                                <select value={adjustment.type} onChange={(e) => setAdjustment(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="fixed">$</option><option value="percent">%</option></select>
-                                <input type="number" placeholder="Discount" value={adjustment.value} onChange={(e) => setAdjustment(prev => ({ ...prev, value: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
-                                <button onClick={() => handleApplyDiscount(b)} className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">Apply</button>
-                              </div>
-                              <div className="flex gap-2">
-                                <select value={extraCharge.type} onChange={(e) => setExtraCharge(prev => ({ ...prev, type: e.target.value }))} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white"><option value="refuel">Refuel</option><option value="mileage">Mileage</option><option value="damage">Damage</option><option value="discount">Discount</option></select>
-                                <input type="number" placeholder="Value" value={extraCharge.amount} onChange={(e) => setExtraCharge(prev => ({ ...prev, amount: e.target.value }))} className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white" />
-                                <button onClick={() => handleAddCharge(b)} className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded">Add</button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 6. Rental Agreement */}
+                          {/* Agreement */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Agreement</h4>
                             <button onClick={() => setViewingAgreementBookingId(b.id)} className="w-full flex items-center justify-between p-2 bg-zinc-800 rounded border border-zinc-700 transition-colors"><div className="flex items-center gap-2"><FileText size={14} className="text-blue-500"/><span className="text-[10px] font-bold uppercase">View Agreement</span></div><ChevronRight size={14} /></button>
