@@ -14183,162 +14183,212 @@ export default function CarHopApp() {
           </div>
         )}
 
-        {view === 'check-workflow' && activeBooking && (
-          <div className="max-w-2xl mx-auto px-6 py-12">
-            <Button variant="ghost" onClick={() => setView('bookings')} className="mb-8"><ArrowLeft size={20} /> Back to Bookings</Button>
-            <Card className="p-8">
-              <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{isHostCheckMode ? (isCheckOutMode ? 'Host Check-Out' : 'Host Check-In') : (isCheckOutMode ? 'Vehicle Check-Out' : 'Vehicle Check-In')}</h2>
-              <p className="text-zinc-500 mb-6">{activeBooking.carName} - {activeBooking.bookingCode}</p>
-              <div className="space-y-6">
-                {/* 1. Outside Photos - First */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Outside Photos <span className="text-red-500">* (min 1, max 15)</span></label>
-                  <div className="flex gap-2 flex-wrap">
-                    {checkData.photosOutside.map((p, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500 group">
-                        <img src={p} className="w-full h-full object-cover"/>
-                        <button 
-                          onClick={() => handleRemoveCheckPhoto('outside', i)} 
-                          className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-bl-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          data-testid={`button-remove-outside-${i}`}
-                        >
-                          <X size={12}/>
-                        </button>
-                      </div>
-                    ))}
-                    {checkData.photosOutside.length < 15 && (
-                      <button onClick={() => triggerCheckInput('outside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-outside">
-                        <Camera size={20}/>
-                      </button>
-                    )}
-                    <input id="check-input-outside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} />
-                  </div>
-                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
-                </div>
-                
-                {/* 2. Inside Photos - Second */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Inside Photos <span className="text-red-500">* (min 1, max 15)</span></label>
-                  <div className="flex gap-2 flex-wrap">
-                    {checkData.photosInside.map((p, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500 group">
-                        <img src={p} className="w-full h-full object-cover"/>
-                        <button 
-                          onClick={() => handleRemoveCheckPhoto('inside', i)} 
-                          className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-bl-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          data-testid={`button-remove-inside-${i}`}
-                        >
-                          <X size={12}/>
-                        </button>
-                      </div>
-                    ))}
-                    {checkData.photosInside.length < 15 && (
-                      <button onClick={() => triggerCheckInput('inside')} className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500" data-testid="button-upload-inside">
-                        <Camera size={20}/>
-                      </button>
-                    )}
-                    <input id="check-input-inside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} />
-                  </div>
-                  <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
-                </div>
-                
-                {/* 3. Current Mileage - Third */}
-                <Input label="Current Mileage" type="number" value={checkData.miles} onChange={(e: any) => setCheckData({...checkData, miles: e.target.value})} placeholder="e.g. 45000" required data-testid="input-check-miles" />
-                
-                {/* 4. Fuel Level - Fourth (Last) */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Fuel Level</label>
-                  <div className="flex gap-2">{['Full', '3/4', '1/2', '1/4', 'Empty'].map(level => (<button key={level} onClick={() => setCheckData({...checkData, gas: level})} className={`flex-1 py-2 rounded border text-sm font-bold ${checkData.gas === level ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`} data-testid={`button-gas-${level}`}>{level}</button>))}</div>
-                </div>
-                
-                {(() => {
-                  const canComplete = checkData.photosOutside.length >= 1 && checkData.photosInside.length >= 1 && checkData.miles && checkData.gas;
-                  
-                  const calculateCheckoutCharges = () => {
-                    if (!isCheckOutMode || !activeBooking?.checkInData) return { excessMileageFee: 0, refuelingFee: 0, totalDifference: 0, excessMiles: 0 };
-                    
-                    const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
-                    const checkOutMiles = parseInt(checkData.miles || '0');
-                    const carPricing = vehicles.find(v => v.id === activeBooking.vehicleId)?.pricing;
-                    const includedMilesPerDay = carPricing?.includedMiles || settings.includedMiles;
-                    const extraMileRate = carPricing?.extraMileRate || settings.extraMileRate;
-                    const allowedMiles = includedMilesPerDay * activeBooking.days;
-                    const milesDriven = checkOutMiles - checkInMiles;
-                    const excessMiles = Math.max(0, milesDriven - allowedMiles);
-                    const excessMileageFee = excessMiles * extraMileRate;
-                    
-                    const gasInLevel = getGasValue(activeBooking.checkInData?.gas || 'Full');
-                    const gasOutLevel = getGasValue(checkData.gas);
-                    const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
-                    const refuelingFee = gasDiff * 10;
-                    
-                    return { excessMileageFee, refuelingFee, totalDifference: excessMileageFee + refuelingFee, excessMiles };
-                  };
-                  
-                  const charges = calculateCheckoutCharges();
-                  
-                  // Calculate booking value (original without extensions)
-                  const originalBookingValue = activeBooking ? activeBooking.total - (activeBooking.details?.extendedRate || 0) : 0;
-                  const extendedAmount = activeBooking?.details?.extendedRate || 0;
-                  const totalAmount = originalBookingValue + extendedAmount + charges.totalDifference;
-                  const amountToPay = totalAmount - originalBookingValue;
-                  
-                  return (
-                    <div className="space-y-3">
-                      {isCheckOutMode && (
-                        <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4 space-y-3">
-                          <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-3">Check-Out Summary</h3>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-zinc-600 dark:text-zinc-400">Original Booking Amount</span>
-                            <span className="text-zinc-900 dark:text-white font-medium">${originalBookingValue.toFixed(2)}</span>
-                          </div>
-                          
-                          {/* Extended Days if any */}
-                          {extendedAmount > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-blue-600 dark:text-blue-400">Extended Days</span>
-                              <span className="text-blue-600 dark:text-blue-400 font-medium">+${extendedAmount.toFixed(2)}</span>
-                            </div>
-                          )}
-                          
-                          {charges.excessMileageFee > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-orange-600 dark:text-orange-400">Extra Miles Charged ({charges.excessMiles} miles)</span>
-                              <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.excessMileageFee.toFixed(2)}</span>
-                            </div>
-                          )}
-                          {charges.refuelingFee > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-orange-600 dark:text-orange-400">Fuel Level Charge</span>
-                              <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.refuelingFee.toFixed(2)}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                            <span className="font-bold text-zinc-900 dark:text-white">Total</span>
-                            <span className="font-bold text-zinc-900 dark:text-white">${totalAmount.toFixed(2)}</span>
-                          </div>
-                          
-                          <div className="flex justify-between text-sm">
-                            <span className="font-bold text-lg text-zinc-900 dark:text-white">Amount to Pay Now</span>
-                            <span className="font-bold text-lg text-green-600 dark:text-green-400">${amountToPay.toFixed(2)}</span>
-                          </div>
-                          
-                          {charges.totalDifference > 0 && (
-                            <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-300 dark:border-zinc-600">
-                              The amount of ${amountToPay.toFixed(2)} will be charged to the same payment method used for the original booking.
-                            </p>
-                          )}
+        {showCheckWorkflowModal && activeBooking && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl relative">
+              <Button 
+                size="icon"
+                variant="ghost"
+                onClick={() => {
+                  setShowCheckWorkflowModal(false);
+                }} 
+                className="absolute top-4 right-4 z-10"
+                data-testid="button-close-check-modal"
+              >
+                <X size={20} />
+              </Button>
+
+              <div className="p-6 sm:p-8">
+                <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">
+                  {isHostCheckMode ? (isCheckOutMode ? 'Host Check-Out' : 'Host Check-In') : (isCheckOutMode ? 'Vehicle Check-Out' : 'Vehicle Check-In')}
+                </h2>
+                <p className="text-zinc-500 mb-6 flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs font-mono text-blue-600 dark:text-blue-400">{activeBooking.bookingCode}</span>
+                  <span>{activeBooking.carName}</span>
+                </p>
+
+                <div className="space-y-6">
+                  {/* 1. Outside Photos */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">
+                      Outside Photos <span className="text-red-500">* (min 1, max 15)</span>
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {checkData.photosOutside.map((p, i) => (
+                        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500 group">
+                          <img src={p} className="w-full h-full object-cover" alt={`Outside ${i+1}`}/>
+                          <button 
+                            onClick={() => handleRemoveCheckPhoto('outside', i)} 
+                            className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-bl-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-testid={`button-remove-outside-${i}`}
+                          >
+                            <X size={12}/>
+                          </button>
                         </div>
+                      ))}
+                      {checkData.photosOutside.length < 15 && (
+                        <button 
+                          onClick={() => triggerCheckInput('outside')} 
+                          className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-colors"
+                          data-testid="button-upload-outside"
+                        >
+                          <Camera size={20}/>
+                        </button>
                       )}
-                      <Button className={`w-full py-4 flex items-center justify-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">
-                        {`Complete ${isHostCheckMode ? 'Host ' : ''}${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
-                      </Button>
+                      <input id="check-input-outside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} />
                     </div>
-                  );
-                })()}
+                    <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
+                  </div>
+                  
+                  {/* 2. Inside Photos */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">
+                      Inside Photos <span className="text-red-500">* (min 1, max 15)</span>
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {checkData.photosInside.map((p, i) => (
+                        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-green-500 group">
+                          <img src={p} className="w-full h-full object-cover" alt={`Inside ${i+1}`}/>
+                          <button 
+                            onClick={() => handleRemoveCheckPhoto('inside', i)} 
+                            className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-bl-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-testid={`button-remove-inside-${i}`}
+                          >
+                            <X size={12}/>
+                          </button>
+                        </div>
+                      ))}
+                      {checkData.photosInside.length < 15 && (
+                        <button 
+                          onClick={() => triggerCheckInput('inside')} 
+                          className="w-16 h-16 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg flex items-center justify-center text-zinc-500 hover:border-green-500 hover:text-green-500 transition-colors"
+                          data-testid="button-upload-inside"
+                        >
+                          <Camera size={20}/>
+                        </button>
+                      )}
+                      <input id="check-input-inside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} />
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
+                  </div>
+                  
+                  {/* 3. Current Mileage */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Current Mileage</label>
+                    <input 
+                      type="number" 
+                      value={checkData.miles} 
+                      onChange={(e: any) => setCheckData({...checkData, miles: e.target.value})} 
+                      placeholder="e.g. 45000" 
+                      className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg p-3 text-zinc-900 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                      data-testid="input-check-miles"
+                    />
+                  </div>
+
+                  {/* 4. Fuel Level */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-wider">Fuel Level</label>
+                    <div className="flex gap-2">
+                      {['Full', '3/4', '1/2', '1/4', 'Empty'].map(level => (
+                        <button 
+                          key={level} 
+                          onClick={() => setCheckData({...checkData, gas: level})} 
+                          className={`flex-1 py-2 rounded border text-sm font-bold transition-all ${checkData.gas === level ? 'bg-green-600 text-white border-green-600' : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300'}`}
+                          data-testid={`button-gas-${level}`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {(() => {
+                    const canComplete = checkData.photosOutside.length >= 1 && checkData.photosInside.length >= 1 && checkData.miles && checkData.gas;
+                    
+                    const calculateCheckoutCharges = () => {
+                      if (!isCheckOutMode || !activeBooking?.checkInData) return { excessMileageFee: 0, refuelingFee: 0, totalDifference: 0, excessMiles: 0 };
+                      
+                      const checkInMiles = parseInt(activeBooking.checkInData?.miles || '0');
+                      const checkOutMiles = parseInt(checkData.miles || '0');
+                      const carPricing = vehicles.find(v => v.id === activeBooking.vehicleId)?.pricing;
+                      const includedMilesPerDay = carPricing?.includedMiles || settings.includedMiles;
+                      const extraMileRate = carPricing?.extraMileRate || settings.extraMileRate;
+                      const allowedMiles = includedMilesPerDay * activeBooking.days;
+                      const milesDriven = checkOutMiles - checkInMiles;
+                      const excessMiles = Math.max(0, milesDriven - allowedMiles);
+                      const excessMileageFee = excessMiles * extraMileRate;
+                      
+                      const gasInLevel = getGasValue(activeBooking.checkInData?.gas || 'Full');
+                      const gasOutLevel = getGasValue(checkData.gas);
+                      const gasDiff = Math.max(0, gasInLevel - gasOutLevel);
+                      const refuelingFee = gasDiff * 10;
+                      
+                      return { excessMileageFee, refuelingFee, totalDifference: excessMileageFee + refuelingFee, excessMiles };
+                    };
+                    
+                    const charges = calculateCheckoutCharges();
+                    
+                    const originalBookingValue = activeBooking ? activeBooking.total - (activeBooking.details?.extendedRate || 0) : 0;
+                    const extendedAmount = activeBooking?.details?.extendedRate || 0;
+                    const totalAmount = originalBookingValue + extendedAmount + charges.totalDifference;
+                    const amountToPay = totalAmount - originalBookingValue;
+                    
+                    return (
+                      <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                        {isCheckOutMode && (
+                          <div className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 space-y-3">
+                            <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-3">Check-Out Summary</h3>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-zinc-600 dark:text-zinc-400">Original Booking Amount</span>
+                              <span className="text-zinc-900 dark:text-white font-medium">${originalBookingValue.toFixed(2)}</span>
+                            </div>
+                            
+                            {extendedAmount > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-blue-600 dark:text-blue-400">Extended Days</span>
+                                <span className="text-blue-600 dark:text-blue-400 font-medium">+${extendedAmount.toFixed(2)}</span>
+                              </div>
+                            )}
+                            
+                            {charges.excessMileageFee > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-orange-600 dark:text-orange-400">Extra Miles Charged ({charges.excessMiles} miles)</span>
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.excessMileageFee.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {charges.refuelingFee > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-orange-600 dark:text-orange-400">Fuel Level Charge</span>
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">+${charges.refuelingFee.toFixed(2)}</span>
+                              </div>
+                            )}
+                            
+                            <div className="flex justify-between text-sm pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                              <span className="font-bold text-zinc-900 dark:text-white">Total</span>
+                              <span className="font-bold text-zinc-900 dark:text-white">${totalAmount.toFixed(2)}</span>
+                            </div>
+                            
+                            <div className="flex justify-between text-sm">
+                              <span className="font-bold text-lg text-zinc-900 dark:text-white">Amount to Pay Now</span>
+                              <span className="font-bold text-lg text-green-600 dark:text-green-400">${amountToPay.toFixed(2)}</span>
+                            </div>
+                            
+                            {charges.totalDifference > 0 && (
+                              <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-300 dark:border-zinc-600">
+                                The amount of ${amountToPay.toFixed(2)} will be charged to the same payment method used for the original booking.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        <Button className={`w-full py-4 flex items-center justify-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!canComplete} onClick={completeWorkflow} data-testid="button-complete-workflow">
+                          {`Complete ${isHostCheckMode ? 'Host ' : ''}${isCheckOutMode ? 'Check-Out' : 'Check-In'}`}
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
-            </Card>
+            </div>
           </div>
         )}
 
