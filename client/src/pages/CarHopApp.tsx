@@ -831,6 +831,7 @@ export default function CarHopApp() {
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
+  const [showCheckWorkflowModal, setShowCheckWorkflowModal] = useState(false);
   
   const [showHostTransferModal, setShowHostTransferModal] = useState(false);
   const [pendingHostTransfer, setPendingHostTransfer] = useState<{ vehicleId: number; vehicleModel: string; fromHostId: string; fromHostName: string; toHostId: string; toHostName: string } | null>(null);
@@ -2044,7 +2045,7 @@ export default function CarHopApp() {
     setCheckData(initialCheckState);
     setIsCheckOutMode(mode === 'checkout');
     setIsHostCheckMode(isHost);
-    setView('check-workflow');
+    setShowCheckWorkflowModal(true);
   };
 
   const handleCheckUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
@@ -2163,9 +2164,11 @@ export default function CarHopApp() {
          title: isCheckOutMode ? "Check-out do Host Concluído" : "Check-in do Host Concluído",
          description: "Os dados foram salvos com sucesso.",
        });
-       setIsHostCheckMode(false);
-       setView('host-dashboard');
+       setShowCheckWorkflowModal(false);
+       setActiveBooking(null);
      } else {
+       setShowCheckWorkflowModal(false);
+       setActiveBooking(null);
        setView('workflow-success');
      }
   };
