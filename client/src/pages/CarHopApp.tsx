@@ -10006,7 +10006,7 @@ export default function CarHopApp() {
                                             >
                                               <div className="flex items-center gap-2">
                                                 <Camera size={14} className="text-green-500"/>
-                                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Host Verification</span>
+                                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Host Check-in / Check-out</span>
                                                 {totalHostPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalHostPhotos} photos)</span>}
                                               </div>
                                               <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isHostExpanded ? 'rotate-180' : ''}`} />
