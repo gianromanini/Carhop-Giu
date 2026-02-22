@@ -1066,9 +1066,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
   app.get("/api/bookings", async (_req, res) => {
     try {
-      console.log(`[API] /api/bookings - Starting fetch at ${new Date().toISOString()}`);
       const bookings = await storage.getBookings();
-      console.log(`[API] /api/bookings - Got ${bookings.length} bookings, preparing response...`);
       
       // Check for a debug query param to see all raw data (may be very large!)
       if (_req.query.debug === 'true') {
@@ -1085,6 +1083,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // This prevents timeout/memory issues when there are many bookings with large photos
       const optimizedBookings = bookings.map(booking => {
         const optimized = { ...booking };
+        
+        // Strip large vehicle image from list response
+        if (optimized.image && typeof optimized.image === 'string' && optimized.image.length > 1000) {
+          optimized.image = '[IMAGE]';
+        }
         
         // Replace large base64 images with placeholder info
         if (optimized.driver && typeof optimized.driver === 'object') {
@@ -1138,9 +1141,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         return optimized;
       });
       
-      console.log(`[API] /api/bookings - Sending optimized JSON response...`);
       res.json(optimizedBookings);
-      console.log(`[API] /api/bookings - Response sent successfully`);
     } catch (error: any) {
       console.error("[API] /api/bookings - ERROR:", error);
       console.error("[API] /api/bookings - Error message:", error?.message || "No message");

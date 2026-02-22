@@ -823,6 +823,10 @@ export default function CarHopApp() {
   const [bookingFilterStatus, setBookingFilterStatus] = useState<string>('');
   const [bookingFilterCarModel, setBookingFilterCarModel] = useState<string>('');
   const [bookingFilterNumber, setBookingFilterNumber] = useState('');
+  const [hostBookingsPage, setHostBookingsPage] = useState(1);
+  const [adminBookingsPage, setAdminBookingsPage] = useState(1);
+  const BOOKINGS_PER_PAGE = 20;
+  useEffect(() => { setHostBookingsPage(1); setAdminBookingsPage(1); }, [bookingFilterStatus, bookingFilterNumber, bookingFilterCarModel, bookingFilterType]);
   const [clientBookingFilter, setClientBookingFilter] = useState<'newest' | 'active' | 'completed' | 'cancelled' | 'pending'>('newest');
   const [expandedBookingId, setExpandedBookingId] = useState<number | null>(null);
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
@@ -966,21 +970,13 @@ export default function CarHopApp() {
   }, [vehicles, allVehicles, fleetSort]);
   const { data: bookings = [], isLoading: bookingsLoading, refetch: refetchBookings } = useQuery<Booking[]>({ 
     queryKey: ['/api/bookings'],
-    staleTime: 0,
+    staleTime: 10000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 2000 
+    refetchInterval: 30000 
   });
   
-  // LOG PARA DEBUG
-  useEffect(() => {
-    console.log('Bookings DEBUG:', { 
-      count: bookings.length, 
-      isLoading: bookingsLoading,
-      firstBooking: bookings[0] || 'none',
-      allBookingIds: bookings.map(b => b.id)
-    });
-  }, [bookings, bookingsLoading]);
+  
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
@@ -1335,21 +1331,15 @@ export default function CarHopApp() {
     );
   }, [fullBookingCache]);
 
-  // Effect to fetch full booking data when placeholders are detected
+  // Only fetch full booking images on demand when a specific booking is opened
   useEffect(() => {
-    if (!bookings || bookings.length === 0) return;
-    
-    // Find bookings that need image fetching
-    const bookingsToFetch = bookings.filter(bookingNeedsImageFetch);
-    
-    // Limit concurrent fetches to avoid overwhelming the server
-    const maxConcurrent = 3;
-    const toFetch = bookingsToFetch.slice(0, maxConcurrent);
-    
-    toFetch.forEach(booking => {
-      fetchFullBooking(booking.id);
-    });
-  }, [bookings, bookingNeedsImageFetch, fetchFullBooking]);
+    const bookingId = manageBookingId || hostManageBookingId;
+    if (!bookingId) return;
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking && bookingNeedsImageFetch(booking)) {
+      fetchFullBooking(bookingId);
+    }
+  }, [manageBookingId, hostManageBookingId, bookings, bookingNeedsImageFetch, fetchFullBooking]);
 
   // Host pickup locations - per host, not global
   const { data: hostPickupLocationsData } = useQuery<{ locations: string[] }>({
@@ -5836,37 +5826,40 @@ export default function CarHopApp() {
                   </div>
                   
                   <div className="space-y-2">
-                    {hostBookings
-                      .sort((a, b) => {
-                        if (bookingFilterType === 'end-soon') {
-                          const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
-                          const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
-                          return aDateTime - bDateTime;
-                        } else {
-                          // Default sort: Newest ID first (which usually means newest booking)
-                          return Number(b.id) - Number(a.id);
-                        }
-                      })
-                      .filter(b => {
-                        let matches = true;
-                        const normalizedBookingStatus = b.status?.toLowerCase().trim();
-                        if (bookingFilterStatus) {
-                          const status = bookingFilterStatus as string;
-                          if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
-                          else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
-                          else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
-                          else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
-                        }
-                        if (bookingFilterNumber) {
-                          const searchTerm = bookingFilterNumber.toLowerCase();
-                          const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
-                          const driverName = (b.driver as any)?.name?.toLowerCase() || "";
-                          const matchesName = driverName.includes(searchTerm);
-                          if (!matchesCode && !matchesName) matches = false;
-                        }
-                        return matches;
-                      })
-                      .map(b => {
+                    {(() => {
+                      const filteredHostBookings = hostBookings
+                        .sort((a, b) => {
+                          if (bookingFilterType === 'end-soon') {
+                            const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
+                            const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
+                            return aDateTime - bDateTime;
+                          } else {
+                            return Number(b.id) - Number(a.id);
+                          }
+                        })
+                        .filter(b => {
+                          let matches = true;
+                          const normalizedBookingStatus = b.status?.toLowerCase().trim();
+                          if (bookingFilterStatus) {
+                            const status = bookingFilterStatus as string;
+                            if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
+                            else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
+                            else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
+                            else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                          }
+                          if (bookingFilterNumber) {
+                            const searchTerm = bookingFilterNumber.toLowerCase();
+                            const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
+                            const driverName = (b.driver as any)?.name?.toLowerCase() || "";
+                            const matchesName = driverName.includes(searchTerm);
+                            if (!matchesCode && !matchesName) matches = false;
+                          }
+                          return matches;
+                        });
+                      const hostTotalPages = Math.ceil(filteredHostBookings.length / BOOKINGS_PER_PAGE);
+                      const hostPagedBookings = filteredHostBookings.slice((hostBookingsPage - 1) * BOOKINGS_PER_PAGE, hostBookingsPage * BOOKINGS_PER_PAGE);
+                      return (<>
+                        {hostPagedBookings.map(b => {
                         const isAwaitingPickupApproval = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled';
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : (b.status === 'Active' || b.status === 'Extended') ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : isAwaitingPickupApproval ? 'bg-orange-400 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : isAwaitingPickupApproval ? 'PENDING PICKUP' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'PENDING APPROVAL' : b.status;
@@ -6022,9 +6015,18 @@ export default function CarHopApp() {
                           </div>
                         );
                       })}
-                    {hostBookings.length === 0 && (
-                      <p className="text-sm text-zinc-500 text-center py-8">No bookings yet</p>
-                    )}
+                        {filteredHostBookings.length === 0 && (
+                          <p className="text-sm text-zinc-500 text-center py-8">{hostBookings.length === 0 ? 'No bookings yet' : 'No bookings match your filters'}</p>
+                        )}
+                        {hostTotalPages > 1 && (
+                          <div className="flex items-center justify-between pt-3 border-t border-zinc-800 mt-3">
+                            <button disabled={hostBookingsPage <= 1} onClick={() => setHostBookingsPage(p => Math.max(1, p - 1))} className="px-3 py-1 text-xs font-bold rounded bg-zinc-800 text-zinc-300 disabled:opacity-30 transition-colors" data-testid="button-host-bookings-prev">Previous</button>
+                            <span className="text-xs text-zinc-400">{hostBookingsPage} / {hostTotalPages} ({filteredHostBookings.length} total)</span>
+                            <button disabled={hostBookingsPage >= hostTotalPages} onClick={() => setHostBookingsPage(p => Math.min(hostTotalPages, p + 1))} className="px-3 py-1 text-xs font-bold rounded bg-zinc-800 text-zinc-300 disabled:opacity-30 transition-colors" data-testid="button-host-bookings-next">Next</button>
+                          </div>
+                        )}
+                      </>);
+                    })()}
                   </div>
                 </Card>
 
@@ -9620,48 +9622,46 @@ export default function CarHopApp() {
                     {bookingsLoading && (
                       <p className="text-zinc-400 text-center py-4">Carregando reservas...</p>
                     )}
-                    {bookings
-                      .filter(b => {
-                        let matches = true;
-                        
-                        // Debug filter
-                        if (!bookingFilterStatus || bookingFilterStatus === "" || bookingFilterStatus === "todos os status") {
-                          // matches is already true
-                        } else {
-                          const status = (bookingFilterStatus as string).toLowerCase().trim();
-                          const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
-                          if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
-                          else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed' || normalizedStatusForFilter === 'concluido' || normalizedStatusForFilter === 'concluído');
-                          else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
-                          else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || normalizedStatusForFilter === 'aguardando aprovação' || (b.details as any)?.deliveryApprovalStatus === 'pending');
-                        }
-                        
-                        // Only filter by car model if one is selected
-                        if (bookingFilterCarModel && bookingFilterCarModel !== "") {
-                          const bVehicleId = String(b.vehicleId || '');
-                          const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
-                          if (vehicle?.model !== bookingFilterCarModel) matches = false;
-                        }
-
-                        if (bookingFilterNumber && bookingFilterNumber !== "") {
-                          const searchTerm = bookingFilterNumber.toLowerCase();
-                          const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
-                          const driverName = (b.driver as any)?.name?.toLowerCase() || (b.driver as any)?.firstName?.toLowerCase() || "";
-                          const matchesName = driverName.includes(searchTerm);
-                          if (!matchesCode && !matchesName) matches = false;
-                        }
-                        return matches;
-                      })
-                      .sort((a, b) => {
-                        if (bookingFilterType === 'end-soon') {
-                          const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
-                          const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
-                          return aDateTime - bDateTime;
-                        } else {
-                          return Number(b.id) - Number(a.id);
-                        }
-                      })
-                      .map(b => {
+                    {(() => {
+                      const filteredAdminBookings = bookings
+                        .filter(b => {
+                          let matches = true;
+                          if (!bookingFilterStatus || bookingFilterStatus === "" || bookingFilterStatus === "todos os status") {
+                          } else {
+                            const status = (bookingFilterStatus as string).toLowerCase().trim();
+                            const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
+                            if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
+                            else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed' || normalizedStatusForFilter === 'concluido' || normalizedStatusForFilter === 'concluído');
+                            else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
+                            else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || normalizedStatusForFilter === 'aguardando aprovação' || (b.details as any)?.deliveryApprovalStatus === 'pending');
+                          }
+                          if (bookingFilterCarModel && bookingFilterCarModel !== "") {
+                            const bVehicleId = String(b.vehicleId || '');
+                            const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
+                            if (vehicle?.model !== bookingFilterCarModel) matches = false;
+                          }
+                          if (bookingFilterNumber && bookingFilterNumber !== "") {
+                            const searchTerm = bookingFilterNumber.toLowerCase();
+                            const matchesCode = b.bookingCode?.toLowerCase().includes(searchTerm) || false;
+                            const driverName = (b.driver as any)?.name?.toLowerCase() || (b.driver as any)?.firstName?.toLowerCase() || "";
+                            const matchesName = driverName.includes(searchTerm);
+                            if (!matchesCode && !matchesName) matches = false;
+                          }
+                          return matches;
+                        })
+                        .sort((a, b) => {
+                          if (bookingFilterType === 'end-soon') {
+                            const aDateTime = new Date(`${a.returnDate}T${a.returnTime}`).getTime();
+                            const bDateTime = new Date(`${b.returnDate}T${b.returnTime}`).getTime();
+                            return aDateTime - bDateTime;
+                          } else {
+                            return Number(b.id) - Number(a.id);
+                          }
+                        });
+                      const adminTotalPages = Math.ceil(filteredAdminBookings.length / BOOKINGS_PER_PAGE);
+                      const adminPagedBookings = filteredAdminBookings.slice((adminBookingsPage - 1) * BOOKINGS_PER_PAGE, adminBookingsPage * BOOKINGS_PER_PAGE);
+                      return (<>
+                        {adminPagedBookings.map(b => {
                         const isAwaitingPickupApproval = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled';
                         const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : isAwaitingPickupApproval ? 'bg-orange-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
                         const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : isAwaitingPickupApproval ? 'PENDING PICKUP' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
@@ -10552,6 +10552,18 @@ export default function CarHopApp() {
                           </div>
                         );
                       })}
+                        {filteredAdminBookings.length === 0 && !bookingsLoading && (
+                          <p className="text-sm text-zinc-500 text-center py-8">{bookings.length === 0 ? 'No bookings yet' : 'No bookings match your filters'}</p>
+                        )}
+                        {adminTotalPages > 1 && (
+                          <div className="flex items-center justify-between pt-3 border-t border-zinc-800 mt-3">
+                            <button disabled={adminBookingsPage <= 1} onClick={() => setAdminBookingsPage(p => Math.max(1, p - 1))} className="px-3 py-1 text-xs font-bold rounded bg-zinc-800 text-zinc-300 disabled:opacity-30 transition-colors" data-testid="button-admin-bookings-prev">Previous</button>
+                            <span className="text-xs text-zinc-400">{adminBookingsPage} / {adminTotalPages} ({filteredAdminBookings.length} total)</span>
+                            <button disabled={adminBookingsPage >= adminTotalPages} onClick={() => setAdminBookingsPage(p => Math.min(adminTotalPages, p + 1))} className="px-3 py-1 text-xs font-bold rounded bg-zinc-800 text-zinc-300 disabled:opacity-30 transition-colors" data-testid="button-admin-bookings-next">Next</button>
+                          </div>
+                        )}
+                      </>);
+                    })()}
                   </div>
                 </Card>
               </div>
