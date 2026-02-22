@@ -6517,7 +6517,7 @@ export default function CarHopApp() {
                                 if (validImages.length > 0) {
                                   return validImages.map((img: string, idx: number) => (
                                     <div key={idx} className="relative group">
-                                      <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => window.open(img, '_blank')} data-testid={`img-driver-license-${idx}`}/>
+                                      <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => openLightbox(validImages, idx)} data-testid={`img-driver-license-${idx}`}/>
                                     </div>
                                   ));
                                 } else if (licenseImages.some((img: string) => img === '[IMAGE]')) {
@@ -6544,12 +6544,15 @@ export default function CarHopApp() {
                             const totalCheckInPhotos = hostCheckInPhotos.length + guestCheckInPhotos.length;
                             const checkInKey = `checkin-${b.id}`;
                             const regionId = `checkin-region-${b.id}`;
-                            const isExpanded = true;
+                            const isExpanded = expandedCheckSections[checkInKey] || false;
 
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
-                                <div
+                                <button
+                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkInKey]: !prev[checkInKey] }))}
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={regionId}
                                   data-testid={`button-toggle-checkin-${b.id}`}
                                 >
                                   <div className="flex items-center gap-2">
@@ -6557,7 +6560,8 @@ export default function CarHopApp() {
                                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-In</span>
                                     {totalCheckInPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckInPhotos} photos)</span>}
                                   </div>
-                                </div>
+                                  <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
                                 {isExpanded && (
                                   <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
                                     <div className={`p-3 rounded-lg border ${hostCheckInDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
@@ -6631,12 +6635,15 @@ export default function CarHopApp() {
                             const totalCheckOutPhotos = hostCheckOutPhotos.length + guestCheckOutPhotos.length;
                             const checkOutKey = `checkout-${b.id}`;
                             const regionId = `checkout-region-${b.id}`;
-                            const isExpanded = true;
+                            const isExpanded = expandedCheckSections[checkOutKey] || false;
 
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
-                                <div
+                                <button
+                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkOutKey]: !prev[checkOutKey] }))}
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={regionId}
                                   data-testid={`button-toggle-checkout-${b.id}`}
                                 >
                                   <div className="flex items-center gap-2">
@@ -6644,7 +6651,8 @@ export default function CarHopApp() {
                                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200">Check-Out</span>
                                     {totalCheckOutPhotos > 0 && <span className="text-[10px] text-zinc-500">({totalCheckOutPhotos} photos)</span>}
                                   </div>
-                                </div>
+                                  <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
                                 {isExpanded && (
                                   <div id={regionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
                                     <div className={`p-3 rounded-lg border ${hostCheckOutDone || hasHostData ? 'bg-green-950/20 border-green-900/30' : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'}`}>
