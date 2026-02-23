@@ -6561,10 +6561,10 @@ export default function CarHopApp() {
                           {(() => {
                             const fullBooking = getBookingWithImages(b);
                             const hostCheckInAllPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
-                            const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const hostCheckInLoading = hostCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
                             const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                            const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
                             const hostCheckInDone = b.hostCheckInStatus === 'completed';
                             const guestCheckInDone = b.checkInStatus === 'completed';
@@ -8966,10 +8966,10 @@ export default function CarHopApp() {
                           {(() => {
                             const fullBooking = getBookingWithImages(selectedTripForView);
                             const hostCheckInAllPhotos = [...((fullBooking.hostCheckInData as any)?.photosOutside || []), ...((fullBooking.hostCheckInData as any)?.photosInside || [])];
-                            const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const hostCheckInLoading = hostCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
                             const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                            const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
                             const hostDone = selectedTripForView.hostCheckInStatus === 'completed';
                             const guestDone = selectedTripForView.checkInStatus === 'completed';
@@ -11619,7 +11619,7 @@ export default function CarHopApp() {
                   {(() => {
                     const fullBooking = getBookingWithImages(receiptBooking);
                     const allCheckInPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                    const validCheckInPhotos = allCheckInPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                    const validCheckInPhotos = allCheckInPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                     
                     if (validCheckInPhotos.length > 0) {
                       return (
@@ -11660,7 +11660,7 @@ export default function CarHopApp() {
                   {(() => {
                     const fullBooking = getBookingWithImages(receiptBooking);
                     const allCheckOutPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                    const validCheckOutPhotos = allCheckOutPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                    const validCheckOutPhotos = allCheckOutPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                     
                     if (validCheckOutPhotos.length > 0) {
                       return (
@@ -13400,7 +13400,7 @@ export default function CarHopApp() {
                           <span className="text-[10px] mt-1">{driverDetails.licenseImages.length === 0 ? 'Add Front' : 'Selfie Hold Your Drivers License'}</span>
                         </button>
                       )}
-                      <input type="file" multiple ref={fileInputRef} className="hidden" accept="image/*"  onChange={handleLicenseUpload} />
+                      <input type="file" multiple ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleLicenseUpload} />
                     </div>
                   </div>
 
@@ -14259,7 +14259,7 @@ export default function CarHopApp() {
                           <Camera size={20}/>
                         </button>
                       )}
-                      <input id="check-input-outside" type="file" multiple className="hidden" accept="image/*"  onChange={(e) => handleCheckUpload(e, 'outside')} />
+                      <input id="check-input-outside" type="file" multiple className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
                   </div>
@@ -14291,7 +14291,7 @@ export default function CarHopApp() {
                           <Camera size={20}/>
                         </button>
                       )}
-                      <input id="check-input-inside" type="file" multiple className="hidden" accept="image/*"  onChange={(e) => handleCheckUpload(e, 'inside')} />
+                      <input id="check-input-inside" type="file" multiple className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
                   </div>
