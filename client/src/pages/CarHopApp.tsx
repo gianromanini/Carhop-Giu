@@ -1839,19 +1839,30 @@ export default function CarHopApp() {
   };
 
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      toast({ title: "Otimizando imagem", description: "Estamos ajustando a foto para garantir qualidade e velocidade.", variant: "default" });
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    toast({ title: "Otimizando imagens", description: "Estamos ajustando as fotos para garantir qualidade e velocidade.", variant: "default" });
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (driverDetails.licenseImages.length >= 2) break;
+
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result as string);
-        setDriverDetails(prev => { 
-          if (prev.licenseImages.length >= 2) return prev; 
-          return { ...prev, licenseImages: [...prev.licenseImages, compressed] }; 
-        });
-      };
+      const promise = new Promise<void>((resolve) => {
+        reader.onloadend = async () => {
+          const compressed = await compressImage(reader.result as string);
+          setDriverDetails(prev => { 
+            if (prev.licenseImages.length >= 2) return prev; 
+            return { ...prev, licenseImages: [...prev.licenseImages, compressed] }; 
+          });
+          resolve();
+        };
+      });
       reader.readAsDataURL(file);
+      await promise;
     }
+    
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
   
@@ -2049,21 +2060,34 @@ export default function CarHopApp() {
   };
 
   const handleCheckUpload = async (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      toast({ title: "Otimizando foto", description: "Ajustando tamanho para o check-in/out.", variant: "default" });
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    toast({ 
+      title: "Otimizando fotos", 
+      description: `Ajustando ${files.length} foto(s) para o check-in/out.`, 
+      variant: "default" 
+    });
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result as string);
-        setCheckData(prev => {
-          const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
-          if (currentList.length >= 15) return prev;
-          return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, compressed] };
-        });
-      };
+      const promise = new Promise<void>((resolve) => {
+        reader.onloadend = async () => {
+          const compressed = await compressImage(reader.result as string);
+          setCheckData(prev => {
+            const currentList = section === 'outside' ? prev.photosOutside : prev.photosInside;
+            if (currentList.length >= 15) return prev;
+            return { ...prev, [section === 'outside' ? 'photosOutside' : 'photosInside']: [...currentList, compressed] };
+          });
+          resolve();
+        };
+      });
       reader.readAsDataURL(file);
+      await promise;
     }
-    if (checkInInputRef.current) checkInInputRef.current.value = '';
+
+    if (e.target) e.target.value = '';
   };
 
   const handleRemoveCheckPhoto = (section: 'outside' | 'inside', index: number) => {
@@ -3635,7 +3659,7 @@ export default function CarHopApp() {
                   <Upload size={18} className="text-zinc-500"/>
                   <span className="text-sm text-zinc-500">Add Image</span>
                   <input
-                    type="file"
+                    type="file" multiple
                     accept="image/*"
                     multiple
                     className="hidden"
@@ -4285,7 +4309,7 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <div>
                         <label className="block text-xs text-zinc-500 mb-1">Front License</label>
-                        <input type="file" accept="image/*" onChange={(e) => {
+                        <input type="file" multiple accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             const reader = new FileReader();
@@ -4300,7 +4324,7 @@ export default function CarHopApp() {
                       </div>
                       <div>
                         <label className="block text-xs text-zinc-500 mb-1">Back License</label>
-                        <input type="file" accept="image/*" onChange={(e) => {
+                        <input type="file" multiple accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             const reader = new FileReader();
@@ -4316,7 +4340,7 @@ export default function CarHopApp() {
                     </div>
                     <div className="mt-3">
                       <label className="block text-xs text-zinc-500 mb-1">Proof of Residence (Utilities Bill, etc.) *</label>
-                      <input type="file" accept="image/*" required onChange={(e) => {
+                      <input type="file" multiple accept="image/*" required onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
                           const reader = new FileReader();
@@ -4879,7 +4903,7 @@ export default function CarHopApp() {
                           <Upload size={20} className="text-zinc-400 mb-1"/>
                           <span className="text-xs text-zinc-500">Upload Front</span>
                           <input 
-                            type="file" 
+                            type="file" multiple 
                             accept="image/*" 
                             className="hidden"
                             onChange={(e) => {
@@ -4921,7 +4945,7 @@ export default function CarHopApp() {
                           <Upload size={20} className="text-zinc-400 mb-1"/>
                           <span className="text-xs text-zinc-500">Upload Back</span>
                           <input 
-                            type="file" 
+                            type="file" multiple 
                             accept="image/*" 
                             className="hidden"
                             onChange={(e) => {
@@ -5625,7 +5649,7 @@ export default function CarHopApp() {
                             ))}
                           </div>
                           <div className="flex gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                            <input type="file" accept="image/*" onChange={(e) => {
+                            <input type="file" multiple accept="image/*" onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
                                 const reader = new FileReader();
@@ -7177,7 +7201,7 @@ export default function CarHopApp() {
                         <Upload size={18} className="text-zinc-500"/>
                         <span className="text-sm text-zinc-500">Add Image</span>
                         <input
-                          type="file"
+                          type="file" multiple
                           accept="image/*"
                           multiple
                           className="hidden"
@@ -8220,7 +8244,7 @@ export default function CarHopApp() {
                             <span className="text-[8px] mt-1 uppercase">Upload</span>
                           </button>
                         </div>
-                        <input type="file" ref={carImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
+                        <input type="file" multiple ref={carImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             const reader = new FileReader();
@@ -8544,7 +8568,7 @@ export default function CarHopApp() {
                                     </button>
                                   </div>
                                 </div>
-                                <input type="file" ref={editCarImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
+                                <input type="file" multiple ref={editCarImageInputRef} className="hidden" accept="image/*" onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
                                     const reader = new FileReader();
@@ -13376,7 +13400,7 @@ export default function CarHopApp() {
                           <span className="text-[10px] mt-1">{driverDetails.licenseImages.length === 0 ? 'Add Front' : 'Selfie Hold Your Drivers License'}</span>
                         </button>
                       )}
-                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleLicenseUpload} />
+                      <input type="file" multiple ref={fileInputRef} className="hidden" accept="image/*"  onChange={handleLicenseUpload} />
                     </div>
                   </div>
 
@@ -14235,7 +14259,7 @@ export default function CarHopApp() {
                           <Camera size={20}/>
                         </button>
                       )}
-                      <input id="check-input-outside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} />
+                      <input id="check-input-outside" type="file" multiple className="hidden" accept="image/*"  onChange={(e) => handleCheckUpload(e, 'outside')} />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
                   </div>
@@ -14267,7 +14291,7 @@ export default function CarHopApp() {
                           <Camera size={20}/>
                         </button>
                       )}
-                      <input id="check-input-inside" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} />
+                      <input id="check-input-inside" type="file" multiple className="hidden" accept="image/*"  onChange={(e) => handleCheckUpload(e, 'inside')} />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
                   </div>
