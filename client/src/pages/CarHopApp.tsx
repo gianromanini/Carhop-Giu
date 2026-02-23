@@ -13228,11 +13228,11 @@ export default function CarHopApp() {
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1">
                           <h4 className="font-semibold text-white flex items-center gap-2 mb-1">
-                            Minimum Protection 
+                            Basic Protection 
                             {cart.insuranceOption === 'minimum' && <Check size={16} className="text-green-500" />}
                           </h4>
-                          <p className="text-xs text-zinc-400 mb-2">Basic protection for vehicle damage.</p>
-                          <p className="text-xs text-zinc-500">$2,500 max out-of-pocket costs for vehicle damage or theft.</p>
+                          <p className="text-xs text-zinc-400 mb-2">Cheap Daily Price for Basic protection for Liability Insurance (SLI).</p>
+                          <p className="text-xs text-zinc-500">$1,700 Deductible out-of-pocket costs for vehicle damages or theft.</p>
                         </div>
                         <span className="font-bold text-white whitespace-nowrap">+$16.90/day</span>
                       </div>
@@ -13376,7 +13376,7 @@ export default function CarHopApp() {
                   
                   <div>
                     <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">
-                      DRIVER LICENSE PHOTOS (FRONT AND BACK) <span className="text-red-500">* REQUIRED</span>
+                      DRIVER LICENSE PHOTOS (FRONT AND SELFIE) <span className="text-red-500">* REQUIRED</span>
                     </label>
                     <div className="flex gap-4 flex-wrap">
                       {driverDetails.licenseImages.map((img, i) => (
@@ -13400,7 +13400,7 @@ export default function CarHopApp() {
                           <span className="text-[10px] mt-1">{driverDetails.licenseImages.length === 0 ? 'Add Front' : 'Selfie Hold Your Drivers License'}</span>
                         </button>
                       )}
-                      <input type="file" multiple ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleLicenseUpload} />
+                      <input type="file" multiple ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLicenseUpload} />
                     </div>
                   </div>
 
@@ -13479,7 +13479,7 @@ export default function CarHopApp() {
                       <span className="text-white">
                         Protection 
                         <span className="text-[10px] text-zinc-400 ml-1 uppercase">
-                          ({cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'})
+                          ({cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Basic'})
                         </span>
                       </span>
                       <span className="text-white">
@@ -14259,7 +14259,7 @@ export default function CarHopApp() {
                           <Camera size={20}/>
                         </button>
                       )}
-                      <input id="check-input-outside" type="file" multiple className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'outside')} />
+                      <input id="check-input-outside" type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'outside')} />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{checkData.photosOutside.length}/15 photos uploaded</p>
                   </div>
@@ -14291,7 +14291,7 @@ export default function CarHopApp() {
                           <Camera size={20}/>
                         </button>
                       )}
-                      <input id="check-input-inside" type="file" multiple className="hidden" accept="image/*" capture="environment" onChange={(e) => handleCheckUpload(e, 'inside')} />
+                      <input id="check-input-inside" type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleCheckUpload(e, 'inside')} />
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">{checkData.photosInside.length}/15 photos uploaded</p>
                   </div>
