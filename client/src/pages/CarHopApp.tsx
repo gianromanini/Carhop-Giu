@@ -6129,6 +6129,13 @@ export default function CarHopApp() {
                                 <p className="font-medium">{b.driver.name}</p>
                                 <p className="text-zinc-500">{b.driver.phone}</p>
                                 <p className="text-zinc-500">{b.driver.email}</p>
+                                              <p className="text-zinc-500 font-bold">Trip Days: {(() => {
+                                                const start = new Date(b.startDate + 'T' + b.startTime);
+                                                const end = new Date(b.returnDate + 'T' + b.returnTime);
+                                                const diffTime = Math.abs(end.getTime() - start.getTime());
+                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                return diffDays;
+                                              })()}</p>
                                 <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                                   <p className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Driver's License</p>
                                   <div className="flex gap-2 overflow-x-auto pb-1">
@@ -9377,7 +9384,7 @@ export default function CarHopApp() {
                           {/* Driver License Info */}
                           {selectedTripForView.driver.licenseNumber && (
                             <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Driver License</h4>
+                              
                               <p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.licenseNumber}</p>
                             </div>
                           )}
