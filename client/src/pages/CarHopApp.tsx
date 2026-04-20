@@ -6583,7 +6583,10 @@ export default function CarHopApp() {
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
                                 <button
-                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkInKey]: !prev[checkInKey] }))}
+                                  onClick={() => {
+                                    if (!expandedCheckSections[checkInKey]) fetchFullBooking(b.id);
+                                    setExpandedCheckSections(prev => ({ ...prev, [checkInKey]: !prev[checkInKey] }));
+                                  }}
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
                                   aria-expanded={isExpanded}
                                   aria-controls={regionId}
@@ -6674,7 +6677,10 @@ export default function CarHopApp() {
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-4">
                                 <button
-                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [checkOutKey]: !prev[checkOutKey] }))}
+                                  onClick={() => {
+                                    if (!expandedCheckSections[checkOutKey]) fetchFullBooking(b.id);
+                                    setExpandedCheckSections(prev => ({ ...prev, [checkOutKey]: !prev[checkOutKey] }));
+                                  }}
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
                                   aria-expanded={isExpanded}
                                   aria-controls={regionId}
@@ -8988,7 +8994,10 @@ export default function CarHopApp() {
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                                 <button
-                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                                  onClick={() => {
+                                    if (!expandedCheckSections[sectionKey]) fetchFullBooking(selectedTripForView.id);
+                                    setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+                                  }}
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
                                   aria-expanded={isExpanded}
                                   aria-controls={regionId}
@@ -9083,7 +9092,10 @@ export default function CarHopApp() {
                             return (
                               <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                                 <button
-                                  onClick={() => setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                                  onClick={() => {
+                                    if (!expandedCheckSections[sectionKey]) fetchFullBooking(selectedTripForView.id);
+                                    setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+                                  }}
                                   className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
                                   aria-expanded={isExpanded}
                                   aria-controls={regionId}
@@ -10025,10 +10037,10 @@ export default function CarHopApp() {
                                       {(() => {
                                         const fullBooking = getBookingWithImages(b);
                                         const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
-                                        const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                         const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
                                         const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                                        const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                         const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
                                         const guestInDone = b.checkInStatus === 'completed';
                                         const guestOutDone = b.checkOutStatus === 'completed';
@@ -10040,9 +10052,9 @@ export default function CarHopApp() {
                                         const isExpanded = expandedCheckSections[sectionKey] || false;
 
                                         const hostCheckInAllPhotos = [...(fullBooking.hostCheckInData?.photosOutside || []), ...(fullBooking.hostCheckInData?.photosInside || [])];
-                                        const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                         const hostCheckOutAllPhotos = [...(fullBooking.hostCheckOutData?.photosOutside || []), ...(fullBooking.hostCheckOutData?.photosInside || [])];
-                                        const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                        const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                         const hostInDone = b.hostCheckInStatus === 'completed';
                                         const hostOutDone = b.hostCheckOutStatus === 'completed';
                                         const hostTotalPhotos = hostCheckInPhotos.length + hostCheckOutPhotos.length;
@@ -10055,7 +10067,10 @@ export default function CarHopApp() {
                                             {/* Host Check-in/Check-out - Collapsible */}
                                             <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                                               <button
-                                                onClick={() => setExpandedCheckSections(prev => ({ ...prev, [hostSectionKey]: !prev[hostSectionKey] }))}
+                                                onClick={() => {
+                                                  if (!expandedCheckSections[hostSectionKey]) fetchFullBooking(b.id);
+                                                  setExpandedCheckSections(prev => ({ ...prev, [hostSectionKey]: !prev[hostSectionKey] }));
+                                                }}
                                                 className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
                                                 aria-expanded={isHostExpanded}
                                                 aria-controls={hostRegionId}
@@ -10118,7 +10133,10 @@ export default function CarHopApp() {
                                             {/* Guest Check-in/Check-out - Collapsible */}
                                             <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                                               <button
-                                                onClick={() => setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                                                onClick={() => {
+                                                  if (!expandedCheckSections[sectionKey]) fetchFullBooking(b.id);
+                                                  setExpandedCheckSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+                                                }}
                                                 className="w-full flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 transition-colors"
                                                 aria-expanded={isExpanded}
                                                 aria-controls={regionId}
