@@ -919,7 +919,7 @@ export default function CarHopApp() {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordError, setAdminPasswordError] = useState('');
 
-  const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '1000' });
+  const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [viewHostProfile, setViewHostProfile] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
@@ -1889,7 +1889,7 @@ export default function CarHopApp() {
   const handleRent = (car: Vehicle) => { 
     if (!clientUser) { alert("Please sign in to make a reservation."); setShowLoginModal(true); return; } 
     const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime); 
-    setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '1000' }); 
+    setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '' }); 
     if (clientUser) setDriverDetails(prev => ({ ...prev, name: clientUser.name, email: clientUser.email, phone: clientUser.phone || '' })); 
     setPickupAddress('');
     setDeliveryAddressBooking('');
@@ -1911,24 +1911,20 @@ export default function CarHopApp() {
     if (cart.extrasSelected.includes('childSeat')) runningTotal += (cart.car.pricing?.prices?.childSeat || settings.prices.childSeat);
     
     // Protection Plan Pricing Logic
-    const dailyRate = cart.car.price;
     const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
     const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com' || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName === 'giuspfc123@gmail.com' || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName === 'gianromanini@gmail.com';
 
-    let standardPlanPrice = 25.70; // Default global
-    if (dailyRate >= 50 && dailyRate <= 120) {
-      standardPlanPrice = 27.90; // Automatically 27.90 if rate is between 50 and 120
-    }
+    const minimumPlanPrice = 19.40;
+    const standardPlanPrice = 25.90;
     
     // Use custom vehicle pricing if set by admin, otherwise use calculated global defaults
     const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
     const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
     const finalGoldPrice = finalStandardPrice + 16.90;
-    const minimumPlanPrice = 16.90;
 
+    if (cart.insuranceOption === 'minimum') runningTotal += (minimumPlanPrice * days);
     if (cart.insuranceOption === '500') runningTotal += (finalStandardPrice * days); 
     if (cart.insuranceOption === '1000' && isSpecialHost) runningTotal += (finalGoldPrice * days); 
-    if (cart.insuranceOption === 'minimum') runningTotal += (minimumPlanPrice * days); 
     
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
     if (deliveryValidationStatus === 'valid') runningTotal += deliveryFee;
@@ -1944,7 +1940,7 @@ export default function CarHopApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2;
+  const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2 && cart.insuranceOption !== '';
 
   const handleConfirmBooking = async () => { 
     if (paymentMethod === 'credit' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName)) { 
@@ -1976,14 +1972,11 @@ export default function CarHopApp() {
       console.log("[Booking] Final host email used:", hostEmail);
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
-      let standardPlanPrice = 25.70;
-      if (dailyRate >= 50 && dailyRate <= 120) {
-        standardPlanPrice = 27.90;
-      }
+      const standardPlanPrice = 25.90;
       const vehicleStandardPrice = cart.car!.pricing?.prices?.insurance500;
       const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
       const finalGoldPrice = finalStandardPrice + 16.90;
-      const minimumPlanPrice = 16.90;
+      const minimumPlanPrice = 19.40;
 
       const newBooking = { 
         bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
@@ -2007,8 +2000,8 @@ export default function CarHopApp() {
           rate: cart.car!.price * days, 
           extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
           childSeatSelected: cart.extrasSelected.includes('childSeat'),
-          protection: (cart.insuranceOption === '500' ? finalStandardPrice : cart.insuranceOption === '1000' ? finalGoldPrice : minimumPlanPrice) * days, 
-          protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'), 
+          protection: (cart.insuranceOption === '500' ? finalStandardPrice : cart.insuranceOption === '1000' ? finalGoldPrice : cart.insuranceOption === 'minimum' ? minimumPlanPrice : 0) * days, 
+          protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : cart.insuranceOption === 'minimum' ? 'Minimum' : 'None'), 
           fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
           deliveryFee: totalData.deliveryFee || 0, 
           tax: totalData.taxAmount, 
@@ -13241,7 +13234,7 @@ export default function CarHopApp() {
                           <p className="text-xs text-zinc-400 mb-2">Basic protection for vehicle damage.</p>
                           <p className="text-xs text-zinc-500">$2,500 max out-of-pocket costs for vehicle damage or theft.</p>
                         </div>
-                        <span className="font-bold text-white whitespace-nowrap">+$16.90/day</span>
+                        <span className="font-bold text-white whitespace-nowrap">+$19.40/day</span>
                       </div>
                     </div>
 
@@ -13271,7 +13264,7 @@ export default function CarHopApp() {
                           <p className="text-xs text-zinc-400 mb-2">Supplemental Liability Insurance (SLI).</p>
                           <p className="text-xs text-zinc-500">$500 max out-of-pocket costs for SLI.</p>
                         </div>
-                        <span className="font-bold text-white whitespace-nowrap">+${(cart.car.price >= 50 && cart.car.price <= 120 ? 27.90 : 25.70).toFixed(2)}/day</span>
+                        <span className="font-bold text-white whitespace-nowrap">+$25.90/day</span>
                       </div>
                     </div>
 
@@ -13281,7 +13274,7 @@ export default function CarHopApp() {
                       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
                       if (!isSpecialHost) return null;
 
-                      const standardPrice = cart.car.price >= 50 && cart.car.price <= 120 ? 27.90 : 25.70;
+                      const standardPrice = 25.90;
                       const goldPrice = standardPrice + 16.90;
 
                       return (
@@ -13482,29 +13475,35 @@ export default function CarHopApp() {
                       <span className="text-zinc-400">Rate ({cart.billingDays} days)</span>
                       <span className="text-white">${(cart.billingDays * cart.car.price).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-white">
-                        Protection 
-                        <span className="text-[10px] text-zinc-400 ml-1 uppercase">
-                          ({cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'})
+                    {cart.insuranceOption === '' ? (
+                      <div className="flex justify-between items-center text-yellow-500">
+                        <span className="text-xs">Protection (not selected)</span>
+                        <span className="text-xs font-bold">—</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between">
+                        <span className="text-white">
+                          Protection 
+                          <span className="text-[10px] text-zinc-400 ml-1 uppercase">
+                            ({cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : 'Minimum'})
+                          </span>
                         </span>
-                      </span>
-                      <span className="text-white">
-                        {(() => {
-                          const dailyRate = cart.car.price;
-                          let std = dailyRate >= 50 && dailyRate <= 120 ? 27.90 : 25.70;
-                          const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
-                          if (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) std = vehicleStandardPrice;
-                          
-                          let price = 0;
-                          if (cart.insuranceOption === '500') price = std;
-                          else if (cart.insuranceOption === '1000') price = std + 16.90;
-                          else if (cart.insuranceOption === 'minimum') price = 16.90;
-                          
-                          return `+$${(price * cart.billingDays).toFixed(2)}`;
-                        })()}
-                      </span>
-                    </div>
+                        <span className="text-white">
+                          {(() => {
+                            let std = 25.90;
+                            const vehicleStandardPrice = cart.car.pricing?.prices?.insurance500;
+                            if (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) std = vehicleStandardPrice;
+                            
+                            let price = 0;
+                            if (cart.insuranceOption === '500') price = std;
+                            else if (cart.insuranceOption === '1000') price = std + 16.90;
+                            else if (cart.insuranceOption === 'minimum') price = 19.40;
+                            
+                            return `+$${(price * cart.billingDays).toFixed(2)}`;
+                          })()}
+                        </span>
+                      </div>
+                    )}
                     {cart.extrasSelected.includes('childSeat') && (
                       <div className="flex justify-between">
                         <span className="text-green-500">Child Seat</span>
