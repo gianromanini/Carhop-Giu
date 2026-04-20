@@ -557,6 +557,46 @@ async function calculateCorrectTotal(booking: any): Promise<number> {
   return initialPayment + extendedRate + extensionTax + manualChargesTotal + manualChargesTax + extraPaymentsTotal;
 }
 
+function stripBookingImages(booking: any): any {
+  const optimized = { ...booking };
+
+  if (optimized.image && typeof optimized.image === 'string' && optimized.image.length > 1000) {
+    optimized.image = '[IMAGE]';
+  }
+
+  if (optimized.driver && typeof optimized.driver === 'object') {
+    const driver = { ...optimized.driver };
+    if (driver.licenseImages && Array.isArray(driver.licenseImages)) {
+      driver.licenseImagesCount = driver.licenseImages.length;
+      driver.licenseImages = driver.licenseImages.map((img: string) =>
+        typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
+      );
+    }
+    optimized.driver = driver;
+  }
+
+  for (const field of ['checkInData', 'checkOutData', 'hostCheckInData', 'hostCheckOutData']) {
+    if (optimized[field] && typeof optimized[field] === 'object') {
+      const data = { ...optimized[field] };
+      if (data.photosOutside && Array.isArray(data.photosOutside)) {
+        data.photosOutsideCount = data.photosOutside.length;
+        data.photosOutside = data.photosOutside.map((img: string) =>
+          typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
+        );
+      }
+      if (data.photosInside && Array.isArray(data.photosInside)) {
+        data.photosInsideCount = data.photosInside.length;
+        data.photosInside = data.photosInside.map((img: string) =>
+          typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
+        );
+      }
+      optimized[field] = data;
+    }
+  }
+
+  return optimized;
+}
+
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
   // ========== AUTHENTICATION (Google OAuth) ==========
   await setupAuth(app);
@@ -1081,65 +1121,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Optimize response by removing heavy image data for list view
       // Full image data is available when fetching individual booking via /api/bookings/:id
       // This prevents timeout/memory issues when there are many bookings with large photos
-      const optimizedBookings = bookings.map(booking => {
-        const optimized = { ...booking };
-        
-        // Strip large vehicle image from list response
-        if (optimized.image && typeof optimized.image === 'string' && optimized.image.length > 1000) {
-          optimized.image = '[IMAGE]';
-        }
-        
-        // Replace large base64 images with placeholder info
-        if (optimized.driver && typeof optimized.driver === 'object') {
-          const driver = { ...optimized.driver as any };
-          if (driver.licenseImages && Array.isArray(driver.licenseImages)) {
-            // Keep count but replace actual images with placeholders
-            driver.licenseImagesCount = driver.licenseImages.length;
-            driver.licenseImages = driver.licenseImages.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
-            );
-          }
-          optimized.driver = driver;
-        }
-        
-        // Replace check-in photos with placeholders
-        if (optimized.checkInData && typeof optimized.checkInData === 'object') {
-          const checkIn = { ...optimized.checkInData as any };
-          if (checkIn.photosOutside && Array.isArray(checkIn.photosOutside)) {
-            checkIn.photosOutsideCount = checkIn.photosOutside.length;
-            checkIn.photosOutside = checkIn.photosOutside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
-            );
-          }
-          if (checkIn.photosInside && Array.isArray(checkIn.photosInside)) {
-            checkIn.photosInsideCount = checkIn.photosInside.length;
-            checkIn.photosInside = checkIn.photosInside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
-            );
-          }
-          optimized.checkInData = checkIn;
-        }
-        
-        // Replace check-out photos with placeholders
-        if (optimized.checkOutData && typeof optimized.checkOutData === 'object') {
-          const checkOut = { ...optimized.checkOutData as any };
-          if (checkOut.photosOutside && Array.isArray(checkOut.photosOutside)) {
-            checkOut.photosOutsideCount = checkOut.photosOutside.length;
-            checkOut.photosOutside = checkOut.photosOutside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
-            );
-          }
-          if (checkOut.photosInside && Array.isArray(checkOut.photosInside)) {
-            checkOut.photosInsideCount = checkOut.photosInside.length;
-            checkOut.photosInside = checkOut.photosInside.map((img: string) => 
-              typeof img === 'string' && img.length > 1000 ? '[IMAGE]' : img
-            );
-          }
-          optimized.checkOutData = checkOut;
-        }
-        
-        return optimized;
-      });
+      const optimizedBookings = bookings.map(stripBookingImages);
       
       res.json(optimizedBookings);
     } catch (error: any) {
@@ -1163,7 +1145,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
       const userBookings = await storage.getUserTrips(userEmail);
       console.log(`[API] Returning ${userBookings.length} user bookings for ${userEmail} at ${new Date().toISOString()}`);
-      res.json(userBookings);
+      res.json(userBookings.map(stripBookingImages));
     } catch (error) {
       console.error("API error fetching user bookings:", error);
       res.status(500).json({ message: "Error fetching user bookings" });

@@ -1205,9 +1205,14 @@ export default function CarHopApp() {
       const res = await apiRequest('PUT', `/api/bookings/${id}`, data);
       return res.json();
     },
-    onSuccess: () => { 
+    onSuccess: (_data, variables) => { 
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] }); 
-      queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/financial/summary'] });
+      setFullBookingCache(prev => {
+        const next = { ...prev };
+        delete next[variables.id];
+        return next;
+      });
       toast({ title: 'Booking updated successfully' });
     }
   });
@@ -6652,10 +6657,10 @@ export default function CarHopApp() {
                           {(() => {
                             const fullBooking = getBookingWithImages(b);
                             const hostCheckOutAllPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
-                            const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const hostCheckOutLoading = hostCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
                             const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                            const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
                             const hostCheckOutDone = b.hostCheckOutStatus === 'completed';
                             const guestCheckOutDone = b.checkOutStatus === 'completed';
@@ -9061,10 +9066,10 @@ export default function CarHopApp() {
                           {(() => {
                             const fullBooking = getBookingWithImages(selectedTripForView);
                             const hostCheckOutAllPhotos = [...((fullBooking.hostCheckOutData as any)?.photosOutside || []), ...((fullBooking.hostCheckOutData as any)?.photosInside || [])];
-                            const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const hostCheckOutLoading = hostCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
                             const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
-                            const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                            const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
                             const hostDone = selectedTripForView.hostCheckOutStatus === 'completed';
                             const guestDone = selectedTripForView.checkOutStatus === 'completed';
