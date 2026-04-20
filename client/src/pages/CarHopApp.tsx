@@ -6547,7 +6547,7 @@ export default function CarHopApp() {
                               {(() => {
                                 const fullBooking = getBookingWithImages(b);
                                 const licenseImages = fullBooking.driver?.licenseImages || [];
-                                const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && img.startsWith('data:'));
+                                const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                 if (validImages.length > 0) {
                                   return validImages.map((img: string, idx: number) => (
                                     <div key={idx} className="relative group">
@@ -11930,8 +11930,8 @@ export default function CarHopApp() {
           const isCheckIn = viewingHostCheckData.mode === 'checkin';
           const checkData = isCheckIn ? (fullHcBooking.hostCheckInData as any) : (fullHcBooking.hostCheckOutData as any);
           if (!checkData) return null;
-          const outsidePhotos = (checkData.photosOutside || []).filter((img: string) => img && img.startsWith('data:'));
-          const insidePhotos = (checkData.photosInside || []).filter((img: string) => img && img.startsWith('data:'));
+          const outsidePhotos = (checkData.photosOutside || []).filter((img: string) => img && (img.startsWith('data:') || img.startsWith('http')));
+          const insidePhotos = (checkData.photosInside || []).filter((img: string) => img && (img.startsWith('data:') || img.startsWith('http')));
           const allPhotos = [...outsidePhotos, ...insidePhotos];
           return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
