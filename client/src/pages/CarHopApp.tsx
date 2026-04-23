@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
@@ -9,8 +9,7 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+const VehicleMap = lazy(() => import('@/components/VehicleMap'));
 import type { Vehicle, Booking } from '@shared/schema';
 type User = typeof import('@shared/schema').users.$inferSelect;
 import { useToast } from '@/hooks/use-toast';
@@ -7618,93 +7617,15 @@ export default function CarHopApp() {
                   </button>
                 </div>
                 <div className="relative bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden" style={{ height: '400px' }}>
-                  {(() => {
-                    // Custom marker icon for user location
-                    const userIcon = L.divIcon({
-                      className: 'custom-marker',
-                      html: `<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-                      iconSize: [20, 20],
-                      iconAnchor: [10, 10],
-                    });
-                    
-                    // Get vehicles with coordinates from database or deterministic fallback
-                    const vehiclesWithCoords = vehicles
-                      .map(v => {
-                        let lat, lon;
-                        // Use real coordinates from database if available
-                        if (v.locationLat !== null && v.locationLat !== undefined && v.locationLon !== null && v.locationLon !== undefined) {
-                          lat = v.locationLat;
-                          lon = v.locationLon;
-                        } else {
-                          // Fallback to deterministic offset based on vehicle ID
-                          const seed = v.id * 0.01;
-                          const latOffset = (Math.sin(seed * 13.7) * 0.05);
-                          const lonOffset = (Math.cos(seed * 17.3) * 0.05);
-                          lat = userCoords.lat + latOffset;
-                          lon = userCoords.lon + lonOffset;
-                        }
-                        return {
-                          ...v,
-                          coords: { lat, lon },
-                          distance: 0
-                        };
-                      })
-                      .map(v => ({
-                        ...v,
-                        distance: haversineDistance(userCoords.lat, userCoords.lon, v.coords.lat, v.coords.lon)
-                      }))
-                      .sort((a, b) => a.distance - b.distance);
-                    
-                    return (
-                      <MapContainer
-                        center={[userCoords.lat, userCoords.lon]}
-                        zoom={12}
-                        style={{ height: '100%', width: '100%' }}
-                        scrollWheelZoom={true}
-                      >
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        {/* User location marker */}
-                        <Marker position={[userCoords.lat, userCoords.lon]} icon={userIcon}>
-                          <Popup>
-                            <div className="text-center">
-                              <strong>Your Location</strong>
-                            </div>
-                          </Popup>
-                        </Marker>
-                        {/* Vehicle markers */}
-                        {vehiclesWithCoords.slice(0, 10).map((v) => {
-                          const isSelected = selectedMapVehicle === v.id;
-                          const carIcon = L.divIcon({
-                            className: 'custom-marker',
-                            html: `<div style="background-color: #000000; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap; display: flex; align-items: center; justify-content: center; height: 28px; width: 38px; ${isSelected ? 'border: 3px solid #22c55e;' : ''}">$ ${v.price}</div>`,
-                            iconSize: [38, 28],
-                            iconAnchor: [19, 14],
-                          });
-                          return (
-                            <Marker key={v.id} position={[v.coords.lat, v.coords.lon]} icon={carIcon} eventHandlers={{ click: () => setSelectedMapVehicle(isSelected ? null : v.id) }}>
-                              <Popup>
-                                <div className="text-center">
-                                  <img src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=100&q=60'} alt={v.model} className="w-24 h-16 object-cover rounded mb-2" />
-                                  <strong>{v.model}</strong>
-                                  <div className="text-green-600 font-bold">${v.price}/day</div>
-                                  <div className="text-xs text-zinc-500">{v.distance.toFixed(1)} miles away</div>
-                                  <button
-                                    onClick={() => handleViewDetails(v)}
-                                    className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                                  >
-                                    View Details
-                                  </button>
-                                </div>
-                              </Popup>
-                            </Marker>
-                          );
-                        })}
-                      </MapContainer>
-                    );
-                  })()}
+                  <Suspense fallback={<div className="flex items-center justify-center h-full text-zinc-500"><Loader className="animate-spin" size={24} /></div>}>
+                    <VehicleMap
+                      userCoords={userCoords}
+                      vehicles={vehicles}
+                      selectedMapVehicle={selectedMapVehicle}
+                      setSelectedMapVehicle={setSelectedMapVehicle}
+                      handleViewDetails={handleViewDetails}
+                    />
+                  </Suspense>
                 </div>
               </div>
             )}
