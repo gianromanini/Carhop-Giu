@@ -1,31 +1,19 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import type { Vehicle } from '@shared/schema';
 
-interface VehicleWithCoords {
-  id: number;
-  model: string;
-  price: number;
-  images?: string[];
-  locationLat?: number | null;
-  locationLon?: number | null;
+interface VehicleWithCoords extends Vehicle {
   distance: number;
   coords: { lat: number; lon: number };
 }
 
 interface VehicleMapProps {
   userCoords: { lat: number; lon: number };
-  vehicles: Array<{
-    id: number;
-    model: string;
-    price: number;
-    images?: string[];
-    locationLat?: number | null;
-    locationLon?: number | null;
-  }>;
+  vehicles: Vehicle[];
   selectedMapVehicle: number | null;
   setSelectedMapVehicle: (id: number | null) => void;
-  handleViewDetails: (v: any) => void;
+  handleViewDetails: (v: Vehicle) => void;
 }
 
 const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
