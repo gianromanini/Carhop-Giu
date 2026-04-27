@@ -3,6 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { insertVehicleSchema, insertBookingSchema, insertHostSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
+import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -600,6 +601,50 @@ function stripBookingImages(booking: any): any {
 export async function registerRoutes(server: Server, app: Express): Promise<void> {
   // ========== AUTHENTICATION (Google OAuth) ==========
   await setupAuth(app);
+
+  // ========== STRIPE PAYMENT ==========
+  app.get('/api/stripe/config', async (_req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error: any) {
+      console.error('[Stripe] Failed to load publishable key:', error?.message || error);
+      res.status(500).json({ message: 'Stripe not configured' });
+    }
+  });
+
+  app.post('/api/stripe/create-payment-intent', async (req, res) => {
+    try {
+      const amount = Number(req.body?.amount);
+      const currency = (req.body?.currency || 'usd').toString().toLowerCase();
+      const description = req.body?.description ? String(req.body.description) : undefined;
+      const metadataInput = req.body?.metadata && typeof req.body.metadata === 'object' ? req.body.metadata : {};
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({ message: 'Invalid amount' });
+      }
+
+      const metadata: Record<string, string> = {};
+      for (const [key, value] of Object.entries(metadataInput)) {
+        if (value === null || value === undefined) continue;
+        metadata[String(key).slice(0, 40)] = String(value).slice(0, 500);
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const intent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency,
+        description,
+        metadata,
+        automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      });
+
+      res.json({ clientSecret: intent.client_secret, paymentIntentId: intent.id });
+    } catch (error: any) {
+      console.error('[Stripe] create-payment-intent error:', error?.message || error);
+      res.status(500).json({ message: error?.message || 'Failed to create payment intent' });
+    }
+  });
 
   // Auth routes - get current authenticated user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
