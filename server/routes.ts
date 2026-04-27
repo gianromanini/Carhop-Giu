@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { insertVehicleSchema, insertBookingSchema, insertHostSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
-import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { getUncachableStripeClient, getStripePublishableKey, verifyStripePaymentIntent } from "./stripeClient";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -1219,6 +1219,35 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
 
     try {
+      // Server-side Stripe payment verification before creating any booking marked as paid/active
+      const paymentRaw: any = (result.data as any).paymentRaw;
+      const stripePaymentIntentId: string | undefined = paymentRaw?.stripePaymentIntentId;
+      if (!stripePaymentIntentId) {
+        console.warn("[API] Booking missing stripePaymentIntentId");
+        return res.status(400).json({ error: "Pagamento não fornecido. Conclua o pagamento por cartão antes de criar a reserva." });
+      }
+      const expectedTotal = Number((result.data as any).total);
+      if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
+        return res.status(400).json({ error: "Total da reserva inválido." });
+      }
+      const verification = await verifyStripePaymentIntent(stripePaymentIntentId, expectedTotal, 'usd');
+      if (!verification.ok) {
+        console.error("[API] Stripe verification failed:", verification.reason);
+        return res.status(402).json({ error: verification.reason || "Pagamento Stripe não pôde ser confirmado." });
+      }
+
+      // Replay protection: ensure this paymentIntent hasn't been used by another booking
+      try {
+        const existing = await storage.getBookings();
+        const reused = existing.some((b) => (b.paymentRaw as any)?.stripePaymentIntentId === stripePaymentIntentId);
+        if (reused) {
+          console.error("[API] Stripe paymentIntent reuse detected:", stripePaymentIntentId);
+          return res.status(409).json({ error: "Este pagamento já foi associado a outra reserva." });
+        }
+      } catch (replayErr) {
+        console.error("[API] Replay check error:", replayErr);
+      }
+
       // Enrich booking details with vehicle year and host info before saving
       const vehicleForEnrich = result.data.vehicleId ? await storage.getVehicle(result.data.vehicleId).catch(() => null) : null;
       if (vehicleForEnrich && result.data.details) {
@@ -1249,10 +1278,44 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (!result.success) {
       return res.status(400).json({ error: result.error.flatten() });
     }
-    
+
     // Get the current booking state before update
     const previousBooking = await storage.getBooking(id);
-    
+
+    // Server-side Stripe payment verification when this update introduces a new payment
+    const incomingPaymentRaw: any = (result.data as any).paymentRaw;
+    const incomingIntentId: string | undefined = incomingPaymentRaw?.stripePaymentIntentId;
+    const previousIntentId: string | undefined = (previousBooking?.paymentRaw as any)?.stripePaymentIntentId;
+    const incomingStatus: string | undefined = (result.data as any).status;
+    const previousStatus: string | undefined = previousBooking?.status;
+    const isActivating = incomingStatus === 'Active' && previousStatus !== 'Active';
+
+    if (incomingIntentId && incomingIntentId !== previousIntentId) {
+      const expectedTotal = Number((result.data as any).total ?? previousBooking?.total);
+      if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
+        return res.status(400).json({ error: "Total da reserva inválido para verificação de pagamento." });
+      }
+      const verification = await verifyStripePaymentIntent(incomingIntentId, expectedTotal, 'usd');
+      if (!verification.ok) {
+        console.error("[API] Stripe verification failed on update:", verification.reason);
+        return res.status(402).json({ error: verification.reason || "Pagamento Stripe não pôde ser confirmado." });
+      }
+      // Replay protection on update path too
+      try {
+        const existing = await storage.getBookings();
+        const reused = existing.some((b) => b.id !== id && (b.paymentRaw as any)?.stripePaymentIntentId === incomingIntentId);
+        if (reused) {
+          console.error("[API] Stripe paymentIntent reuse detected on update:", incomingIntentId);
+          return res.status(409).json({ error: "Este pagamento já foi associado a outra reserva." });
+        }
+      } catch (replayErr) {
+        console.error("[API] Replay check error on update:", replayErr);
+      }
+    } else if (isActivating && !incomingIntentId && !previousIntentId) {
+      // Activating without any payment intent (legacy path) is not allowed
+      return res.status(402).json({ error: "Não é possível ativar a reserva sem um pagamento Stripe confirmado." });
+    }
+
     const booking = await storage.updateBooking(id, result.data);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
     

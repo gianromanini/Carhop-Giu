@@ -112,7 +112,6 @@ function InnerCardForm(props: StripeCardFormProps) {
       });
       if (pmError || !paymentMethod) {
         toast({ title: 'Cartão inválido', description: pmError?.message || 'Não foi possível validar o cartão.', variant: 'destructive' });
-        setLocalProcessing(false);
         return;
       }
 
@@ -122,26 +121,30 @@ function InnerCardForm(props: StripeCardFormProps) {
 
       if (result.error) {
         toast({ title: 'Pagamento recusado', description: result.error.message || 'Tente outro cartão.', variant: 'destructive' });
-        setLocalProcessing(false);
         return;
       }
 
       const intent = result.paymentIntent;
       if (!intent || (intent.status !== 'succeeded' && intent.status !== 'requires_capture')) {
         toast({ title: 'Pagamento não concluído', description: 'O cartão não autorizou o valor.', variant: 'destructive' });
-        setLocalProcessing(false);
         return;
       }
 
-      onPaymentSuccess({
-        paymentIntentId: intent.id,
-        brand: paymentMethod.card?.brand || 'card',
-        last4: paymentMethod.card?.last4 || '',
-        cardName: cardName.trim(),
-      });
+      try {
+        await Promise.resolve(onPaymentSuccess({
+          paymentIntentId: intent.id,
+          brand: paymentMethod.card?.brand || 'card',
+          last4: paymentMethod.card?.last4 || '',
+          cardName: cardName.trim(),
+        }));
+      } catch (cbErr: any) {
+        console.error('[Stripe] onPaymentSuccess callback error:', cbErr);
+        toast({ title: 'Erro ao confirmar reserva', description: cbErr?.message || 'Pagamento aprovado, mas houve erro ao salvar a reserva.', variant: 'destructive' });
+      }
     } catch (err: any) {
       console.error('[Stripe] Payment error:', err);
       toast({ title: 'Erro no pagamento', description: err?.message || 'Tente novamente.', variant: 'destructive' });
+    } finally {
       setLocalProcessing(false);
     }
   };

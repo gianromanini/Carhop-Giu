@@ -144,6 +144,8 @@ export const bookings = pgTable("bookings", {
     cardNumber?: string;
     expiry?: string;
     cvc?: string;
+    last4?: string;
+    stripePaymentIntentId?: string;
     type: string;
   }>(),
   paymentMethod: text("payment_method"),

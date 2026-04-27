@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { LocationAutocomplete } from '@/components/LocationAutocomplete';
+import { StripeCardForm, type StripePaymentResult } from '@/components/StripeCardForm';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 const generateTimeOptions = () => {
@@ -1936,40 +1937,63 @@ export default function CarHopApp() {
     return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount, deliveryFee: deliveryValidationStatus === 'valid' ? deliveryFee : 0 }; 
   };
 
-  const handleProceedToPayment = async () => { 
-    if (!isCheckoutValid()) { alert("Please complete all mandatory fields and upload driver license photos."); return; } 
-    
-    // Set view to payment and scroll to top
-    setView('payment'); 
+  const getMissingBookingFields = (): string[] => {
+    const missing: string[] = [];
+    if (!driverDetails.name?.trim()) missing.push('Nome do motorista');
+    if (!driverDetails.email?.trim()) missing.push('E-mail do motorista');
+    if (!driverDetails.phone?.trim()) missing.push('Telefone do motorista');
+    if (!driverDetails.licenseNumber?.trim()) missing.push('Número da CNH');
+    if (driverDetails.licenseImages.length < 2) missing.push('Fotos da CNH (frente e verso)');
+    if (cart.insuranceOption === '') missing.push('Plano de proteção');
+    if (selectedDeliveryType === 'pickup') {
+      if (!pickupAddress) missing.push('Local de retirada');
+      else if (cart.car?.availableLocations && cart.car.availableLocations.length > 0 && !cart.car.availableLocations.includes(pickupAddress)) {
+        missing.push('Local de retirada (selecione um dos locais disponíveis)');
+      }
+    }
+    if (selectedDeliveryType === 'delivery') {
+      if (!deliveryAddressBooking?.trim()) missing.push('Endereço de entrega');
+      else if (deliveryValidationStatus !== 'valid') missing.push('Confirmação do endereço de entrega');
+    }
+    if (!carRentalAgreementAccepted) missing.push('Aceite do contrato de aluguel');
+    return missing;
+  };
+
+  const handleProceedToPayment = async () => {
+    const missing = getMissingBookingFields();
+    if (missing.length > 0) {
+      toast({
+        title: 'Dados incompletos',
+        description: `Preencha antes de continuar: ${missing.join(', ')}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setView('payment');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2 && cart.insuranceOption !== '';
 
-  const handleConfirmBooking = async () => { 
-    if (paymentMethod === 'credit' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvc || !paymentDetails.cardName)) { 
-      alert("Please enter valid payment details."); 
-      return; 
+  const handleConfirmBooking = async (stripePayment: StripePaymentResult) => {
+    const missing = getMissingBookingFields();
+    if (missing.length > 0) {
+      toast({
+        title: 'Dados incompletos',
+        description: `Preencha antes de pagar: ${missing.join(', ')}.`,
+        variant: 'destructive',
+      });
+      return;
     }
-    
-    // Validate pickup location selection - must be from available locations
-    if (selectedDeliveryType === 'pickup') {
-      if (!pickupAddress || (cart.car?.availableLocations && !cart.car.availableLocations.includes(pickupAddress))) {
-        alert("Please select a valid pickup location from the vehicle's available locations.");
-        return;
-      }
-    }
-    
-    setIsProcessingPayment(true); 
-    
-    // Simulate payment processing animation
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
+
+    setIsProcessingPayment(true);
+
     try {
       const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
       const totalData = calculateTotal();
       const bookingLocation = selectedDeliveryType === 'delivery' ? (deliveryAddressBooking || pickupAddress || "Default Location") : (pickupAddress || "Default Location");
-      const paymentMethodDisplay = paymentMethod === 'paypal' ? 'PayPal' : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
+      const paymentBrand = (stripePayment.brand || 'card').toUpperCase();
+      const paymentMethodDisplay = `${paymentBrand} **** ${stripePayment.last4 || '----'}`;
       
       const dailyRate = cart.car!.price;
       const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostId || '';
@@ -1996,8 +2020,13 @@ export default function CarHopApp() {
         days: days, 
         total: totalData.total, 
         image: cart.car!.images?.[0] || '', 
-        driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages }, 
-        paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type }, 
+        driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages },
+        paymentRaw: {
+          type: (stripePayment.brand || 'card').toLowerCase(),
+          cardName: stripePayment.cardName,
+          last4: stripePayment.last4,
+          stripePaymentIntentId: stripePayment.paymentIntentId,
+        },
         paymentMethod: paymentMethodDisplay, 
         deliveryType: selectedDeliveryType,
         details: { 
@@ -9115,7 +9144,7 @@ export default function CarHopApp() {
                             <div className={`p-4 rounded-lg border ${selectedTripForView.paymentRaw?.type === 'paypal' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
                               <p className={`text-xs font-bold uppercase tracking-wider ${selectedTripForView.paymentRaw?.type === 'paypal' ? 'text-blue-900 dark:text-blue-200' : 'text-red-900 dark:text-red-200'}`}>Payment Method</p>
                               <p className={`text-sm mt-1 ${selectedTripForView.paymentRaw?.type === 'paypal' ? 'text-blue-800 dark:text-blue-300' : 'text-red-800 dark:text-red-300'}`}>
-                                {selectedTripForView.paymentRaw?.type === 'paypal' ? 'PayPal' : `Credit Card (${selectedTripForView.paymentRaw?.type || 'Visa'}) ****${selectedTripForView.paymentRaw?.cardNumber?.slice(-4)}`}
+                                {selectedTripForView.paymentRaw?.type === 'paypal' ? 'PayPal' : `Credit Card (${(selectedTripForView.paymentRaw?.type || 'card').toUpperCase()}) ****${selectedTripForView.paymentRaw?.last4 || selectedTripForView.paymentRaw?.cardNumber?.slice(-4) || '----'}`}
                               </p>
                             </div>
                           )}
@@ -11665,7 +11694,7 @@ export default function CarHopApp() {
                   <div className={`p-4 rounded-lg border ${receiptBooking.paymentRaw?.type === 'paypal' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
                     <p className={`text-xs font-bold uppercase tracking-wider ${receiptBooking.paymentRaw?.type === 'paypal' ? 'text-blue-900 dark:text-blue-200' : 'text-red-900 dark:text-red-200'}`}>Payment Method</p>
                     <p className={`text-sm mt-1 ${receiptBooking.paymentRaw?.type === 'paypal' ? 'text-blue-800 dark:text-blue-300' : 'text-red-800 dark:text-red-300'}`}>
-                      {receiptBooking.paymentRaw?.type === 'paypal' ? 'PayPal' : `Credit Card (${receiptBooking.paymentRaw?.type || 'Visa'}) ****${receiptBooking.paymentRaw?.cardNumber?.slice(-4)}`}
+                      {receiptBooking.paymentRaw?.type === 'paypal' ? 'PayPal' : `Credit Card (${(receiptBooking.paymentRaw?.type || 'card').toUpperCase()}) ****${receiptBooking.paymentRaw?.last4 || receiptBooking.paymentRaw?.cardNumber?.slice(-4) || '----'}`}
                     </p>
                   </div>
 
@@ -13476,16 +13505,39 @@ export default function CarHopApp() {
                     <span className="text-3xl font-bold text-green-500" data-testid="text-checkout-total">${calculateTotal().total.toFixed(2)}</span>
                   </div>
 
+                  {/* Missing fields alert */}
+                  {(() => {
+                    const missingFields = getMissingBookingFields();
+                    if (missingFields.length === 0) return null;
+                    return (
+                      <div className="mt-6 p-4 bg-amber-900/20 border border-amber-700 rounded-lg" data-testid="alert-missing-fields">
+                        <p className="text-amber-300 font-semibold text-sm mb-2">
+                          Para liberar o pagamento, complete:
+                        </p>
+                        <ul className="list-disc list-inside text-amber-200 text-sm space-y-1">
+                          {missingFields.map((field) => (
+                            <li key={field} data-testid={`text-missing-field-${field.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}>{field}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+
                   {/* Proceed Button */}
-                  <button 
-                    ref={proceedButtonRef}
-                    onClick={handleProceedToPayment} 
-                    disabled={!isCheckoutValid() || !carRentalAgreementAccepted} 
-                    className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${isCheckoutValid() && carRentalAgreementAccepted ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
-                    data-testid="button-proceed-payment"
-                  >
-                    {selectedDeliveryType === 'delivery' && deliveryValidationStatus === 'valid' ? 'Proceed' : 'Proceed to Payment'}
-                  </button>
+                  {(() => {
+                    const canProceed = getMissingBookingFields().length === 0;
+                    return (
+                      <button
+                        ref={proceedButtonRef}
+                        onClick={handleProceedToPayment}
+                        disabled={!canProceed}
+                        className={`w-full mt-6 py-4 rounded-lg font-bold text-sm transition-all ${canProceed ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'}`}
+                        data-testid="button-proceed-payment"
+                      >
+                        {selectedDeliveryType === 'delivery' && deliveryValidationStatus === 'valid' ? 'Proceed' : 'Proceed to Payment'}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -13493,9 +13545,10 @@ export default function CarHopApp() {
         )}
 
         {view === 'payment' && cart.car && (() => {
-          const isCreditCardValid = paymentDetails.cardName && paymentDetails.cardNumber && paymentDetails.expiry && paymentDetails.cvc;
-          const isPayButtonEnabled = paymentMethod === 'paypal' || (paymentMethod === 'credit' && isCreditCardValid);
-          
+          const missingFields = getMissingBookingFields();
+          const hasMissing = missingFields.length > 0;
+          const totalAmount = calculateTotal().total;
+
           return (
           <div className="max-w-3xl mx-auto px-6 py-12">
             {/* Back to Details Button - Above everything */}
@@ -13508,149 +13561,43 @@ export default function CarHopApp() {
             </button>
             
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <h2 className="text-2xl font-bold mb-6 text-white">Payment Method</h2>
-              
-              {/* Payment Method Tabs */}
-              <div className="flex mb-8 border-b border-zinc-700">
-                <button 
-                  onClick={() => setPaymentMethod('credit')}
-                  className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'credit' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  data-testid="tab-credit-card"
-                >
-                  <CreditCard size={20} className="inline mr-2" />
-                  Credit Card
-                </button>
-                <button 
-                  onClick={() => setPaymentMethod('paypal')}
-                  className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'paypal' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  data-testid="tab-paypal"
-                >
-                  <Wallet size={20} className="inline mr-2" />
-                  PayPal
-                </button>
+              <div className="flex items-center gap-3 mb-6">
+                <CreditCard size={24} className="text-green-500" />
+                <h2 className="text-2xl font-bold text-white">Pagamento por cartão</h2>
               </div>
 
-              {/* Credit Card Form */}
-              {paymentMethod === 'credit' && (
-                <div className="space-y-4">
-                  {/* Card Number with Auto-detected Brand */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider">CARD NUMBER</label>
-                      {detectCardType(paymentDetails.cardNumber) && (
-                        <div className="text-xs font-bold uppercase text-green-400 bg-green-900/20 px-3 py-1 rounded-lg border border-green-700">
-                          {detectCardType(paymentDetails.cardNumber)}
-                        </div>
-                      )}
-                    </div>
-                    <input 
-                      type="text"
-                      value={paymentDetails.cardNumber} 
-                      onChange={(e: any) => {
-                        const num = e.target.value;
-                        const detectedType = detectCardType(num);
-                        setPaymentDetails({...paymentDetails, cardNumber: num, type: detectedType || paymentDetails.type})} 
-                      } 
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                      data-testid="input-card-number" 
-                    />
-                  </div>
-
-                  {/* Name + Expiry/CVC in responsive grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div className="lg:col-span-1">
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">NAME ON CARD</label>
-                      <input 
-                        type="text"
-                        value={paymentDetails.cardName} 
-                        onChange={(e: any) => setPaymentDetails({...paymentDetails, cardName: e.target.value})} 
-                        placeholder="JOHN DOE"
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                        data-testid="input-card-name" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY (MM/YY)</label>
-                      <input 
-                        type="text"
-                        value={paymentDetails.expiry} 
-                        onChange={handleExpiryChange} 
-                        placeholder="MM/YY"
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                        data-testid="input-card-expiry" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CVC</label>
-                      <input 
-                        type="text"
-                        value={paymentDetails.cvc} 
-                        onChange={(e: any) => setPaymentDetails({...paymentDetails, cvc: e.target.value})} 
-                        placeholder="123"
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors" 
-                        data-testid="input-card-cvc" 
-                      />
-                    </div>
-                  </div>
+              {hasMissing && (
+                <div className="mb-6 p-4 bg-amber-900/20 border border-amber-700 rounded-lg" data-testid="alert-payment-missing-fields">
+                  <p className="text-amber-300 font-semibold text-sm mb-2">Faltam dados do booking. Volte e complete:</p>
+                  <ul className="list-disc list-inside text-amber-200 text-sm space-y-1">
+                    {missingFields.map((field) => (
+                      <li key={field}>{field}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
-              {/* PayPal Form */}
-              {paymentMethod === 'paypal' && (
-                <div className="text-center py-8">
-                  <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Wallet size={36} className="text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Pay with PayPal</h3>
-                  <p className="text-zinc-400 mb-6">You will be redirected to PayPal to complete your payment securely.</p>
-                  <div className="bg-zinc-800 rounded-lg p-4 text-left max-w-sm mx-auto">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-zinc-400">Amount:</span>
-                      <span className="text-white font-bold">${calculateTotal().total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-400">Vehicle:</span>
-                      <span className="text-white">{cart.car.model} {cart.car.year && ` ${cart.car.year}`}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Total and Pay Button */}
-              <div className="mt-8 pt-6 border-t border-zinc-700">
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-zinc-400 text-lg">Total to Pay</span>
-                  <span className="text-4xl font-bold text-green-500">${calculateTotal().total.toFixed(2)}</span>
-                </div>
-                <button 
-                  onClick={handleConfirmBooking} 
-                  disabled={isProcessingPayment || !isPayButtonEnabled}
-                  className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${
-                    isProcessingPayment 
-                      ? 'bg-zinc-700 text-zinc-400 cursor-wait' 
-                      : isPayButtonEnabled 
-                        ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer' 
-                        : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-                  }`}
-                  data-testid="button-confirm-booking"
-                >
-                  {isProcessingPayment ? (
-                    <>
-                      <Loader size={20} className="animate-spin" />
-                      Processing Payment...
-                    </>
-                  ) : (
-                    <>
-                      {paymentMethod === 'credit' ? <CreditCard size={20} /> : <Wallet size={20} />}
-                      {paymentMethod === 'credit' ? 'Pay with Card' : 'Pay with PayPal'}
-                    </>
-                  )}
-                </button>
-                {paymentMethod === 'credit' && !isCreditCardValid && (
-                  <p className="text-center text-zinc-500 text-sm mt-3">Please fill all card details to continue</p>
-                )}
+              <div className="mb-6 p-4 bg-zinc-800 border border-zinc-700 rounded-lg flex justify-between items-center">
+                <span className="text-zinc-400 text-lg">Total a pagar</span>
+                <span className="text-4xl font-bold text-green-500" data-testid="text-payment-total">${totalAmount.toFixed(2)}</span>
               </div>
+
+              <StripeCardForm
+                amount={totalAmount}
+                description={`CarHop - ${cart.car.model}`}
+                metadata={{
+                  vehicleId: cart.car.id,
+                  vehicleModel: cart.car.model,
+                  driverEmail: driverDetails.email,
+                  startDate: searchParams.start,
+                  returnDate: searchParams.end,
+                }}
+                disabled={hasMissing}
+                disabledReason={hasMissing ? 'Volte e complete os dados do booking antes de pagar.' : undefined}
+                isParentProcessing={isProcessingPayment}
+                buttonLabel="Pagar com Cartão"
+                onPaymentSuccess={(info) => { void handleConfirmBooking(info); }}
+              />
             </div>
           </div>
         );})()}
@@ -13882,32 +13829,25 @@ export default function CarHopApp() {
             ? subtotalWithoutDelivery + taxWithoutDelivery
             : subtotal + calculatedTax;
           
-          const isCreditCardValid = paymentDetails.cardName && paymentDetails.cardNumber && paymentDetails.expiry && paymentDetails.cvc;
-          const isPayButtonEnabled = paymentMethod === 'paypal' || (paymentMethod === 'credit' && isCreditCardValid);
-          
-          const handleFinalPayment = async () => {
-            if (paymentMethod === 'credit' && !isCreditCardValid) {
-              alert("Please enter valid payment details.");
-              return;
-            }
-            
+          const handleFinalPayment = async (stripePayment: StripePaymentResult) => {
             setIsProcessingPayment(true);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
+
             try {
-              const paymentMethodDisplay = paymentMethod === 'paypal' 
-                ? 'PayPal' 
-                : `${paymentDetails.type.toUpperCase()} **** ${paymentDetails.cardNumber.slice(-4)}`;
-            
-              // Update the booking with payment info and status
+              const paymentBrand = (stripePayment.brand || 'card').toUpperCase();
+              const paymentMethodDisplay = `${paymentBrand} **** ${stripePayment.last4 || '----'}`;
+
               const updateData: any = {
                 status: 'Active',
                 total: adjustedTotal,
-                paymentRaw: paymentMethod === 'paypal' ? { type: 'paypal' } : { cardName: paymentDetails.cardName, cardNumber: paymentDetails.cardNumber, expiry: paymentDetails.expiry, cvc: paymentDetails.cvc, type: paymentDetails.type },
+                paymentRaw: {
+                  type: (stripePayment.brand || 'card').toLowerCase(),
+                  cardName: stripePayment.cardName,
+                  last4: stripePayment.last4,
+                  stripePaymentIntentId: stripePayment.paymentIntentId,
+                },
                 paymentMethod: paymentMethodDisplay,
               };
-              
-              // If rejected, apply discount
+
               if (approvalStatus === 'rejected' && deliveryFeeAmount > 0) {
                 updateData.details = {
                   ...pendingBooking.details,
@@ -13916,21 +13856,21 @@ export default function CarHopApp() {
                 };
                 updateData.location = (pendingBooking.details as any)?.pickupAddress || pendingBooking.location;
               }
-              
+
               await updateBookingMutation.mutateAsync({ id: pendingDeliveryBookingId, data: updateData });
-              
+
               setIsProcessingPayment(false);
               setPendingDeliveryBookingId(null);
-              setPaymentDetails({ cardName: '', cardNumber: '', expiry: '', cvc: '', type: 'visa' });
-              toast({ description: "Payment confirmed! Booking is now active." });
+              toast({ description: "Pagamento confirmado! Reserva ativada." });
               setView('confirmation');
-            } catch (error) {
-              console.error('[Frontend] Error processing final payment:', error);
+            } catch (error: any) {
+              const errorMsg = error?.message || error?.toString() || 'Unknown error';
+              console.error('[Frontend] Error processing final payment:', errorMsg, error);
               setIsProcessingPayment(false);
-              toast({ 
-                title: "Erro no pagamento", 
-                description: "Ocorreu um erro ao processar o pagamento via PayPal. Por favor, tente novamente.", 
-                variant: "destructive" 
+              toast({
+                title: "Erro no pagamento",
+                description: errorMsg || "Ocorreu um erro ao confirmar a reserva. Tente novamente.",
+                variant: "destructive"
               });
             }
           };
@@ -14008,112 +13948,29 @@ export default function CarHopApp() {
                   </div>
                 </div>
                 
-                {/* Payment Method Tabs */}
-                <div className="flex mb-8 border-b border-zinc-700">
-                  <button 
-                    onClick={() => setPaymentMethod('credit')}
-                    className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'credit' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                    <CreditCard size={20} className="inline mr-2" />
-                    Credit Card
-                  </button>
-                  <button 
-                    onClick={() => setPaymentMethod('paypal')}
-                    className={`flex-1 py-4 text-center font-semibold transition-all ${paymentMethod === 'paypal' ? 'text-green-500 border-b-2 border-green-500' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                    <Wallet size={20} className="inline mr-2" />
-                    PayPal
-                  </button>
+                {/* Total */}
+                <div className="mb-6 p-4 bg-zinc-800 border border-zinc-700 rounded-lg flex justify-between items-center">
+                  <span className="text-zinc-400 text-lg">Total a pagar</span>
+                  <span className="text-3xl font-bold text-green-500">${adjustedTotal.toFixed(2)}</span>
                 </div>
-                
-                {/* Credit Card Form */}
-                {paymentMethod === 'credit' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARD NUMBER</label>
-                      <input 
-                        type="text" 
-                        placeholder="1234 5678 9012 3456" 
-                        value={paymentDetails.cardNumber} 
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 16);
-                          setPaymentDetails({ ...paymentDetails, cardNumber: val, type: detectCardType(val) || 'visa' });
-                        }}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white font-mono text-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CARDHOLDER NAME</label>
-                      <input 
-                        type="text" 
-                        placeholder="John Doe" 
-                        value={paymentDetails.cardName} 
-                        onChange={(e) => setPaymentDetails({ ...paymentDetails, cardName: e.target.value })}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">EXPIRY</label>
-                        <input 
-                          type="text" 
-                          placeholder="MM/YY" 
-                          value={paymentDetails.expiry} 
-                          onChange={handleExpiryChange}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-2">CVC</label>
-                        <input 
-                          type="text" 
-                          placeholder="123" 
-                          value={paymentDetails.cvc} 
-                          onChange={(e) => setPaymentDetails({ ...paymentDetails, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-white font-mono"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {paymentMethod === 'paypal' && (
-                  <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-6 text-center">
-                    <Wallet size={48} className="mx-auto text-blue-400 mb-4" />
-                    <p className="text-blue-300">You will be redirected to PayPal to complete your payment.</p>
-                  </div>
-                )}
-                
-                {/* Total and Pay Button */}
-                <div className="mt-8 pt-6 border-t border-zinc-700">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-zinc-400 font-bold">TOTAL</span>
-                    <span className="text-3xl font-bold text-green-500">${adjustedTotal.toFixed(2)}</span>
-                  </div>
-                  <button 
-                    onClick={handleFinalPayment}
-                    disabled={isProcessingPayment || !isPayButtonEnabled}
-                    className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${
-                      isProcessingPayment 
-                        ? 'bg-zinc-700 text-zinc-400 cursor-wait' 
-                        : isPayButtonEnabled 
-                          ? 'bg-green-600 hover:bg-green-700 text-white' 
-                          : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {isProcessingPayment ? (
-                      <>
-                        <Loader size={20} className="animate-spin" />
-                        Processing Payment...
-                      </>
-                    ) : (
-                      <>
-                        {paymentMethod === 'credit' ? <CreditCard size={20} /> : <Wallet size={20} />}
-                        Pay ${adjustedTotal.toFixed(2)}
-                      </>
-                    )}
-                  </button>
+
+                {/* Stripe Card Form */}
+                <div className="flex items-center gap-3 mb-4">
+                  <CreditCard size={20} className="text-green-500" />
+                  <h3 className="text-lg font-bold text-white">Pagamento por cartão</h3>
                 </div>
+                <StripeCardForm
+                  amount={adjustedTotal}
+                  description={`CarHop - ${pendingBooking.carName} (${pendingBooking.bookingCode})`}
+                  metadata={{
+                    bookingId: pendingDeliveryBookingId,
+                    bookingCode: pendingBooking.bookingCode,
+                    vehicleId: pendingBooking.vehicleId,
+                  }}
+                  isParentProcessing={isProcessingPayment}
+                  buttonLabel={`Pagar $${adjustedTotal.toFixed(2)}`}
+                  onPaymentSuccess={(info) => { void handleFinalPayment(info); }}
+                />
               </div>
             </div>
           );
