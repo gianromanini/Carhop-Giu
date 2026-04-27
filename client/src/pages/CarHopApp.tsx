@@ -13512,7 +13512,7 @@ export default function CarHopApp() {
                     return (
                       <div className="mt-6 p-4 bg-amber-900/20 border border-amber-700 rounded-lg" data-testid="alert-missing-fields">
                         <p className="text-amber-300 font-semibold text-sm mb-2">
-                          Para liberar o pagamento, complete:
+                          To unlock payment, complete:
                         </p>
                         <ul className="list-disc list-inside text-amber-200 text-sm space-y-1">
                           {missingFields.map((field) => (

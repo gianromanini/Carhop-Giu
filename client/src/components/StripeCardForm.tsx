@@ -157,7 +157,7 @@ function InnerCardForm(props: StripeCardFormProps) {
           type="text"
           value={cardName}
           onChange={(e) => setCardName(e.target.value)}
-          placeholder="JOHN DOE"
+          placeholder=""
           className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm outline-none focus:border-green-500 transition-colors"
           data-testid="input-stripe-card-name"
         />
