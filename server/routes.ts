@@ -1224,16 +1224,16 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const stripePaymentIntentId: string | undefined = paymentRaw?.stripePaymentIntentId;
       if (!stripePaymentIntentId) {
         console.warn("[API] Booking missing stripePaymentIntentId");
-        return res.status(400).json({ error: "Pagamento não fornecido. Conclua o pagamento por cartão antes de criar a reserva." });
+        return res.status(400).json({ error: "Payment missing. Complete the card payment before creating the booking." });
       }
       const expectedTotal = Number((result.data as any).total);
       if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
-        return res.status(400).json({ error: "Total da reserva inválido." });
+        return res.status(400).json({ error: "Invalid booking total." });
       }
       const verification = await verifyStripePaymentIntent(stripePaymentIntentId, expectedTotal, 'usd');
       if (!verification.ok) {
         console.error("[API] Stripe verification failed:", verification.reason);
-        return res.status(402).json({ error: verification.reason || "Pagamento Stripe não pôde ser confirmado." });
+        return res.status(402).json({ error: verification.reason || "Stripe payment could not be confirmed." });
       }
 
       // Replay protection: ensure this paymentIntent hasn't been used by another booking
@@ -1242,7 +1242,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         const reused = existing.some((b) => (b.paymentRaw as any)?.stripePaymentIntentId === stripePaymentIntentId);
         if (reused) {
           console.error("[API] Stripe paymentIntent reuse detected:", stripePaymentIntentId);
-          return res.status(409).json({ error: "Este pagamento já foi associado a outra reserva." });
+          return res.status(409).json({ error: "This payment has already been used for another booking." });
         }
       } catch (replayErr) {
         console.error("[API] Replay check error:", replayErr);
@@ -1293,12 +1293,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (incomingIntentId && incomingIntentId !== previousIntentId) {
       const expectedTotal = Number((result.data as any).total ?? previousBooking?.total);
       if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
-        return res.status(400).json({ error: "Total da reserva inválido para verificação de pagamento." });
+        return res.status(400).json({ error: "Invalid booking total for payment verification." });
       }
       const verification = await verifyStripePaymentIntent(incomingIntentId, expectedTotal, 'usd');
       if (!verification.ok) {
         console.error("[API] Stripe verification failed on update:", verification.reason);
-        return res.status(402).json({ error: verification.reason || "Pagamento Stripe não pôde ser confirmado." });
+        return res.status(402).json({ error: verification.reason || "Stripe payment could not be confirmed." });
       }
       // Replay protection on update path too
       try {
@@ -1306,14 +1306,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         const reused = existing.some((b) => b.id !== id && (b.paymentRaw as any)?.stripePaymentIntentId === incomingIntentId);
         if (reused) {
           console.error("[API] Stripe paymentIntent reuse detected on update:", incomingIntentId);
-          return res.status(409).json({ error: "Este pagamento já foi associado a outra reserva." });
+          return res.status(409).json({ error: "This payment has already been used for another booking." });
         }
       } catch (replayErr) {
         console.error("[API] Replay check error on update:", replayErr);
       }
     } else if (isActivating && !incomingIntentId && !previousIntentId) {
       // Activating without any payment intent (legacy path) is not allowed
-      return res.status(402).json({ error: "Não é possível ativar a reserva sem um pagamento Stripe confirmado." });
+      return res.status(402).json({ error: "Cannot activate a booking without a confirmed Stripe payment." });
     }
 
     const booking = await storage.updateBooking(id, result.data);
@@ -2688,7 +2688,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
           senderIdentifier: senderIdentifier,
           senderEmail: senderEmail || null,
           subject: finalSubject,
-          text: `(Cliente Reabriu o chat ${reopenTime})`,
+          text: `(Client reopened the chat ${reopenTime})`,
           images: [],
           read: true,
           chatStartedAt: lastFinished.chatStartedAt
@@ -2773,30 +2773,30 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
             await transporter.sendMail({
               from: process.env.EMAIL_FROM || 'noreply@carhop.com',
               to: clientEmail,
-              subject: 'CarHop Support - Nova Resposta ao seu chamado',
+              subject: 'CarHop Support - New reply to your inquiry',
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
                   <div style="background: #16a34a; padding: 24px; text-align: center;">
                     <h1 style="color: white; margin: 0; font-size: 24px;">CarHop Support</h1>
                   </div>
                   <div style="padding: 32px; background: white;">
-                    <p style="font-size: 16px; color: #374151; margin-top: 0;">Olá ${originalMessage.senderName},</p>
-                    <p style="font-size: 16px; color: #374151;">Você recebeu uma nova resposta do nosso suporte sobre o assunto: <strong>"${originalMessage.subject}"</strong></p>
+                    <p style="font-size: 16px; color: #374151; margin-top: 0;">Hello ${originalMessage.senderName},</p>
+                    <p style="font-size: 16px; color: #374151;">You have received a new reply from our support team regarding: <strong>"${originalMessage.subject}"</strong></p>
                     
                     <div style="background: #f9fafb; border-left: 4px solid #16a34a; padding: 20px; border-radius: 4px; margin: 24px 0;">
                       <p style="margin: 0; white-space: pre-wrap; color: #1f2937; font-size: 15px; line-height: 1.6;">${adminReply}</p>
                     </div>
                     
                     <div style="text-align: center; margin-top: 32px;">
-                      <a href="${process.env.APP_URL || 'https://carhop.replit.app'}" style="background: #16a34a; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Ver no Chat</a>
+                      <a href="${process.env.APP_URL || 'https://carhop.replit.app'}" style="background: #16a34a; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">View in Chat</a>
                     </div>
                     
                     <p style="font-size: 14px; color: #6b7280; margin-top: 32px; border-top: 1px solid #f3f4f6; padding-top: 20px;">
-                      Obrigado por escolher CarHop. Se tiver mais dúvidas, sinta-se à vontade para responder diretamente no chat em nossa plataforma.
+                      Thank you for choosing CarHop. If you have any further questions, feel free to reply directly in the chat on our platform.
                     </p>
                   </div>
                   <div style="background: #f9fafb; padding: 16px; text-align: center;">
-                    <p style="color: #9ca3af; font-size: 12px; margin: 0;">Esta é uma mensagem automática do CarHop. Por favor, não responda a este e-mail.</p>
+                    <p style="color: #9ca3af; font-size: 12px; margin: 0;">This is an automated message from CarHop. Please do not reply to this email.</p>
                   </div>
                 </div>
               `

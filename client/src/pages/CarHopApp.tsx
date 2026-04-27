@@ -1144,12 +1144,12 @@ export default function CarHopApp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       setDeletingVehicleId(null);
-      toast({ title: 'Veículo excluído com sucesso' });
+      toast({ title: 'Vehicle deleted successfully' });
     }
   });
 
   const handleDeleteVehicle = (id: number, model: string) => {
-    if (confirm(`Deseja excluir o veículo ${model}? Esta ação não pode ser desfeita.`)) {
+    if (confirm(`Delete vehicle ${model}? This action cannot be undone.`)) {
       deleteVehicleMutation.mutate(id);
     }
   };
@@ -1939,23 +1939,23 @@ export default function CarHopApp() {
 
   const getMissingBookingFields = (): string[] => {
     const missing: string[] = [];
-    if (!driverDetails.name?.trim()) missing.push('Nome do motorista');
-    if (!driverDetails.email?.trim()) missing.push('E-mail do motorista');
-    if (!driverDetails.phone?.trim()) missing.push('Telefone do motorista');
-    if (!driverDetails.licenseNumber?.trim()) missing.push('Número da CNH');
-    if (driverDetails.licenseImages.length < 2) missing.push('Fotos da CNH (frente e verso)');
-    if (cart.insuranceOption === '') missing.push('Plano de proteção');
+    if (!driverDetails.name?.trim()) missing.push("Driver's name");
+    if (!driverDetails.email?.trim()) missing.push("Driver's email");
+    if (!driverDetails.phone?.trim()) missing.push("Driver's phone");
+    if (!driverDetails.licenseNumber?.trim()) missing.push("Driver's license number");
+    if (driverDetails.licenseImages.length < 2) missing.push("Driver's license photos (front and back)");
+    if (cart.insuranceOption === '') missing.push('Protection plan');
     if (selectedDeliveryType === 'pickup') {
-      if (!pickupAddress) missing.push('Local de retirada');
+      if (!pickupAddress) missing.push('Pickup location');
       else if (cart.car?.availableLocations && cart.car.availableLocations.length > 0 && !cart.car.availableLocations.includes(pickupAddress)) {
-        missing.push('Local de retirada (selecione um dos locais disponíveis)');
+        missing.push('Pickup location (select one of the available locations)');
       }
     }
     if (selectedDeliveryType === 'delivery') {
-      if (!deliveryAddressBooking?.trim()) missing.push('Endereço de entrega');
-      else if (deliveryValidationStatus !== 'valid') missing.push('Confirmação do endereço de entrega');
+      if (!deliveryAddressBooking?.trim()) missing.push('Delivery address');
+      else if (deliveryValidationStatus !== 'valid') missing.push('Delivery address confirmation');
     }
-    if (!carRentalAgreementAccepted) missing.push('Aceite do contrato de aluguel');
+    if (!carRentalAgreementAccepted) missing.push('Acceptance of the rental agreement');
     return missing;
   };
 
@@ -2066,7 +2066,7 @@ export default function CarHopApp() {
       const errorMsg = error?.message || error?.toString() || 'Unknown error';
       console.error('[Frontend] Error creating booking:', errorMsg, error);
       setIsProcessingPayment(false);
-      toast({ title: "Erro", description: errorMsg || "Ocorreu um erro ao processar. Tente novamente.", variant: "destructive" });
+      toast({ title: "Error", description: errorMsg || "An error occurred while processing. Please try again.", variant: "destructive" });
     }
   };
 
@@ -2135,8 +2135,8 @@ export default function CarHopApp() {
        const checkOutMiles = parseInt(checkData.miles || '0');
        if (checkOutMiles < checkInMiles) {
          toast({ 
-           title: "Erro de Milhagem", 
-           description: `As milhas no check-out (${checkOutMiles}) não podem ser menores que as milhas no check-in (${checkInMiles}).`, 
+           title: "Mileage Error", 
+           description: `Check-out miles (${checkOutMiles}) cannot be less than check-in miles (${checkInMiles}).`, 
            variant: "destructive" 
          });
          return;
@@ -2211,8 +2211,8 @@ export default function CarHopApp() {
      await updateBookingMutation.mutateAsync({ id: activeBooking.id, data: updateData });
      if (isHostCheckMode) {
        toast({
-         title: isCheckOutMode ? "Check-out do Host Concluído" : "Check-in do Host Concluído",
-         description: "Os dados foram salvos com sucesso.",
+         title: isCheckOutMode ? "Host Check-out Completed" : "Host Check-in Completed",
+         description: "Data was saved successfully.",
        });
        setShowCheckWorkflowModal(false);
        setActiveBooking(null);
@@ -2725,7 +2725,7 @@ export default function CarHopApp() {
     
     if (missingFields.length > 0) {
       toast({ 
-        description: `Por favor, preencha os campos obrigatórios: ${missingFields.join(', ')}`, 
+        description: `Please fill in the required fields: ${missingFields.join(', ')}`, 
         variant: 'destructive' 
       });
       return;
@@ -2845,31 +2845,31 @@ export default function CarHopApp() {
 
   const addLocationToVehicle = () => { 
     if (!newLocation.trim()) {
-      toast({ title: "Erro", description: "Por favor, digite um endereço", variant: "destructive" });
+      toast({ title: "Error", description: "Please enter an address", variant: "destructive" });
       return;
     }
     if (!editingHostVehicle) {
-      toast({ title: "Erro", description: "Nenhum veículo selecionado", variant: "destructive" });
+      toast({ title: "Error", description: "No vehicle selected", variant: "destructive" });
       return;
     }
     const current = editingHostVehicle.availableLocations || [];
     if (current.includes(newLocation.trim())) {
-      toast({ title: "Aviso", description: "Este endereço já foi adicionado", variant: "default" });
+      toast({ title: "Notice", description: "This address has already been added", variant: "default" });
       return;
     }
     setEditingHostVehicle({...editingHostVehicle, availableLocations: [...current, newLocation.trim()]});
-    toast({ title: "Sucesso", description: "Endereço adicionado! Clique em 'Salvar Locações' para confirmar", });
+    toast({ title: "Success", description: "Address added! Click 'Save Locations' to confirm", });
     setNewLocation(''); 
   };
 
   const addLocation = async () => { 
     if (!newLocation.trim()) {
-      toast({ title: "Erro", description: "Por favor, digite um endereço", variant: "destructive" });
+      toast({ title: "Error", description: "Please enter an address", variant: "destructive" });
       return;
     }
     const current = settings.locations || [];
     if (current.includes(newLocation.trim())) {
-      toast({ title: "Aviso", description: "Este endereço já foi adicionado", variant: "default" });
+      toast({ title: "Notice", description: "This address has already been added", variant: "default" });
       return;
     }
     
@@ -2889,7 +2889,7 @@ export default function CarHopApp() {
     }
     
     updateSettingMutation.mutate({ key: 'locations', value: [...current, newLocation.trim()] });
-    toast({ title: "Sucesso", description: "Endereço adicionado com sucesso!", });
+    toast({ title: "Success", description: "Address added successfully!", });
     setNewLocation('');
     setNewLocationCoords(null);
   };
@@ -3445,7 +3445,7 @@ export default function CarHopApp() {
                               const messageText = msg.text || '';
                               const phoneMatch = messageText.match(/Telefone:\s*(.*?)(?:\n|$)/);
                               const phone = phoneMatch ? phoneMatch[1] : '';
-                              const cleanText = messageText.replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim();
+                              const cleanText = messageText.replace(/\[.*?\]/, '').replace(/Phone:.*?(?:\n|$)/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').replace(/Not provided/, '').trim();
                               
                               return (
                                 <div key={msg.id} className="space-y-1 pb-2 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
@@ -3456,7 +3456,7 @@ export default function CarHopApp() {
                                       </span>
                                     </div>
                                   )}
-                                  {idx === 0 && phone && phone !== 'Não informado' && (
+                                  {idx === 0 && phone && phone !== 'Não informado' && phone !== 'Not provided' && (
                                     <div className="flex justify-end">
                                       <span className="text-xs text-zinc-600 dark:text-zinc-400">{phone}</span>
                                     </div>
@@ -3567,7 +3567,7 @@ export default function CarHopApp() {
             <form onSubmit={async (e) => {
               e.preventDefault();
               if (!clientChatForm.name.trim() || !clientChatForm.email.trim() || !clientChatForm.message.trim()) {
-                toast({ description: 'Por favor, preencha todos os campos obrigatórios', variant: 'destructive' });
+                toast({ description: 'Please fill in all required fields', variant: 'destructive' });
                 return;
               }
               setClientChatSending(true);
@@ -6189,7 +6189,7 @@ export default function CarHopApp() {
                                       <p className="font-medium">{(() => { const veh = (allVehicles || []).find(vv => vv.id === b.vehicleId) || vehicles.find(vv => vv.id === b.vehicleId); const host = veh?.hostId ? hostsData.find((h: any) => String(h.id) === String(veh.hostId)) : null; return <>{veh?.year || (b.details as any)?.vehicleYear || ''} {b.carName} {host ? <span className="text-zinc-500 text-xs font-normal">| Host: {host.firstName} {host.lastName}</span> : null}</>; })()}</p>
                                       {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                                          Substituído: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
+                                          Replaced: {((b as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
                                         </span>
                                       )}
                                     </div>
@@ -6976,7 +6976,7 @@ export default function CarHopApp() {
                                       <div className="text-xs font-bold uppercase text-zinc-400 mb-2">EXTRA EXPENSES</div>
                                         {((b as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                             <div key={`replace-diff-${r.id}`} className="flex justify-between text-zinc-300 text-xs">
-                                              <span>Substituição Veículo: {r.oldVehicleModel} → {b.carName}</span>
+                                              <span>Vehicle Replacement: {r.oldVehicleModel} → {b.carName}</span>
                                               <span className={r.priceDifference > 0 ? 'text-red-400' : 'text-green-400'}>
                                                 {r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}
                                               </span>
@@ -8594,10 +8594,10 @@ export default function CarHopApp() {
                           {deletingVehicleId !== null && (
                             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                               <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
-                                <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Excluir Veículo?</h3>
-                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Tem certeza que deseja excluir permanentemente este veículo da sua frota?</p>
+                                <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Vehicle?</h3>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to permanently delete this vehicle from your fleet?</p>
                                 <div className="flex gap-3">
-                                  <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancelar</button>
+                                  <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-cancel-delete-vehicle">Cancel</button>
                                   <button 
                                     onClick={() => { 
                                       if (deletingVehicleId) {
@@ -8608,7 +8608,7 @@ export default function CarHopApp() {
                                     data-testid="button-confirm-delete-vehicle"
                                     disabled={deleteVehicleMutation.isPending}
                                   >
-                                    {deleteVehicleMutation.isPending ? 'Excluindo...' : 'Sim, Excluir'}
+                                    {deleteVehicleMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
                                   </button>
                                 </div>
                               </div>
@@ -8621,14 +8621,14 @@ export default function CarHopApp() {
                 </Card>
               </div>
             )}
-            {/* Modal de confirmação para frota do Host */}
+            {/* Confirmation modal for Host fleet */}
             {hostTab === 'fleet' && deletingVehicleId !== null && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-2xl">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Excluir Veículo?</h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Tem certeza que deseja excluir permanentemente este veículo da sua frota?</p>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Delete Vehicle?</h3>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Are you sure you want to permanently delete this vehicle from your fleet?</p>
                   <div className="flex gap-3">
-                    <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-host-cancel-delete-vehicle">Cancelar</button>
+                    <button onClick={() => setDeletingVehicleId(null)} className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-bold hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors" data-testid="button-host-cancel-delete-vehicle">Cancel</button>
                     <button 
                       onClick={() => { 
                         if (deletingVehicleId) {
@@ -8639,7 +8639,7 @@ export default function CarHopApp() {
                       data-testid="button-host-confirm-delete-vehicle"
                       disabled={deleteVehicleMutation.isPending}
                     >
-                      {deleteVehicleMutation.isPending ? 'Excluindo...' : 'Sim, Excluir'}
+                      {deleteVehicleMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
                     </button>
                   </div>
                 </div>
@@ -8711,8 +8711,8 @@ export default function CarHopApp() {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => setConfirmingEditUserId(selectedClient.id)} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Salvar</button>
-                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-decline-edit-client">Voltar</button>
+                              <button onClick={() => setConfirmingEditUserId(selectedClient.id)} disabled={updateUserMutation.isPending} className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50" data-testid="button-accept-edit-client">Save</button>
+                              <button onClick={() => { setEditingUserId(null); setEditForm(null); }} className="flex-1 px-3 py-1 bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold rounded transition-colors" data-testid="button-decline-edit-client">Back</button>
                             </div>
                           </div>
                         ) : (
@@ -9614,7 +9614,7 @@ export default function CarHopApp() {
                     </div>
                   <div className="space-y-2">
                     {bookingsLoading && (
-                      <p className="text-zinc-400 text-center py-4">Carregando reservas...</p>
+                      <p className="text-zinc-400 text-center py-4">Loading bookings...</p>
                     )}
                     {(() => {
                       const filteredAdminBookings = bookings
@@ -9625,9 +9625,9 @@ export default function CarHopApp() {
                             const status = (bookingFilterStatus as string).toLowerCase().trim();
                             const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
                             if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
-                            else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed' || normalizedStatusForFilter === 'concluido' || normalizedStatusForFilter === 'concluído');
+                            else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed');
                             else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
-                            else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || normalizedStatusForFilter === 'aguardando aprovação' || (b.details as any)?.deliveryApprovalStatus === 'pending');
+                            else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending');
                           }
                           if (bookingFilterCarModel && bookingFilterCarModel !== "") {
                             const bVehicleId = String(b.vehicleId || '');
@@ -11104,12 +11104,12 @@ export default function CarHopApp() {
                                           {isFirstMsg && chatSubject && (
                                             <div className="mb-1 pb-1 border-b border-zinc-300 dark:border-zinc-600">
                                             <p className="text-xs text-zinc-600 dark:text-zinc-400">Email: {message.senderEmail || message.senderIdentifier}</p>
-                                            {phone && phone !== 'Não informado' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Telefone: {phone}</p>}
+                                            {phone && phone !== 'Não informado' && phone !== 'Not provided' && <p className="text-xs text-zinc-600 dark:text-zinc-400">Phone: {phone}</p>}
                                           </div>
                                         )}
                                           
                                           <p className="text-xs text-zinc-900 dark:text-white whitespace-pre-wrap">
-                                            {(message.text || '').replace(/\[.*?\]/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').trim()}
+                                            {(message.text || '').replace(/\[.*?\]/, '').replace(/Phone:.*?(?:\n|$)/, '').replace(/Telefone:.*?(?:\n|$)/, '').replace(/Não informado/, '').replace(/Not provided/, '').trim()}
                                           </p>
                                           
                                           {message.images && message.images.length > 0 && (
@@ -11137,14 +11137,14 @@ export default function CarHopApp() {
                                                     queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] });
                                                     setEditingSupportMessageId(null);
                                                     setEditingSupportMessageText('');
-                                                    toast({ description: 'Mensagem atualizada!' });
+                                                    toast({ description: 'Message updated!' });
                                                   } catch (error) {
-                                                    toast({ description: 'Erro ao atualizar', variant: 'destructive' });
+                                                    toast({ description: 'Failed to update', variant: 'destructive' });
                                                   }
                                                 }}
                                                 className="flex-1 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded text-xs"
                                               >
-                                                Salvar
+                                                Save
                                               </button>
                                               <button
                                                 onClick={() => {
@@ -11153,7 +11153,7 @@ export default function CarHopApp() {
                                                 }}
                                                 className="flex-1 py-1 bg-zinc-400 hover:bg-zinc-500 text-white font-bold rounded text-xs"
                                               >
-                                                Cancelar
+                                                Cancel
                                               </button>
                                             </div>
                                           </div>
@@ -11558,7 +11558,7 @@ export default function CarHopApp() {
                       })()}
                       {((receiptBooking as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved') && (
                         <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                          Substituído: {((receiptBooking as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
+                          Replaced: {((receiptBooking as any).vehicleReplaceRequests || []).find((r: any) => r.status === 'approved').oldVehicleModel}
                         </span>
                       )}
                     </h3>
@@ -11787,7 +11787,7 @@ export default function CarHopApp() {
                             <div className="space-y-1">
                               {((receiptBooking as any).vehicleReplaceRequests || []).filter((r: any) => r.status === 'approved' && r.priceDifference !== 0).map((r: any) => (
                                 <div key={`receipt-replace-diff-${r.id}`} className="flex justify-between text-sm">
-                                  <span className="text-zinc-600 dark:text-zinc-400">Substituição Veículo: {r.oldVehicleModel} → {receiptBooking.carName}</span>
+                                  <span className="text-zinc-600 dark:text-zinc-400">Vehicle Replacement: {r.oldVehicleModel} → {receiptBooking.carName}</span>
                                   <span className={`font-bold ${r.priceDifference > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                                     {r.priceDifference > 0 ? '+' : ''}${r.priceDifference.toFixed(2)}
                                   </span>
@@ -13563,12 +13563,12 @@ export default function CarHopApp() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
               <div className="flex items-center gap-3 mb-6">
                 <CreditCard size={24} className="text-green-500" />
-                <h2 className="text-2xl font-bold text-white">Pagamento por cartão</h2>
+                <h2 className="text-2xl font-bold text-white">Card payment</h2>
               </div>
 
               {hasMissing && (
                 <div className="mb-6 p-4 bg-amber-900/20 border border-amber-700 rounded-lg" data-testid="alert-payment-missing-fields">
-                  <p className="text-amber-300 font-semibold text-sm mb-2">Faltam dados do booking. Volte e complete:</p>
+                  <p className="text-amber-300 font-semibold text-sm mb-2">Booking details are missing. Please go back and complete:</p>
                   <ul className="list-disc list-inside text-amber-200 text-sm space-y-1">
                     {missingFields.map((field) => (
                       <li key={field}>{field}</li>
@@ -13578,7 +13578,7 @@ export default function CarHopApp() {
               )}
 
               <div className="mb-6 p-4 bg-zinc-800 border border-zinc-700 rounded-lg flex justify-between items-center">
-                <span className="text-zinc-400 text-lg">Total a pagar</span>
+                <span className="text-zinc-400 text-lg">Total to pay</span>
                 <span className="text-4xl font-bold text-green-500" data-testid="text-payment-total">${totalAmount.toFixed(2)}</span>
               </div>
 
@@ -13593,9 +13593,9 @@ export default function CarHopApp() {
                   returnDate: searchParams.end,
                 }}
                 disabled={hasMissing}
-                disabledReason={hasMissing ? 'Volte e complete os dados do booking antes de pagar.' : undefined}
+                disabledReason={hasMissing ? 'Go back and complete the booking details before paying.' : undefined}
                 isParentProcessing={isProcessingPayment}
-                buttonLabel="Pagar com Cartão"
+                buttonLabel="Pay with Card"
                 onPaymentSuccess={(info) => { void handleConfirmBooking(info); }}
               />
             </div>
@@ -13861,15 +13861,15 @@ export default function CarHopApp() {
 
               setIsProcessingPayment(false);
               setPendingDeliveryBookingId(null);
-              toast({ description: "Pagamento confirmado! Reserva ativada." });
+              toast({ description: "Payment confirmed! Booking activated." });
               setView('confirmation');
             } catch (error: any) {
               const errorMsg = error?.message || error?.toString() || 'Unknown error';
               console.error('[Frontend] Error processing final payment:', errorMsg, error);
               setIsProcessingPayment(false);
               toast({
-                title: "Erro no pagamento",
-                description: errorMsg || "Ocorreu um erro ao confirmar a reserva. Tente novamente.",
+                title: "Payment error",
+                description: errorMsg || "An error occurred while confirming the booking. Please try again.",
                 variant: "destructive"
               });
             }
@@ -13950,14 +13950,14 @@ export default function CarHopApp() {
                 
                 {/* Total */}
                 <div className="mb-6 p-4 bg-zinc-800 border border-zinc-700 rounded-lg flex justify-between items-center">
-                  <span className="text-zinc-400 text-lg">Total a pagar</span>
+                  <span className="text-zinc-400 text-lg">Total to pay</span>
                   <span className="text-3xl font-bold text-green-500">${adjustedTotal.toFixed(2)}</span>
                 </div>
 
                 {/* Stripe Card Form */}
                 <div className="flex items-center gap-3 mb-4">
                   <CreditCard size={20} className="text-green-500" />
-                  <h3 className="text-lg font-bold text-white">Pagamento por cartão</h3>
+                  <h3 className="text-lg font-bold text-white">Card payment</h3>
                 </div>
                 <StripeCardForm
                   amount={adjustedTotal}
@@ -13968,7 +13968,7 @@ export default function CarHopApp() {
                     vehicleId: pendingBooking.vehicleId,
                   }}
                   isParentProcessing={isProcessingPayment}
-                  buttonLabel={`Pagar $${adjustedTotal.toFixed(2)}`}
+                  buttonLabel={`Pay $${adjustedTotal.toFixed(2)}`}
                   onPaymentSuccess={(info) => { void handleFinalPayment(info); }}
                 />
               </div>
@@ -14607,7 +14607,7 @@ export default function CarHopApp() {
                     const rating = ratingsData?.find(r => r.bookingId === b.id);
                     if (rating) {
                       updateRatingMutation.mutate({ id: rating.id, hostStarsToClient: hostRatingStars, hostCommentToClient: hostRatingComment });
-                      toast({ title: "Sucesso", description: `Você avaliou ${b.driver.name} com ${hostRatingStars} estrelas!` });
+                      toast({ title: "Success", description: `You rated ${b.driver.name} with ${hostRatingStars} stars!` });
                     }
                     setShowRateGuestModal(false);
                     setSelectedBookingForRating(null);

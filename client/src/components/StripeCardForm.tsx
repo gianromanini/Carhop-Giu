@@ -90,7 +90,7 @@ function InnerCardForm(props: StripeCardFormProps) {
   const handlePay = async () => {
     if (!stripe || !elements) return;
     if (disabled) {
-      toast({ title: 'Dados incompletos', description: disabledReason || 'Preencha todos os campos antes de pagar.', variant: 'destructive' });
+      toast({ title: 'Missing information', description: disabledReason || 'Please complete all fields before paying.', variant: 'destructive' });
       return;
     }
     const card = elements.getElement(CardElement);
@@ -103,7 +103,7 @@ function InnerCardForm(props: StripeCardFormProps) {
       });
       const intentData = await intentRes.json();
       if (!intentData?.clientSecret) {
-        throw new Error(intentData?.message || 'Falha ao iniciar o pagamento.');
+        throw new Error(intentData?.message || 'Failed to start the payment.');
       }
 
       const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
@@ -111,7 +111,7 @@ function InnerCardForm(props: StripeCardFormProps) {
         billing_details: { name: cardName },
       });
       if (pmError || !paymentMethod) {
-        toast({ title: 'Cartão inválido', description: pmError?.message || 'Não foi possível validar o cartão.', variant: 'destructive' });
+        toast({ title: 'Invalid card', description: pmError?.message || 'Could not validate the card.', variant: 'destructive' });
         return;
       }
 
@@ -120,13 +120,13 @@ function InnerCardForm(props: StripeCardFormProps) {
       });
 
       if (result.error) {
-        toast({ title: 'Pagamento recusado', description: result.error.message || 'Tente outro cartão.', variant: 'destructive' });
+        toast({ title: 'Payment declined', description: result.error.message || 'Please try another card.', variant: 'destructive' });
         return;
       }
 
       const intent = result.paymentIntent;
       if (!intent || (intent.status !== 'succeeded' && intent.status !== 'requires_capture')) {
-        toast({ title: 'Pagamento não concluído', description: 'O cartão não autorizou o valor.', variant: 'destructive' });
+        toast({ title: 'Payment not completed', description: 'The card did not authorize the amount.', variant: 'destructive' });
         return;
       }
 
@@ -139,11 +139,11 @@ function InnerCardForm(props: StripeCardFormProps) {
         }));
       } catch (cbErr: any) {
         console.error('[Stripe] onPaymentSuccess callback error:', cbErr);
-        toast({ title: 'Erro ao confirmar reserva', description: cbErr?.message || 'Pagamento aprovado, mas houve erro ao salvar a reserva.', variant: 'destructive' });
+        toast({ title: 'Could not confirm booking', description: cbErr?.message || 'Payment was approved, but there was an error saving the booking.', variant: 'destructive' });
       }
     } catch (err: any) {
       console.error('[Stripe] Payment error:', err);
-      toast({ title: 'Erro no pagamento', description: err?.message || 'Tente novamente.', variant: 'destructive' });
+      toast({ title: 'Payment error', description: err?.message || 'Please try again.', variant: 'destructive' });
     } finally {
       setLocalProcessing(false);
     }
@@ -171,7 +171,7 @@ function InnerCardForm(props: StripeCardFormProps) {
           />
         </div>
         <p className="text-[11px] text-zinc-500 mt-2 flex items-center gap-1">
-          <Lock size={11} /> Pagamento seguro processado pelo Stripe.
+          <Lock size={11} /> Secure payment processed by Stripe.
         </p>
       </div>
 
@@ -191,7 +191,7 @@ function InnerCardForm(props: StripeCardFormProps) {
         {isBusy ? (
           <>
             <Loader size={20} className="animate-spin" />
-            Processando pagamento...
+            Processing payment...
           </>
         ) : (
           <>
@@ -205,7 +205,7 @@ function InnerCardForm(props: StripeCardFormProps) {
         <p className="text-center text-amber-400 text-sm" data-testid="text-stripe-disabled-reason">{disabledReason}</p>
       )}
       {!disabled && !isReady && !isBusy && (
-        <p className="text-center text-zinc-500 text-sm">Preencha o nome e os dados do cartão para liberar o pagamento.</p>
+        <p className="text-center text-zinc-500 text-sm">Enter the cardholder name and card details to enable payment.</p>
       )}
     </div>
   );
@@ -228,7 +228,7 @@ export function StripeCardForm(props: StripeCardFormProps) {
   if (loadError) {
     return (
       <div className="bg-red-900/20 border border-red-700 rounded-lg p-4 text-red-300 text-sm" data-testid="text-stripe-load-error">
-        Não foi possível carregar o sistema de pagamento. Tente novamente em instantes.
+        Could not load the payment system. Please try again in a moment.
       </div>
     );
   }
@@ -237,7 +237,7 @@ export function StripeCardForm(props: StripeCardFormProps) {
     return (
       <div className="flex items-center justify-center py-8 text-zinc-500 text-sm" data-testid="text-stripe-loading">
         <Loader size={18} className="animate-spin mr-2" />
-        Carregando pagamento seguro...
+        Loading secure payment...
       </div>
     );
   }

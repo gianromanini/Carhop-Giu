@@ -163,7 +163,7 @@ export function LocationAutocomplete({
       {isOpen && !isLoading && inputValue.length >= 1 && suggestions.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 px-4 py-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {availableLocations?.length === 0 ? 'Nenhuma localização disponível' : 'Nenhuma localização encontrada'}
+            {availableLocations?.length === 0 ? 'No locations available' : 'No locations found'}
           </p>
         </div>
       )}

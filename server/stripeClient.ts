@@ -68,25 +68,25 @@ export async function verifyStripePaymentIntent(
   currency: string = 'usd',
 ): Promise<StripeIntentVerifyResult> {
   if (!paymentIntentId || typeof paymentIntentId !== 'string') {
-    return { ok: false, reason: 'paymentIntentId ausente' };
+    return { ok: false, reason: 'Missing paymentIntentId' };
   }
   try {
     const stripe = await getUncachableStripeClient();
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (intent.status !== 'succeeded' && intent.status !== 'requires_capture') {
-      return { ok: false, reason: `PaymentIntent status inválido: ${intent.status}`, status: intent.status };
+      return { ok: false, reason: `Invalid PaymentIntent status: ${intent.status}`, status: intent.status };
     }
     if ((intent.currency || '').toLowerCase() !== currency.toLowerCase()) {
-      return { ok: false, reason: `Currency mismatch: esperado ${currency}, recebido ${intent.currency}` };
+      return { ok: false, reason: `Currency mismatch: expected ${currency}, received ${intent.currency}` };
     }
     const expectedCents = Math.round(expectedAmount * 100);
     const intentAmount = intent.amount || 0;
     if (Math.abs(intentAmount - expectedCents) > 1) {
-      return { ok: false, reason: `Amount mismatch: esperado ${expectedCents}, cobrado ${intentAmount}` };
+      return { ok: false, reason: `Amount mismatch: expected ${expectedCents}, charged ${intentAmount}` };
     }
     return { ok: true, status: intent.status, amountPaid: intentAmount };
   } catch (err: any) {
     console.error('[Stripe] verifyStripePaymentIntent error:', err?.message || err);
-    return { ok: false, reason: err?.message || 'Falha ao validar pagamento Stripe' };
+    return { ok: false, reason: err?.message || 'Failed to validate Stripe payment' };
   }
 }

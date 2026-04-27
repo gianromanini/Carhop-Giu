@@ -468,7 +468,7 @@ export default function Admin() {
             <AlertDialogDescription>
               {confirmationDialog.vehicle?.hostInfo ? (
                 <span>
-                  Este Veículo pertence ao Host <span className="font-semibold text-foreground">{confirmationDialog.vehicle.hostInfo.firstName} {confirmationDialog.vehicle.hostInfo.lastName}</span>, tem certeza que quer fazer alguma alteração?
+                  This vehicle belongs to host <span className="font-semibold text-foreground">{confirmationDialog.vehicle.hostInfo.firstName} {confirmationDialog.vehicle.hostInfo.lastName}</span>. Are you sure you want to continue?
                 </span>
               ) : (
                 `Are you sure you want to ${confirmationDialog.action} this vehicle?`
