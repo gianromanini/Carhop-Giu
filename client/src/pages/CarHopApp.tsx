@@ -6220,11 +6220,11 @@ export default function CarHopApp() {
                                 <p className="text-zinc-500">{b.driver.phone}</p>
                                 <p className="text-zinc-500">{b.driver.email}</p>
                                               <p className="text-zinc-500 font-bold">Trip Days: {(() => {
-                                                const start = new Date(b.startDate + 'T' + b.startTime);
-                                                const end = new Date(b.returnDate + 'T' + b.returnTime);
-                                                const diffTime = Math.abs(end.getTime() - start.getTime());
-                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                                return diffDays;
+                                                const startDate = b.startDate ? new Date(`${b.startDate}T${b.startTime || '12:00 AM'}`) : null;
+                                                const endDate = b.returnDate ? new Date(`${b.returnDate}T${b.returnTime || '12:00 AM'}`) : null;
+                                                const diffTime = startDate && endDate ? Math.abs(endDate.getTime() - startDate.getTime()) : NaN;
+                                                const diffDays = Number.isFinite(diffTime) ? Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))) : null;
+                                                return diffDays ?? (Number.isFinite(b.days) && b.days > 0 ? b.days : 1);
                                               })()}</p>
                                 <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                                   <p className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Driver's License</p>
