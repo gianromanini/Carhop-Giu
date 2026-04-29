@@ -1060,6 +1060,16 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json(vehicle);
   });
 
+  app.get("/api/vehicles/:id/booked-dates", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const allBookings = await storage.getBookings();
+    const inactive = ['Cancelled', 'Declined', 'Completed'];
+    const ranges = allBookings
+      .filter(b => b.vehicleId === id && !inactive.includes(b.status))
+      .map(b => ({ start: b.startDate, end: b.returnDate, status: b.status }));
+    res.json(ranges);
+  });
+
   app.post("/api/vehicles", async (req, res) => {
     const result = insertVehicleSchema.safeParse(req.body);
     if (!result.success) {

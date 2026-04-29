@@ -949,6 +949,17 @@ export default function CarHopApp() {
     }
   });
 
+  const { data: viewCarBookedDates = [] } = useQuery<{start: string; end: string; status: string}[]>({
+    queryKey: ['/api/vehicles', viewCar?.id, 'booked-dates'],
+    queryFn: async () => {
+      if (!viewCar?.id) return [];
+      const res = await fetch(`/api/vehicles/${viewCar.id}/booked-dates`);
+      return res.json();
+    },
+    enabled: !!viewCar?.id && view === 'car-details',
+    staleTime: 30000,
+  });
+
   const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState<boolean>(false);
   const [fleetSort, setFleetSort] = useState('brand-asc');
@@ -1847,7 +1858,7 @@ export default function CarHopApp() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    toast({ title: "Otimizando imagens", description: "Estamos ajustando as fotos para garantir qualidade e velocidade.", variant: "default" });
+    toast({ title: "Optimizing images", description: "Adjusting photos to ensure quality and speed.", variant: "default" });
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -2090,8 +2101,8 @@ export default function CarHopApp() {
     if (!files || files.length === 0) return;
 
     toast({ 
-      title: "Otimizando fotos", 
-      description: `Ajustando ${files.length} foto(s) para o check-in/out.`, 
+      title: "Optimizing photos", 
+      description: `Adjusting ${files.length} photo(s) for check-in/out.`, 
       variant: "default" 
     });
 
@@ -2898,17 +2909,40 @@ export default function CarHopApp() {
     updateSettingMutation.mutate({ key: 'locations', value: settings.locations.filter(l => l !== locToRemove) });
   };
 
+  const handlePrint = (printSelector: string = '.printable-receipt') => {
+    const el = document.querySelector(printSelector);
+    if (!el) { window.print(); return; }
+    const win = window.open('', '_blank', 'width=850,height=1100');
+    if (!win) { window.print(); return; }
+    const collectedCSS: string[] = [];
+    Array.from(document.styleSheets).forEach(sheet => {
+      try { Array.from(sheet.cssRules).forEach(rule => { collectedCSS.push(rule.cssText); }); } catch {}
+    });
+    const printCSS = `
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { margin: 0.35in 0.45in; background: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif; }
+      img { max-width: 100% !important; }
+      button, .no-print { display: none !important; }
+      .dark\\:bg-zinc-900, .dark\\:bg-zinc-800, .dark\\:bg-black { background-color: white !important; }
+      .dark\\:text-white, .dark\\:text-zinc-100, .dark\\:text-zinc-200, .dark\\:text-zinc-300 { color: black !important; }
+      .dark\\:border-zinc-800, .dark\\:border-zinc-700 { border-color: #d1d5db !important; }
+    `;
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>CarHopGo</title><style>${collectedCSS.join('\n')}</style><style>${printCSS}</style></head><body class="bg-white text-zinc-900">${el.outerHTML}</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  };
+
   if (vehiclesLoading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600"><Loader className="animate-spin" size={32} /> Loading CarHopGo...</div>;
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <style>{` @page { size: letter; margin: 0.10in 0.10in 0.10in 0.10in; } @media print { body { margin: 0 !important; padding: 0 !important; } body * { visibility: hidden; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; margin: 0 !important; padding: 0 !important; } .printable-receipt, .printable-agreement { display: block !important; width: 100% !important; max-width: 100% !important; color: black !important; font-size: 8pt; line-height: 1.15; background: white !important; box-sizing: border-box !important; padding: 0 0.05in !important; margin: 0 !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
+      <style>{` @page { size: letter; margin: 0.4in; } @media print { body * { visibility: hidden; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; } .printable-receipt, .printable-agreement { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; color: black !important; font-size: 9pt; line-height: 1.2; padding: 0.3in !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
     <div className="min-h-screen bg-gray-50 dark:bg-black text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
       
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-2">
           <div className="flex items-center gap-1 sm:gap-2 cursor-pointer flex-shrink-0" onClick={() => setView('home')} data-testid="link-home">
-            <img src="/logo.png" alt="CarHop Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain mix-blend-multiply dark:mix-blend-screen bg-transparent" style={{ backgroundColor: 'transparent' }} />
             <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
@@ -6913,7 +6947,7 @@ export default function CarHopApp() {
                                       <div className="text-xs font-bold uppercase text-zinc-400 mb-2">Original Booking Amount</div>
                                       <div className="space-y-1 mb-2">
                                         <div className="flex justify-between text-zinc-300 text-xs">
-                                          <span>Base Rate - {b.days} Days</span>
+                                          <span>Base Rate - {(!isNaN(b.days) && b.days > 0) ? b.days : Math.max(1, Math.ceil((new Date(b.returnDate).getTime() - new Date(b.startDate).getTime()) / 86400000))} Days</span>
                                           <span>${rate.toFixed(2)}</span>
                                         </div>
                                         {extras > 0 && (
@@ -9596,8 +9630,7 @@ export default function CarHopApp() {
                         <option value="active">Active</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
-                          <option value="pending-approval">Pending Approval</option>
-                          <option value="todos os status">Todos os Status</option>
+                        <option value="pending-approval">Pending Approval</option>
                         </select>
                       </div>
                       <div className="flex-1">
@@ -9620,7 +9653,7 @@ export default function CarHopApp() {
                       const filteredAdminBookings = bookings
                         .filter(b => {
                           let matches = true;
-                          if (!bookingFilterStatus || bookingFilterStatus === "" || bookingFilterStatus === "todos os status") {
+                          if (!bookingFilterStatus || bookingFilterStatus === "") {
                           } else {
                             const status = (bookingFilterStatus as string).toLowerCase().trim();
                             const normalizedStatusForFilter = (b.status || "").toLowerCase().trim();
@@ -10231,7 +10264,7 @@ export default function CarHopApp() {
                                                 <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700">
                                                   <div className="space-y-1 mb-2">
                                                     <div className="flex justify-between text-zinc-300 text-xs">
-                                                      <span>Base Rate - {b.days} Days</span>
+                                                      <span>Base Rate - {(!isNaN(b.days) && b.days > 0) ? b.days : Math.max(1, Math.ceil((new Date(b.returnDate).getTime() - new Date(b.startDate).getTime()) / 86400000))} Days</span>
                                                       <span>${rate.toFixed(2)}</span>
                                                     </div>
                                                     {extras > 0 && (
@@ -11280,7 +11313,7 @@ export default function CarHopApp() {
 
         {showCarRentalModal && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
               <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Car Rental Agreement</h2>
                 <button onClick={() => { setShowCarRentalModal(false); setCarRentalAgreementAccepted(false); setViewingCarRentalOnly(false); }} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
@@ -11395,7 +11428,7 @@ export default function CarHopApp() {
                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3 no-print">
                   {viewingCarRentalOnly ? (
                     <button 
-                      onClick={() => window.print()} 
+                      onClick={() => handlePrint('.printable-agreement')} 
                       className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                       data-testid="button-print-car-rental-agreement"
                     >
@@ -11432,7 +11465,7 @@ export default function CarHopApp() {
           const agHost = agVehicle?.hostId ? hostsData.find((h: any) => String(h.id) === String(agVehicle.hostId)) : null;
           return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
                 <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Car Rental Agreement</h2>
                   <button onClick={() => setViewingAgreementBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" data-testid="button-close-agreement"><X size={24}/></button>
@@ -11514,7 +11547,7 @@ export default function CarHopApp() {
                     </div>
                   </div>
                   <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex gap-3 no-print">
-                    <button onClick={() => window.print()} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-agreement">
+                    <button onClick={() => handlePrint('.printable-agreement')} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-agreement">
                       <FileText size={18}/> Print
                     </button>
                     <button onClick={() => setViewingAgreementBookingId(null)} className="flex-1 py-3 bg-zinc-600 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors" data-testid="button-close-agreement-bottom">Close</button>
@@ -11529,7 +11562,7 @@ export default function CarHopApp() {
           const receiptBooking = bookings.find(b => b.id === viewingReceiptBookingId)!;
           return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
                 <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6 flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Rental Receipt</h2>
                   <button onClick={() => setViewingReceiptBookingId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={24}/></button>
@@ -11862,7 +11895,7 @@ export default function CarHopApp() {
                   </div>
 
                   <div className="no-print flex gap-3 mt-6">
-                    <button onClick={() => window.print()} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-receipt">
+                    <button onClick={() => handlePrint('.printable-receipt')} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2" data-testid="button-print-receipt">
                       <FileText size={18}/> Print Receipt
                     </button>
                     <button onClick={() => setViewingReceiptBookingId(null)} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors" data-testid="button-close-receipt">Close Receipt</button>
@@ -11885,7 +11918,7 @@ export default function CarHopApp() {
           const allPhotos = [...outsidePhotos, ...insidePhotos];
           return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-zinc-900 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="bg-white dark:bg-zinc-900 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
                 <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 flex justify-between items-center">
                   <h2 className={`text-lg font-bold ${isCheckIn ? 'text-green-400' : 'text-orange-400'}`}>
                     Host {isCheckIn ? 'Check-in' : 'Check-out'} Data
@@ -12208,7 +12241,7 @@ export default function CarHopApp() {
                               })()}
                             </div>
                       <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                        {b.days} Days | {(() => {
+                        {(!isNaN(b.days) && b.days > 0) ? b.days : Math.max(1, Math.ceil((new Date(b.returnDate).getTime() - new Date(b.startDate).getTime()) / 86400000))} Days | {(() => {
                           const isDelivery = (b.details as any)?.deliveryType === 'delivery';
                           const deliveryAddr = (b.details as any)?.deliveryAddress;
                           const isDeclined = (b.details as any)?.deliveryApprovalStatus === 'rejected';
@@ -14016,7 +14049,7 @@ export default function CarHopApp() {
 
         {showCheckWorkflowModal && activeBooking && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl relative">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-2xl relative">
               <Button 
                 size="icon"
                 variant="ghost"
@@ -14473,10 +14506,53 @@ export default function CarHopApp() {
                     </div>
                   </div>
 
+                  {(() => {
+                    const hasConflict = viewCarBookedDates.some(range =>
+                      carDetailsBooking.startDate < range.end && carDetailsBooking.endDate > range.start
+                    );
+                    if (hasConflict) {
+                      return (
+                        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg" data-testid="alert-date-conflict">
+                          <p className="text-red-700 dark:text-red-400 font-semibold text-sm">This vehicle is not available for the selected dates.</p>
+                          <p className="text-red-600 dark:text-red-500 text-xs mt-1">Please choose different pickup or return dates.</p>
+                        </div>
+                      );
+                    }
+                    if (viewCarBookedDates.length > 0) {
+                      return (
+                        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg" data-testid="alert-booked-dates">
+                          <p className="text-amber-700 dark:text-amber-400 font-semibold text-xs mb-1">Already booked periods:</p>
+                          <ul className="space-y-0.5">
+                            {viewCarBookedDates.map((range, i) => (
+                              <li key={i} className="text-amber-600 dark:text-amber-500 text-xs">
+                                {range.start} → {range.end}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <div className="p-4 sm:p-6 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
                       <div><span className="text-zinc-500 text-xs sm:text-sm">Price for {bookingDays} day{bookingDays !== 1 ? 's' : ''}</span><div className="text-2xl sm:text-4xl font-bold text-green-600" data-testid="text-car-detail-price">${(viewCar.price * bookingDays).toFixed(2)}</div></div>
-                      <Button onClick={() => { setSearchParams({location: '', start: carDetailsBooking.startDate, startTime: carDetailsBooking.startTime, end: carDetailsBooking.endDate, endTime: carDetailsBooking.endTime}); handleRent(viewCar); }} className="px-4 sm:px-8 py-2 sm:py-3 text-xs sm:text-sm w-full sm:w-auto" data-testid="button-rent-detail">Book Now</Button>
+                      {(() => {
+                        const hasConflict = viewCarBookedDates.some(range =>
+                          carDetailsBooking.startDate < range.end && carDetailsBooking.endDate > range.start
+                        );
+                        return (
+                          <Button
+                            onClick={() => { setSearchParams({location: '', start: carDetailsBooking.startDate, startTime: carDetailsBooking.startTime, end: carDetailsBooking.endDate, endTime: carDetailsBooking.endTime}); handleRent(viewCar); }}
+                            className="px-4 sm:px-8 py-2 sm:py-3 text-xs sm:text-sm w-full sm:w-auto"
+                            disabled={hasConflict}
+                            data-testid="button-rent-detail"
+                          >
+                            {hasConflict ? 'Dates Unavailable' : 'Book Now'}
+                          </Button>
+                        );
+                      })()}
                     </div>
                   </div>
                   {viewCar.isPriceMatch && (
