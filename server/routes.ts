@@ -1267,6 +1267,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         (result.data.details as any).hostName = hostForEnrich ? `${hostForEnrich.firstName} ${hostForEnrich.lastName}` : (vehicleForEnrich.hostName || null);
       }
 
+      // Initialize license verification as pending for host review
+      (result.data as any).licenseVerification = { status: 'pending' };
+
       const booking = await storage.createBooking(result.data);
       console.log("[API] Booking created successfully:", booking.id);
       

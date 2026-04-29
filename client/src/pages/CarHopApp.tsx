@@ -1150,6 +1150,11 @@ export default function CarHopApp() {
     }
   });
 
+  const toggleVehicleAvailabilityMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) => apiRequest('PUT', `/api/vehicles/${id}`, { availabilityStatus: status }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); }
+  });
+
   const deleteVehicleMutation = useMutation({
     mutationFn: (id: number) => apiRequest('DELETE', `/api/vehicles/${id}`),
     onSuccess: () => {
@@ -1357,6 +1362,14 @@ export default function CarHopApp() {
       fetchFullBooking(bookingId);
     }
   }, [manageBookingId, hostManageBookingId, bookings, bookingNeedsImageFetch, fetchFullBooking]);
+
+  // Fetch full booking images when admin selects a trip for viewing
+  useEffect(() => {
+    if (!selectedTripForView) return;
+    if (bookingNeedsImageFetch(selectedTripForView)) {
+      fetchFullBooking(selectedTripForView.id);
+    }
+  }, [selectedTripForView, bookingNeedsImageFetch, fetchFullBooking]);
 
   // Host pickup locations - per host, not global
   const { data: hostPickupLocationsData } = useQuery<{ locations: string[] }>({
@@ -5295,6 +5308,26 @@ export default function CarHopApp() {
                                 </div>
                                 <p className="text-xs text-zinc-500 truncate mt-1">{car.fuel} · {car.category} · {car.seats}p</p>
                                 <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
+                                {(() => {
+                                  const isOnTrip = bookings.some((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
+                                  const effectiveStatus = isOnTrip ? 'on-trip' : ((car as any).availabilityStatus || 'available');
+                                  return (
+                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                      {effectiveStatus === 'on-trip' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700" data-testid={`badge-vehicle-status-${car.id}`}>On a Trip</span>}
+                                      {effectiveStatus === 'available' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700" data-testid={`badge-vehicle-status-${car.id}`}>Available</span>}
+                                      {effectiveStatus === 'unavailable' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700" data-testid={`badge-vehicle-status-${car.id}`}>Unavailable</span>}
+                                      {!isOnTrip && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); toggleVehicleAvailabilityMutation.mutate({ id: car.id, status: effectiveStatus === 'available' ? 'unavailable' : 'available' }); }}
+                                          className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
+                                          data-testid={`button-toggle-availability-${car.id}`}
+                                        >
+                                          {effectiveStatus === 'available' ? 'Set Unavailable' : 'Set Available'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
                                 <button onClick={() => { 
@@ -5912,7 +5945,50 @@ export default function CarHopApp() {
               
               return false;
             });
+            const pendingLicenseBookings = hostBookings.filter((b: any) => (b as any).licenseVerification?.status === 'pending' && (b.status === 'Active' || b.status === 'Extended'));
             return (
+              <div className="space-y-4">
+              {pendingLicenseBookings.length > 0 && (
+                <Card className="p-3 sm:p-4 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30">
+                  <h3 className="text-sm font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2" data-testid="text-pending-license-title">
+                    <AlertTriangle size={16} className="text-blue-500" />
+                    License Verification Required ({pendingLicenseBookings.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {pendingLicenseBookings.map((b: any) => (
+                      <div key={b.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-white dark:bg-zinc-900 rounded-lg border border-blue-200 dark:border-blue-800" data-testid={`license-verification-row-${b.id}`}>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-zinc-900 dark:text-white">{b.driver?.name}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">{b.carName} · #{b.bookingCode}</p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 text-white text-xs h-7 px-3"
+                            onClick={async () => {
+                              await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'approved', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } });
+                            }}
+                            data-testid={`button-approve-license-${b.id}`}
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-300 dark:border-red-700 text-xs h-7 px-3"
+                            onClick={async () => {
+                              await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'rejected', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } });
+                            }}
+                            data-testid={`button-reject-license-${b.id}`}
+                          >
+                            Not Legitimate
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column - Bookings List */}
                 <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
@@ -6635,23 +6711,65 @@ export default function CarHopApp() {
                           {/* Driver's License */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-3">Driver's License</h4>
-                            <div className="flex gap-2 flex-wrap">
-                              {(() => {
-                                const fullBooking = getBookingWithImages(b);
-                                const licenseImages = fullBooking.driver?.licenseImages || [];
-                                const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
-                                if (validImages.length > 0) {
-                                  return validImages.map((img: string, idx: number) => (
-                                    <div key={idx} className="relative group">
-                                      <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => openLightbox(validImages, idx)} data-testid={`img-driver-license-${idx}`}/>
+                            {(() => {
+                              const licVerif = (b as any).licenseVerification;
+                              const verifStatus = licVerif?.status;
+                              if (verifStatus === 'approved') {
+                                return (
+                                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/30 rounded border border-green-200 dark:border-green-800" data-testid={`license-verified-${b.id}`}>
+                                    <span className="text-xs font-bold text-green-700 dark:text-green-400">License Verified</span>
+                                    {licVerif?.verifiedAt && <span className="text-[10px] text-zinc-400">{new Date(licVerif.verifiedAt).toLocaleDateString()}</span>}
+                                  </div>
+                                );
+                              }
+                              if (verifStatus === 'rejected') {
+                                return (
+                                  <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/30 rounded border border-red-200 dark:border-red-800" data-testid={`license-rejected-${b.id}`}>
+                                    <span className="text-xs font-bold text-red-700 dark:text-red-400">License Flagged as Not Legitimate</span>
+                                    {licVerif?.verifiedAt && <span className="text-[10px] text-zinc-400">{new Date(licVerif.verifiedAt).toLocaleDateString()}</span>}
+                                  </div>
+                                );
+                              }
+                              const fullBooking = getBookingWithImages(b);
+                              const licenseImages = fullBooking.driver?.licenseImages || [];
+                              const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
+                              return (
+                                <div>
+                                  <div className="flex gap-2 flex-wrap mb-3">
+                                    {validImages.length > 0 ? validImages.map((img: string, idx: number) => (
+                                      <div key={idx} className="relative group">
+                                        <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => openLightbox(validImages, idx)} data-testid={`img-driver-license-${idx}`}/>
+                                      </div>
+                                    )) : licenseImages.some((img: string) => img === '[IMAGE]') ? (
+                                      <span className="text-xs text-zinc-500">Loading...</span>
+                                    ) : (
+                                      <span className="text-xs text-zinc-500">No license photos</span>
+                                    )}
+                                  </div>
+                                  {(verifStatus === 'pending' || !verifStatus) && (b.status === 'Active' || b.status === 'Extended') && (
+                                    <div className="flex gap-2 flex-wrap">
+                                      <Button
+                                        size="sm"
+                                        className="bg-blue-600 text-white text-xs"
+                                        onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'approved', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
+                                        data-testid={`button-confirm-license-detail-${b.id}`}
+                                      >
+                                        Confirm
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-red-600 border-red-300 dark:border-red-700 text-xs"
+                                        onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'rejected', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
+                                        data-testid={`button-reject-license-detail-${b.id}`}
+                                      >
+                                        Not Legitimate
+                                      </Button>
                                     </div>
-                                  ));
-                                } else if (licenseImages.some((img: string) => img === '[IMAGE]')) {
-                                  return <span className="text-xs text-zinc-500">Loading...</span>;
-                                }
-                                return <span className="text-xs text-zinc-500">No license photos</span>;
-                              })()}
-                            </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* CHECK-IN Section - Collapsible */}
@@ -7144,6 +7262,7 @@ export default function CarHopApp() {
                     </div>
                   )}
                 </Card>
+              </div>
               </div>
             );
           })()}
@@ -8370,6 +8489,26 @@ export default function CarHopApp() {
                                 {car.vinNumber && car.licensePlate && <span className="mx-1">·</span>}
                                 {car.licensePlate && <span>Plate:{car.licensePlate}</span>}
                               </p>
+                              {(() => {
+                                const isOnTrip = bookings.some((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
+                                const effectiveStatus = isOnTrip ? 'on-trip' : ((car as any).availabilityStatus || 'available');
+                                return (
+                                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                    {effectiveStatus === 'on-trip' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>On a Trip</span>}
+                                    {effectiveStatus === 'available' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Available</span>}
+                                    {effectiveStatus === 'unavailable' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Unavailable</span>}
+                                    {!isOnTrip && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); toggleVehicleAvailabilityMutation.mutate({ id: car.id, status: effectiveStatus === 'available' ? 'unavailable' : 'available' }); }}
+                                        className="text-[9px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
+                                        data-testid={`button-toggle-availability-admin-${car.id}`}
+                                      >
+                                        {effectiveStatus === 'available' ? 'Set Unavailable' : 'Set Available'}
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                             <div className="flex gap-1">
                               <Button 
@@ -9406,12 +9545,37 @@ export default function CarHopApp() {
                           })()}
 
                           {/* Driver License Info */}
-                          {selectedTripForView.driver.licenseNumber && (
-                            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                              
-                              <p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedTripForView.driver.licenseNumber}</p>
-                            </div>
-                          )}
+                          <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                            <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Driver's License</h4>
+                            {selectedTripForView.driver.licenseNumber && (
+                              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2">{selectedTripForView.driver.licenseNumber}</p>
+                            )}
+                            {(() => {
+                              const licVerif = (selectedTripForView as any).licenseVerification;
+                              const fullBooking = getBookingWithImages(selectedTripForView);
+                              const licenseImages = fullBooking.driver?.licenseImages || [];
+                              const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
+                              return (
+                                <div>
+                                  {licVerif && (
+                                    <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 ${licVerif.status === 'approved' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700' : licVerif.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700'}`} data-testid={`admin-license-status-${selectedTripForView.id}`}>
+                                      {licVerif.status === 'approved' ? 'Verified by Host' : licVerif.status === 'rejected' ? 'Flagged by Host' : 'Pending Verification'}
+                                      {licVerif.verifiedAt && ` · ${new Date(licVerif.verifiedAt).toLocaleDateString()}`}
+                                    </div>
+                                  )}
+                                  <div className="flex gap-2 flex-wrap">
+                                    {validImages.length > 0 ? validImages.map((img: string, idx: number) => (
+                                      <img key={idx} src={img} alt={`License ${idx + 1}`} className="w-16 h-16 rounded border border-zinc-300 dark:border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => openLightbox(validImages, idx)} data-testid={`admin-img-driver-license-${idx}`} />
+                                    )) : licenseImages.some((img: string) => img === '[IMAGE]') ? (
+                                      <span className="text-xs text-zinc-500">Loading...</span>
+                                    ) : (
+                                      <span className="text-xs text-zinc-500">No license photos</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
                       </div>
                     </div>

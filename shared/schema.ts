@@ -114,6 +114,7 @@ export const vehicles = pgTable("vehicles", {
     createdAt: string;
     respondedAt?: string;
   }[]>().default([]),
+  availabilityStatus: text("availability_status").default('available'),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -244,6 +245,12 @@ export const bookings = pgTable("bookings", {
     respondedAt?: string;
     respondedBy?: string;
   }[]>().default([]),
+  licenseVerification: jsonb("license_verification").$type<{
+    status: 'pending' | 'approved' | 'rejected';
+    verifiedBy?: string;
+    verifiedAt?: string;
+    rejectionReason?: string;
+  }>(),
   unread: boolean("unread").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
