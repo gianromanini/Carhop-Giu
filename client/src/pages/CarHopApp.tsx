@@ -2918,14 +2918,44 @@ export default function CarHopApp() {
     Array.from(document.styleSheets).forEach(sheet => {
       try { Array.from(sheet.cssRules).forEach(rule => { collectedCSS.push(rule.cssText); }); } catch {}
     });
+    const isAgreement = printSelector === '.printable-agreement';
     const printCSS = `
+      @page { size: letter; margin: ${isAgreement ? '0.18in 0.25in' : '0.35in 0.45in'}; }
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      body { margin: 0.35in 0.45in; background: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif; }
+      body { margin: 0; padding: 0; background: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif; }
       img { max-width: 100% !important; }
       button, .no-print { display: none !important; }
       .dark\\:bg-zinc-900, .dark\\:bg-zinc-800, .dark\\:bg-black { background-color: white !important; }
       .dark\\:text-white, .dark\\:text-zinc-100, .dark\\:text-zinc-200, .dark\\:text-zinc-300 { color: black !important; }
       .dark\\:border-zinc-800, .dark\\:border-zinc-700 { border-color: #d1d5db !important; }
+      ${isAgreement ? `
+      /* Compact agreement — fit everything on one Letter page */
+      .printable-agreement { padding: 0 !important; font-size: 7.5pt !important; line-height: 1.18 !important; }
+      .printable-agreement .p-8 { padding: 5pt !important; }
+      .printable-agreement .p-4 { padding: 4pt !important; }
+      .printable-agreement .p-3 { padding: 3pt !important; }
+      .printable-agreement .space-y-6 > * + * { margin-top: 5pt !important; }
+      .printable-agreement .space-y-4 > * + * { margin-top: 3pt !important; }
+      .printable-agreement .space-y-3 > * + * { margin-top: 2pt !important; }
+      .printable-agreement h3 { font-size: 9pt !important; margin: 3pt 0 2pt 0 !important; }
+      .printable-agreement h4 { font-size: 7.5pt !important; margin: 3pt 0 1pt 0 !important; }
+      .printable-agreement p { font-size: 7pt !important; line-height: 1.18 !important; margin: 0 0 1pt 0 !important; }
+      .printable-agreement .text-xs { font-size: 7pt !important; }
+      .printable-agreement .text-sm { font-size: 7.5pt !important; }
+      .printable-agreement .text-lg { font-size: 9pt !important; }
+      .printable-agreement .mb-4 { margin-bottom: 2pt !important; }
+      .printable-agreement .mb-2 { margin-bottom: 1pt !important; }
+      .printable-agreement .mt-4 { margin-top: 3pt !important; }
+      .printable-agreement .mt-2 { margin-top: 1pt !important; }
+      .printable-agreement .pt-6 { padding-top: 4pt !important; }
+      .printable-agreement .gap-4 { gap: 4pt !important; }
+      .printable-agreement .gap-3 { gap: 3pt !important; }
+      .printable-agreement .gap-2 { gap: 2pt !important; }
+      .printable-agreement .grid { display: grid !important; }
+      .printable-agreement .grid-cols-2 { grid-template-columns: 1fr 1fr !important; }
+      .printable-agreement .rounded-lg { border-radius: 2pt !important; }
+      .printable-agreement .prose { max-width: none !important; }
+      ` : ''}
     `;
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>CarHopGo</title><style>${collectedCSS.join('\n')}</style><style>${printCSS}</style></head><body class="bg-white text-zinc-900">${el.outerHTML}</body></html>`);
     win.document.close();
