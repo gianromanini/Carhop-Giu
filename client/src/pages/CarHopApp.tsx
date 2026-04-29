@@ -2943,19 +2943,19 @@ export default function CarHopApp() {
       .dark\\:border-zinc-800, .dark\\:border-zinc-700 { border-color: #d1d5db !important; }
       ${isAgreement ? `
       /* Compact agreement — fit everything on one Letter page */
-      .printable-agreement { padding: 0 !important; font-size: 7.5pt !important; line-height: 1.18 !important; }
+      .printable-agreement { padding: 0 !important; font-size: 8pt !important; line-height: 1.2 !important; }
       .printable-agreement .p-8 { padding: 5pt !important; }
       .printable-agreement .p-4 { padding: 4pt !important; }
       .printable-agreement .p-3 { padding: 3pt !important; }
       .printable-agreement .space-y-6 > * + * { margin-top: 5pt !important; }
       .printable-agreement .space-y-4 > * + * { margin-top: 3pt !important; }
       .printable-agreement .space-y-3 > * + * { margin-top: 2pt !important; }
-      .printable-agreement h3 { font-size: 9pt !important; margin: 3pt 0 2pt 0 !important; }
-      .printable-agreement h4 { font-size: 7.5pt !important; margin: 3pt 0 1pt 0 !important; }
-      .printable-agreement p { font-size: 7pt !important; line-height: 1.18 !important; margin: 0 0 1pt 0 !important; }
-      .printable-agreement .text-xs { font-size: 7pt !important; }
-      .printable-agreement .text-sm { font-size: 7.5pt !important; }
-      .printable-agreement .text-lg { font-size: 9pt !important; }
+      .printable-agreement h3 { font-size: 10pt !important; margin: 3pt 0 2pt 0 !important; }
+      .printable-agreement h4 { font-size: 8.5pt !important; margin: 3pt 0 1pt 0 !important; }
+      .printable-agreement p { font-size: 8pt !important; line-height: 1.2 !important; margin: 0 0 1pt 0 !important; }
+      .printable-agreement .text-xs { font-size: 7.5pt !important; }
+      .printable-agreement .text-sm { font-size: 8pt !important; }
+      .printable-agreement .text-lg { font-size: 10pt !important; }
       .printable-agreement .mb-4 { margin-bottom: 2pt !important; }
       .printable-agreement .mb-2 { margin-bottom: 1pt !important; }
       .printable-agreement .mt-4 { margin-top: 3pt !important; }
@@ -11922,39 +11922,41 @@ export default function CarHopApp() {
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOPGO CAR SHARING AGREEMENT</h3>
                   
                   <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">The person identified as "Guest" on the Trip Summary above was connected through CarHopGo.com. The Guest agrees to be bound by the CarHopGo Terms of Service and incorporated policies.</p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">The person identified as "Guest" on the Trip Summary above was connected through CarHopGo.com. The Guest agrees to be bound by the CarHopGo Terms of Service and incorporated policies.</p>
                     
                     {cart.car && (
-                      <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-xs">
+                      <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-sm">
                         <p className="font-bold mb-2 text-zinc-900 dark:text-white">Trip Details:</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip Start:</strong> {formatDisplayDate(searchParams.start, searchParams.startTime)}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip End:</strong> {formatDisplayDate(searchParams.end, searchParams.endTime)}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Pickup Location:</strong> {pickupAddress || 'To be confirmed'}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Return Location:</strong> {pickupAddress || 'To be confirmed'}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Vehicle:</strong> {cart.car.year ? `${cart.car.year} ` : ''}{cart.car.model}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>VIN:</strong> {cart.car.vinNumber || 'N/A'}</p>
                       </div>
                     )}
                     
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">DEFINITIONS</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Extras:</strong> Optional child seats and other products selected by Guest.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Guest:</strong> The person identified as Guest on this Agreement ({driverDetails.name}).</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> The {cart.car?.year ? `${cart.car.year} ` : ''}{cart.car?.model}{cart.car?.vinNumber ? ` — VIN: ${cart.car.vinNumber}` : ''} identified on this Agreement.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2"><strong>Extras:</strong> Optional child seats and other products selected by Guest.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Guest:</strong> The person identified as Guest on this Agreement ({driverDetails.name}).</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> The {cart.car?.year ? `${cart.car.year} ` : ''}{cart.car?.model}{cart.car?.vinNumber ? ` — VIN: ${cart.car.vinNumber}` : ''} identified on this Agreement.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">TERMS OF SERVICE</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Vehicle Ownership & Condition:</strong> Vehicle is provided "as-is". Guest accepts Vehicle in current condition and has inspected it. Guest must report any pre-existing damage.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Personal Property:</strong> CarHopGo is not responsible for loss or damage to Guest's personal property during or after the Reservation Period.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle Return:</strong> Guest must return Vehicle in same condition as received, ordinary wear and tear excepted. Late returns incur additional fees.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Financial Responsibility:</strong> Guest is financially responsible for all damage to Vehicle during Reservation Period, regardless of fault. Guest's personal auto insurance is PRIMARY coverage.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2"><strong>Vehicle Ownership & Condition:</strong> Vehicle is provided "as-is". Guest accepts Vehicle in current condition and has inspected it. Guest must report any pre-existing damage.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Personal Property:</strong> CarHopGo is not responsible for loss or damage to Guest's personal property during or after the Reservation Period.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Vehicle Return:</strong> Guest must return Vehicle in same condition as received, ordinary wear and tear excepted. Late returns incur additional fees.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Financial Responsibility:</strong> Guest is financially responsible for all damage to Vehicle during Reservation Period, regardless of fault. Guest's personal auto insurance is PRIMARY coverage.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">CARHOPGO RENTAL TERMS</h4>
                       <p>The Guest agrees to pay the total charges quoted, including rental fees, taxes, and applicable fees. Payment is due at or before pickup.</p>
                       {cart.car && (
-                        <p className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/30 p-2 rounded border border-blue-200 dark:border-blue-800">
+                        <p className="mt-2 text-sm bg-blue-50 dark:bg-blue-900/30 p-2 rounded border border-blue-200 dark:border-blue-800">
                           <strong>Duration:</strong> {cart.billingDays} day(s) | <strong>Rate:</strong> ${cart.car.price}/day | <strong>Total Rental:</strong> ${(cart.car.price * cart.billingDays).toFixed(2)}
                         </p>
                       )}
@@ -11964,31 +11966,31 @@ export default function CarHopApp() {
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GUEST PROTECTION PLANS & INSURANCE (IMPORTANT)</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Selected Plan:</strong> {cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'} (${cart.insuranceOption === '500' ? '500' : '1,000'} deductible)</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Coverage:</strong> {cart.insuranceOption === '500' ? 'Covers damage to host\'s vehicle' : 'Covers damage to host\'s vehicle, third party vehicles, bodily injuries and property damage'}</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Deductible:</strong> Maximum Guest pays for vehicle damage</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Exclusions:</strong> Protection plan is VOID if Guest violates terms (drunk driving, unauthorized drivers, commercial use)</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2"><strong>Selected Plan:</strong> {cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'} (${cart.insuranceOption === '500' ? '500' : '1,000'} deductible)</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Coverage:</strong> {cart.insuranceOption === '500' ? 'Covers damage to host\'s vehicle' : 'Covers damage to host\'s vehicle, third party vehicles, bodily injuries and property damage'}</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Deductible:</strong> Maximum Guest pays for vehicle damage</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Exclusions:</strong> Protection plan is VOID if Guest violates terms (drunk driving, unauthorized drivers, commercial use)</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">PROHIBITED USES</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Strictly prohibited and voids insurance protection: (a) Commercial use (Uber, Lyft, DoorDash), (b) Off-road driving, (c) Towing or pushing, (d) Unauthorized drivers, (e) Criminal activity</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Strictly prohibited and voids insurance protection: (a) Commercial use (Uber, Lyft, DoorDash), (b) Off-road driving, (c) Towing or pushing, (d) Unauthorized drivers, (e) Criminal activity</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GPS TRACKING & SAFETY</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Guest consents to GPS tracking. CarHopGo may use GPS data for vehicle recovery if not returned on time, stolen, or emergency assistance.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Guest consents to GPS tracking. CarHopGo may use GPS data for vehicle recovery if not returned on time, stolen, or emergency assistance.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GOVERNING LAW & DISPUTES</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Governing Law:</strong> Connecticut law governs this Agreement.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Binding Arbitration:</strong> All disputes shall be resolved by binding arbitration in Connecticut. Guest waives right to jury trial or class action.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Governing Law:</strong> Connecticut law governs this Agreement.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Binding Arbitration:</strong> All disputes shall be resolved by binding arbitration in Connecticut. Guest waives right to jury trial or class action.</p>
                     </div>
 
                     <div>
                       <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GENERAL</h4>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">If any provision is invalid, remaining provisions remain enforceable. This Agreement cannot be modified except in writing through CarHopGo. In case of conflict between this Agreement and CarHopGo Terms of Service, the Terms of Service control.</p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">If any provision is invalid, remaining provisions remain enforceable. This Agreement cannot be modified except in writing through CarHopGo. In case of conflict between this Agreement and CarHopGo Terms of Service, the Terms of Service control.</p>
                     </div>
 
                     <div>
@@ -12080,47 +12082,47 @@ export default function CarHopApp() {
                   <div className="prose dark:prose-invert max-w-none">
                     <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">CARHOPGO CAR SHARING AGREEMENT</h3>
                     <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">The person identified as "Guest" on the Trip Summary above was connected through CarHopGo.com. The Guest agrees to be bound by the CarHopGo Terms of Service and incorporated policies.</p>
-                      <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-xs">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">The person identified as "Guest" on the Trip Summary above was connected through CarHopGo.com. The Guest agrees to be bound by the CarHopGo Terms of Service and incorporated policies.</p>
+                      <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-lg text-sm">
                         <p className="font-bold mb-2 text-zinc-900 dark:text-white">Trip Details:</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip Start:</strong> {formatDisplayDate(agBooking.startDate, agBooking.startTime)}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip End:</strong> {formatDisplayDate(agBooking.returnDate, agBooking.returnTime)}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Pickup Location:</strong> {formatAddressForDisplay(agBooking.location)}</p>
-                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Vehicle:</strong> {agVehicle?.year ? `${agVehicle.year} ` : ''}{agBooking.carName}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Vehicle:</strong> {agVehicle?.year || (agBooking.details as any)?.vehicleYear ? `${agVehicle?.year || (agBooking.details as any)?.vehicleYear} ` : ''}{agBooking.carName}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>VIN:</strong> {agVehicle?.vinNumber || 'N/A'}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Booking Code:</strong> {agBooking.bookingCode}</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">DEFINITIONS</h4>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Guest:</strong> {agBooking.driver?.name}</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> {agVehicle?.year ? `${agVehicle.year} ` : ''}{agBooking.carName}{agVehicle?.vinNumber ? ` — VIN: ${agVehicle.vinNumber}` : ''}</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2"><strong>Guest:</strong> {agBooking.driver?.name}</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> {agVehicle?.year || (agBooking.details as any)?.vehicleYear ? `${agVehicle?.year || (agBooking.details as any)?.vehicleYear} ` : ''}{agBooking.carName}{agVehicle?.vinNumber ? ` — VIN: ${agVehicle.vinNumber}` : ''}</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">TERMS OF SERVICE</h4>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Vehicle Ownership & Condition:</strong> Vehicle is provided "as-is". Guest accepts Vehicle in current condition and has inspected it.</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Personal Property:</strong> CarHopGo is not responsible for loss or damage to Guest's personal property.</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle Return:</strong> Guest must return Vehicle in same condition as received, ordinary wear and tear excepted.</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Financial Responsibility:</strong> Guest is financially responsible for all damage during Reservation Period, regardless of fault.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2"><strong>Vehicle Ownership & Condition:</strong> Vehicle is provided "as-is". Guest accepts Vehicle in current condition and has inspected it.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Personal Property:</strong> CarHopGo is not responsible for loss or damage to Guest's personal property.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Vehicle Return:</strong> Guest must return Vehicle in same condition as received, ordinary wear and tear excepted.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Financial Responsibility:</strong> Guest is financially responsible for all damage during Reservation Period, regardless of fault.</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GUEST PROTECTION PLANS & INSURANCE</h4>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Selected Plan:</strong> {agBooking.details?.protectionType || 'Standard'}</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Protection Amount:</strong> ${(agBooking.details?.protection || 0).toFixed(2)}</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Exclusions:</strong> Protection plan is VOID if Guest violates terms (drunk driving, unauthorized drivers, commercial use)</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2"><strong>Selected Plan:</strong> {agBooking.details?.protectionType || 'Standard'}</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Protection Amount:</strong> ${(agBooking.details?.protection || 0).toFixed(2)}</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Exclusions:</strong> Protection plan is VOID if Guest violates terms (drunk driving, unauthorized drivers, commercial use)</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">PROHIBITED USES</h4>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Strictly prohibited: (a) Commercial use, (b) Off-road driving, (c) Towing, (d) Unauthorized drivers, (e) Criminal activity</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Strictly prohibited: (a) Commercial use, (b) Off-road driving, (c) Towing, (d) Unauthorized drivers, (e) Criminal activity</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GPS TRACKING & SAFETY</h4>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Guest consents to GPS tracking for vehicle recovery and emergency assistance.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Guest consents to GPS tracking for vehicle recovery and emergency assistance.</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">GOVERNING LAW & DISPUTES</h4>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Governing Law:</strong> Connecticut law governs this Agreement.</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Binding Arbitration:</strong> All disputes shall be resolved by binding arbitration in Connecticut.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Governing Law:</strong> Connecticut law governs this Agreement.</p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400"><strong>Binding Arbitration:</strong> All disputes shall be resolved by binding arbitration in Connecticut.</p>
                       </div>
                     </div>
                   </div>
