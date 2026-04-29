@@ -607,6 +607,293 @@ interface FormDataType {
   [key: string]: any;
 }
 
+function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; vehicles: any[]; bookings: any[] }) {
+  const queryClient = useQueryClient();
+  const hostId = currentHost.id;
+  const hostIdStr = String(hostId);
+  const bankAccount = currentHost.bankAccount || null;
+  const payoutSettings = currentHost.payoutSettings || {};
+  const totalWithdrawn = payoutSettings.totalWithdrawn || 0;
+  const lastPayoutAt = payoutSettings.lastPayoutAt || null;
+  const autoPayoutEnabled = payoutSettings.autoPayoutEnabled || false;
+
+  const hostVehicleIds = vehicles.filter((v: any) => String(v.hostId) === hostIdStr).map((v: any) => v.id);
+  const hostVehicleMap = Object.fromEntries(vehicles.filter((v: any) => String(v.hostId) === hostIdStr).map((v: any) => [v.id, v]));
+
+  const completedBookings = bookings.filter((b: any) => {
+    const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+    const vehicle = vehicles.find((v: any) => String(v.id) === bVehicleId);
+    if (vehicle && String(vehicle.hostId) === hostIdStr) return true;
+    if (String((b.details as any)?.hostId) === hostIdStr) return true;
+    return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
+  }).filter((b: any) => b.status === 'Completed');
+
+  const activeBookings = bookings.filter((b: any) => {
+    const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+    const vehicle = vehicles.find((v: any) => String(v.id) === bVehicleId);
+    if (vehicle && String(vehicle.hostId) === hostIdStr) return true;
+    if (String((b.details as any)?.hostId) === hostIdStr) return true;
+    return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
+  }).filter((b: any) => b.status === 'Active' || b.status === 'Extended');
+
+  let totalNet = 0;
+  completedBookings.forEach((b: any) => {
+    const vehicle = hostVehicleMap[b.vehicleId];
+    const protectionAmount = (b.details as any)?.protection || 0;
+    const earningsBase = b.total - protectionAmount;
+    const commission = vehicle ? (earningsBase * (vehicle.commission || 10) / 100) : (earningsBase * 0.10);
+    totalNet += earningsBase - commission;
+  });
+
+  let pendingNet = 0;
+  activeBookings.forEach((b: any) => {
+    const vehicle = hostVehicleMap[b.vehicleId];
+    const protectionAmount = (b.details as any)?.protection || 0;
+    const earningsBase = b.total - protectionAmount;
+    const commission = vehicle ? (earningsBase * (vehicle.commission || 10) / 100) : (earningsBase * 0.10);
+    pendingNet += earningsBase - commission;
+  });
+
+  const available = Math.max(0, totalNet - totalWithdrawn);
+
+  const { data: payoutHistory = [], isLoading: payoutsLoading } = useQuery<any[]>({
+    queryKey: ['/api/hosts', hostId, 'payouts'],
+    queryFn: () => apiRequest('GET', `/api/hosts/${hostId}/payouts`).then((r: any) => r.json()),
+    enabled: !!hostId,
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: (data: { amount: number; type: string }) =>
+      apiRequest('POST', `/api/hosts/${hostId}/payouts`, data).then((r: any) => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts', hostId, 'payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+    },
+  });
+
+  const updateBankMutation = useMutation({
+    mutationFn: (data: any) =>
+      apiRequest('PUT', `/api/hosts/${hostId}/payout-settings`, data).then((r: any) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/hosts'] }),
+  });
+
+  const [showBankForm, setShowBankForm] = useState(false);
+  const [bankType, setBankType] = useState<'manual' | 'linked'>(bankAccount?.type || 'manual');
+  const [routingNum, setRoutingNum] = useState(bankAccount?.routingNumber || '');
+  const [accountNum, setAccountNum] = useState(bankAccount?.accountNumber || '');
+  const [accountName, setAccountName] = useState(bankAccount?.accountName || '');
+  const [linkedEmail, setLinkedEmail] = useState(bankAccount?.linkedEmail || '');
+  const [withdrawInput, setWithdrawInput] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
+
+  const handleSaveBank = () => {
+    const newBank = bankType === 'manual'
+      ? { type: 'manual', routingNumber: routingNum, accountNumber: accountNum, accountName }
+      : { type: 'linked', linkedEmail };
+    updateBankMutation.mutate({ bankAccount: newBank });
+    setShowBankForm(false);
+  };
+
+  const handleWithdraw = () => {
+    const amt = parseFloat(withdrawInput);
+    if (isNaN(amt) || amt <= 0) { setWithdrawError('Enter a valid amount.'); return; }
+    if (amt > available) { setWithdrawError(`Maximum available: $${available.toFixed(2)}`); return; }
+    if (!bankAccount) { setWithdrawError('Set up a bank account first.'); return; }
+    setWithdrawError('');
+    withdrawMutation.mutate({ amount: amt, type: 'instant' });
+    setWithdrawInput('');
+  };
+
+  const toggleAuto = () => {
+    updateBankMutation.mutate({ payoutSettings: { ...payoutSettings, autoPayoutEnabled: !autoPayoutEnabled } });
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Balance Summary */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <Card className="p-3 sm:p-5 text-center">
+          <p className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1">Net Balance</p>
+          <p className="text-xl sm:text-3xl font-bold text-green-500">${available.toFixed(2)}</p>
+          <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">Available to withdraw</p>
+        </Card>
+        <Card className="p-3 sm:p-5 text-center">
+          <p className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1">Last Withdrawal</p>
+          {lastPayoutAt ? (
+            <>
+              <p className="text-xl sm:text-3xl font-bold text-blue-500">${((payoutHistory as any[])[0]?.netAmount ?? 0).toFixed(2)}</p>
+              <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">{new Date(lastPayoutAt).toLocaleDateString()}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xl sm:text-3xl font-bold text-zinc-400">—</p>
+              <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">No withdrawals yet</p>
+            </>
+          )}
+        </Card>
+        <Card className="p-3 sm:p-5 text-center">
+          <p className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1">Pending</p>
+          <p className="text-xl sm:text-3xl font-bold text-orange-500">${pendingNet.toFixed(2)}</p>
+          <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">Active trips</p>
+        </Card>
+      </div>
+
+      {/* Payout Mode */}
+      <Card className="p-4 sm:p-6">
+        <h4 className="text-sm font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
+          <Receipt size={15} /> Payout Mode
+        </h4>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div
+            onClick={toggleAuto}
+            className={`flex-1 rounded-md border-2 p-4 cursor-pointer transition-all ${autoPayoutEnabled ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}
+            data-testid="button-payout-mode-auto"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarClock size={16} className={autoPayoutEnabled ? 'text-green-600' : 'text-zinc-500'} />
+              <span className={`font-semibold text-sm ${autoPayoutEnabled ? 'text-green-700 dark:text-green-400' : ''}`}>Automatic Weekly</span>
+              {autoPayoutEnabled && <CheckCircle size={14} className="text-green-500 ml-auto" />}
+            </div>
+            <p className="text-xs text-zinc-500">Your balance is paid out automatically every week. No fees.</p>
+          </div>
+          <div
+            onClick={toggleAuto}
+            className={`flex-1 rounded-md border-2 p-4 cursor-pointer transition-all ${!autoPayoutEnabled ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}
+            data-testid="button-payout-mode-manual"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign size={16} className={!autoPayoutEnabled ? 'text-blue-600' : 'text-zinc-500'} />
+              <span className={`font-semibold text-sm ${!autoPayoutEnabled ? 'text-blue-700 dark:text-blue-400' : ''}`}>Withdraw Now</span>
+              {!autoPayoutEnabled && <CheckCircle size={14} className="text-blue-500 ml-auto" />}
+            </div>
+            <p className="text-xs text-zinc-500">Withdraw on demand. A 2% processing fee applies to each withdrawal.</p>
+          </div>
+        </div>
+        {!autoPayoutEnabled && (
+          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex-1 w-full">
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={available}
+                  step="0.01"
+                  value={withdrawInput}
+                  onChange={e => { setWithdrawInput(e.target.value); setWithdrawError(''); }}
+                  placeholder={`Max $${available.toFixed(2)}`}
+                  className="flex-1 h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm"
+                  data-testid="input-withdraw-amount"
+                />
+                <button
+                  onClick={handleWithdraw}
+                  disabled={withdrawMutation.isPending || available <= 0}
+                  className="h-9 px-4 rounded-md bg-blue-600 text-white text-sm font-semibold disabled:opacity-50"
+                  data-testid="button-withdraw-now"
+                >
+                  {withdrawMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Withdraw'}
+                </button>
+              </div>
+              {withdrawError && <p className="text-xs text-red-500 mt-1">{withdrawError}</p>}
+              {withdrawInput && !withdrawError && (
+                <p className="text-xs text-zinc-500 mt-1">
+                  Fee: ${(parseFloat(withdrawInput || '0') * 0.02).toFixed(2)} — You receive: ${(parseFloat(withdrawInput || '0') * 0.98).toFixed(2)}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Bank Account */}
+      <Card className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-bold uppercase text-zinc-400 flex items-center gap-2">
+            <Building2 size={15} /> Bank Account
+          </h4>
+          <button
+            onClick={() => setShowBankForm(!showBankForm)}
+            className="text-xs font-semibold text-blue-500 hover:underline"
+            data-testid="button-edit-bank-account"
+          >
+            {bankAccount ? 'Edit' : 'Set Up'}
+          </button>
+        </div>
+        {bankAccount && !showBankForm ? (
+          <div className="flex items-center gap-3 text-sm">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <CreditCard size={14} className="text-blue-600" />
+            </div>
+            {bankAccount.type === 'linked' ? (
+              <div>
+                <p className="font-semibold">Linked Account</p>
+                <p className="text-zinc-500 text-xs">{bankAccount.linkedEmail}</p>
+              </div>
+            ) : (
+              <div>
+                <p className="font-semibold">{bankAccount.accountName || 'Bank Account'}</p>
+                <p className="text-zinc-500 text-xs">Routing: ···{bankAccount.routingNumber?.slice(-4)} · Account: ···{bankAccount.accountNumber?.slice(-4)}</p>
+              </div>
+            )}
+            <CheckCircle size={14} className="text-green-500 ml-auto" />
+          </div>
+        ) : !bankAccount && !showBankForm ? (
+          <p className="text-sm text-zinc-500">No bank account set up yet.</p>
+        ) : null}
+        {showBankForm && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <button onClick={() => setBankType('manual')} className={`flex-1 h-8 rounded-md text-xs font-semibold border ${bankType === 'manual' ? 'bg-blue-600 text-white border-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`} data-testid="button-bank-type-manual">Manual Entry</button>
+              <button onClick={() => setBankType('linked')} className={`flex-1 h-8 rounded-md text-xs font-semibold border ${bankType === 'linked' ? 'bg-blue-600 text-white border-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`} data-testid="button-bank-type-linked">Linked Account</button>
+            </div>
+            {bankType === 'manual' ? (
+              <>
+                <input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Account holder name" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-account-name" />
+                <input value={routingNum} onChange={e => setRoutingNum(e.target.value)} placeholder="Routing number (9 digits)" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-routing" />
+                <input value={accountNum} onChange={e => setAccountNum(e.target.value)} placeholder="Account number" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-account-number" />
+              </>
+            ) : (
+              <input value={linkedEmail} onChange={e => setLinkedEmail(e.target.value)} placeholder="Email / PayPal / Venmo linked account" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-linked-email" />
+            )}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowBankForm(false)} className="h-9 px-4 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm" data-testid="button-bank-cancel">Cancel</button>
+              <button onClick={handleSaveBank} disabled={updateBankMutation.isPending} className="h-9 px-4 rounded-md bg-green-600 text-white text-sm font-semibold disabled:opacity-50" data-testid="button-bank-save">
+                {updateBankMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Payout History */}
+      <Card className="p-4 sm:p-6">
+        <h4 className="text-sm font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
+          <Receipt size={15} /> Payout History
+        </h4>
+        {payoutsLoading ? (
+          <div className="flex justify-center py-6"><Loader size={20} className="animate-spin text-zinc-400" /></div>
+        ) : (payoutHistory as any[]).length === 0 ? (
+          <p className="text-sm text-zinc-500 text-center py-4">No payouts yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {(payoutHistory as any[]).map((p: any) => (
+              <div key={p.id} className="flex items-center justify-between text-sm py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0" data-testid={`row-payout-${p.id}`}>
+                <div>
+                  <p className="font-semibold">{p.type === 'instant' ? 'Instant Withdrawal' : 'Auto Payout'}</p>
+                  <p className="text-xs text-zinc-500">{new Date(p.createdAt).toLocaleDateString()} {p.fee > 0 && `· Fee: $${p.fee.toFixed(2)}`}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-green-600">+${p.netAmount.toFixed(2)}</p>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">{p.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export default function CarHopApp() {
   const queryClient = useQueryClient();
   const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -7320,298 +7607,7 @@ export default function CarHopApp() {
             );
           })()}
 
-          {hostTab === 'payout' && (() => {
-            const hostId = currentHost.id;
-            const hostIdStr = String(hostId);
-            const bankAccount = (currentHost as any).bankAccount || null;
-            const payoutSettings = (currentHost as any).payoutSettings || {};
-            const totalWithdrawn = payoutSettings.totalWithdrawn || 0;
-            const lastPayoutAt = payoutSettings.lastPayoutAt || null;
-            const autoPayoutEnabled = payoutSettings.autoPayoutEnabled || false;
-
-            // Compute net earnings (Completed bookings only)
-            const hostVehicleIds = vehicles.filter(v => String(v.hostId) === hostIdStr).map(v => v.id);
-            const hostVehicleMap = Object.fromEntries(vehicles.filter(v => String(v.hostId) === hostIdStr).map(v => [v.id, v]));
-            const completedBookings = bookings.filter(b => {
-              const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
-              const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
-              if (vehicle && String(vehicle.hostId) === hostIdStr) return true;
-              if (String((b.details as any)?.hostId) === hostIdStr) return true;
-              return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
-            }).filter(b => b.status === 'Completed');
-            const activeBookings = bookings.filter(b => {
-              const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
-              const vehicle = vehicles.find(v => String(v.id) === bVehicleId);
-              if (vehicle && String(vehicle.hostId) === hostIdStr) return true;
-              if (String((b.details as any)?.hostId) === hostIdStr) return true;
-              return bVehicleId && hostVehicleIds.map(String).includes(bVehicleId);
-            }).filter(b => b.status === 'Active' || b.status === 'Extended');
-
-            let totalNet = 0;
-            completedBookings.forEach(b => {
-              const vehicle = hostVehicleMap[b.vehicleId as unknown as number];
-              const protectionAmount = (b.details as any)?.protection || 0;
-              const earningsBase = b.total - protectionAmount;
-              const commission = vehicle ? (earningsBase * (vehicle.commission || 10) / 100) : (earningsBase * 0.10);
-              totalNet += earningsBase - commission;
-            });
-
-            let pendingNet = 0;
-            activeBookings.forEach(b => {
-              const vehicle = hostVehicleMap[b.vehicleId as unknown as number];
-              const protectionAmount = (b.details as any)?.protection || 0;
-              const earningsBase = b.total - protectionAmount;
-              const commission = vehicle ? (earningsBase * (vehicle.commission || 10) / 100) : (earningsBase * 0.10);
-              pendingNet += earningsBase - commission;
-            });
-
-            const available = Math.max(0, totalNet - totalWithdrawn);
-
-            const { data: payoutHistory = [], isLoading: payoutsLoading } = useQuery<any[]>({
-              queryKey: ['/api/hosts', hostId, 'payouts'],
-              queryFn: () => apiRequest('GET', `/api/hosts/${hostId}/payouts`).then(r => r.json()),
-              enabled: !!hostId,
-            });
-
-            const withdrawMutation = useMutation({
-              mutationFn: (data: { amount: number; type: string }) =>
-                apiRequest('POST', `/api/hosts/${hostId}/payouts`, data).then(r => r.json()),
-              onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: ['/api/hosts', hostId, 'payouts'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
-              },
-            });
-
-            const updateBankMutation = useMutation({
-              mutationFn: (data: any) =>
-                apiRequest('PUT', `/api/hosts/${hostId}/payout-settings`, data).then(r => r.json()),
-              onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/hosts'] }),
-            });
-
-            const [showBankForm, setShowBankForm] = useState(false);
-            const [bankType, setBankType] = useState<'manual' | 'linked'>(bankAccount?.type || 'manual');
-            const [routingNum, setRoutingNum] = useState(bankAccount?.routingNumber || '');
-            const [accountNum, setAccountNum] = useState(bankAccount?.accountNumber || '');
-            const [accountName, setAccountName] = useState(bankAccount?.accountName || '');
-            const [linkedEmail, setLinkedEmail] = useState(bankAccount?.linkedEmail || '');
-            const [withdrawInput, setWithdrawInput] = useState('');
-            const [withdrawError, setWithdrawError] = useState('');
-
-            const handleSaveBank = () => {
-              const newBank = bankType === 'manual'
-                ? { type: 'manual', routingNumber: routingNum, accountNumber: accountNum, accountName }
-                : { type: 'linked', linkedEmail };
-              updateBankMutation.mutate({ bankAccount: newBank });
-              setShowBankForm(false);
-            };
-
-            const handleWithdraw = () => {
-              const amt = parseFloat(withdrawInput);
-              if (isNaN(amt) || amt <= 0) { setWithdrawError('Enter a valid amount.'); return; }
-              if (amt > available) { setWithdrawError(`Maximum available: $${available.toFixed(2)}`); return; }
-              if (!bankAccount) { setWithdrawError('Set up a bank account first.'); return; }
-              setWithdrawError('');
-              withdrawMutation.mutate({ amount: amt, type: 'instant' });
-              setWithdrawInput('');
-            };
-
-            const toggleAuto = () => {
-              updateBankMutation.mutate({ payoutSettings: { ...payoutSettings, autoPayoutEnabled: !autoPayoutEnabled } });
-            };
-
-            return (
-              <div className="space-y-5">
-                {/* Balance Summary */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                  <Card className="p-3 sm:p-5 text-center">
-                    <p className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1">Net Balance</p>
-                    <p className="text-xl sm:text-3xl font-bold text-green-500">${available.toFixed(2)}</p>
-                    <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">Available to withdraw</p>
-                  </Card>
-                  <Card className="p-3 sm:p-5 text-center">
-                    <p className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1">Last Withdrawal</p>
-                    {lastPayoutAt ? (
-                      <>
-                        <p className="text-xl sm:text-3xl font-bold text-blue-500">${(payoutHistory[0]?.netAmount ?? 0).toFixed(2)}</p>
-                        <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">{new Date(lastPayoutAt).toLocaleDateString()}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xl sm:text-3xl font-bold text-zinc-400">—</p>
-                        <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">No withdrawals yet</p>
-                      </>
-                    )}
-                  </Card>
-                  <Card className="p-3 sm:p-5 text-center">
-                    <p className="text-[10px] sm:text-xs font-bold uppercase text-zinc-400 mb-1">Pending</p>
-                    <p className="text-xl sm:text-3xl font-bold text-orange-500">${pendingNet.toFixed(2)}</p>
-                    <p className="text-[9px] sm:text-xs text-zinc-500 mt-0.5">Active trips</p>
-                  </Card>
-                </div>
-
-                {/* Payout Mode */}
-                <Card className="p-4 sm:p-6">
-                  <h4 className="text-sm font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
-                    <Receipt size={15} /> Payout Mode
-                  </h4>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div
-                      onClick={toggleAuto}
-                      className={`flex-1 rounded-md border-2 p-4 cursor-pointer transition-all ${autoPayoutEnabled ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}
-                      data-testid="button-payout-mode-auto"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <CalendarClock size={16} className={autoPayoutEnabled ? 'text-green-600' : 'text-zinc-500'} />
-                        <span className={`font-semibold text-sm ${autoPayoutEnabled ? 'text-green-700 dark:text-green-400' : ''}`}>Automatic Weekly</span>
-                        {autoPayoutEnabled && <CheckCircle size={14} className="text-green-500 ml-auto" />}
-                      </div>
-                      <p className="text-xs text-zinc-500">Your balance is paid out automatically every week. No fees.</p>
-                    </div>
-                    <div
-                      onClick={toggleAuto}
-                      className={`flex-1 rounded-md border-2 p-4 cursor-pointer transition-all ${!autoPayoutEnabled ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}
-                      data-testid="button-payout-mode-manual"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <DollarSign size={16} className={!autoPayoutEnabled ? 'text-blue-600' : 'text-zinc-500'} />
-                        <span className={`font-semibold text-sm ${!autoPayoutEnabled ? 'text-blue-700 dark:text-blue-400' : ''}`}>Withdraw Now</span>
-                        {!autoPayoutEnabled && <CheckCircle size={14} className="text-blue-500 ml-auto" />}
-                      </div>
-                      <p className="text-xs text-zinc-500">Withdraw on demand. A 2% processing fee applies to each withdrawal.</p>
-                    </div>
-                  </div>
-                  {!autoPayoutEnabled && (
-                    <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                      <div className="flex-1 w-full">
-                        <div className="flex gap-2">
-                          <input
-                            type="number"
-                            min="1"
-                            max={available}
-                            step="0.01"
-                            value={withdrawInput}
-                            onChange={e => { setWithdrawInput(e.target.value); setWithdrawError(''); }}
-                            placeholder={`Max $${available.toFixed(2)}`}
-                            className="flex-1 h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm"
-                            data-testid="input-withdraw-amount"
-                          />
-                          <button
-                            onClick={handleWithdraw}
-                            disabled={withdrawMutation.isPending || available <= 0}
-                            className="h-9 px-4 rounded-md bg-blue-600 text-white text-sm font-semibold disabled:opacity-50"
-                            data-testid="button-withdraw-now"
-                          >
-                            {withdrawMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Withdraw'}
-                          </button>
-                        </div>
-                        {withdrawError && <p className="text-xs text-red-500 mt-1">{withdrawError}</p>}
-                        {withdrawInput && !withdrawError && (
-                          <p className="text-xs text-zinc-500 mt-1">
-                            Fee: ${(parseFloat(withdrawInput || '0') * 0.02).toFixed(2)} — You receive: ${(parseFloat(withdrawInput || '0') * 0.98).toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </Card>
-
-                {/* Bank Account */}
-                <Card className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-bold uppercase text-zinc-400 flex items-center gap-2">
-                      <Building2 size={15} /> Bank Account
-                    </h4>
-                    <button
-                      onClick={() => setShowBankForm(!showBankForm)}
-                      className="text-xs font-semibold text-blue-500 hover:underline"
-                      data-testid="button-edit-bank-account"
-                    >
-                      {bankAccount ? 'Edit' : 'Set Up'}
-                    </button>
-                  </div>
-                  {bankAccount && !showBankForm ? (
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <CreditCard size={14} className="text-blue-600" />
-                      </div>
-                      {bankAccount.type === 'linked' ? (
-                        <div>
-                          <p className="font-semibold">Linked Account</p>
-                          <p className="text-zinc-500 text-xs">{bankAccount.linkedEmail}</p>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="font-semibold">{bankAccount.accountName || 'Bank Account'}</p>
-                          <p className="text-zinc-500 text-xs">Routing: ···{bankAccount.routingNumber?.slice(-4)} · Account: ···{bankAccount.accountNumber?.slice(-4)}</p>
-                        </div>
-                      )}
-                      <CheckCircle size={14} className="text-green-500 ml-auto" />
-                    </div>
-                  ) : !bankAccount && !showBankForm ? (
-                    <p className="text-sm text-zinc-500">No bank account set up yet.</p>
-                  ) : null}
-                  {showBankForm && (
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setBankType('manual')}
-                          className={`flex-1 h-8 rounded-md text-xs font-semibold border ${bankType === 'manual' ? 'bg-blue-600 text-white border-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`}
-                          data-testid="button-bank-type-manual"
-                        >Manual Entry</button>
-                        <button
-                          onClick={() => setBankType('linked')}
-                          className={`flex-1 h-8 rounded-md text-xs font-semibold border ${bankType === 'linked' ? 'bg-blue-600 text-white border-blue-600' : 'border-zinc-300 dark:border-zinc-600'}`}
-                          data-testid="button-bank-type-linked"
-                        >Linked Account</button>
-                      </div>
-                      {bankType === 'manual' ? (
-                        <>
-                          <input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Account holder name" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-account-name" />
-                          <input value={routingNum} onChange={e => setRoutingNum(e.target.value)} placeholder="Routing number (9 digits)" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-routing" />
-                          <input value={accountNum} onChange={e => setAccountNum(e.target.value)} placeholder="Account number" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-account-number" />
-                        </>
-                      ) : (
-                        <input value={linkedEmail} onChange={e => setLinkedEmail(e.target.value)} placeholder="Email / PayPal / Venmo linked account" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-linked-email" />
-                      )}
-                      <div className="flex gap-2 justify-end">
-                        <button onClick={() => setShowBankForm(false)} className="h-9 px-4 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm" data-testid="button-bank-cancel">Cancel</button>
-                        <button onClick={handleSaveBank} disabled={updateBankMutation.isPending} className="h-9 px-4 rounded-md bg-green-600 text-white text-sm font-semibold disabled:opacity-50" data-testid="button-bank-save">
-                          {updateBankMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-
-                {/* Payout History */}
-                <Card className="p-4 sm:p-6">
-                  <h4 className="text-sm font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
-                    <Receipt size={15} /> Payout History
-                  </h4>
-                  {payoutsLoading ? (
-                    <div className="flex justify-center py-6"><Loader size={20} className="animate-spin text-zinc-400" /></div>
-                  ) : payoutHistory.length === 0 ? (
-                    <p className="text-sm text-zinc-500 text-center py-4">No payouts yet.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {payoutHistory.map((p: any) => (
-                        <div key={p.id} className="flex items-center justify-between text-sm py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0" data-testid={`row-payout-${p.id}`}>
-                          <div>
-                            <p className="font-semibold">{p.type === 'instant' ? 'Instant Withdrawal' : 'Auto Payout'}</p>
-                            <p className="text-xs text-zinc-500">{new Date(p.createdAt).toLocaleDateString()} {p.fee > 0 && `· Fee: $${p.fee.toFixed(2)}`}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-green-600">+${p.netAmount.toFixed(2)}</p>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">{p.status}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              </div>
-            );
-          })()}
+          {hostTab === 'payout' && <HostPayoutTab currentHost={currentHost} vehicles={vehicles} bookings={bookings} />}
 
           {hostTab === 'chat' && (() => {
             const hostEmail = currentHost?.email || '';
