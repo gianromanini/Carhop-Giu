@@ -11357,11 +11357,15 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Vehicle</p>
-                        <p className="text-blue-900 dark:text-blue-200">{cart.car.model}</p>
+                        <p className="text-blue-900 dark:text-blue-200">{cart.car.year ? `${cart.car.year} ` : ''}{cart.car.model}</p>
                       </div>
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Protection Plan</p>
                         <p className="text-blue-900 dark:text-blue-200">{cart.insuranceOption === '500' ? 'Standard Protection' : 'Gold Protection'}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">VIN Number</p>
+                        <p className="text-blue-900 dark:text-blue-200 font-mono">{cart.car.vinNumber || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Deductible</p>
@@ -11396,7 +11400,7 @@ export default function CarHopApp() {
                       <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Extras:</strong> Optional child seats and other products selected by Guest.</p>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Guest:</strong> The person identified as Guest on this Agreement ({driverDetails.name}).</p>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> The {cart.car?.model} identified on this Agreement.</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> The {cart.car?.year ? `${cart.car.year} ` : ''}{cart.car?.model}{cart.car?.vinNumber ? ` — VIN: ${cart.car.vinNumber}` : ''} identified on this Agreement.</p>
                     </div>
 
                     <div>
@@ -11506,11 +11510,15 @@ export default function CarHopApp() {
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Vehicle</p>
-                        <p className="text-blue-900 dark:text-blue-200">{agBooking.carName}</p>
+                        <p className="text-blue-900 dark:text-blue-200">{agVehicle?.year ? `${agVehicle.year} ` : ''}{agBooking.carName}</p>
                       </div>
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Protection Plan</p>
                         <p className="text-blue-900 dark:text-blue-200">{agBooking.details?.protectionType || 'Standard'}</p>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 dark:text-blue-300 font-semibold">VIN Number</p>
+                        <p className="text-blue-900 dark:text-blue-200 font-mono">{agVehicle?.vinNumber || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Host</p>
@@ -11539,13 +11547,14 @@ export default function CarHopApp() {
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip Start:</strong> {formatDisplayDate(agBooking.startDate, agBooking.startTime)}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Trip End:</strong> {formatDisplayDate(agBooking.returnDate, agBooking.returnTime)}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Pickup Location:</strong> {formatAddressForDisplay(agBooking.location)}</p>
-                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Vehicle:</strong> {agBooking.carName}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>Vehicle:</strong> {agVehicle?.year ? `${agVehicle.year} ` : ''}{agBooking.carName}</p>
+                        <p className="text-zinc-700 dark:text-zinc-300"><strong>VIN:</strong> {agVehicle?.vinNumber || 'N/A'}</p>
                         <p className="text-zinc-700 dark:text-zinc-300"><strong>Booking Code:</strong> {agBooking.bookingCode}</p>
                       </div>
                       <div>
                         <h4 className="font-bold text-zinc-900 dark:text-white mt-4">DEFINITIONS</h4>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2"><strong>Guest:</strong> {agBooking.driver?.name}</p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> {agBooking.carName}</p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Vehicle:</strong> {agVehicle?.year ? `${agVehicle.year} ` : ''}{agBooking.carName}{agVehicle?.vinNumber ? ` — VIN: ${agVehicle.vinNumber}` : ''}</p>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400"><strong>Reservation Period:</strong> From Guest taking possession until Vehicle is returned and checked in.</p>
                       </div>
                       <div>
