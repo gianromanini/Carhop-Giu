@@ -1,12 +1,13 @@
 import { 
-  vehicles, bookings, settings, hosts, users, ratings, supportMessages,
+  vehicles, bookings, settings, hosts, users, ratings, supportMessages, payouts,
   type Vehicle, type InsertVehicle,
   type Booking, type InsertBooking,
   type Settings, type InsertSettings,
   type User, type UpsertUser,
   type Host, type InsertHost,
   type Rating, type InsertRating,
-  type SupportMessage, type InsertSupportMessage
+  type SupportMessage, type InsertSupportMessage,
+  type Payout, type InsertPayout
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, ilike, or, and, inArray, sql, desc } from "drizzle-orm";
@@ -74,6 +75,10 @@ export interface IStorage {
   finishSupportMessageGroup(senderIdentifier: string, senderType: string, finishedBy: string): Promise<boolean>;
   finishSupportMessageGroupBySubjectAndSender(subject: string, senderId: string, finishedBy: string): Promise<boolean>;
   getUnreadSupportMessagesCount(senderType: string): Promise<number>;
+
+  // Payouts
+  getPayoutsByHost(hostId: number): Promise<Payout[]>;
+  createPayout(payout: InsertPayout): Promise<Payout>;
 }
 
 export class MemStorage implements IStorage {
@@ -1110,6 +1115,20 @@ export class MemStorage implements IStorage {
   async getUnreadSupportMessagesCount(senderType: string): Promise<number> {
     return Array.from(this.supportMessagesMap.values()).filter(m => m.senderType === senderType && !m.read).length;
   }
+
+  private payoutsMap: Map<number, Payout> = new Map();
+  private payoutCounter = 1;
+
+  async getPayoutsByHost(hostId: number): Promise<Payout[]> {
+    return Array.from(this.payoutsMap.values()).filter(p => p.hostId === hostId).sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async createPayout(payout: InsertPayout): Promise<Payout> {
+    const id = this.payoutCounter++;
+    const record: Payout = { ...payout, id, createdAt: new Date() };
+    this.payoutsMap.set(id, record);
+    return record;
+  }
 }
 
 // Database Storage Implementation
@@ -1847,6 +1866,21 @@ export class DatabaseStorage implements IStorage {
       console.error("Error getting unread support messages count:", error);
       return 0;
     }
+  }
+
+  async getPayoutsByHost(hostId: number): Promise<Payout[]> {
+    if (!this.initialized) return [];
+    try {
+      return await this.db.select().from(payouts).where(eq(payouts.hostId, hostId)).orderBy(desc(payouts.createdAt));
+    } catch (error) {
+      console.error("Error getting payouts:", error);
+      return [];
+    }
+  }
+
+  async createPayout(payout: InsertPayout): Promise<Payout> {
+    const result = await this.db.insert(payouts).values(payout).returning();
+    return result[0];
   }
 
   // Email OTP for booking lookup

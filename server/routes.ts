@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
-import { insertVehicleSchema, insertBookingSchema, insertHostSchema } from "@shared/schema";
+import { insertVehicleSchema, insertBookingSchema, insertHostSchema, insertPayoutSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
 import { getUncachableStripeClient, getStripePublishableKey, verifyStripePaymentIntent } from "./stripeClient";
 import bcrypt from "bcryptjs";
@@ -3117,6 +3117,81 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     } catch (error) {
       console.error("Error removing host pickup location:", error);
       res.status(500).json({ message: "Failed to remove pickup location" });
+    }
+  });
+
+  // Payouts - Get payout history for a host
+  app.get('/api/hosts/:hostId/payouts', async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      const host = await storage.getHost(hostId);
+      if (!host) return res.status(404).json({ error: "Host not found" });
+      const payoutList = await storage.getPayoutsByHost(hostId);
+      res.json(payoutList);
+    } catch (error) {
+      console.error("Error getting payouts:", error);
+      res.status(500).json({ error: "Failed to get payouts" });
+    }
+  });
+
+  // Payouts - Create a new payout (withdraw)
+  app.post('/api/hosts/:hostId/payouts', async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      const host = await storage.getHost(hostId);
+      if (!host) return res.status(404).json({ error: "Host not found" });
+
+      const { amount, type } = req.body;
+      if (!amount || amount <= 0) return res.status(400).json({ error: "Invalid amount" });
+
+      const fee = type === 'instant' ? parseFloat((amount * 0.02).toFixed(2)) : 0;
+      const netAmount = parseFloat((amount - fee).toFixed(2));
+
+      const payout = await storage.createPayout({
+        hostId,
+        amount: parseFloat(amount.toFixed(2)),
+        fee,
+        netAmount,
+        type: type || 'instant',
+        status: 'completed',
+        note: req.body.note || null,
+      });
+
+      // Update host payout settings with last payout date and total withdrawn
+      const currentSettings = (host as any).payoutSettings || {};
+      const totalWithdrawn = (currentSettings.totalWithdrawn || 0) + netAmount;
+      await storage.updateHost(hostId, {
+        payoutSettings: {
+          ...currentSettings,
+          totalWithdrawn: parseFloat(totalWithdrawn.toFixed(2)),
+          lastPayoutAt: new Date().toISOString(),
+        }
+      } as any);
+
+      res.status(201).json(payout);
+    } catch (error) {
+      console.error("Error creating payout:", error);
+      res.status(500).json({ error: "Failed to create payout" });
+    }
+  });
+
+  // Payouts - Update bank account & payout settings for a host
+  app.put('/api/hosts/:hostId/payout-settings', async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      const host = await storage.getHost(hostId);
+      if (!host) return res.status(404).json({ error: "Host not found" });
+
+      const { bankAccount, payoutSettings } = req.body;
+      const updates: any = {};
+      if (bankAccount !== undefined) updates.bankAccount = bankAccount;
+      if (payoutSettings !== undefined) updates.payoutSettings = payoutSettings;
+
+      const updated = await storage.updateHost(hostId, updates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating payout settings:", error);
+      res.status(500).json({ error: "Failed to update payout settings" });
     }
   });
 }

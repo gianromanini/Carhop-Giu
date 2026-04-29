@@ -276,6 +276,21 @@ export const hosts = pgTable("hosts", {
   agreementAcceptedAt: timestamp("agreement_accepted_at"),
   status: varchar("status").notNull().default('active'),
   pickupLocations: text("pickup_locations").array().default([]),
+  bankAccount: jsonb("bank_account").$type<{
+    routingNumber?: string;
+    accountNumber?: string;
+    accountType?: 'checking' | 'savings';
+    bankName?: string;
+    accountHolderName?: string;
+    linkedAt?: string;
+    method?: 'manual' | 'linked';
+  }>(),
+  payoutSettings: jsonb("payout_settings").$type<{
+    mode: 'automatic' | 'manual';
+    frequency?: 'weekly';
+    totalWithdrawn?: number;
+    lastPayoutAt?: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -306,6 +321,22 @@ export const ratings = pgTable("ratings", {
   hostRatedClientAt: timestamp("host_rated_client_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const payouts = pgTable("payouts", {
+  id: serial("id").primaryKey(),
+  hostId: integer("host_id").notNull(),
+  amount: real("amount").notNull(),
+  fee: real("fee").notNull(),
+  netAmount: real("net_amount").notNull(),
+  type: text("type").notNull().default('instant'),
+  status: text("status").notNull().default('completed'),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPayoutSchema = createInsertSchema(payouts).omit({ id: true, createdAt: true });
+export type InsertPayout = z.infer<typeof insertPayoutSchema>;
+export type Payout = typeof payouts.$inferSelect;
 
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({ id: true, createdAt: true });
 export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
