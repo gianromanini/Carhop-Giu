@@ -6645,21 +6645,12 @@ export default function CarHopApp() {
                                               })()}</p>
                                 <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                                   <p className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Driver's License</p>
-                                  <div className="flex gap-2 overflow-x-auto pb-1">
-                                    {(b.driver as any)?.licensePhotos && Array.isArray((b.driver as any).licensePhotos) ? (
-                                      (b.driver as any).licensePhotos.map((photo: string, idx: number) => (
-                                        <div 
-                                          key={idx} 
-                                          className="w-16 h-12 bg-zinc-800 rounded border border-zinc-700 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors flex-shrink-0"
-                                          onClick={() => openLightbox((b.driver as any).licensePhotos, idx)}
-                                        >
-                                          <img src={photo} alt={`License ${idx + 1}`} className="w-full h-full object-cover" />
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <p className="text-[10px] text-zinc-500 italic">No license photos uploaded</p>
-                                    )}
-                                  </div>
+                                  {(() => {
+                                    const lv = (b as any).licenseVerification;
+                                    if (lv?.status === 'approved') return <span className="text-[10px] font-bold text-green-600 dark:text-green-400">Verified</span>;
+                                    if (lv?.status === 'rejected') return <span className="text-[10px] font-bold text-red-600 dark:text-red-400">Flagged</span>;
+                                    return <span className="text-[10px] text-yellow-600 dark:text-yellow-400 font-bold">Pending Verification</span>;
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -7071,22 +7062,9 @@ export default function CarHopApp() {
                                   </div>
                                 );
                               }
-                              const fullBooking = getBookingWithImages(b);
-                              const licenseImages = fullBooking.driver?.licenseImages || [];
-                              const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                               return (
                                 <div>
-                                  <div className="flex gap-2 flex-wrap mb-3">
-                                    {validImages.length > 0 ? validImages.map((img: string, idx: number) => (
-                                      <div key={idx} className="relative group">
-                                        <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => openLightbox(validImages, idx)} data-testid={`img-driver-license-${idx}`}/>
-                                      </div>
-                                    )) : licenseImages.some((img: string) => img === '[IMAGE]') ? (
-                                      <span className="text-xs text-zinc-500">Loading...</span>
-                                    ) : (
-                                      <span className="text-xs text-zinc-500">No license photos</span>
-                                    )}
-                                  </div>
+                                  <p className="text-xs text-zinc-500 mb-3">License photos are only visible to admins. Use the buttons below to approve or reject.</p>
                                   {(verifStatus === 'pending' || !verifStatus) && (b.status === 'Active' || b.status === 'Extended') && (
                                     <div className="flex gap-2 flex-wrap">
                                       <Button
@@ -7095,7 +7073,7 @@ export default function CarHopApp() {
                                         onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'approved', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
                                         data-testid={`button-confirm-license-detail-${b.id}`}
                                       >
-                                        Confirm
+                                        Confirm License
                                       </Button>
                                       <Button
                                         size="sm"
@@ -10533,11 +10511,38 @@ export default function CarHopApp() {
                                       <div className="grid grid-cols-1 gap-4 p-3 bg-zinc-50 dark:bg-zinc-950 rounded-lg">
                                         <div>
                                           <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Customer</h4>
-                                          <div className="text-xs text-zinc-900 dark:text-white space-y-0.5">
+                                          <div className="text-xs text-zinc-900 dark:text-white space-y-0.5 mb-3">
                                             <p className="font-medium">{b.driver.name}</p>
                                             <p className="text-zinc-500">{b.driver.phone}</p>
                                             <p className="text-zinc-500">{b.driver.email}</p>
                                           </div>
+                                          {/* Driver's License — Admin Only */}
+                                          <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Driver's License</h4>
+                                          {(() => {
+                                            const licVerif = (b as any).licenseVerification;
+                                            const fullB = getBookingWithImages(b);
+                                            const licImgs = fullB.driver?.licenseImages || [];
+                                            const validLicImgs = licImgs.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
+                                            return (
+                                              <div>
+                                                {licVerif && (
+                                                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded mb-2 ${licVerif.status === 'approved' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : licVerif.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400' : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400'}`} data-testid={`admin-license-status-booking-${b.id}`}>
+                                                    {licVerif.status === 'approved' ? 'Verified by Host' : licVerif.status === 'rejected' ? 'Flagged by Host' : 'Pending Verification'}
+                                                    {licVerif.verifiedAt && ` · ${new Date(licVerif.verifiedAt).toLocaleDateString()}`}
+                                                  </span>
+                                                )}
+                                                <div className="flex gap-2 flex-wrap">
+                                                  {validLicImgs.length > 0 ? validLicImgs.map((img: string, idx: number) => (
+                                                    <img key={idx} src={img} alt={`License ${idx + 1}`} className="w-16 h-12 rounded border border-zinc-300 dark:border-zinc-700 object-cover cursor-pointer hover:border-blue-500 transition-colors" onClick={() => openLightbox(validLicImgs, idx)} data-testid={`admin-booking-license-img-${b.id}-${idx}`} />
+                                                  )) : licImgs.some((img: string) => img === '[IMAGE]') ? (
+                                                    <span className="text-xs text-zinc-500 flex items-center gap-1"><Loader size={11} className="animate-spin" /> Loading…</span>
+                                                  ) : (
+                                                    <span className="text-xs text-zinc-500">No license photos on file</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          })()}
                                         </div>
                                         <div>
                                   <h4 className="text-[10px] font-bold uppercase text-zinc-400 mb-1">Rental Information</h4>
