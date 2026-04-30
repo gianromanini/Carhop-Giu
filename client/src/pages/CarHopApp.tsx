@@ -14170,9 +14170,25 @@ export default function CarHopApp() {
             </button>
             
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <CreditCard size={24} className="text-green-500" />
-                <h2 className="text-2xl font-bold text-white">Card payment</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">Payment</h2>
+
+              {/* Payment method tabs */}
+              <div className="flex gap-3 mb-6">
+                <button
+                  onClick={() => setPaymentMethod('credit')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border font-semibold text-sm transition-all ${paymentMethod === 'credit' ? 'bg-green-600 border-green-600 text-white' : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}
+                  data-testid="button-payment-method-credit"
+                >
+                  <CreditCard size={16} /> Credit / Debit Card
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('paypal')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border font-semibold text-sm transition-all ${paymentMethod === 'paypal' ? 'bg-blue-600 border-blue-600 text-white' : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}
+                  data-testid="button-payment-method-paypal"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.313 2.548 1.236 3.938-.877 5.384-4.53 8.166-9.77 8.166H7.076l-1 7.423zm4.797-14.44c.013 0 .025 0 .038.002 2.093.116 3.377-.978 3.618-3.076.139-1.22-.153-2.155-.895-2.756-.72-.584-1.795-.864-3.194-.864H7.46L5.93 12.056h4.017l1.926-5.159zm8.086 1.14c-.232 1.505-.783 2.81-1.641 3.887-.882 1.11-2.01 1.946-3.354 2.48-1.32.527-2.81.794-4.425.794H8.16l-.955 7.145h3.764c.47 0 .87-.335.942-.8l.04-.198.748-4.733.048-.264a.953.953 0 0 1 .942-.8h.594c3.848 0 6.863-1.563 7.746-6.086.37-1.89.18-3.47-.716-4.425z"/></svg>
+                  PayPal
+                </button>
               </div>
 
               {hasMissing && (
@@ -14191,22 +14207,43 @@ export default function CarHopApp() {
                 <span className="text-4xl font-bold text-green-500" data-testid="text-payment-total">${totalAmount.toFixed(2)}</span>
               </div>
 
-              <StripeCardForm
-                amount={totalAmount}
-                description={`CarHop - ${cart.car.model}`}
-                metadata={{
-                  vehicleId: cart.car.id,
-                  vehicleModel: cart.car.model,
-                  driverEmail: driverDetails.email,
-                  startDate: searchParams.start,
-                  returnDate: searchParams.end,
-                }}
-                disabled={hasMissing}
-                disabledReason={hasMissing ? 'Go back and complete the booking details before paying.' : undefined}
-                isParentProcessing={isProcessingPayment}
-                buttonLabel="Pay with Card"
-                onPaymentSuccess={(info) => { void handleConfirmBooking(info); }}
-              />
+              {paymentMethod === 'credit' ? (
+                <StripeCardForm
+                  amount={totalAmount}
+                  description={`CarHop - ${cart.car.model}`}
+                  metadata={{
+                    vehicleId: cart.car.id,
+                    vehicleModel: cart.car.model,
+                    driverEmail: driverDetails.email,
+                    startDate: searchParams.start,
+                    returnDate: searchParams.end,
+                  }}
+                  disabled={hasMissing}
+                  disabledReason={hasMissing ? 'Go back and complete the booking details before paying.' : undefined}
+                  isParentProcessing={isProcessingPayment}
+                  buttonLabel="Pay with Card"
+                  onPaymentSuccess={(info) => { void handleConfirmBooking(info); }}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-900/20 border border-blue-700 rounded-lg text-center">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="#60a5fa" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-3"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.313 2.548 1.236 3.938-.877 5.384-4.53 8.166-9.77 8.166H7.076l-1 7.423zm4.797-14.44c.013 0 .025 0 .038.002 2.093.116 3.377-.978 3.618-3.076.139-1.22-.153-2.155-.895-2.756-.72-.584-1.795-.864-3.194-.864H7.46L5.93 12.056h4.017l1.926-5.159zm8.086 1.14c-.232 1.505-.783 2.81-1.641 3.887-.882 1.11-2.01 1.946-3.354 2.48-1.32.527-2.81.794-4.425.794H8.16l-.955 7.145h3.764c.47 0 .87-.335.942-.8l.04-.198.748-4.733.048-.264a.953.953 0 0 1 .942-.8h.594c3.848 0 6.863-1.563 7.746-6.086.37-1.89.18-3.47-.716-4.425z"/></svg>
+                    <p className="text-blue-300 font-semibold mb-1">Pay securely with PayPal</p>
+                    <p className="text-zinc-500 text-sm">You will be redirected to PayPal to complete your payment.</p>
+                  </div>
+                  <button
+                    disabled={hasMissing}
+                    className="w-full py-4 rounded-lg font-bold text-sm bg-[#0070ba] hover:bg-[#005ea6] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    data-testid="button-pay-paypal"
+                    onClick={() => {
+                      toast({ title: 'PayPal', description: 'PayPal integration coming soon.' });
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.313 2.548 1.236 3.938-.877 5.384-4.53 8.166-9.77 8.166H7.076l-1 7.423zm4.797-14.44c.013 0 .025 0 .038.002 2.093.116 3.377-.978 3.618-3.076.139-1.22-.153-2.155-.895-2.756-.72-.584-1.795-.864-3.194-.864H7.46L5.93 12.056h4.017l1.926-5.159zm8.086 1.14c-.232 1.505-.783 2.81-1.641 3.887-.882 1.11-2.01 1.946-3.354 2.48-1.32.527-2.81.794-4.425.794H8.16l-.955 7.145h3.764c.47 0 .87-.335.942-.8l.04-.198.748-4.733.048-.264a.953.953 0 0 1 .942-.8h.594c3.848 0 6.863-1.563 7.746-6.086.37-1.89.18-3.47-.716-4.425z"/></svg>
+                    Pay with PayPal
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         );})()}
