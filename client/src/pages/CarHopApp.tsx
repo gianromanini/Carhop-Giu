@@ -2311,7 +2311,9 @@ export default function CarHopApp() {
       const paymentMethodDisplay = `${paymentBrand} **** ${stripePayment.last4 || '----'}`;
       
       const dailyRate = cart.car!.price;
-      const hostEmail = (cart.car as any).hostEmail || (vehicles || []).find(v => v.id === cart.car?.id)?.hostId || '';
+      const vehicleForHost = (allVehicles.length > 0 ? allVehicles : vehicles).find(v => String(v.id) === String(cart.car?.id)) || vehicles.find(v => String(v.id) === String(cart.car?.id));
+      const hostForBooking = vehicleForHost?.hostId ? (hostsData as any[]).find((h: any) => String(h.id) === String(vehicleForHost.hostId)) : null;
+      const hostEmail = (cart.car as any).hostEmail || hostForBooking?.email || '';
       console.log("[Booking] Final host email used:", hostEmail);
       const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
 
@@ -2357,7 +2359,9 @@ export default function CarHopApp() {
           deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
           deliveryAddress: selectedDeliveryType === 'delivery' ? deliveryAddressBooking : undefined,
           pickupAddress: pickupAddress,
-          hostEmail: hostEmail
+          hostEmail: hostEmail,
+          hostId: vehicleForHost?.hostId || '',
+          hostName: hostForBooking ? `${hostForBooking.firstName} ${hostForBooking.lastName}` : '',
         },
         messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
         carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
@@ -12125,8 +12129,18 @@ export default function CarHopApp() {
         {viewingAgreementBookingId && (() => {
           const agBooking = bookings.find(b => b.id === viewingAgreementBookingId);
           if (!agBooking) return null;
-          const agVehicle = vehicles.find(v => v.id === agBooking.vehicleId);
-          const agHost = agVehicle?.hostId ? hostsData.find((h: any) => String(h.id) === String(agVehicle.hostId)) : null;
+          const agVehicle = (allVehicles.length > 0 ? allVehicles : vehicles).find(v => String(v.id) === String(agBooking.vehicleId)) || vehicles.find(v => String(v.id) === String(agBooking.vehicleId));
+          const agHostEmail = (agBooking.details as any)?.hostEmail || '';
+          const agHost = (() => {
+            if (agVehicle?.hostId) {
+              const byId = hostsData.find((h: any) => String(h.id) === String(agVehicle.hostId));
+              if (byId) return byId;
+            }
+            if (agHostEmail) {
+              return hostsData.find((h: any) => h.email === agHostEmail) || null;
+            }
+            return null;
+          })();
           return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
@@ -12152,7 +12166,7 @@ export default function CarHopApp() {
                       </div>
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Host</p>
-                        <p className="text-blue-900 dark:text-blue-200">{agHost ? `${agHost.firstName} ${agHost.lastName}` : 'N/A'}</p>
+                        <p className="text-blue-900 dark:text-blue-200">{agHost ? `${agHost.firstName} ${agHost.lastName}` : ((agBooking.details as any)?.hostName || 'N/A')}</p>
                       </div>
                       <div>
                         <p className="text-blue-800 dark:text-blue-300 font-semibold">Duration</p>
