@@ -1119,7 +1119,11 @@ export default function CarHopApp() {
   const [showRateGuestModal, setShowRateGuestModal] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<number | null>(null);
   const [showCheckWorkflowModal, setShowCheckWorkflowModal] = useState(false);
-  
+  const [showManualCheckoutModal, setShowManualCheckoutModal] = useState(false);
+  const [manualCheckoutBooking, setManualCheckoutBooking] = useState<Booking | null>(null);
+  const [manualCheckoutNote, setManualCheckoutNote] = useState('');
+  const [manualCheckoutMiles, setManualCheckoutMiles] = useState('');
+
   const [showHostTransferModal, setShowHostTransferModal] = useState(false);
   const [pendingHostTransfer, setPendingHostTransfer] = useState<{ vehicleId: number; vehicleModel: string; fromHostId: string; fromHostName: string; toHostId: string; toHostName: string } | null>(null);
   
@@ -2532,6 +2536,55 @@ export default function CarHopApp() {
        setActiveBooking(null);
        setView('workflow-success');
      }
+  };
+
+  const handleManualCheckout = async () => {
+    if (!manualCheckoutBooking) return;
+    const b = manualCheckoutBooking;
+    const checkInMiles = parseInt((b.checkInData as any)?.miles || (b as any).hostCheckInData?.miles || '0');
+    const checkOutMilesVal = manualCheckoutMiles ? parseInt(manualCheckoutMiles) : checkInMiles;
+    const carPricing = vehicles.find(v => v.id === b.vehicleId)?.pricing;
+    const includedMilesPerDay = carPricing?.includedMiles || settings.includedMiles;
+    const extraMileRate = carPricing?.extraMileRate || settings.extraMileRate;
+    const allowedMiles = includedMilesPerDay * b.days;
+    const milesDriven = Math.max(0, checkOutMilesVal - checkInMiles);
+    const excessMiles = Math.max(0, milesDriven - allowedMiles);
+    const excessMileageFee = excessMiles * extraMileRate;
+    const newCharges: { type: string; amount: number }[] = [];
+    if (excessMileageFee > 0) newCharges.push({ type: 'Extra Mileage Fee', amount: excessMileageFee });
+    const manualCheckData = {
+      miles: String(checkOutMilesVal),
+      gas: 'Unknown',
+      photosOutside: [],
+      photosInside: [],
+      note: manualCheckoutNote || 'Manual check-out by staff',
+      manualCheckout: true,
+    };
+    const updateData: any = {
+      checkOutStatus: 'completed',
+      checkOutData: manualCheckData,
+      hostCheckOutStatus: 'completed',
+      hostCheckOutData: manualCheckData,
+      status: 'Completed',
+      total: b.total + excessMileageFee,
+      details: {
+        ...b.details,
+        manualCheckout: true,
+        manualCheckoutNote: manualCheckoutNote || 'Manual check-out by staff',
+        manualCheckoutAt: new Date().toISOString(),
+        manualCharges: [...((b.details as any)?.manualCharges || []), ...newCharges],
+      },
+    };
+    try {
+      await updateBookingMutation.mutateAsync({ id: b.id, data: updateData });
+      toast({ title: 'Manual Check-out Complete', description: `Booking ${b.bookingCode} has been checked out.` });
+      setShowManualCheckoutModal(false);
+      setManualCheckoutBooking(null);
+      setManualCheckoutNote('');
+      setManualCheckoutMiles('');
+    } catch {
+      toast({ title: 'Error', description: 'Failed to complete manual check-out.', variant: 'destructive' });
+    }
   };
 
   const initExtension = (booking: Booking) => { 
@@ -7280,6 +7333,16 @@ export default function CarHopApp() {
                                 </Button>
                               )}
                             </div>
+                            {/* Manual Check-out */}
+                            {(b.status === 'Active' || b.status === 'Extended') && b.checkOutStatus !== 'completed' && (
+                              <button
+                                onClick={(e: any) => { e.stopPropagation(); setManualCheckoutBooking(b); setManualCheckoutNote(''); setManualCheckoutMiles(''); setShowManualCheckoutModal(true); }}
+                                className="w-full mb-4 py-2 rounded-md border border-red-700 bg-red-950/40 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-colors flex items-center justify-center gap-2"
+                                data-testid={`button-manual-checkout-${b.id}`}
+                              >
+                                <Unlock size={12} /> Manual Check-out (Force)
+                              </button>
+                            )}
 
                           {/* Manage Charges & Adjustments */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
@@ -10580,6 +10643,16 @@ export default function CarHopApp() {
                                           {b.hostCheckOutStatus === 'completed' ? <><Check size={12} className="mr-1"/> Check-out Verified</> : 'Host Check-out'}
                                         </Button>
                                       </div>
+                                      {/* Manual Check-out */}
+                                      {(b.status === 'Active' || b.status === 'Extended') && b.checkOutStatus !== 'completed' && (
+                                        <button
+                                          onClick={(e: any) => { e.stopPropagation(); setManualCheckoutBooking(b); setManualCheckoutNote(''); setManualCheckoutMiles(''); setShowManualCheckoutModal(true); }}
+                                          className="w-full mb-4 py-2 rounded-md border border-red-700 bg-red-950/40 text-red-400 text-xs font-bold hover:bg-red-900/50 transition-colors flex items-center justify-center gap-2"
+                                          data-testid={`button-manual-checkout-admin-${b.id}`}
+                                        >
+                                          <Unlock size={12} /> Manual Check-out (Force)
+                                        </button>
+                                      )}
 
                                       {/* Guest Check-in/Check-out - Collapsible */}
                                       {(() => {
@@ -15233,6 +15306,92 @@ export default function CarHopApp() {
             >
               <ZoomIn size={16}/> {lightboxZoom === 1 ? 'Zoom In' : 'Zoom Out'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showManualCheckoutModal && manualCheckoutBooking && (
+        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6 max-w-md w-full shadow-xl">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Unlock size={18} className="text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-white">Manual Check-out</h3>
+                  <p className="text-xs text-zinc-500">{manualCheckoutBooking.bookingCode} · {manualCheckoutBooking.carName}</p>
+                </div>
+              </div>
+              <button onClick={() => { setShowManualCheckoutModal(false); setManualCheckoutBooking(null); }} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-testid="button-close-manual-checkout-modal"><X size={20}/></button>
+            </div>
+
+            <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+              <p className="text-xs text-red-700 dark:text-red-400 font-medium">This will immediately mark the booking as Completed and release the vehicle, bypassing the normal check-out flow. Use only when the guest cannot complete check-out themselves.</p>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase block mb-1">Guest</label>
+                <p className="text-sm text-zinc-900 dark:text-white">{(manualCheckoutBooking.driver as any)?.name || 'Unknown'}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase block mb-1">Odometer at check-out (optional)</label>
+                <input
+                  type="number"
+                  placeholder={`Last known: ${(manualCheckoutBooking.checkInData as any)?.miles || (manualCheckoutBooking as any).hostCheckInData?.miles || '—'} mi`}
+                  value={manualCheckoutMiles}
+                  onChange={e => setManualCheckoutMiles(e.target.value)}
+                  className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm"
+                  data-testid="input-manual-checkout-miles"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase block mb-1">Reason <span className="text-red-500">*</span></label>
+                <select
+                  value={manualCheckoutNote}
+                  onChange={e => setManualCheckoutNote(e.target.value)}
+                  className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm mb-2"
+                  data-testid="select-manual-checkout-reason"
+                >
+                  <option value="">Select a reason…</option>
+                  <option value="Guest forgot to check out">Guest forgot to check out</option>
+                  <option value="Vehicle abandoned by guest">Vehicle abandoned by guest</option>
+                  <option value="Vehicle reported stolen">Vehicle reported stolen</option>
+                  <option value="Vehicle recovered after theft">Vehicle recovered after theft</option>
+                  <option value="Guest unreachable – trip ended">Guest unreachable – trip ended</option>
+                  <option value="Admin override – administrative close">Admin override – administrative close</option>
+                  <option value="Other">Other (add note below)</option>
+                </select>
+                {manualCheckoutNote === 'Other' && (
+                  <input
+                    type="text"
+                    placeholder="Describe the reason…"
+                    className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm"
+                    onBlur={e => setManualCheckoutNote(e.target.value || 'Other')}
+                    data-testid="input-manual-checkout-note"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowManualCheckoutModal(false); setManualCheckoutBooking(null); }}
+                className="flex-1 h-10 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm font-semibold"
+                data-testid="button-cancel-manual-checkout"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleManualCheckout}
+                disabled={!manualCheckoutNote || updateBookingMutation.isPending}
+                className="flex-1 h-10 rounded-md bg-red-600 text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                data-testid="button-confirm-manual-checkout"
+              >
+                {updateBookingMutation.isPending ? <Loader size={14} className="animate-spin" /> : <><Unlock size={14} /> Confirm Check-out</>}
+              </button>
+            </div>
           </div>
         </div>
       )}
