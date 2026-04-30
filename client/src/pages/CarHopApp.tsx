@@ -7062,32 +7062,47 @@ export default function CarHopApp() {
                                   </div>
                                 );
                               }
-                              return (
-                                <div>
-                                  <p className="text-xs text-zinc-500 mb-3">License photos are only visible to admins. Use the buttons below to approve or reject.</p>
-                                  {(verifStatus === 'pending' || !verifStatus) && (b.status === 'Active' || b.status === 'Extended') && (
-                                    <div className="flex gap-2 flex-wrap">
-                                      <Button
-                                        size="sm"
-                                        className="bg-blue-600 text-white text-xs"
-                                        onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'approved', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
-                                        data-testid={`button-confirm-license-detail-${b.id}`}
-                                      >
-                                        Confirm License
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="text-red-600 border-red-300 dark:border-red-700 text-xs"
-                                        onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'rejected', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
-                                        data-testid={`button-reject-license-detail-${b.id}`}
-                                      >
-                                        Not Legitimate
-                                      </Button>
+                              {
+                                const fullBooking = getBookingWithImages(b);
+                                const licenseImages = fullBooking.driver?.licenseImages || [];
+                                const validImages = licenseImages.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
+                                return (
+                                  <div>
+                                    <div className="flex gap-2 flex-wrap mb-3">
+                                      {validImages.length > 0 ? validImages.map((img: string, idx: number) => (
+                                        <div key={idx} className="relative group">
+                                          <img src={img} alt={`License ${idx + 1}`} className="w-12 h-12 rounded border border-zinc-700 object-cover cursor-pointer hover:border-zinc-500 transition-colors" onClick={() => openLightbox(validImages, idx)} data-testid={`img-driver-license-${idx}`}/>
+                                        </div>
+                                      )) : licenseImages.some((img: string) => img === '[IMAGE]') ? (
+                                        <span className="text-xs text-zinc-500">Loading...</span>
+                                      ) : (
+                                        <span className="text-xs text-zinc-500">No license photos</span>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                              );
+                                    {(verifStatus === 'pending' || !verifStatus) && (b.status === 'Active' || b.status === 'Extended') && (
+                                      <div className="flex gap-2 flex-wrap">
+                                        <Button
+                                          size="sm"
+                                          className="bg-blue-600 text-white text-xs"
+                                          onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'approved', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
+                                          data-testid={`button-confirm-license-detail-${b.id}`}
+                                        >
+                                          Confirm License
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-red-600 border-red-300 dark:border-red-700 text-xs"
+                                          onClick={async () => { await updateBookingMutation.mutateAsync({ id: b.id, data: { licenseVerification: { status: 'rejected', verifiedBy: currentHost.email, verifiedAt: new Date().toISOString() } } }); }}
+                                          data-testid={`button-reject-license-detail-${b.id}`}
+                                        >
+                                          Not Legitimate
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }
                             })()}
                           </div>
 
