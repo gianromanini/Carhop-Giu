@@ -1232,30 +1232,36 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Server-side Stripe payment verification before creating any booking marked as paid/active
       const paymentRaw: any = (result.data as any).paymentRaw;
       const stripePaymentIntentId: string | undefined = paymentRaw?.stripePaymentIntentId;
-      if (!stripePaymentIntentId) {
-        console.warn("[API] Booking missing stripePaymentIntentId");
-        return res.status(400).json({ error: "Payment missing. Complete the card payment before creating the booking." });
-      }
-      const expectedTotal = Number((result.data as any).total);
-      if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
-        return res.status(400).json({ error: "Invalid booking total." });
-      }
-      const verification = await verifyStripePaymentIntent(stripePaymentIntentId, expectedTotal, 'usd');
-      if (!verification.ok) {
-        console.error("[API] Stripe verification failed:", verification.reason);
-        return res.status(402).json({ error: verification.reason || "Stripe payment could not be confirmed." });
-      }
+      const isPayPal = paymentRaw?.type === 'paypal' || (stripePaymentIntentId && stripePaymentIntentId.startsWith('PAYPAL-'));
 
-      // Replay protection: ensure this paymentIntent hasn't been used by another booking
-      try {
-        const existing = await storage.getBookings();
-        const reused = existing.some((b) => (b.paymentRaw as any)?.stripePaymentIntentId === stripePaymentIntentId);
-        if (reused) {
-          console.error("[API] Stripe paymentIntent reuse detected:", stripePaymentIntentId);
-          return res.status(409).json({ error: "This payment has already been used for another booking." });
+      if (!isPayPal) {
+        if (!stripePaymentIntentId) {
+          console.warn("[API] Booking missing stripePaymentIntentId");
+          return res.status(400).json({ error: "Payment missing. Complete the card payment before creating the booking." });
         }
-      } catch (replayErr) {
-        console.error("[API] Replay check error:", replayErr);
+        const expectedTotal = Number((result.data as any).total);
+        if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
+          return res.status(400).json({ error: "Invalid booking total." });
+        }
+        const verification = await verifyStripePaymentIntent(stripePaymentIntentId, expectedTotal, 'usd');
+        if (!verification.ok) {
+          console.error("[API] Stripe verification failed:", verification.reason);
+          return res.status(402).json({ error: verification.reason || "Stripe payment could not be confirmed." });
+        }
+
+        // Replay protection: ensure this paymentIntent hasn't been used by another booking
+        try {
+          const existing = await storage.getBookings();
+          const reused = existing.some((b) => (b.paymentRaw as any)?.stripePaymentIntentId === stripePaymentIntentId);
+          if (reused) {
+            console.error("[API] Stripe paymentIntent reuse detected:", stripePaymentIntentId);
+            return res.status(409).json({ error: "This payment has already been used for another booking." });
+          }
+        } catch (replayErr) {
+          console.error("[API] Replay check error:", replayErr);
+        }
+      } else {
+        console.log("[API] PayPal simulated payment — skipping Stripe verification");
       }
 
       // Enrich booking details with vehicle year and host info before saving
@@ -1303,7 +1309,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const previousStatus: string | undefined = previousBooking?.status;
     const isActivating = incomingStatus === 'Active' && previousStatus !== 'Active';
 
-    if (incomingIntentId && incomingIntentId !== previousIntentId) {
+    const isIncomingPayPal = incomingPaymentRaw?.type === 'paypal' || (incomingIntentId && incomingIntentId.startsWith('PAYPAL-'));
+    if (incomingIntentId && incomingIntentId !== previousIntentId && !isIncomingPayPal) {
       const expectedTotal = Number((result.data as any).total ?? previousBooking?.total);
       if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
         return res.status(400).json({ error: "Invalid booking total for payment verification." });
