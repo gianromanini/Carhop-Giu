@@ -14051,7 +14051,7 @@ export default function CarHopApp() {
                   
                   <div>
                     <label className="block text-xs text-zinc-500 uppercase tracking-wider mb-3">
-                      DRIVER LICENSE PHOTOS (FRONT AND BACK) <span className="text-red-500">* REQUIRED</span>
+                      DRIVER LICENSE PHOTOS (FRONT AND SELFIE) <span className="text-red-500">* REQUIRED</span>
                     </label>
                     <div className="flex gap-4 flex-wrap">
                       {driverDetails.licenseImages.map((img, i) => (
