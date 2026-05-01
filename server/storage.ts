@@ -754,6 +754,7 @@ export class MemStorage implements IStorage {
       extensionRequests: [],
       vehicleReplaceRequests: [],
       messages: [],
+      userId: (booking as any).userId ?? null,
     };
     this.bookings.set(id, newBooking);
     return newBooking;

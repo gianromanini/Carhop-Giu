@@ -251,6 +251,7 @@ export const bookings = pgTable("bookings", {
     verifiedAt?: string;
     rejectionReason?: string;
   }>(),
+  userId: varchar("user_id"),
   unread: boolean("unread").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

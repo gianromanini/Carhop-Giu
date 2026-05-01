@@ -1779,9 +1779,10 @@ export default function CarHopApp() {
       const detailDriverEmail = ((b.details as any)?.driverEmail || '').toLowerCase().trim();
       const detailHostEmail = ((b.details as any)?.hostEmail || '').toLowerCase().trim();
       
-      const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail);
+      const detailAuthEmail = ((b.details as any)?.authEmail || '').toLowerCase().trim();
+      const emailMatch = effectiveEmail && (driverEmail === effectiveEmail || detailDriverEmail === effectiveEmail || detailHostEmail === effectiveEmail || detailAuthEmail === effectiveEmail);
       
-      // If we are in the live site and user is authenticated, we should also try matching by ID if available in metadata
+      // Match by authenticated userId saved at booking creation time
       const userIdMatch = activeUser.id && (b as any).userId === activeUser.id;
       
       return emailMatch || userIdMatch;
@@ -2329,6 +2330,7 @@ export default function CarHopApp() {
         status: 'Active', 
         carName: cart.car!.model, 
         vehicleId: cart.car!.id,
+        userId: authUser?.id || undefined,
         location: bookingLocation, 
         startDate: searchParams.start, 
         startTime: searchParams.startTime, 
@@ -2362,6 +2364,7 @@ export default function CarHopApp() {
           hostEmail: hostEmail,
           hostId: vehicleForHost?.hostId || '',
           hostName: hostForBooking ? `${hostForBooking.firstName} ${hostForBooking.lastName}` : '',
+          authEmail: authUser?.email || '',
         },
         messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
         carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
