@@ -260,6 +260,7 @@ export const bookings = pgTable("bookings", {
   index("idx_bookings_user_id").on(table.userId),
   index("idx_bookings_vehicle_id").on(table.vehicleId),
   index("idx_bookings_start_date").on(table.startDate),
+  index("idx_bookings_return_date").on(table.returnDate),
   index("idx_bookings_status").on(table.status),
 ]);
 
@@ -328,7 +329,10 @@ export const ratings = pgTable("ratings", {
   hostCommentToClient: text("host_comment_to_client"),
   hostRatedClientAt: timestamp("host_rated_client_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_ratings_vehicle_id").on(table.vehicleId),
+  index("idx_ratings_booking_id").on(table.bookingId),
+]);
 
 export const payouts = pgTable("payouts", {
   id: serial("id").primaryKey(),

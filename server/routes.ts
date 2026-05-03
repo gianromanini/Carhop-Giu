@@ -1931,9 +1931,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const safeHosts = hosts.map(h => ({
         ...h,
         passwordHash: undefined,
-        licenseFrontImage: h.licenseFrontImage ? '[IMAGE]' : '',
-        licenseBackImage: h.licenseBackImage ? '[IMAGE]' : '',
-        proofOfResidenceImage: h.proofOfResidenceImage ? '[IMAGE]' : '',
+        // Omit large base64 document images from list (kept on /api/hosts/:id)
+        licenseFrontImage: '',
+        licenseBackImage: '',
+        proofOfResidenceImage: '',
+        hasLicenseFrontImage: !!h.licenseFrontImage,
+        hasLicenseBackImage: !!h.licenseBackImage,
+        hasProofOfResidenceImage: !!h.proofOfResidenceImage,
       }));
       res.json(safeHosts);
     } catch (error) {
