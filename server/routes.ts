@@ -3199,6 +3199,76 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // Send a manual Stripe transfer from the platform balance to a host's connected account
+  app.post('/api/hosts/:hostId/stripe-transfer', async (req: any, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (Number.isNaN(hostId)) return res.status(400).json({ error: 'Invalid host id' });
+      const host = await storage.getHost(hostId);
+      if (!host) return res.status(404).json({ error: 'Host not found' });
+      if (!host.stripeAccountId) {
+        return res.status(400).json({ error: 'Host has not connected a Stripe account yet' });
+      }
+      if (!host.stripeOnboardingComplete) {
+        return res.status(400).json({ error: 'Host onboarding is incomplete on Stripe' });
+      }
+
+      const { amount, note, idempotencyKey } = req.body || {};
+      const amt = Number(amount);
+      if (!Number.isFinite(amt) || amt <= 0 || amt > 1_000_000) {
+        return res.status(400).json({ error: 'Invalid amount' });
+      }
+      const cents = Math.round(amt * 100);
+      if (cents < 1) {
+        return res.status(400).json({ error: 'Amount is too small' });
+      }
+
+      const { getUncachableStripeClient } = await import('./stripeClient');
+      const stripe = await getUncachableStripeClient();
+
+      const idemKey = (typeof idempotencyKey === 'string' && idempotencyKey.length > 0 && idempotencyKey.length <= 200)
+        ? idempotencyKey
+        : `host-${hostId}-${cents}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+      const transfer = await stripe.transfers.create(
+        {
+          amount: cents,
+          currency: 'usd',
+          destination: host.stripeAccountId,
+          description: note || `Payout to ${host.firstName} ${host.lastName}`,
+          metadata: { hostId: String(hostId) },
+        },
+        { idempotencyKey: idemKey }
+      );
+
+      const payout = await storage.createPayout({
+        hostId,
+        amount: parseFloat(amt.toFixed(2)),
+        fee: 0,
+        netAmount: parseFloat(amt.toFixed(2)),
+        type: 'stripe',
+        status: 'completed',
+        note: note || null,
+        stripeTransferId: transfer.id,
+      } as any);
+
+      const currentSettings = (host as any).payoutSettings || {};
+      const totalWithdrawn = (currentSettings.totalWithdrawn || 0) + amt;
+      await storage.updateHost(hostId, {
+        payoutSettings: {
+          ...currentSettings,
+          totalWithdrawn: parseFloat(totalWithdrawn.toFixed(2)),
+          lastPayoutAt: new Date().toISOString(),
+        }
+      } as any);
+
+      res.status(201).json({ payout, transferId: transfer.id });
+    } catch (error: any) {
+      console.error('[StripeTransfer] error:', error?.message || error);
+      res.status(500).json({ error: error?.message || 'Failed to send transfer' });
+    }
+  });
+
   // ========== STRIPE CONNECT EXPRESS (host bank linking) ==========
   // NOTE: Hosts authenticate client-side (no server session), matching the existing
   // /api/hosts/:hostId/payout-settings and /pickup-locations endpoints. We rely on the

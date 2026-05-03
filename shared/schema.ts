@@ -346,6 +346,7 @@ export const payouts = pgTable("payouts", {
   type: text("type").notNull().default('instant'),
   status: text("status").notNull().default('completed'),
   note: text("note"),
+  stripeTransferId: varchar("stripe_transfer_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

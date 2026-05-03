@@ -35,6 +35,7 @@ Development uses `npm run dev` for an Express server with Vite middleware, suppo
 - **Secure Password Reset**: Implements a two-step, token-based password reset system with email verification and bcryptjs for secure password hashing.
 - **Chat Support System**: Integrates a comprehensive chat system for clients and hosts to communicate with support, including database storage for messages, an admin dashboard for managing conversations, and a client-side chat modal with image attachment capabilities.
 - **Production Image Optimization**: To prevent oversized responses, list endpoints return lightweight data with image placeholders, while individual booking endpoints provide full image data on demand. The frontend caches full booking data for efficient display.
+- **Host Payouts (Stripe Connect Express)**: Hosts link their bank via Stripe Connect Express onboarding (transfers capability). Payouts are admin-triggered manually: from the admin host detail view, an admin enters an amount and sends a Stripe transfer from the platform balance to the host's connected account (`POST /api/hosts/:hostId/stripe-transfer`, idempotency-key protected). Each transfer is recorded in the `payouts` table with `type='stripe'` and `stripeTransferId` for audit. There is no automatic destination-charge split; Stripe fees are reconciled separately.
 
 ## External Dependencies
 

@@ -607,6 +607,131 @@ interface FormDataType {
   [key: string]: any;
 }
 
+function StripePayoutPanel({ host }: { host: any }) {
+  const queryClient = useQueryClient();
+  const hostId = host?.id;
+  const [amount, setAmount] = useState<string>('');
+  const [note, setNote] = useState<string>('');
+  const { toast } = useToast();
+
+  const { data: payoutHistory = [] } = useQuery<any[]>({
+    queryKey: ['/api/hosts', hostId, 'payouts'],
+    queryFn: () => apiRequest('GET', `/api/hosts/${hostId}/payouts`).then((r: any) => r.json()),
+    enabled: !!hostId,
+  });
+
+  const stripeTransfers = (payoutHistory || []).filter((p: any) => p.type === 'stripe').slice(0, 5);
+  const linked = !!host?.stripeAccountId && !!host?.stripeOnboardingComplete;
+
+  const sendMutation = useMutation({
+    mutationFn: (data: { amount: number; note?: string; idempotencyKey: string }) =>
+      apiRequest('POST', `/api/hosts/${hostId}/stripe-transfer`, data).then(async (r: any) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.error || 'Transfer failed');
+        }
+        return r.json();
+      }),
+    onSuccess: (data: any) => {
+      toast({ title: 'Transfer sent', description: `Stripe transfer ${data.transferId} created.` });
+      setAmount('');
+      setNote('');
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts', hostId, 'payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Transfer failed', description: err?.message || 'Unknown error', variant: 'destructive' });
+    },
+  });
+
+  const handleSend = () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) {
+      toast({ title: 'Invalid amount', description: 'Enter an amount greater than 0', variant: 'destructive' });
+      return;
+    }
+    if (!linked) {
+      toast({ title: 'Host not connected', description: 'This host has not finished Stripe onboarding.', variant: 'destructive' });
+      return;
+    }
+    const idempotencyKey = `host-${hostId}-${Math.round(amt * 100)}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    sendMutation.mutate({ amount: amt, note: note || undefined, idempotencyKey });
+  };
+
+  return (
+    <div>
+      <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2 flex items-center gap-2">
+        <DollarSign size={13} /> Send Payout via Stripe
+      </h4>
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-zinc-500">Stripe Connect status</span>
+          {linked ? (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold uppercase" data-testid="badge-stripe-linked">Linked</span>
+          ) : host?.stripeAccountId ? (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-bold uppercase" data-testid="badge-stripe-pending">Onboarding incomplete</span>
+          ) : (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold uppercase" data-testid="badge-stripe-none">Not connected</span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="sm:col-span-1">
+            <label className="block text-[10px] uppercase text-zinc-500 mb-1">Amount (USD)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+              data-testid="input-stripe-payout-amount"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-[10px] uppercase text-zinc-500 mb-1">Note (optional)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. Weekly payout 05/01-05/07"
+              className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+              data-testid="input-stripe-payout-note"
+            />
+          </div>
+        </div>
+        <Button
+          onClick={handleSend}
+          disabled={!linked || sendMutation.isPending}
+          className="w-full"
+          data-testid="button-send-stripe-payout"
+        >
+          {sendMutation.isPending ? 'Sending…' : 'Send Stripe Payout'}
+        </Button>
+        <p className="text-[10px] text-zinc-500">
+          Funds are transferred from your Stripe balance to the host's connected Express account. Stripe fees are charged separately.
+        </p>
+
+        {stripeTransfers.length > 0 && (
+          <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+            <p className="text-[10px] uppercase font-bold text-zinc-500 mb-2">Recent Stripe transfers</p>
+            <div className="space-y-1">
+              {stripeTransfers.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between text-xs" data-testid={`row-stripe-transfer-${p.id}`}>
+                  <span className="text-zinc-600 dark:text-zinc-300">
+                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'} · ${Number(p.amount).toFixed(2)}
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-500 truncate ml-2 max-w-[160px]">{p.stripeTransferId || ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; vehicles: any[]; bookings: any[] }) {
   const queryClient = useQueryClient();
   const hostId = currentHost.id;
@@ -10225,6 +10350,8 @@ export default function CarHopApp() {
                               </div>
                             );
                           })()}
+
+                          <StripePayoutPanel host={selectedHost} />
 
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Host Vehicles ({vehicles.filter(v => v.hostId === String(selectedHost.id)).length})</h4>
