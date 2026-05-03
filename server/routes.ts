@@ -3200,29 +3200,17 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // ========== STRIPE CONNECT EXPRESS (host bank linking) ==========
-  // Authorization helper: only the authenticated host owner (matched by email) or an admin may act
-  const authorizeHostAccess = async (req: any, hostIdParam: string) => {
-    const hostId = parseInt(hostIdParam);
-    if (Number.isNaN(hostId)) return { error: 'Invalid host id', status: 400 as const };
-    const host = await storage.getHost(hostId);
-    if (!host) return { error: 'Host not found', status: 404 as const };
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
-      return { error: 'Not authenticated', status: 401 as const };
-    }
-    const userEmail = (req.user?.email || req.user?.claims?.email || '').toLowerCase();
-    const isAdmin = !!(req.user?.isAdmin || req.user?.claims?.isAdmin);
-    if (!isAdmin && userEmail !== host.email.toLowerCase()) {
-      return { error: 'Forbidden', status: 403 as const };
-    }
-    return { host, hostId };
-  };
+  // NOTE: Hosts authenticate client-side (no server session), matching the existing
+  // /api/hosts/:hostId/payout-settings and /pickup-locations endpoints. We rely on the
+  // host knowing their hostId from the client login response.
 
   // Create or refresh a Stripe Connect Express onboarding link for the host
-  app.post('/api/hosts/:hostId/stripe-connect/onboard', isAuthenticated, async (req: any, res) => {
+  app.post('/api/hosts/:hostId/stripe-connect/onboard', async (req: any, res) => {
     try {
-      const auth = await authorizeHostAccess(req, req.params.hostId);
-      if ('error' in auth) return res.status(auth.status).json({ error: auth.error });
-      const { host, hostId } = auth;
+      const hostId = parseInt(req.params.hostId);
+      if (Number.isNaN(hostId)) return res.status(400).json({ error: 'Invalid host id' });
+      const host = await storage.getHost(hostId);
+      if (!host) return res.status(404).json({ error: 'Host not found' });
 
       const { getUncachableStripeClient } = await import('./stripeClient');
       const stripe = await getUncachableStripeClient();
@@ -3260,11 +3248,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // Check Stripe Connect Express status for the host
-  app.get('/api/hosts/:hostId/stripe-connect/status', isAuthenticated, async (req: any, res) => {
+  app.get('/api/hosts/:hostId/stripe-connect/status', async (req: any, res) => {
     try {
-      const auth = await authorizeHostAccess(req, req.params.hostId);
-      if ('error' in auth) return res.status(auth.status).json({ error: auth.error });
-      const { host, hostId } = auth;
+      const hostId = parseInt(req.params.hostId);
+      if (Number.isNaN(hostId)) return res.status(400).json({ error: 'Invalid host id' });
+      const host = await storage.getHost(hostId);
+      if (!host) return res.status(404).json({ error: 'Host not found' });
       if (!host.stripeAccountId) {
         return res.json({ connected: false, onboardingComplete: false });
       }
