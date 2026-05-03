@@ -2085,9 +2085,15 @@ export default function CarHopApp() {
     setTimeout(() => { setIsSearching(false); const fleetSection = document.getElementById('fleet'); if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); }, 1500); 
   };
   
-  const handleViewDetails = (car: Vehicle) => { 
-    setViewCar(car); 
-    setView('car-details'); 
+  const handleViewDetails = (car: Vehicle) => {
+    setViewCar(car);
+    setView('car-details');
+    // List endpoint returns slim images (first only); fetch full vehicle for the gallery
+    fetch(`/api/vehicles/${car.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(full => { if (full && full.id) setViewCar(full); })
+      .catch(() => {});
+
     const today = getTodayString();
     const nextTime = getNext30MinSlot();
     const returnDay = addDaysToDate(today, 3);
@@ -5678,13 +5684,19 @@ export default function CarHopApp() {
                                 })()}
                               </div>
                               <div className="flex gap-2 flex-shrink-0">
-                                <button onClick={() => { 
+                                <button onClick={async () => {
                                   if (editingHostVehicle?.id === car.id) {
                                     setEditingHostVehicle(null);
                                     setFormData(initialFormState);
                                   } else {
                                     setShowHostAddVehicleForm(false);
-                                    setEditingHostVehicle(car); 
+                                    // Fetch full vehicle (with all images) since list returns slim
+                                    let fullCar: any = car;
+                                    try {
+                                      const r = await fetch(`/api/vehicles/${car.id}`);
+                                      if (r.ok) { const f = await r.json(); if (f && f.id) fullCar = f; }
+                                    } catch {}
+                                    setEditingHostVehicle(fullCar);
                                     setFormData({
                                       model: car.model || '',
                                       year: car.year || new Date().getFullYear(),
@@ -5711,7 +5723,7 @@ export default function CarHopApp() {
                                       hasDriveAssist: car.hasDriveAssist || false,
                                       hasUSBCharger: car.hasUSBCharger || false,
                                       isPriceMatch: car.isPriceMatch || false,
-                                      images: car.images || [],
+                                      images: fullCar.images || [],
                                       commission: car.commission || 10,
                                       deductible: car.deductible || 1000,
                                       availableLocations: car.availableLocations || [],
@@ -5725,7 +5737,7 @@ export default function CarHopApp() {
                                       locationLon: car.locationLon || null,
                                       pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
                                     });
-                                    setHostVehicleImages(car.images || []);
+                                    setHostVehicleImages(fullCar.images || []);
                                   }
                                 }} className="p-2 sm:p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all" data-testid={`button-edit-vehicle-${car.id}`}>
                                   <Edit size={20} className="sm:w-6 sm:h-6" />
@@ -8867,7 +8879,7 @@ export default function CarHopApp() {
                               <Button 
                                 variant="outline" 
                                 className="h-7 w-7 p-0 border-zinc-200 dark:border-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center justify-center relative overflow-visible" 
-                                onClick={() => { setEditingId(isEditing ? null : car.id); if (!isEditing) { setFormData(car); setPricingStrings({taxes: String(car.pricing?.taxes || 8.5), cleaningFee: String(car.pricing?.cleaningFee || 25), includedMiles: String(car.pricing?.includedMiles || 200), extraMileRate: String(car.pricing?.extraMileRate || 0.45), insurance500: String(car.pricing?.prices?.insurance500 || 25), insurance1000: String(car.pricing?.prices?.insurance1000 || 15), childSeat: String(car.pricing?.prices?.childSeat || 8), prepaidFuel: String(car.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(car.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(car.pricing?.prices?.stressFreePackage || 45)}); } }} 
+                                onClick={async () => { setEditingId(isEditing ? null : car.id); if (!isEditing) { let fullCar: any = car; try { const r = await fetch(`/api/vehicles/${car.id}`); if (r.ok) { const f = await r.json(); if (f && f.id) fullCar = f; } } catch {} setFormData(fullCar); setPricingStrings({taxes: String(fullCar.pricing?.taxes || 8.5), cleaningFee: String(fullCar.pricing?.cleaningFee || 25), includedMiles: String(fullCar.pricing?.includedMiles || 200), extraMileRate: String(fullCar.pricing?.extraMileRate || 0.45), insurance500: String(fullCar.pricing?.prices?.insurance500 || 25), insurance1000: String(fullCar.pricing?.prices?.insurance1000 || 15), childSeat: String(fullCar.pricing?.prices?.childSeat || 8), prepaidFuel: String(fullCar.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(fullCar.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(fullCar.pricing?.prices?.stressFreePackage || 45)}); } }} 
                                 data-testid={`button-edit-vehicle-${car.id}`}
                               >
                                 {isEditing ? (
@@ -9946,7 +9958,14 @@ export default function CarHopApp() {
                       {hostsData.map((host: any) => {
                         const hostVehicles = vehicles.filter(v => v.hostId === String(host.id));
                         return (
-                          <div key={host.id} onClick={() => { setSelectedHost(host); setEditingHost(null); }} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedHost?.id === host.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-${host.id}`}>
+                          <div key={host.id} onClick={() => {
+                            setSelectedHost(host);
+                            setEditingHost(null);
+                            fetch(`/api/hosts/${host.id}`)
+                              .then(r => r.ok ? r.json() : null)
+                              .then(full => { if (full && full.id) setSelectedHost(full); })
+                              .catch(() => {});
+                          }} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedHost?.id === host.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-${host.id}`}>
                             <div className="flex justify-between items-start mb-1">
                               <span className="font-bold text-sm text-white">{host.firstName} {host.lastName}</span>
                               <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${host.status === 'active' ? 'bg-green-600 text-white' : 'bg-zinc-500 text-white'}`}>{host.status}</span>

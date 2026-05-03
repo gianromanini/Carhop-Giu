@@ -1039,17 +1039,23 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       filteredVehicles = vehicles.filter(v => !overlappingVehicleIds.has(v.id));
     }
     
-    const vehiclesWithHost = filteredVehicles.map(v => ({
-      ...v,
-      hostInfo: v.hostId ? {
-        id: hostsMap.get(v.hostId)?.id,
-        firstName: hostsMap.get(v.hostId)?.firstName,
-        lastName: hostsMap.get(v.hostId)?.lastName,
-        city: hostsMap.get(v.hostId)?.city,
-        state: hostsMap.get(v.hostId)?.state,
-      } : null,
-    }));
-    
+    const vehiclesWithHost = filteredVehicles.map(v => {
+      const allImages = Array.isArray(v.images) ? v.images : [];
+      const slimImages = allImages.length > 0 ? [allImages[0]] : [];
+      return {
+        ...v,
+        images: slimImages,
+        imagesCount: allImages.length,
+        hostInfo: v.hostId ? {
+          id: hostsMap.get(v.hostId)?.id,
+          firstName: hostsMap.get(v.hostId)?.firstName,
+          lastName: hostsMap.get(v.hostId)?.lastName,
+          city: hostsMap.get(v.hostId)?.city,
+          state: hostsMap.get(v.hostId)?.state,
+        } : null,
+      };
+    });
+
     res.json(vehiclesWithHost);
   });
 
@@ -1920,8 +1926,15 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get("/api/hosts", async (_req, res) => {
     try {
       const hosts = await storage.getHosts();
-      // Don't send password hashes to frontend
-      const safeHosts = hosts.map(h => ({ ...h, passwordHash: undefined }));
+      // Don't send password hashes or large base64 document images in list view.
+      // Admin fetches full host (with documents) via /api/hosts/:id when needed.
+      const safeHosts = hosts.map(h => ({
+        ...h,
+        passwordHash: undefined,
+        licenseFrontImage: h.licenseFrontImage ? '[IMAGE]' : '',
+        licenseBackImage: h.licenseBackImage ? '[IMAGE]' : '',
+        proofOfResidenceImage: h.proofOfResidenceImage ? '[IMAGE]' : '',
+      }));
       res.json(safeHosts);
     } catch (error) {
       console.error("Error fetching hosts:", error);
