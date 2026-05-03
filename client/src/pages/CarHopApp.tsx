@@ -732,7 +732,7 @@ function StripePayoutPanel({ host }: { host: any }) {
   );
 }
 
-function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; vehicles: any[]; bookings: any[] }) {
+function HostPayoutTab({ currentHost, vehicles, bookings, setCurrentHost }: { currentHost: any; vehicles: any[]; bookings: any[]; setCurrentHost?: (h: any) => void }) {
   const queryClient = useQueryClient();
   const hostId = currentHost.id;
   const hostIdStr = String(hostId);
@@ -799,7 +799,12 @@ function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; 
   const updateBankMutation = useMutation({
     mutationFn: (data: any) =>
       apiRequest('PUT', `/api/hosts/${hostId}/payout-settings`, data).then((r: any) => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/hosts'] }),
+    onSuccess: (updatedHost: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+      if (updatedHost && updatedHost.id && setCurrentHost) {
+        setCurrentHost({ ...currentHost, ...updatedHost });
+      }
+    },
   });
 
   // Stripe Connect status
@@ -7824,7 +7829,7 @@ export default function CarHopApp() {
             );
           })()}
 
-          {hostTab === 'payout' && <HostPayoutTab currentHost={currentHost} vehicles={vehicles} bookings={bookings} />}
+          {hostTab === 'payout' && <HostPayoutTab currentHost={currentHost} vehicles={vehicles} bookings={bookings} setCurrentHost={setCurrentHost} />}
 
           {hostTab === 'chat' && (() => {
             const hostEmail = currentHost?.email || '';
