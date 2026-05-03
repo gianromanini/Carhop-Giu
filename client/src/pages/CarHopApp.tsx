@@ -677,6 +677,14 @@ function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; 
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/hosts'] }),
   });
 
+  // Force Automatic Weekly payout mode (Withdraw Now option removed from UI)
+  useEffect(() => {
+    if (hostId && !autoPayoutEnabled) {
+      updateBankMutation.mutate({ payoutSettings: { ...payoutSettings, autoPayoutEnabled: true } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostId, autoPayoutEnabled]);
+
   const [showBankForm, setShowBankForm] = useState(false);
   const [bankType, setBankType] = useState<'manual' | 'linked'>(bankAccount?.type || 'manual');
   const [routingNum, setRoutingNum] = useState(bankAccount?.routingNumber || '');
@@ -743,65 +751,17 @@ function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; 
         <h4 className="text-sm font-bold uppercase text-zinc-400 mb-4 flex items-center gap-2">
           <Receipt size={15} /> Payout Mode
         </h4>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div
-            onClick={toggleAuto}
-            className={`flex-1 rounded-md border-2 p-4 cursor-pointer transition-all ${autoPayoutEnabled ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}
-            data-testid="button-payout-mode-auto"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <CalendarClock size={16} className={autoPayoutEnabled ? 'text-green-600' : 'text-zinc-500'} />
-              <span className={`font-semibold text-sm ${autoPayoutEnabled ? 'text-green-700 dark:text-green-400' : ''}`}>Automatic Weekly</span>
-              {autoPayoutEnabled && <CheckCircle size={14} className="text-green-500 ml-auto" />}
-            </div>
-            <p className="text-xs text-zinc-500">Your balance is paid out automatically every week. No fees.</p>
+        <div
+          className="rounded-md border-2 border-green-500 bg-green-50 dark:bg-green-900/20 p-4"
+          data-testid="card-payout-mode-auto"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarClock size={16} className="text-green-600" />
+            <span className="font-semibold text-sm text-green-700 dark:text-green-400">Automatic Weekly</span>
+            <CheckCircle size={14} className="text-green-500 ml-auto" />
           </div>
-          <div
-            onClick={toggleAuto}
-            className={`flex-1 rounded-md border-2 p-4 cursor-pointer transition-all ${!autoPayoutEnabled ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-700'}`}
-            data-testid="button-payout-mode-manual"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign size={16} className={!autoPayoutEnabled ? 'text-blue-600' : 'text-zinc-500'} />
-              <span className={`font-semibold text-sm ${!autoPayoutEnabled ? 'text-blue-700 dark:text-blue-400' : ''}`}>Withdraw Now</span>
-              {!autoPayoutEnabled && <CheckCircle size={14} className="text-blue-500 ml-auto" />}
-            </div>
-            <p className="text-xs text-zinc-500">Withdraw on demand. A 2% processing fee applies to each withdrawal.</p>
-          </div>
+          <p className="text-xs text-zinc-500">Your balance is paid out automatically every week. No fees.</p>
         </div>
-        {!autoPayoutEnabled && (
-          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex-1 w-full">
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max={available}
-                  step="0.01"
-                  value={withdrawInput}
-                  onChange={e => { setWithdrawInput(e.target.value); setWithdrawError(''); }}
-                  placeholder={`Max $${available.toFixed(2)}`}
-                  className="flex-1 h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm"
-                  data-testid="input-withdraw-amount"
-                />
-                <button
-                  onClick={handleWithdraw}
-                  disabled={withdrawMutation.isPending || available <= 0}
-                  className="h-9 px-4 rounded-md bg-blue-600 text-white text-sm font-semibold disabled:opacity-50"
-                  data-testid="button-withdraw-now"
-                >
-                  {withdrawMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Withdraw'}
-                </button>
-              </div>
-              {withdrawError && <p className="text-xs text-red-500 mt-1">{withdrawError}</p>}
-              {withdrawInput && !withdrawError && (
-                <p className="text-xs text-zinc-500 mt-1">
-                  Fee: ${(parseFloat(withdrawInput || '0') * 0.02).toFixed(2)} — You receive: ${(parseFloat(withdrawInput || '0') * 0.98).toFixed(2)}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* Bank Account */}
