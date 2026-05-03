@@ -299,7 +299,10 @@ export const hosts = pgTable("hosts", {
     frequency?: 'weekly';
     totalWithdrawn?: number;
     lastPayoutAt?: string;
+    autoPayoutEnabled?: boolean;
   }>(),
+  stripeAccountId: varchar("stripe_account_id"),
+  stripeOnboardingComplete: boolean("stripe_onboarding_complete").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

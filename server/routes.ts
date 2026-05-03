@@ -3199,6 +3199,125 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // ========== STRIPE CONNECT EXPRESS (host bank linking) ==========
+  // Authorization helper: only the authenticated host owner (matched by email) or an admin may act
+  const authorizeHostAccess = async (req: any, hostIdParam: string) => {
+    const hostId = parseInt(hostIdParam);
+    if (Number.isNaN(hostId)) return { error: 'Invalid host id', status: 400 as const };
+    const host = await storage.getHost(hostId);
+    if (!host) return { error: 'Host not found', status: 404 as const };
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return { error: 'Not authenticated', status: 401 as const };
+    }
+    const userEmail = (req.user?.email || req.user?.claims?.email || '').toLowerCase();
+    const isAdmin = !!(req.user?.isAdmin || req.user?.claims?.isAdmin);
+    if (!isAdmin && userEmail !== host.email.toLowerCase()) {
+      return { error: 'Forbidden', status: 403 as const };
+    }
+    return { host, hostId };
+  };
+
+  // Create or refresh a Stripe Connect Express onboarding link for the host
+  app.post('/api/hosts/:hostId/stripe-connect/onboard', isAuthenticated, async (req: any, res) => {
+    try {
+      const auth = await authorizeHostAccess(req, req.params.hostId);
+      if ('error' in auth) return res.status(auth.status).json({ error: auth.error });
+      const { host, hostId } = auth;
+
+      const { getUncachableStripeClient } = await import('./stripeClient');
+      const stripe = await getUncachableStripeClient();
+
+      let accountId = host.stripeAccountId;
+      if (!accountId) {
+        const account = await stripe.accounts.create({
+          type: 'express',
+          country: 'US',
+          email: host.email,
+          capabilities: {
+            transfers: { requested: true },
+          },
+          business_type: 'individual',
+          metadata: { hostId: String(host.id) },
+        });
+        accountId = account.id;
+        await storage.updateHost(hostId, { stripeAccountId: accountId });
+      }
+
+      // Always derive base URL from server-known request, never trust client Origin header
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const accountLink = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: `${baseUrl}/?stripeConnect=refresh&hostId=${hostId}`,
+        return_url: `${baseUrl}/?stripeConnect=return&hostId=${hostId}`,
+        type: 'account_onboarding',
+      });
+
+      res.json({ url: accountLink.url, accountId });
+    } catch (error: any) {
+      console.error("[StripeConnect] onboard error:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to create onboarding link" });
+    }
+  });
+
+  // Check Stripe Connect Express status for the host
+  app.get('/api/hosts/:hostId/stripe-connect/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const auth = await authorizeHostAccess(req, req.params.hostId);
+      if ('error' in auth) return res.status(auth.status).json({ error: auth.error });
+      const { host, hostId } = auth;
+      if (!host.stripeAccountId) {
+        return res.json({ connected: false, onboardingComplete: false });
+      }
+
+      const { getUncachableStripeClient } = await import('./stripeClient');
+      const stripe = await getUncachableStripeClient();
+      const account = await stripe.accounts.retrieve(host.stripeAccountId);
+
+      const onboardingComplete = !!account.details_submitted && !!account.payouts_enabled;
+      const externalAccount = (account.external_accounts?.data?.[0] as any) || null;
+      const bankInfo = externalAccount ? {
+        bankName: externalAccount.bank_name || null,
+        last4: externalAccount.last4 || null,
+        country: externalAccount.country || null,
+      } : null;
+
+      // Persist onboarding status + write a 'linked' bank account record matching the UI contract
+      const updates: any = {};
+      if (host.stripeOnboardingComplete !== onboardingComplete) {
+        updates.stripeOnboardingComplete = onboardingComplete;
+      }
+      if (onboardingComplete && bankInfo) {
+        updates.bankAccount = {
+          type: 'linked',
+          method: 'linked',
+          bankName: bankInfo.bankName || 'Stripe',
+          accountName: `${host.firstName} ${host.lastName}`,
+          accountHolderName: `${host.firstName} ${host.lastName}`,
+          linkedEmail: host.email,
+          accountNumber: bankInfo.last4 || '',
+          routingNumber: '',
+          linkedAt: new Date().toISOString(),
+        };
+      }
+      if (Object.keys(updates).length > 0) {
+        await storage.updateHost(hostId, updates);
+      }
+
+      res.json({
+        connected: true,
+        accountId: host.stripeAccountId,
+        onboardingComplete,
+        detailsSubmitted: !!account.details_submitted,
+        payoutsEnabled: !!account.payouts_enabled,
+        chargesEnabled: !!account.charges_enabled,
+        bank: bankInfo,
+      });
+    } catch (error: any) {
+      console.error("[StripeConnect] status error:", error?.message || error);
+      res.status(500).json({ error: error?.message || "Failed to fetch status" });
+    }
+  });
+
   // Payouts - Update bank account & payout settings for a host
   app.put('/api/hosts/:hostId/payout-settings', async (req, res) => {
     try {

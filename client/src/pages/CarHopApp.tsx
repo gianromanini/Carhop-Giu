@@ -677,6 +677,32 @@ function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; 
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/hosts'] }),
   });
 
+  // Stripe Connect status
+  const { data: stripeStatus, refetch: refetchStripeStatus } = useQuery<any>({
+    queryKey: ['/api/hosts', hostId, 'stripe-connect/status'],
+    queryFn: () => fetch(`/api/hosts/${hostId}/stripe-connect/status`).then(r => r.json()),
+    enabled: !!hostId,
+  });
+
+  const stripeOnboardMutation = useMutation({
+    mutationFn: () =>
+      apiRequest('POST', `/api/hosts/${hostId}/stripe-connect/onboard`, {}).then((r: any) => r.json()),
+    onSuccess: (data: any) => {
+      if (data?.url) window.location.href = data.url;
+    },
+  });
+
+  // Auto-refresh status if user just returned from Stripe onboarding
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('stripeConnect')) {
+      refetchStripeStatus();
+      queryClient.invalidateQueries({ queryKey: ['/api/hosts'] });
+      // Clear the query string
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [refetchStripeStatus]);
+
   // Force Automatic Weekly payout mode (Withdraw Now option removed from UI)
   useEffect(() => {
     if (hostId && !autoPayoutEnabled) {
@@ -812,13 +838,44 @@ function HostPayoutTab({ currentHost, vehicles, bookings }: { currentHost: any; 
                 <input value={accountNum} onChange={e => setAccountNum(e.target.value)} placeholder="Account number" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-account-number" />
               </>
             ) : (
-              <input value={linkedEmail} onChange={e => setLinkedEmail(e.target.value)} placeholder="Email / PayPal / Venmo linked account" className="w-full h-9 px-3 rounded-md border border-zinc-300 dark:border-zinc-600 bg-background text-sm" data-testid="input-bank-linked-email" />
+              <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-md bg-[#635bff] flex items-center justify-center text-white font-bold text-xs shrink-0">S</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Connect with Stripe</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      Link your bank securely through Stripe. Your account info is verified automatically — no need to type routing or account numbers.
+                    </p>
+                  </div>
+                </div>
+                {stripeStatus?.connected && (
+                  <div className="text-xs flex items-center gap-2">
+                    {stripeStatus.onboardingComplete ? (
+                      <><CheckCircle size={13} className="text-green-500" /> <span className="text-green-600 font-semibold">Bank linked</span>{stripeStatus.bank?.bankName && <span className="text-zinc-500">· {stripeStatus.bank.bankName} ····{stripeStatus.bank.last4}</span>}</>
+                    ) : (
+                      <><AlertCircle size={13} className="text-orange-500" /> <span className="text-orange-600 font-semibold">Onboarding incomplete</span><span className="text-zinc-500">— click below to finish</span></>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => stripeOnboardMutation.mutate()}
+                  disabled={stripeOnboardMutation.isPending}
+                  className="w-full h-9 rounded-md bg-[#635bff] hover:bg-[#5147e5] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                  data-testid="button-stripe-connect"
+                >
+                  {stripeOnboardMutation.isPending ? <Loader size={14} className="animate-spin" /> : (
+                    stripeStatus?.onboardingComplete ? 'Manage Stripe Account' : stripeStatus?.connected ? 'Resume Onboarding' : 'Connect Bank with Stripe'
+                  )}
+                </button>
+              </div>
             )}
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowBankForm(false)} className="h-9 px-4 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm" data-testid="button-bank-cancel">Cancel</button>
-              <button onClick={handleSaveBank} disabled={updateBankMutation.isPending} className="h-9 px-4 rounded-md bg-green-600 text-white text-sm font-semibold disabled:opacity-50" data-testid="button-bank-save">
-                {updateBankMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save'}
-              </button>
+              <button onClick={() => setShowBankForm(false)} className="h-9 px-4 rounded-md border border-zinc-300 dark:border-zinc-600 text-sm" data-testid="button-bank-cancel">{bankType === 'linked' ? 'Close' : 'Cancel'}</button>
+              {bankType === 'manual' && (
+                <button onClick={handleSaveBank} disabled={updateBankMutation.isPending} className="h-9 px-4 rounded-md bg-green-600 text-white text-sm font-semibold disabled:opacity-50" data-testid="button-bank-save">
+                  {updateBankMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save'}
+                </button>
+              )}
             </div>
           </div>
         )}

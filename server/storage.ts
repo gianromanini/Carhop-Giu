@@ -342,6 +342,10 @@ export class MemStorage implements IStorage {
         agreementAcceptedAt: h.agreementAcceptedAt ?? null,
         status: h.status ?? 'active',
         pickupLocations: h.pickupLocations ?? [],
+        bankAccount: null,
+        payoutSettings: null,
+        stripeAccountId: null,
+        stripeOnboardingComplete: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -894,6 +898,10 @@ export class MemStorage implements IStorage {
       agreementAccepted: hostData.agreementAccepted ?? false,
       agreementAcceptedAt: hostData.agreementAcceptedAt ?? null,
       status: hostData.status ?? 'active',
+      bankAccount: (hostData as any).bankAccount ?? null,
+      payoutSettings: (hostData as any).payoutSettings ?? null,
+      stripeAccountId: (hostData as any).stripeAccountId ?? null,
+      stripeOnboardingComplete: (hostData as any).stripeOnboardingComplete ?? false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
