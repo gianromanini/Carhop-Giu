@@ -1416,7 +1416,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Simple query without orderBy to avoid any issues
       const results = await this.db.select().from(bookings);
-      console.log(`[Storage] RAW DB FETCH: Found ${results.length} bookings in table at ${new Date().toISOString()}`);
+      // (Removed noisy per-request log)
       
       // Sort by ID descending in JavaScript
       const sorted = results.sort((a: Booking, b: Booking) => Number(b.id) - Number(a.id));
@@ -1454,7 +1454,8 @@ export class DatabaseStorage implements IStorage {
   async createBooking(booking: InsertBooking): Promise<Booking> {
     if (!this.initialized) throw new Error("Database not initialized");
     try {
-      console.log("[Storage] Creating booking:", JSON.stringify(booking).substring(0, 200));
+      // Avoid serializing the full booking (which contains base64 images)
+      console.log("[Storage] Creating booking:", booking.bookingCode);
       const result = await this.db.insert(bookings).values(booking).returning();
       console.log("[Storage] Booking created with ID:", result[0].id);
       return result[0];

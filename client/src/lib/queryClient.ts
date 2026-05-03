@@ -64,10 +64,10 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: 15000,
+      refetchInterval: false,
       refetchOnWindowFocus: true,
-      staleTime: 0,
-      gcTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 30 * 1000,
+      gcTime: 1000 * 60 * 5,
       retry: 3,
     },
     mutations: {

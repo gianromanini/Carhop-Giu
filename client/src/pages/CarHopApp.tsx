@@ -5639,7 +5639,7 @@ export default function CarHopApp() {
                         sortedHostVehicles.map((car: any) => (
                           <div key={car.id} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden" data-testid={`card-host-vehicle-${car.id}`}>
                             <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
-                              <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
+                              <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} loading="lazy" decoding="async" className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white truncate">{car.model} {car.year}</h4>
                                 <div className="flex flex-wrap gap-2 mt-1">
@@ -8379,7 +8379,7 @@ export default function CarHopApp() {
                   <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
                       <div className="relative overflow-hidden rounded-t-lg">
-                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} loading="lazy" decoding="async" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="p-4 sm:p-5">
                         <div className="flex justify-between items-start mb-1 gap-2">
@@ -8826,7 +8826,7 @@ export default function CarHopApp() {
                       return (
                         <div key={car.id}>
                           <div className={`flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 border ${isEditing ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-800'} rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`} data-testid={`card-admin-vehicle-${car.id}`}>
-                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded-lg" />
+                            <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} loading="lazy" decoding="async" className="w-12 h-12 object-cover rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm truncate">
                                 <span className="text-zinc-600 dark:text-zinc-300 font-medium">
@@ -10200,7 +10200,7 @@ export default function CarHopApp() {
                                 const hostNetProfit = grossRevenue - commissionEarned;
                                 return (
                                   <div key={car.id} onClick={() => setSelectedHostCarCommission({ car, host: selectedHost, trips: carBookings.length, grossRevenue, commissionEarned, hostNetProfit })} className="flex items-center gap-3 p-2 bg-zinc-900 rounded-lg cursor-pointer hover:bg-zinc-800 hover:border-green-500/50 border border-zinc-800 transition-all">
-                                    <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} className="w-12 h-12 object-cover rounded" />
+                                    <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=100&q=60'} alt={car.model} loading="lazy" decoding="async" className="w-12 h-12 object-cover rounded" />
                                     <div className="flex-1">
                                       <p className="text-sm font-bold text-white">{car.model}</p>
                                       <p className="text-xs text-zinc-500">${car.price}/day | {car.commission || 10}% commission | {carBookings.length} trips</p>
@@ -11413,7 +11413,7 @@ export default function CarHopApp() {
                             <div className="flex items-center gap-2 sm:gap-3">
                               {/* Vehicle Image */}
                               <div className="w-12 sm:w-16 h-9 sm:h-12 rounded overflow-hidden shrink-0">
-                                <img src={vehicle.images[0]} alt={vehicle.model} className="w-full h-full object-cover"/>
+                                <img src={vehicle.images[0]} alt={vehicle.model} loading="lazy" decoding="async" className="w-full h-full object-cover"/>
                               </div>
                               
                               {/* Vehicle Info */}
@@ -15045,7 +15045,7 @@ export default function CarHopApp() {
                     <div key={car.id} onClick={() => handleViewDetails(car)} data-testid={`card-host-vehicle-${car.id}`}>
                     <Card className="group cursor-pointer hover-elevate overflow-visible">
                       <div className="relative overflow-hidden rounded-t-lg">
-                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={car.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=60'} alt={car.model} loading="lazy" decoding="async" className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2 gap-2">

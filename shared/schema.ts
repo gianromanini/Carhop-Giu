@@ -116,7 +116,9 @@ export const vehicles = pgTable("vehicles", {
   }[]>().default([]),
   availabilityStatus: text("availability_status").default('available'),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_vehicles_host_id").on(table.hostId),
+]);
 
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
@@ -254,7 +256,12 @@ export const bookings = pgTable("bookings", {
   userId: varchar("user_id"),
   unread: boolean("unread").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_bookings_user_id").on(table.userId),
+  index("idx_bookings_vehicle_id").on(table.vehicleId),
+  index("idx_bookings_start_date").on(table.startDate),
+  index("idx_bookings_status").on(table.status),
+]);
 
 export const hosts = pgTable("hosts", {
   id: serial("id").primaryKey(),
@@ -364,7 +371,10 @@ export const supportMessages = pgTable("support_messages", {
   finishedAt: timestamp("finished_at"),
   chatStartedAt: timestamp("chat_started_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_support_messages_sender_id").on(table.senderId),
+  index("idx_support_messages_sender_type").on(table.senderType),
+]);
 
 export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true, adminRepliedAt: true, finishedAt: true, chatStartedAt: true });
 export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
