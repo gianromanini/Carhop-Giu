@@ -742,6 +742,11 @@ function StripePayoutPanel({ host, vehicles = [], bookings = [] }: { host: any; 
                     {bankAccount.last4 ? `····${bankAccount.last4}` : 'Account verified by Stripe'}
                   </p>
                 )}
+                {bankAccount?.routingNumber && bankAccount?.accountNumber && (
+                  <p className="text-xs text-zinc-500 mt-1 font-mono" data-testid="text-stripe-bank-numbers">
+                    Routing: {bankAccount.routingNumber} · Account: {bankAccount.accountNumber}
+                  </p>
+                )}
                 <p className="font-mono text-[10px] text-zinc-500 mt-1 truncate" data-testid="text-stripe-account-id">acct: {host?.stripeAccountId}</p>
               </div>
             </div>
@@ -764,8 +769,8 @@ function StripePayoutPanel({ host, vehicles = [], bookings = [] }: { host: any; 
                   <p className="text-sm font-semibold text-zinc-900 dark:text-white" data-testid="text-bank-name">{bankAccount.accountName || 'Manual Bank Account'}</p>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold uppercase">Manual</span>
                 </div>
-                <p className="text-xs text-zinc-500 mt-1" data-testid="text-bank-numbers">
-                  Routing ····{(bankAccount.routingNumber || '').slice(-4)} · Account ····{(bankAccount.accountNumber || '').slice(-4)}
+                <p className="text-xs text-zinc-500 mt-1 font-mono" data-testid="text-bank-numbers">
+                  Routing: {bankAccount.routingNumber || '—'} · Account: {bankAccount.accountNumber || '—'}
                 </p>
                 <p className="text-[10px] text-yellow-600 dark:text-yellow-400 mt-1">Manual entry — pay this host outside of Stripe (e.g. ACH/wire) and log it in their payout history.</p>
               </div>
@@ -10259,6 +10264,22 @@ export default function CarHopApp() {
                     <div className="space-y-2">
                       {hostsData.map((host: any) => {
                         const hostVehicles = vehicles.filter(v => v.hostId === String(host.id));
+                        const hostVehicleIds = new Set(hostVehicles.map(v => v.id));
+                        let netEarned = 0;
+                        (bookings || []).forEach((b: any) => {
+                          if (!hostVehicleIds.has(b.vehicleId)) return;
+                          if (b.status !== 'completed' && b.status !== 'checked_out') return;
+                          const veh = hostVehicles.find(v => v.id === b.vehicleId);
+                          const protectionAmount = b.protectionPlan && b.protectionPlan !== 'none' ? (b.protectionAmount || 0) : 0;
+                          const base = (b.total || 0) - protectionAmount;
+                          const commission = base * ((veh?.commission || 10) / 100);
+                          netEarned += base - commission;
+                        });
+                        const totalWithdrawn = host?.payoutSettings?.totalWithdrawn || 0;
+                        const available = Math.max(0, netEarned - totalWithdrawn);
+                        const lastPayoutAt = host?.payoutSettings?.lastPayoutAt ? new Date(host.payoutSettings.lastPayoutAt).getTime() : 0;
+                        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+                        const weeklyOverdue = available > 0 && (!lastPayoutAt || (Date.now() - lastPayoutAt) >= sevenDaysMs);
                         return (
                           <div key={host.id} onClick={() => {
                             setSelectedHost(host);
@@ -10267,13 +10288,20 @@ export default function CarHopApp() {
                               .then(r => r.ok ? r.json() : null)
                               .then(full => { if (full && full.id) setSelectedHost(full); })
                               .catch(() => {});
-                          }} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedHost?.id === host.id ? 'border-green-500 bg-green-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-${host.id}`}>
-                            <div className="flex justify-between items-start mb-1">
+                          }} className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedHost?.id === host.id ? 'border-green-500 bg-green-950/30' : weeklyOverdue ? 'border-yellow-500 bg-yellow-950/20 hover:bg-yellow-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-${host.id}`}>
+                            <div className="flex justify-between items-start mb-1 gap-1">
                               <span className="font-bold text-sm text-white">{host.firstName} {host.lastName}</span>
                               <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${host.status === 'active' ? 'bg-green-600 text-white' : 'bg-zinc-500 text-white'}`}>{host.status}</span>
                             </div>
                             <div className="text-xs text-zinc-500">@{host.username}</div>
                             <div className="text-xs text-zinc-400 mt-1">Vehicles: {hostVehicles.length}</div>
+                            {weeklyOverdue && (
+                              <div className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded bg-yellow-500/15 border border-yellow-500/40" data-testid={`alert-payout-due-${host.id}`}>
+                                <AlertTriangle size={12} className="text-yellow-500 shrink-0"/>
+                                <span className="text-[10px] font-bold text-yellow-200 uppercase tracking-wide">Weekly payout due</span>
+                                <span className="ml-auto text-[10px] font-bold text-yellow-300">${available.toFixed(2)}</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
