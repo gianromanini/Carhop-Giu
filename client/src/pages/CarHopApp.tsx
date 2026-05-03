@@ -607,9 +607,10 @@ interface FormDataType {
   [key: string]: any;
 }
 
-function StripePayoutPanel({ host }: { host: any }) {
+function StripePayoutPanel({ host, vehicles = [], bookings = [] }: { host: any; vehicles?: any[]; bookings?: any[] }) {
   const queryClient = useQueryClient();
   const hostId = host?.id;
+  const hostIdStr = String(hostId);
   const [amount, setAmount] = useState<string>('');
   const [note, setNote] = useState<string>('');
   const { toast } = useToast();
@@ -621,7 +622,39 @@ function StripePayoutPanel({ host }: { host: any }) {
   });
 
   const stripeTransfers = (payoutHistory || []).filter((p: any) => p.type === 'stripe').slice(0, 5);
+  const recentPayouts = (payoutHistory || []).slice(0, 8);
   const linked = !!host?.stripeAccountId && !!host?.stripeOnboardingComplete;
+  const bankAccount = host?.bankAccount || null;
+
+  // Earnings calculations matching the host's own payout view
+  const hostVehicleMap: Record<string, any> = Object.fromEntries(
+    (vehicles || []).filter((v: any) => String(v.hostId) === hostIdStr).map((v: any) => [v.id, v])
+  );
+  const isHostBooking = (b: any) => {
+    const bVehicleId = b.vehicleId ? String(b.vehicleId) : null;
+    const vehicle = (vehicles || []).find((v: any) => String(v.id) === bVehicleId);
+    if (vehicle && String(vehicle.hostId) === hostIdStr) return true;
+    if (String((b.details as any)?.hostId) === hostIdStr) return true;
+    return false;
+  };
+  const computeNet = (b: any) => {
+    const vehicle = hostVehicleMap[b.vehicleId];
+    const protectionAmount = (b.details as any)?.protection || 0;
+    const earningsBase = (b.total || 0) - protectionAmount;
+    const commission = vehicle ? (earningsBase * (vehicle.commission || 10) / 100) : (earningsBase * 0.10);
+    return earningsBase - commission;
+  };
+  const totalNetEarned = (bookings || [])
+    .filter((b: any) => isHostBooking(b) && b.status === 'Completed')
+    .reduce((sum: number, b: any) => sum + computeNet(b), 0);
+  const pendingNet = (bookings || [])
+    .filter((b: any) => isHostBooking(b) && (b.status === 'Active' || b.status === 'Extended'))
+    .reduce((sum: number, b: any) => sum + computeNet(b), 0);
+  const totalWithdrawn = (host?.payoutSettings?.totalWithdrawn) || 0;
+  const available = Math.max(0, totalNetEarned - totalWithdrawn);
+  const lastPayoutAt = host?.payoutSettings?.lastPayoutAt || null;
+  const fmt = (n: number) => `$${Number(n || 0).toFixed(2)}`;
+  const prefillAvailable = () => setAmount(available > 0 ? available.toFixed(2) : '');
 
   const sendMutation = useMutation({
     mutationFn: (data: { amount: number; note?: string; idempotencyKey: string }) =>
@@ -659,74 +692,196 @@ function StripePayoutPanel({ host }: { host: any }) {
   };
 
   return (
-    <div>
-      <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2 flex items-center gap-2">
-        <DollarSign size={13} /> Send Payout via Stripe
-      </h4>
-      <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-zinc-500">Stripe Connect status</span>
+    <div className="space-y-4">
+      {/* Earnings summary */}
+      <div>
+        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2 flex items-center gap-2">
+          <TrendingUp size={13} /> Earnings & Payouts
+        </h4>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 bg-zinc-50 dark:bg-zinc-900">
+            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-zinc-500">Net Earned</p>
+            <p className="text-sm sm:text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-host-net-earned">{fmt(totalNetEarned)}</p>
+          </div>
+          <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 bg-zinc-50 dark:bg-zinc-900">
+            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-zinc-500">Already Paid</p>
+            <p className="text-sm sm:text-lg font-bold text-blue-600 dark:text-blue-400" data-testid="text-host-paid">{fmt(totalWithdrawn)}</p>
+            {lastPayoutAt && (
+              <p className="text-[9px] text-zinc-500 mt-0.5">{new Date(lastPayoutAt).toLocaleDateString()}</p>
+            )}
+          </div>
+          <div className="rounded-md border border-green-300 dark:border-green-800 p-3 bg-green-50 dark:bg-green-900/20">
+            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-green-700 dark:text-green-400">Available</p>
+            <p className="text-sm sm:text-lg font-bold text-green-700 dark:text-green-400" data-testid="text-host-available">{fmt(available)}</p>
+          </div>
+          <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 bg-zinc-50 dark:bg-zinc-900">
+            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-zinc-500">Pending</p>
+            <p className="text-sm sm:text-lg font-bold text-orange-500" data-testid="text-host-pending">{fmt(pendingNet)}</p>
+            <p className="text-[9px] text-zinc-500 mt-0.5">Active trips</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bank account on file */}
+      <div>
+        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2 flex items-center gap-2">
+          <Building2 size={13} /> Bank Account on File
+        </h4>
+        <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900">
           {linked ? (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold uppercase" data-testid="badge-stripe-linked">Linked</span>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-md bg-[#635bff] flex items-center justify-center text-white font-bold text-xs shrink-0">S</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Stripe Connect (Express)</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold uppercase" data-testid="badge-stripe-linked">Linked</span>
+                </div>
+                {bankAccount?.type === 'linked' && (
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {bankAccount.bankName ? `${bankAccount.bankName} · ` : ''}
+                    {bankAccount.last4 ? `····${bankAccount.last4}` : 'Account verified by Stripe'}
+                  </p>
+                )}
+                <p className="font-mono text-[10px] text-zinc-500 mt-1 truncate" data-testid="text-stripe-account-id">acct: {host?.stripeAccountId}</p>
+              </div>
+            </div>
           ) : host?.stripeAccountId ? (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-bold uppercase" data-testid="badge-stripe-pending">Onboarding incomplete</span>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-md bg-yellow-500 flex items-center justify-center text-white font-bold text-xs shrink-0">!</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">Stripe onboarding incomplete</p>
+                <p className="text-xs text-zinc-500 mt-1">The host started Stripe Connect but did not finish verification. Stripe transfers are blocked until they complete onboarding.</p>
+                <p className="font-mono text-[10px] text-zinc-500 mt-1 truncate">acct: {host?.stripeAccountId}</p>
+              </div>
+            </div>
+          ) : bankAccount?.type === 'manual' ? (
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <CreditCard size={16} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white" data-testid="text-bank-name">{bankAccount.accountName || 'Manual Bank Account'}</p>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold uppercase">Manual</span>
+                </div>
+                <p className="text-xs text-zinc-500 mt-1" data-testid="text-bank-numbers">
+                  Routing ····{(bankAccount.routingNumber || '').slice(-4)} · Account ····{(bankAccount.accountNumber || '').slice(-4)}
+                </p>
+                <p className="text-[10px] text-yellow-600 dark:text-yellow-400 mt-1">Manual entry — pay this host outside of Stripe (e.g. ACH/wire) and log it in their payout history.</p>
+              </div>
+            </div>
+          ) : bankAccount?.type === 'linked' ? (
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                <CreditCard size={16} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">Linked Account</p>
+                <p className="text-xs text-zinc-500 mt-1">{bankAccount.linkedEmail}</p>
+              </div>
+            </div>
           ) : (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold uppercase" data-testid="badge-stripe-none">Not connected</span>
+            <p className="text-sm text-zinc-500" data-testid="text-no-bank">This host has not set up a payout method yet.</p>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div className="sm:col-span-1">
-            <label className="block text-[10px] uppercase text-zinc-500 mb-1">Amount (USD)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
-              data-testid="input-stripe-payout-amount"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-[10px] uppercase text-zinc-500 mb-1">Note (optional)</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. Weekly payout 05/01-05/07"
-              className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
-              data-testid="input-stripe-payout-note"
-            />
-          </div>
-        </div>
-        <Button
-          onClick={handleSend}
-          disabled={!linked || sendMutation.isPending}
-          className="w-full"
-          data-testid="button-send-stripe-payout"
-        >
-          {sendMutation.isPending ? 'Sending…' : 'Send Stripe Payout'}
-        </Button>
-        <p className="text-[10px] text-zinc-500">
-          Funds are transferred from your Stripe balance to the host's connected Express account. Stripe fees are charged separately.
-        </p>
+      </div>
 
-        {stripeTransfers.length > 0 && (
-          <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-            <p className="text-[10px] uppercase font-bold text-zinc-500 mb-2">Recent Stripe transfers</p>
-            <div className="space-y-1">
-              {stripeTransfers.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between text-xs" data-testid={`row-stripe-transfer-${p.id}`}>
-                  <span className="text-zinc-600 dark:text-zinc-300">
-                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'} · ${Number(p.amount).toFixed(2)}
-                  </span>
-                  <span className="font-mono text-[10px] text-zinc-500 truncate ml-2 max-w-[160px]">{p.stripeTransferId || ''}</span>
+      {/* Send payout */}
+      <div>
+        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2 flex items-center gap-2">
+          <DollarSign size={13} /> Send Payout via Stripe
+        </h4>
+        <div className="rounded-md border border-zinc-200 dark:border-zinc-700 p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="sm:col-span-1">
+              <label className="block text-[10px] uppercase text-zinc-500 mb-1">Amount (USD)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+                data-testid="input-stripe-payout-amount"
+              />
+              {available > 0 && (
+                <button
+                  type="button"
+                  onClick={prefillAvailable}
+                  className="text-[10px] text-blue-500 hover:underline mt-1"
+                  data-testid="button-prefill-available"
+                >
+                  Use available ({fmt(available)})
+                </button>
+              )}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[10px] uppercase text-zinc-500 mb-1">Note (optional)</label>
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. Weekly payout 05/01-05/07"
+                className="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-white"
+                data-testid="input-stripe-payout-note"
+              />
+            </div>
+          </div>
+          <Button
+            onClick={handleSend}
+            disabled={!linked || sendMutation.isPending}
+            className="w-full"
+            data-testid="button-send-stripe-payout"
+          >
+            {sendMutation.isPending ? 'Sending…' : linked ? 'Send Stripe Payout' : 'Stripe not linked'}
+          </Button>
+          <p className="text-[10px] text-zinc-500">
+            Funds are transferred from your Stripe balance to the host's connected Express account. Stripe fees are charged separately.
+          </p>
+        </div>
+      </div>
+
+      {/* Payout history */}
+      <div>
+        <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2 flex items-center gap-2">
+          <Receipt size={13} /> Payout History
+        </h4>
+        <div className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900">
+          {recentPayouts.length === 0 ? (
+            <p className="text-sm text-zinc-500 p-4 text-center" data-testid="text-no-payouts">No payouts recorded yet.</p>
+          ) : (
+            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              {recentPayouts.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between gap-2 p-3 text-xs" data-testid={`row-payout-${p.id}`}>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-zinc-900 dark:text-white">{fmt(p.amount)}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                        p.type === 'stripe'
+                          ? 'bg-[#635bff]/15 text-[#635bff]'
+                          : p.type === 'auto'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                      }`}>{p.type}</span>
+                    </div>
+                    <p className="text-zinc-500 mt-0.5">
+                      {p.createdAt ? new Date(p.createdAt).toLocaleString() : '—'}
+                      {p.note ? ` · ${p.note}` : ''}
+                    </p>
+                    {p.stripeTransferId && (
+                      <p className="font-mono text-[10px] text-zinc-500 truncate mt-0.5">{p.stripeTransferId}</p>
+                    )}
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold uppercase shrink-0">{p.status}</span>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+          {stripeTransfers.length === 0 && payoutHistory.length > recentPayouts.length && (
+            <p className="text-[10px] text-zinc-500 px-3 pb-2">Showing latest {recentPayouts.length} of {payoutHistory.length}.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -10356,7 +10511,7 @@ export default function CarHopApp() {
                             );
                           })()}
 
-                          <StripePayoutPanel host={selectedHost} />
+                          <StripePayoutPanel host={selectedHost} vehicles={vehicles} bookings={bookings} />
 
                           <div>
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-2">Host Vehicles ({vehicles.filter(v => v.hostId === String(selectedHost.id)).length})</h4>
