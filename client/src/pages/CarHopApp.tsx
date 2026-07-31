@@ -1561,6 +1561,7 @@ export default function CarHopApp() {
   const [deletingVehicleId, setDeletingVehicleId] = useState<number | null>(null);
   const [mobileActionsMenuOpen, setMobileActionsMenuOpen] = useState<boolean>(false);
   const [fleetSort, setFleetSort] = useState('brand-asc');
+  const [fleetStatusFilter, setFleetStatusFilter] = useState('all');
 
   const filteredAndSortedFleet = useMemo(() => {
     let result = [...(allVehicles.length > 0 ? allVehicles : vehicles)];
@@ -1585,6 +1586,17 @@ export default function CarHopApp() {
     refetchOnMount: true,
     refetchInterval: 30000 
   });
+
+  const adminFleetFiltered = useMemo(() => {
+    if (fleetStatusFilter === 'all') return filteredAndSortedFleet;
+    return filteredAndSortedFleet.filter((car: any) => {
+      const activeBooking = bookings.find((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
+      const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
+      const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
+      const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : (car.availabilityStatus || 'available');
+      return effectiveStatus === fleetStatusFilter;
+    });
+  }, [filteredAndSortedFleet, bookings, fleetStatusFilter]);
   
   
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
@@ -9124,26 +9136,55 @@ export default function CarHopApp() {
 
                 {/* Inventory - Vehicle Cards with Inline Edit */}
                 <Card className="p-3 sm:p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">Inventory ({vehicles.length})</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase">Sort by:</span>
-                      <select 
-                        value={fleetSort} 
-                        onChange={(e) => setFleetSort(e.target.value)}
-                        className="p-1.5 sm:p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs font-bold rounded-lg outline-none"
-                      >
-                        <option value="brand-asc">Brand (A-Z)</option>
-                        <option value="brand-desc">Brand (Z-A)</option>
-                        <option value="year-desc">Year (Newest)</option>
-                        <option value="year-asc">Year (Oldest)</option>
-                        <option value="host-asc">Host (A-Z)</option>
-                        <option value="host-desc">Host (Z-A)</option>
-                      </select>
+                  <div className="flex flex-col gap-3 mb-4 sm:mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">
+                        Inventory ({adminFleetFiltered.length}{fleetStatusFilter !== 'all' ? ` of ${filteredAndSortedFleet.length}` : ''})
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase">Sort by:</span>
+                        <select 
+                          value={fleetSort} 
+                          onChange={(e) => setFleetSort(e.target.value)}
+                          className="p-1.5 sm:p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-xs font-bold rounded-lg outline-none"
+                        >
+                          <option value="brand-asc">Brand (A-Z)</option>
+                          <option value="brand-desc">Brand (Z-A)</option>
+                          <option value="year-desc">Year (Newest)</option>
+                          <option value="year-asc">Year (Oldest)</option>
+                          <option value="host-asc">Host (A-Z)</option>
+                          <option value="host-desc">Host (Z-A)</option>
+                        </select>
+                      </div>
+                    </div>
+                    {/* Status filter pills */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { value: 'all', label: 'All', className: 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border-zinc-300 dark:border-zinc-600', activeClassName: 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-800 dark:border-zinc-100' },
+                        { value: 'booked', label: 'Booked', className: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800', activeClassName: 'bg-blue-600 text-white border-blue-600' },
+                        { value: 'on-trip', label: 'On a Trip', className: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800', activeClassName: 'bg-yellow-500 text-white border-yellow-500' },
+                        { value: 'available', label: 'Available', className: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800', activeClassName: 'bg-green-600 text-white border-green-600' },
+                        { value: 'unavailable', label: 'Unavailable', className: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800', activeClassName: 'bg-red-600 text-white border-red-600' },
+                      ].map(({ value, label, className, activeClassName }) => {
+                        const isActive = fleetStatusFilter === value;
+                        return (
+                          <button
+                            key={value}
+                            onClick={() => setFleetStatusFilter(value)}
+                            className={`text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border transition-all ${isActive ? activeClassName : className}`}
+                            data-testid={`filter-fleet-status-${value}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="space-y-2 sm:space-y-3 max-h-full overflow-y-auto">
-                    {filteredAndSortedFleet.map((car: any) => {
+                    {adminFleetFiltered.length === 0 ? (
+                      <div className="py-10 text-center text-zinc-400 text-sm">No vehicles match the selected status filter.</div>
+                    ) : null}
+                    {adminFleetFiltered.map((car: any) => {
                       const isEditing = editingId === car.id;
                       return (
                         <div key={car.id}>
