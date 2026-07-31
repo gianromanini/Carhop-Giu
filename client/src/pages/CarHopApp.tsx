@@ -6753,8 +6753,8 @@ export default function CarHopApp() {
                         const returnIsTomorrow = returnDate === tomorrow;
                         
                         return (
-                          <div key={b.id} onClick={() => { setHostManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-host-booking-${b.id}`}>
-                            {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
+                          <div key={b.id} onClick={() => { setHostManageBookingId(b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-all relative ${hostManageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : b.unread ? 'border-amber-500 bg-amber-950/20 shadow-[0_0_14px_rgba(245,158,11,0.35)] hover:bg-amber-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-host-booking-${b.id}`}>
+                            {b.unread && <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.8)]">NEW</div>}
                             <div className="flex justify-between items-start gap-3 mb-2">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
@@ -10738,8 +10738,8 @@ export default function CarHopApp() {
                         
                         return (
                           <div key={b.id} className="space-y-2">
-                            <div onClick={() => { setManageBookingId(manageBookingId === b.id ? null : b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-colors relative ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'} ${b.unread ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`} data-testid={`card-booking-${b.id}`}>
-                              {b.unread && <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" title="New booking" />}
+                            <div onClick={() => { setManageBookingId(manageBookingId === b.id ? null : b.id); if (b.unread) markBookingAsReadMutation.mutate(b.id); }} className={`p-3 rounded-lg border cursor-pointer transition-all relative ${manageBookingId === b.id ? 'border-blue-400 bg-blue-950/30' : b.unread ? 'border-amber-500 bg-amber-950/20 shadow-[0_0_14px_rgba(245,158,11,0.35)] hover:bg-amber-950/30' : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-800'}`} data-testid={`card-booking-${b.id}`}>
+                              {b.unread && <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.8)]">NEW</div>}
                               {/* Header: Code + Status Badge */}
                               <div className="flex justify-between items-center gap-2 mb-2">
                                 <div className="flex items-center gap-1 flex-1">
@@ -13171,11 +13171,11 @@ export default function CarHopApp() {
                         isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
                         normalizedStatus === 'pending approval' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
                         'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
-                      } ${b.unread ? 'ring-2 ring-cyan-500 ring-opacity-50' : ''}`} 
+                      } ${b.unread ? 'border-amber-500 shadow-[0_0_14px_rgba(245,158,11,0.35)]' : ''}`} 
                       data-testid={`card-my-booking-${b.id}`}
                     >
                       {b.unread && (
-                        <div className="absolute top-2 right-2 w-3 h-3 bg-cyan-500 rounded-full animate-pulse" title="New booking" />
+                        <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.8)]">NEW</div>
                       )}
                       <div 
                         className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
