@@ -5970,14 +5970,17 @@ export default function CarHopApp() {
                                 <p className="text-xs text-zinc-500 truncate mt-1">{car.fuel} · {car.category} · {car.seats}p</p>
                                 <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
                                 {(() => {
-                                  const isOnTrip = bookings.some((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
-                                  const effectiveStatus = isOnTrip ? 'on-trip' : ((car as any).availabilityStatus || 'available');
+                                  const activeBooking = bookings.find((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
+                                  const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
+                                  const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
+                                  const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : ((car as any).availabilityStatus || 'available');
                                   return (
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                       {effectiveStatus === 'on-trip' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700" data-testid={`badge-vehicle-status-${car.id}`}>On a Trip</span>}
+                                      {effectiveStatus === 'booked' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700" data-testid={`badge-vehicle-status-${car.id}`}>Booked</span>}
                                       {effectiveStatus === 'available' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700" data-testid={`badge-vehicle-status-${car.id}`}>Available</span>}
                                       {effectiveStatus === 'unavailable' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700" data-testid={`badge-vehicle-status-${car.id}`}>Unavailable</span>}
-                                      {!isOnTrip && (
+                                      {!isOnTrip && !isBooked && (
                                         <button
                                           onClick={(e) => { e.stopPropagation(); toggleVehicleAvailabilityMutation.mutate({ id: car.id, status: effectiveStatus === 'available' ? 'unavailable' : 'available' }); }}
                                           className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
@@ -9162,14 +9165,17 @@ export default function CarHopApp() {
                                 {car.licensePlate && <span>Plate:{car.licensePlate}</span>}
                               </p>
                               {(() => {
-                                const isOnTrip = bookings.some((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
-                                const effectiveStatus = isOnTrip ? 'on-trip' : ((car as any).availabilityStatus || 'available');
+                                const activeBooking = bookings.find((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
+                                const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
+                                const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
+                                const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : ((car as any).availabilityStatus || 'available');
                                 return (
                                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                     {effectiveStatus === 'on-trip' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>On a Trip</span>}
+                                    {effectiveStatus === 'booked' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Booked</span>}
                                     {effectiveStatus === 'available' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Available</span>}
                                     {effectiveStatus === 'unavailable' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Unavailable</span>}
-                                    {!isOnTrip && (
+                                    {!isOnTrip && !isBooked && (
                                       <button
                                         onClick={(e) => { e.stopPropagation(); toggleVehicleAvailabilityMutation.mutate({ id: car.id, status: effectiveStatus === 'available' ? 'unavailable' : 'available' }); }}
                                         className="text-[9px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
