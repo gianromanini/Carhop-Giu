@@ -7711,7 +7711,7 @@ export default function CarHopApp() {
                               <div className="flex gap-2 mb-4">
                                 {b.checkInStatus !== 'completed' && (
                                   <button
-                                    onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setManualCheckinGas('Full'); setShowManualCheckinModal(true); }}
+                                    onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setManualCheckinGas((b as any).hostCheckInData?.gas && (b as any).hostCheckInData.gas !== 'Unknown' ? (b as any).hostCheckInData.gas : 'Full'); setShowManualCheckinModal(true); }}
                                     className="flex-1 py-2 rounded-md border border-green-700 bg-green-950/40 text-green-400 text-xs font-bold hover:bg-green-900/50 transition-colors flex items-center justify-center gap-2"
                                     data-testid={`button-manual-checkin-${b.id}`}
                                   >
@@ -11125,7 +11125,7 @@ export default function CarHopApp() {
                                         <div className="flex gap-2 mb-4">
                                           {b.checkInStatus !== 'completed' && (
                                             <button
-                                              onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setManualCheckinGas('Full'); setShowManualCheckinModal(true); }}
+                                              onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setManualCheckinGas((b as any).hostCheckInData?.gas && (b as any).hostCheckInData.gas !== 'Unknown' ? (b as any).hostCheckInData.gas : 'Full'); setShowManualCheckinModal(true); }}
                                               className="flex-1 py-2 rounded-md border border-green-700 bg-green-950/40 text-green-400 text-xs font-bold hover:bg-green-900/50 transition-colors flex items-center justify-center gap-2"
                                               data-testid={`button-manual-checkin-admin-${b.id}`}
                                             >
@@ -15872,24 +15872,33 @@ export default function CarHopApp() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase block mb-1">Gas Level <span className="text-red-500">*</span></label>
-                <div className="flex gap-2">
-                  {['Empty', '1/4', '1/2', '3/4', 'Full'].map(level => (
-                    <button
-                      key={level}
-                      type="button"
-                      onClick={() => setManualCheckinGas(level)}
-                      className={`flex-1 py-1.5 rounded-md border text-xs font-semibold transition-colors ${
-                        manualCheckinGas === level
-                          ? 'border-green-500 bg-green-600 text-white'
-                          : 'border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400 hover:border-green-500 hover:text-green-400'
-                      }`}
-                      data-testid={`button-checkin-gas-${level}`}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-zinc-400 mt-1">This value will be recorded for both the guest and host check-in.</p>
+                {(manualCheckinBooking as any)?.hostCheckInData?.gas && (manualCheckinBooking as any).hostCheckInData.gas !== 'Unknown' ? (
+                  <div className="flex items-center gap-2 p-2 rounded-md border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800">
+                    <span className="text-sm font-bold text-zinc-900 dark:text-white">{(manualCheckinBooking as any).hostCheckInData.gas}</span>
+                    <span className="text-[10px] text-zinc-400">— copied from host check-in (locked)</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      {['Empty', '1/4', '1/2', '3/4', 'Full'].map(level => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setManualCheckinGas(level)}
+                          className={`flex-1 py-1.5 rounded-md border text-xs font-semibold transition-colors ${
+                            manualCheckinGas === level
+                              ? 'border-green-500 bg-green-600 text-white'
+                              : 'border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400 hover:border-green-500 hover:text-green-400'
+                          }`}
+                          data-testid={`button-checkin-gas-${level}`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-zinc-400 mt-1">No host check-in recorded — select the gas level manually.</p>
+                  </>
+                )}
               </div>
             </div>
 
