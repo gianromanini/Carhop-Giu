@@ -1433,6 +1433,7 @@ export default function CarHopApp() {
   const [showManualCheckinModal, setShowManualCheckinModal] = useState(false);
   const [manualCheckinBooking, setManualCheckinBooking] = useState<Booking | null>(null);
   const [manualCheckinNote, setManualCheckinNote] = useState('');
+  const [manualCheckinGas, setManualCheckinGas] = useState('Full');
 
   const [showHostTransferModal, setShowHostTransferModal] = useState(false);
   const [pendingHostTransfer, setPendingHostTransfer] = useState<{ vehicleId: number; vehicleModel: string; fromHostId: string; fromHostName: string; toHostId: string; toHostName: string } | null>(null);
@@ -2927,7 +2928,7 @@ export default function CarHopApp() {
     const b = manualCheckinBooking;
     const manualCheckData = {
       miles: (b as any).hostCheckInData?.miles || '0',
-      gas: 'Unknown',
+      gas: manualCheckinGas,
       photosOutside: [],
       photosInside: [],
       note: manualCheckinNote || 'Manual check-in by staff',
@@ -2951,6 +2952,7 @@ export default function CarHopApp() {
       setShowManualCheckinModal(false);
       setManualCheckinBooking(null);
       setManualCheckinNote('');
+      setManualCheckinGas('Full');
     } catch {
       toast({ title: 'Error', description: 'Failed to complete manual check-in.', variant: 'destructive' });
     }
@@ -7709,7 +7711,7 @@ export default function CarHopApp() {
                               <div className="flex gap-2 mb-4">
                                 {b.checkInStatus !== 'completed' && (
                                   <button
-                                    onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setShowManualCheckinModal(true); }}
+                                    onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setManualCheckinGas('Full'); setShowManualCheckinModal(true); }}
                                     className="flex-1 py-2 rounded-md border border-green-700 bg-green-950/40 text-green-400 text-xs font-bold hover:bg-green-900/50 transition-colors flex items-center justify-center gap-2"
                                     data-testid={`button-manual-checkin-${b.id}`}
                                   >
@@ -11123,7 +11125,7 @@ export default function CarHopApp() {
                                         <div className="flex gap-2 mb-4">
                                           {b.checkInStatus !== 'completed' && (
                                             <button
-                                              onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setShowManualCheckinModal(true); }}
+                                              onClick={(e: any) => { e.stopPropagation(); setManualCheckinBooking(b); setManualCheckinNote(''); setManualCheckinGas('Full'); setShowManualCheckinModal(true); }}
                                               className="flex-1 py-2 rounded-md border border-green-700 bg-green-950/40 text-green-400 text-xs font-bold hover:bg-green-900/50 transition-colors flex items-center justify-center gap-2"
                                               data-testid={`button-manual-checkin-admin-${b.id}`}
                                             >
@@ -15867,6 +15869,27 @@ export default function CarHopApp() {
                     data-testid="input-manual-checkin-note"
                   />
                 )}
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase block mb-1">Gas Level <span className="text-red-500">*</span></label>
+                <div className="flex gap-2">
+                  {['Empty', '1/4', '1/2', '3/4', 'Full'].map(level => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => setManualCheckinGas(level)}
+                      className={`flex-1 py-1.5 rounded-md border text-xs font-semibold transition-colors ${
+                        manualCheckinGas === level
+                          ? 'border-green-500 bg-green-600 text-white'
+                          : 'border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400 hover:border-green-500 hover:text-green-400'
+                      }`}
+                      data-testid={`button-checkin-gas-${level}`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-zinc-400 mt-1">This value will be recorded for both the guest and host check-in.</p>
               </div>
             </div>
 
