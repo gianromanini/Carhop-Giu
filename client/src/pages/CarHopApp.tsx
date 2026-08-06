@@ -1973,15 +1973,16 @@ export default function CarHopApp() {
     );
   }, [fullBookingCache]);
 
-  // Only fetch full booking images on demand when a specific booking is opened
+  // Always fetch the complete booking when a Host/Admin opens its detail panel.
+  // List responses are intentionally slimmed down, which can omit check-in details
+  // even when they do not contain an explicit [IMAGE] placeholder.
   useEffect(() => {
     const bookingId = manageBookingId || hostManageBookingId;
     if (!bookingId) return;
-    const booking = bookings.find(b => b.id === bookingId);
-    if (booking && bookingNeedsImageFetch(booking)) {
+    if (!fullBookingCache[bookingId] && !pendingFetchesRef.current.has(bookingId)) {
       fetchFullBooking(bookingId);
     }
-  }, [manageBookingId, hostManageBookingId, bookings, bookingNeedsImageFetch, fetchFullBooking]);
+  }, [manageBookingId, hostManageBookingId, fullBookingCache, fetchFullBooking]);
 
   // Fetch full booking images when admin selects a trip for viewing
   useEffect(() => {
@@ -7542,8 +7543,8 @@ export default function CarHopApp() {
                             const guestCheckInAllPhotos = [...(fullBooking.checkInData?.photosOutside || []), ...(fullBooking.checkInData?.photosInside || [])];
                             const guestCheckInPhotos = guestCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const guestCheckInLoading = guestCheckInAllPhotos.some((img: string) => img === '[IMAGE]');
-                            const hostCheckInDone = b.hostCheckInStatus === 'completed';
-                            const guestCheckInDone = b.checkInStatus === 'completed';
+                            const hostCheckInDone = fullBooking.hostCheckInStatus === 'completed';
+                            const guestCheckInDone = fullBooking.checkInStatus === 'completed';
                             const hasHostData = !!(fullBooking.hostCheckInData as any);
                             const hasGuestData = !!fullBooking.checkInData;
                             const totalCheckInPhotos = hostCheckInPhotos.length + guestCheckInPhotos.length;
