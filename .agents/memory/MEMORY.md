@@ -1,0 +1,1 @@
+- [Booking check-in media](booking-checkin-media.md) — every role's booking detail must fetch the full booking before rendering Host/Guest photos, gas, or mileage.
