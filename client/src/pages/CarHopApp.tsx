@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { 
@@ -1567,6 +1568,10 @@ export default function CarHopApp() {
   const [fleetSort, setFleetSort] = useState('brand-asc');
   const [fleetStatusFilter, setFleetStatusFilter] = useState('all');
   const [hostFleetStatusFilter, setHostFleetStatusFilter] = useState('all');
+  const [hostInlineEditorContainer, setHostInlineEditorContainer] = useState<HTMLDivElement | null>(null);
+  const hostInlineEditorRef = useCallback((node: HTMLDivElement | null) => {
+    setHostInlineEditorContainer(node);
+  }, []);
 
   const filteredAndSortedFleet = useMemo(() => {
     let result = [...(allVehicles.length > 0 ? allVehicles : vehicles)];
@@ -1760,8 +1765,8 @@ export default function CarHopApp() {
       setFormData(initialFormState); 
       setPricingStrings(defaultPricingStrings);
       setEditingId(null); 
+      setEditingHostVehicle(null);
       toast({ title: 'Vehicle updated successfully' });
-      window.scrollTo(0, 0);
     }
   });
 
@@ -6143,6 +6148,9 @@ export default function CarHopApp() {
                                 </button>
                               </div>
                             </div>
+                            {editingHostVehicle?.id === car.id && (
+                              <div ref={hostInlineEditorRef} data-testid={`inline-editor-vehicle-${car.id}`} />
+                            )}
                           </div>
                         ))
                       ) : (
@@ -6152,8 +6160,9 @@ export default function CarHopApp() {
                   </div>
                 </Card>
 
-                {/* Add/Edit Vehicle Form - Only shown when button clicked or editing */}
-                {(showHostAddVehicleForm || editingHostVehicle) && (
+                {/* Add Vehicle Form stays below the fleet; edit forms are portaled into their selected card. */}
+                {(showHostAddVehicleForm || editingHostVehicle) && (() => {
+                  const vehicleForm = (
                   <form onSubmit={(e) => {
                     e.preventDefault();
                     if (formData.vinNumber.length !== 17) {
@@ -6186,8 +6195,6 @@ export default function CarHopApp() {
 
                     if (editingHostVehicle) {
                       updateVehicleMutation.mutate({ id: editingHostVehicle.id, data: finalVehicleData });
-                      setEditingHostVehicle(null);
-                      setFormData(initialFormState);
                     } else {
                       createVehicleMutation.mutate(finalVehicleData);
                       setShowHostAddVehicleForm(false);
@@ -6670,7 +6677,12 @@ export default function CarHopApp() {
                       </div>
                     </Card>
                   </form>
-                )}
+                  );
+                  if (editingHostVehicle) {
+                    return hostInlineEditorContainer ? createPortal(vehicleForm, hostInlineEditorContainer) : null;
+                  }
+                  return vehicleForm;
+                })()}
               </div>
             );
           })()}
