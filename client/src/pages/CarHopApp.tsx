@@ -7637,8 +7637,8 @@ export default function CarHopApp() {
                             const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
                             const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                             const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
-                            const hostCheckOutDone = b.hostCheckOutStatus === 'completed';
-                            const guestCheckOutDone = b.checkOutStatus === 'completed';
+                            const hostCheckOutDone = fullBooking.hostCheckOutStatus === 'completed';
+                            const guestCheckOutDone = fullBooking.checkOutStatus === 'completed';
                             const hasHostData = !!(fullBooking.hostCheckOutData as any);
                             const hasGuestData = !!fullBooking.checkOutData;
                             const totalCheckOutPhotos = hostCheckOutPhotos.length + guestCheckOutPhotos.length;
@@ -7685,7 +7685,9 @@ export default function CarHopApp() {
                                             </div>
                                           ) : hostCheckOutLoading ? (
                                             <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
-                                          ) : null}
+                                          ) : (
+                                            <p className="text-xs text-zinc-500 mt-2">No photos recorded</p>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -7707,7 +7709,9 @@ export default function CarHopApp() {
                                             </div>
                                           ) : guestCheckOutLoading ? (
                                             <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
-                                          ) : null}
+                                          ) : (
+                                            <p className="text-xs text-zinc-500 mt-2">No photos recorded</p>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -11201,8 +11205,8 @@ export default function CarHopApp() {
                                         const guestCheckOutAllPhotos = [...(fullBooking.checkOutData?.photosOutside || []), ...(fullBooking.checkOutData?.photosInside || [])];
                                         const guestCheckOutPhotos = guestCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                         const guestCheckOutLoading = guestCheckOutAllPhotos.some((img: string) => img === '[IMAGE]');
-                                        const guestInDone = b.checkInStatus === 'completed';
-                                        const guestOutDone = b.checkOutStatus === 'completed';
+                                        const guestInDone = fullBooking.checkInStatus === 'completed';
+                                        const guestOutDone = fullBooking.checkOutStatus === 'completed';
                                         const hasGuestInData = !!fullBooking.checkInData;
                                         const hasGuestOutData = !!fullBooking.checkOutData;
                                         const totalPhotos = guestCheckInPhotos.length + guestCheckOutPhotos.length;
@@ -11214,8 +11218,8 @@ export default function CarHopApp() {
                                         const hostCheckInPhotos = hostCheckInAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
                                         const hostCheckOutAllPhotos = [...(fullBooking.hostCheckOutData?.photosOutside || []), ...(fullBooking.hostCheckOutData?.photosInside || [])];
                                         const hostCheckOutPhotos = hostCheckOutAllPhotos.filter((img: string) => img && img !== '[IMAGE]' && (img.startsWith('data:') || img.startsWith('http')));
-                                        const hostInDone = b.hostCheckInStatus === 'completed';
-                                        const hostOutDone = b.hostCheckOutStatus === 'completed';
+                                        const hostInDone = fullBooking.hostCheckInStatus === 'completed';
+                                        const hostOutDone = fullBooking.hostCheckOutStatus === 'completed';
                                         const hostTotalPhotos = hostCheckInPhotos.length + hostCheckOutPhotos.length;
                                         const hostSectionKey = `adminlist-host-${b.id}`;
                                         const hostRegionId = `adminlist-host-region-${b.id}`;
@@ -11253,10 +11257,10 @@ export default function CarHopApp() {
                                               {isHostExpanded && (
                                                 <div id={hostRegionId} role="region" className="p-3 bg-white dark:bg-zinc-900 space-y-3 animate-in slide-in-from-top-2 duration-300">
                                                   {/* Host In Data */}
-                                                  {hostInDone && (
-                                                    <div className="p-3 rounded-lg border bg-green-950/10 border-green-900/20">
+                                                   {(hostInDone || fullBooking.hostCheckInData) && (
+                                                     <div className="p-3 rounded-lg border bg-green-950/10 border-green-900/20">
                                                       <p className="text-xs font-bold text-green-500 uppercase mb-2">Host Check-In</p>
-                                                      <p className="text-xs text-zinc-400">Miles: {b.hostCheckInData?.miles} | Gas: {b.hostCheckInData?.gas}</p>
+                                                       <p className="text-xs text-zinc-400">Miles: {fullBooking.hostCheckInData?.miles || 'Not recorded'} | Gas: {fullBooking.hostCheckInData?.gas || 'Not recorded'}</p>
                                                       {hostCheckInPhotos.length > 0 && (
                                                         <div className="grid grid-cols-3 gap-1 mt-2">
                                                           {hostCheckInPhotos.map((photo: string, idx: number) => (
@@ -11266,13 +11270,16 @@ export default function CarHopApp() {
                                                           ))}
                                                         </div>
                                                       )}
+                                                       {hostCheckInPhotos.length === 0 && (
+                                                         <p className="text-xs text-zinc-500 mt-2">No photos recorded</p>
+                                                       )}
                                                     </div>
                                                   )}
                                                   {/* Host Out Data */}
-                                                  {hostOutDone && (
+                                                   {(hostOutDone || fullBooking.hostCheckOutData) && (
                                                     <div className="p-3 rounded-lg border bg-orange-950/10 border-orange-900/20">
                                                       <p className="text-xs font-bold text-orange-500 uppercase mb-2">Host Check-Out</p>
-                                                      <p className="text-xs text-zinc-400">Miles: {b.hostCheckOutData?.miles} | Gas: {b.hostCheckOutData?.gas}</p>
+                                                       <p className="text-xs text-zinc-400">Miles: {fullBooking.hostCheckOutData?.miles || 'Not recorded'} | Gas: {fullBooking.hostCheckOutData?.gas || 'Not recorded'}</p>
                                                       {hostCheckOutPhotos.length > 0 && (
                                                         <div className="grid grid-cols-3 gap-1 mt-2">
                                                           {hostCheckOutPhotos.map((photo: string, idx: number) => (
@@ -11282,6 +11289,9 @@ export default function CarHopApp() {
                                                           ))}
                                                         </div>
                                                       )}
+                                                       {hostCheckOutPhotos.length === 0 && (
+                                                         <p className="text-xs text-zinc-500 mt-2">No photos recorded</p>
+                                                       )}
                                                     </div>
                                                   )}
                                                   {!hostInDone && !hostOutDone && <p className="text-xs text-zinc-500 italic">No host verification data yet</p>}
@@ -11326,7 +11336,7 @@ export default function CarHopApp() {
                                                     </div>
                                                     {hasGuestInData && (
                                                       <div>
-                                                        <p className="text-xs text-zinc-400">Miles: {b.checkInData?.miles} | Gas: {b.checkInData?.gas}</p>
+                                                        <p className="text-xs text-zinc-400">Miles: {fullBooking.checkInData?.miles || 'Not recorded'} | Gas: {fullBooking.checkInData?.gas || 'Not recorded'}</p>
                                                         {guestCheckInPhotos.length > 0 ? (
                                                           <div className="grid grid-cols-3 gap-1 mt-2">
                                                             {guestCheckInPhotos.map((photo: string, idx: number) => (
@@ -11338,7 +11348,7 @@ export default function CarHopApp() {
                                                         ) : guestCheckInLoading ? (
                                                           <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
                                                         ) : (
-                                                          <p className="text-xs text-zinc-500 mt-2">No photos</p>
+                                                          <p className="text-xs text-zinc-500 mt-2">No photos recorded</p>
                                                         )}
                                                       </div>
                                                     )}
@@ -11350,7 +11360,7 @@ export default function CarHopApp() {
                                                     </div>
                                                     {hasGuestOutData && (
                                                       <div>
-                                                        <p className="text-xs text-zinc-400">Miles: {b.checkOutData?.miles} | Gas: {b.checkOutData?.gas}</p>
+                                                        <p className="text-xs text-zinc-400">Miles: {fullBooking.checkOutData?.miles || 'Not recorded'} | Gas: {fullBooking.checkOutData?.gas || 'Not recorded'}</p>
                                                         {guestCheckOutPhotos.length > 0 ? (
                                                           <div className="grid grid-cols-3 gap-1 mt-2">
                                                             {guestCheckOutPhotos.map((photo: string, idx: number) => (
@@ -11362,7 +11372,7 @@ export default function CarHopApp() {
                                                         ) : guestCheckOutLoading ? (
                                                           <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1"><Loader size={12} className="animate-spin"/> Loading photos...</p>
                                                         ) : (
-                                                          <p className="text-xs text-zinc-500 mt-2">No photos</p>
+                                                          <p className="text-xs text-zinc-500 mt-2">No photos recorded</p>
                                                         )}
                                                       </div>
                                                     )}
