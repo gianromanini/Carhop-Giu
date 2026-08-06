@@ -50,3 +50,7 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = "587"
 EMAIL_FROM = "carhopcompany@gmail.com"
 VITE_GOOGLE_MAPS_API_KEY = "AIzaSyDXddcKPLeE8OvKWlt-_SNEWy-bhoNsDK0"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000
