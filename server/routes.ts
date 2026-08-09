@@ -174,6 +174,88 @@ async function sendDeliveryApprovalEmail(booking: any, status: 'approved' | 'rej
   }
 }
 
+// Helper: convert 12-hour time string to 24-hour (server-side)
+function convertTimeTo24HourServer(timeStr: string): string {
+  const parts = (timeStr || '12:00 PM').trim().split(' ');
+  const [time, period] = [parts[0], parts[1] || 'AM'];
+  let [h, m] = time.split(':').map(Number);
+  if (period.toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+async function sendForceExtendEmail(booking: any, newReturnDate: string, newReturnTime: string, extraDays: number, extraCost: number, note?: string) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Trip Extended #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Trip Extended!</h1>
+          </div>
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+              Your trip for <strong>${booking.carName}</strong> has been extended by the host.
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+              <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}</p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">New Return Date:</strong> ${newReturnDate} at ${newReturnTime}</p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Extra Days:</strong> ${extraDays}</p>
+              <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">Additional Charge:</strong> $${extraCost.toFixed(2)}</p>
+              ${note ? `<p style="margin: 10px 0 0 0; color: #6b7280;"><strong style="color: #1f2937;">Note:</strong> ${note}</p>` : ''}
+            </div>
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622.<br/>CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Error sending force-extend email:", error);
+  }
+}
+
+async function sendLateReturnEmail(booking: any, extraDays: number, lateReturnFee: number) {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Late Return Fee Applied #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Late Return Fee</h1>
+          </div>
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
+              Your vehicle was returned after the scheduled return date. A late return fee has been applied.
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+              <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}</p>
+              <p style="margin: 0 0 10px 0; color: #6b7280;"><strong style="color: #1f2937;">Extra Days:</strong> ${extraDays}</p>
+              <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">Late Return Fee:</strong> $${lateReturnFee.toFixed(2)}</p>
+            </div>
+            <p style="font-size: 12px; color: #9ca3af; margin: 20px 0 0 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              Questions? Contact us at (475) 449-8622.<br/>CarHop LLC - Connecticut, USA
+            </p>
+          </div>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Error sending late return email:", error);
+  }
+}
+
 async function sendExtensionResponseEmail(booking: any, status: 'approved' | 'rejected', requestDetails: any) {
   const clientEmail = booking.driver?.email;
   if (!clientEmail) return;
@@ -1467,6 +1549,193 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json(updated);
   });
 
+  // ========== FORCE EXTEND (Host/Admin only — no guest request needed) ==========
+  app.post("/api/bookings/:id/force-extend", async (req: any, res) => {
+    // Auth: accept either a Passport session (isAdmin/isHost flags) OR an Express session established
+    // by POST /api/hosts/login (authenticatedHostEmail) or POST /api/admin/session-auth (adminAuthenticated).
+    const passportAuth = typeof req.isAuthenticated === 'function' && req.isAuthenticated();
+    const sessionAdminAuth: boolean = req.session?.adminAuthenticated === true;
+    const sessionHostEmail: string = (req.session?.authenticatedHostEmail || '').toLowerCase().trim();
+
+    const callerIsAdmin = (passportAuth && req.user?.isAdmin === true) || sessionAdminAuth;
+    const callerIsHostViaPassport = passportAuth && req.user?.isHost === true;
+    const callerIsHostViaSession = !!sessionHostEmail;
+    const callerIsHost = callerIsHostViaPassport || callerIsHostViaSession;
+
+    if (!callerIsAdmin && !callerIsHost) {
+      return res.status(401).json({ error: "Authentication required. Please sign in as a host or admin." });
+    }
+
+    const id = parseInt(req.params.id);
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    // For non-admin callers, verify host ownership of the booking's vehicle
+    if (!callerIsAdmin) {
+      const actorEmail: string = callerIsHostViaPassport
+        ? (req.user?.email || '').toLowerCase().trim()
+        : sessionHostEmail;
+
+      if (!booking.vehicleId) {
+        return res.status(403).json({ error: "Forbidden: vehicle has no associated host" });
+      }
+      const vehicleForAuth = await storage.getVehicle(booking.vehicleId).catch(() => null);
+      if (!vehicleForAuth?.hostId) {
+        return res.status(403).json({ error: "Forbidden: vehicle has no associated host" });
+      }
+      const hostForAuth = await storage.getHost(parseInt(vehicleForAuth.hostId)).catch(() => null);
+      if (!hostForAuth || hostForAuth.email.toLowerCase().trim() !== actorEmail) {
+        return res.status(403).json({ error: "Forbidden: only the vehicle's host or an admin may extend this booking" });
+      }
+    }
+
+    // Lifecycle state guard: only Active or Extended bookings that are not yet checked out may be extended
+    const EXTENDABLE_STATUSES = ['Active', 'Extended'];
+    if (!EXTENDABLE_STATUSES.includes(booking.status)) {
+      return res.status(409).json({
+        error: `Cannot extend a booking with status '${booking.status}'. Only Active or Extended bookings may be extended.`,
+      });
+    }
+    if (booking.checkOutStatus === 'completed') {
+      return res.status(409).json({
+        error: "Cannot extend a booking that has already been checked out.",
+      });
+    }
+
+    const { returnDate, returnTime, note } = req.body;
+
+    // Validate presence and format of returnDate (YYYY-MM-DD) and returnTime
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    const TIME_12H_RE = /^(1[0-2]|0?[1-9]):[0-5]\d\s?(AM|PM)$/i;
+    if (!returnDate || !returnTime) {
+      return res.status(400).json({ error: "returnDate and returnTime are required" });
+    }
+    if (!ISO_DATE_RE.test(returnDate)) {
+      return res.status(400).json({ error: "returnDate must be in YYYY-MM-DD format" });
+    }
+    if (!TIME_12H_RE.test(String(returnTime).trim())) {
+      return res.status(400).json({ error: "returnTime must be in h:mm AM/PM format (e.g. '10:00 AM')" });
+    }
+
+    // Validate the calendar date is a real date (rejects e.g. Feb 30, Apr 31)
+    const [rdYear, rdMonth, rdDay] = returnDate.split('-').map(Number);
+    const calendarCheck = new Date(rdYear, rdMonth - 1, rdDay);
+    if (
+      calendarCheck.getFullYear() !== rdYear ||
+      calendarCheck.getMonth() !== rdMonth - 1 ||
+      calendarCheck.getDate() !== rdDay
+    ) {
+      return res.status(400).json({ error: `'${returnDate}' is not a valid calendar date` });
+    }
+
+    // Parse and validate datetimes are finite
+    const currentReturnHHMM = convertTimeTo24HourServer(booking.returnTime || '12:00 PM');
+    const currentReturnDT = new Date(`${booking.returnDate}T${currentReturnHHMM}:00`);
+    const newReturnHHMM = convertTimeTo24HourServer(returnTime);
+    const newReturnDT = new Date(`${returnDate}T${newReturnHHMM}:00`);
+
+    if (!isFinite(currentReturnDT.getTime()) || !isFinite(newReturnDT.getTime())) {
+      return res.status(400).json({ error: "Invalid date or time value" });
+    }
+
+    if (newReturnDT <= currentReturnDT) {
+      return res.status(400).json({ error: "New return date must be after the current return date" });
+    }
+
+    // Conflict check — ensure no other booking overlaps the extended window (full datetime precision)
+    if (booking.vehicleId) {
+      const allBookings = await storage.getBookings();
+      const excluded = ['Cancelled', 'Completed', 'Declined'];
+      // Window being extended: from current returnDate/Time to new returnDate/Time
+      const windowStart = currentReturnDT;
+      const windowEnd = newReturnDT;
+      const conflicting = allBookings.find(b => {
+        if (b.id === id) return false;
+        if (b.vehicleId !== booking.vehicleId) return false;
+        if (excluded.includes(b.status)) return false;
+        // Build full datetimes for the candidate booking
+        const bStartHHMM = convertTimeTo24HourServer(b.startTime || '10:00 AM');
+        const bEndHHMM = convertTimeTo24HourServer(b.returnTime || '10:00 AM');
+        const bStartDT = new Date(`${b.startDate}T${bStartHHMM}:00`);
+        const bEndDT = new Date(`${b.returnDate}T${bEndHHMM}:00`);
+        // Overlap if the candidate's window intersects [windowStart, windowEnd)
+        return bStartDT < windowEnd && bEndDT > windowStart;
+      });
+      if (conflicting) {
+        return res.status(409).json({
+          error: "Vehicle is already booked for those dates",
+          conflictingBooking: conflicting.bookingCode,
+        });
+      }
+    }
+
+    // Billing: calculate incremental cost from current returnDT → new returnDT (not from startDate)
+    // This ensures a same-day time-only extension still produces the correct charge.
+    const extensionMs = newReturnDT.getTime() - currentReturnDT.getTime();
+    const extraDays = Math.max(0, Math.ceil(extensionMs / (1000 * 60 * 60 * 24)));
+    // New total days = original days + incremental days
+    const newDays = Math.max(1, (booking.days || 1) + extraDays);
+
+    const allSettings = await storage.getAllSettings();
+    const settingsObj: Record<string, any> = {};
+    allSettings.forEach(s => (settingsObj[s.key] = s.value));
+
+    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
+    const pricePerDay = vehicle?.price || 0;
+    const rateDifference = pricePerDay * extraDays;
+    const oldExtendedRate = booking.details?.extendedRate || 0;
+    const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
+
+    const oldTax = booking.details?.tax || 0;
+    const taxRate = (settingsObj.taxes || 0) / 100;
+    const taxAdjustment = rateDifference * taxRate;
+    const newTax = oldTax + taxAdjustment;
+
+    // Incremental total: add only the extension delta (rate difference + its tax) to the existing total.
+    // This preserves every component already in booking.total (extras, fees, delivery, discounts,
+    // manual charges, existing tax, etc.) without risk of recomputing them differently from the UI.
+    const newTotal = (booking.total || 0) + rateDifference + taxAdjustment;
+
+    // Append a system message notifying the guest
+    const noteText = note ? ` Note: ${note}` : '';
+    const totalAddition = rateDifference + taxAdjustment;
+    const systemMsg = {
+      id: `msg-${Date.now()}`,
+      read: false,
+      sender: 'admin' as const,
+      text: `Your trip has been extended to ${returnDate} at ${returnTime}. ${totalAddition > 0 ? `Additional charge: $${totalAddition.toFixed(2)}.` : ''}${noteText}`,
+      createdAt: new Date().toISOString(),
+    };
+    const messages = [...(booking.messages || []), systemMsg];
+
+    const updateData: any = {
+      returnDate,
+      returnTime,
+      days: newDays,
+      details: {
+        ...booking.details,
+        extendedRate: newExtendedRate,
+        tax: newTax,
+      },
+      total: newTotal,
+      messages,
+      carName: booking.carName,
+      vehicleId: booking.vehicleId,
+    };
+
+    const updated = await storage.updateBooking(id, updateData);
+    if (!updated) return res.status(404).json({ error: "Booking not found after update" });
+
+    // Send email notification to guest (async, don't block response)
+    (async () => {
+      try {
+        await sendForceExtendEmail(updated, returnDate, returnTime, extraDays, totalAddition, note);
+      } catch {}
+    })();
+
+    res.json(updated);
+  });
+
   // ========== DELIVERY APPROVAL ==========
   app.put("/api/bookings/:id/accept-pickup", async (req, res) => {
     const id = parseInt(req.params.id);
@@ -2061,7 +2330,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // Host login
-  app.post("/api/hosts/login", async (req, res) => {
+  app.post("/api/hosts/login", async (req: any, res) => {
     try {
       const { username, password } = req.body;
 
@@ -2079,6 +2348,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         return res.status(403).json({ message: "Account is not active" });
       }
 
+      // Establish server-side session so privileged endpoints (e.g. force-extend) can verify host identity
+      req.session.authenticatedHostId = host.id;
+      req.session.authenticatedHostEmail = host.email;
+      req.session.authenticatedHostAt = new Date().toISOString();
+
       res.json({ 
         message: "Login successful", 
         host: { ...host, passwordHash: undefined }
@@ -2087,6 +2361,42 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       console.error("Error logging in host:", error);
       res.status(500).json({ message: "Failed to login" });
     }
+  });
+
+  app.post("/api/hosts/logout-session", async (req: any, res) => {
+    // Clear the host session variables (does not destroy the full Passport session)
+    delete req.session.authenticatedHostId;
+    delete req.session.authenticatedHostEmail;
+    delete req.session.authenticatedHostAt;
+    res.json({ message: "Host session cleared" });
+  });
+
+  // ========== ADMIN SESSION AUTH ==========
+  // Establishes a server-side session for admin access to privileged endpoints.
+  // Password is read from ADMIN_PASSWORD env var; defaults to the same value as the client-side check.
+  app.post("/api/admin/session-auth", async (req: any, res) => {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "Password required" });
+
+    // ADMIN_PASSWORD must be set as a server secret; no default fallback to avoid source-visible bypass
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      console.error("[API] ADMIN_PASSWORD environment secret is not configured");
+      return res.status(503).json({ error: "Admin authentication is not configured on this server" });
+    }
+    if (password !== adminPassword) {
+      return res.status(401).json({ error: "Invalid admin password" });
+    }
+
+    req.session.adminAuthenticated = true;
+    req.session.adminAuthenticatedAt = new Date().toISOString();
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/session-logout", async (req: any, res) => {
+    delete req.session.adminAuthenticated;
+    delete req.session.adminAuthenticatedAt;
+    res.json({ message: "Admin session cleared" });
   });
 
   // Host profile update (self-service with limited fields)

@@ -1413,6 +1413,10 @@ export default function CarHopApp() {
   const [chatBookingId, setChatBookingId] = useState<number | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [extensionRequestReason, setExtensionRequestReason] = useState('');
+  const [forceExtendingBookingId, setForceExtendingBookingId] = useState<number | null>(null);
+  const [forceExtendDate, setForceExtendDate] = useState('');
+  const [forceExtendTime, setForceExtendTime] = useState('12:00 PM');
+  const [forceExtendNote, setForceExtendNote] = useState('');
   const [pendingDeliveryBookingId, setPendingDeliveryBookingId] = useState<number | null>(null);
   const [bookingFilterType, setBookingFilterType] = useState<'end-soon' | 'start-first'>('start-first');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<string>('');
@@ -3033,6 +3037,40 @@ export default function CarHopApp() {
     }
   };
 
+  const handleForceExtend = async (booking: Booking) => {
+    if (!forceExtendDate) {
+      toast({ title: 'Select a return date', variant: 'destructive' });
+      return;
+    }
+    const oldReturn = new Date(`${booking.returnDate}T${convertTo24Hour(booking.returnTime || '12:00 PM')}:00`);
+    const newReturn = new Date(`${forceExtendDate}T${convertTo24Hour(forceExtendTime)}:00`);
+    if (newReturn <= oldReturn) {
+      toast({ title: 'Invalid date', description: 'New return date must be after the current return date.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await apiRequest('POST', `/api/bookings/${booking.id}/force-extend`, {
+        returnDate: forceExtendDate,
+        returnTime: forceExtendTime,
+        note: forceExtendNote || undefined,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      setForceExtendingBookingId(null);
+      setForceExtendDate('');
+      setForceExtendNote('');
+      toast({ title: '✅ Trip Extended', description: `New return: ${forceExtendDate} at ${forceExtendTime}. Extra cost added to booking.` });
+    } catch (error: any) {
+      const msg = String(error?.message || '');
+      if (msg.includes('already booked')) {
+        toast({ title: 'Date unavailable', description: 'Vehicle is already booked for those dates.', variant: 'destructive' });
+      } else if (msg.includes('after')) {
+        toast({ title: 'Invalid date', description: 'New return date must be after the current return date.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Extension failed', description: msg || 'Please try again.', variant: 'destructive' });
+      }
+    }
+  };
+
   const sendChatMessage = async (bookingId: number, sender: 'client' | 'admin' | 'host') => {
     if (!chatMessage.trim()) return;
     await apiRequest('POST', `/api/bookings/${bookingId}/messages`, { sender, text: chatMessage });
@@ -4032,16 +4070,26 @@ export default function CarHopApp() {
             
             <h2 className="text-2xl font-bold mb-6 text-center text-zinc-900 dark:text-white">Admin Access</h2>
             
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              if (adminPasswordInput === 'xablau321') {
-                setAdminAuthenticated(true);
-                setShowAdminPasswordModal(false);
-                setAdminPasswordInput('');
-                setAdminPasswordError('');
-                setView('admin');
-              } else {
-                setAdminPasswordError('Incorrect password');
+              try {
+                const resp = await fetch('/api/admin/session-auth', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ password: adminPasswordInput }),
+                });
+                if (resp.ok) {
+                  setAdminAuthenticated(true);
+                  setShowAdminPasswordModal(false);
+                  setAdminPasswordInput('');
+                  setAdminPasswordError('');
+                  setView('admin');
+                } else {
+                  setAdminPasswordError('Incorrect password');
+                }
+              } catch {
+                setAdminPasswordError('Connection error. Please try again.');
               }
             }} className="space-y-4">
               <div>
@@ -7791,6 +7839,54 @@ export default function CarHopApp() {
                               </div>
                             )}
 
+                          {/* Force Extend Trip — Host Panel */}
+                          {(b.status === 'Active' || b.status === 'Extended') && b.checkOutStatus !== 'completed' && (
+                            <div className="mb-4">
+                              {forceExtendingBookingId !== b.id ? (
+                                <button
+                                  onClick={(e: any) => { e.stopPropagation(); setForceExtendingBookingId(b.id); setForceExtendDate(b.returnDate); setForceExtendTime(b.returnTime || '12:00 PM'); setForceExtendNote(''); }}
+                                  className="w-full py-2 rounded-md border border-blue-700 bg-blue-950/40 text-blue-400 text-xs font-bold hover:bg-blue-900/50 transition-colors flex items-center justify-center gap-2"
+                                  data-testid={`button-force-extend-host-${b.id}`}
+                                >
+                                  <CalendarClock size={12} /> Extend Trip
+                                </button>
+                              ) : (
+                                <div className="animate-in fade-in slide-in-from-top-2 bg-zinc-800 border border-blue-700 rounded-lg p-4 space-y-3">
+                                  <h4 className="text-xs font-bold text-blue-300 uppercase tracking-wider flex items-center gap-2"><CalendarClock size={12}/> Extend Trip (No Approval Needed)</h4>
+                                  <p className="text-xs text-zinc-400">Sets a new return date immediately. Extra days are charged to the booking automatically and the guest is notified by email.</p>
+                                  {(() => {
+                                    if (!forceExtendDate) return null;
+                                    const oldReturn = new Date(`${b.returnDate}T${convertTo24Hour(b.returnTime || '12:00 PM')}:00`);
+                                    const newReturn = new Date(`${forceExtendDate}T${convertTo24Hour(forceExtendTime)}:00`);
+                                    const diffMs = newReturn.getTime() - oldReturn.getTime();
+                                    const extraDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                                    if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
+                                    const pricePerDay = vehicles.find(v => v.id === b.vehicleId)?.price || 0;
+                                    const extraCost = pricePerDay * extraDays;
+                                    const taxRate = (vehicles.find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
+                                    const extraTax = extraCost * taxRate;
+                                    return (
+                                      <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
+                                        <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
+                                        {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
+                                        <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraTax).toFixed(2)}</span></div>
+                                      </div>
+                                    );
+                                  })()}
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center bg-zinc-900 border border-zinc-700 rounded-lg p-2"><Calendar size={14} className="text-blue-400 mr-2 shrink-0"/><input type="date" className="bg-transparent w-full outline-none text-sm text-white" value={forceExtendDate} min={b.returnDate} onChange={(e) => setForceExtendDate(e.target.value)} data-testid={`input-force-extend-date-${b.id}`}/></div>
+                                    <div className="flex items-center bg-zinc-900 border border-zinc-700 rounded-lg p-2"><Clock size={14} className="text-blue-400 mr-2 shrink-0"/><select className="bg-transparent w-full outline-none text-sm text-white" value={forceExtendTime} onChange={(e) => setForceExtendTime(e.target.value)} data-testid={`select-force-extend-time-${b.id}`}>{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
+                                    <input type="text" placeholder="Note for guest (optional)" value={forceExtendNote} onChange={(e) => setForceExtendNote(e.target.value)} className="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm text-white placeholder-zinc-500 w-full outline-none" data-testid={`input-force-extend-note-${b.id}`}/>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button onClick={() => handleForceExtend(b)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-confirm-force-extend-${b.id}`}>Confirm Extension</button>
+                                    <button onClick={() => { setForceExtendingBookingId(null); setForceExtendDate(''); setForceExtendNote(''); }} className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-xs font-bold rounded-lg transition-colors">Cancel</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* Manage Charges & Adjustments */}
                           <div className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg mb-4 border border-zinc-200 dark:border-zinc-800">
                             <h4 className="text-xs font-bold uppercase text-zinc-400 mb-4">Manage Charges & Adjustments</h4>
@@ -10155,16 +10251,16 @@ export default function CarHopApp() {
                           })()}
 
                           {/* Mileage Info */}
-                          {fullBooking.checkInData?.miles && fullBooking.checkOutData?.miles && (
+                          {selectedTripForView.checkInData?.miles && selectedTripForView.checkOutData?.miles && (
                             <div className="space-y-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <p className="text-xs text-zinc-500 uppercase">Check-in Mileage</p>
-                                  <p className="text-lg font-bold text-zinc-900 dark:text-white">{fullBooking.checkInData.miles} mi</p>
+                                  <p className="text-lg font-bold text-zinc-900 dark:text-white">{selectedTripForView.checkInData.miles} mi</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-zinc-500 uppercase">Check-out Mileage</p>
-                                  <p className="text-lg font-bold text-zinc-900 dark:text-white">{fullBooking.checkOutData.miles} mi</p>
+                                  <p className="text-lg font-bold text-zinc-900 dark:text-white">{selectedTripForView.checkOutData.miles} mi</p>
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700">
@@ -11201,6 +11297,54 @@ export default function CarHopApp() {
                                             >
                                               <Unlock size={12} /> Manual Check-out (Force)
                                             </button>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Force Extend Trip — Admin Panel */}
+                                      {(b.status === 'Active' || b.status === 'Extended') && b.checkOutStatus !== 'completed' && (
+                                        <div className="mb-4">
+                                          {forceExtendingBookingId !== b.id ? (
+                                            <button
+                                              onClick={(e: any) => { e.stopPropagation(); setForceExtendingBookingId(b.id); setForceExtendDate(b.returnDate); setForceExtendTime(b.returnTime || '12:00 PM'); setForceExtendNote(''); }}
+                                              className="w-full py-2 rounded-md border border-blue-700 bg-blue-950/40 text-blue-400 text-xs font-bold hover:bg-blue-900/50 transition-colors flex items-center justify-center gap-2"
+                                              data-testid={`button-force-extend-admin-${b.id}`}
+                                            >
+                                              <CalendarClock size={12} /> Extend Trip
+                                            </button>
+                                          ) : (
+                                            <div className="animate-in fade-in slide-in-from-top-2 bg-zinc-800 border border-blue-700 rounded-lg p-4 space-y-3">
+                                              <h4 className="text-xs font-bold text-blue-300 uppercase tracking-wider flex items-center gap-2"><CalendarClock size={12}/> Extend Trip (No Approval Needed)</h4>
+                                              <p className="text-xs text-zinc-400">Sets a new return date immediately. Extra days are charged to the booking automatically and the guest is notified by email.</p>
+                                              {(() => {
+                                                if (!forceExtendDate) return null;
+                                                const oldReturn = new Date(`${b.returnDate}T${convertTo24Hour(b.returnTime || '12:00 PM')}:00`);
+                                                const newReturn = new Date(`${forceExtendDate}T${convertTo24Hour(forceExtendTime)}:00`);
+                                                const diffMs = newReturn.getTime() - oldReturn.getTime();
+                                                const extraDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                                                if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
+                                                const pricePerDay = (allVehicles || vehicles).find(v => v.id === b.vehicleId)?.price || 0;
+                                                const extraCost = pricePerDay * extraDays;
+                                                const taxRate = ((allVehicles || vehicles).find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
+                                                const extraTax = extraCost * taxRate;
+                                                return (
+                                                  <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
+                                                    <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
+                                                    {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
+                                                    <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraTax).toFixed(2)}</span></div>
+                                                  </div>
+                                                );
+                                              })()}
+                                              <div className="flex flex-col gap-2">
+                                                <div className="flex items-center bg-zinc-900 border border-zinc-700 rounded-lg p-2"><Calendar size={14} className="text-blue-400 mr-2 shrink-0"/><input type="date" className="bg-transparent w-full outline-none text-sm text-white" value={forceExtendDate} min={b.returnDate} onChange={(e) => setForceExtendDate(e.target.value)} data-testid={`input-force-extend-date-admin-${b.id}`}/></div>
+                                                <div className="flex items-center bg-zinc-900 border border-zinc-700 rounded-lg p-2"><Clock size={14} className="text-blue-400 mr-2 shrink-0"/><select className="bg-transparent w-full outline-none text-sm text-white" value={forceExtendTime} onChange={(e) => setForceExtendTime(e.target.value)} data-testid={`select-force-extend-time-admin-${b.id}`}>{timeOptions.map(t => <option key={t} value={t} className="text-black">{t}</option>)}</select></div>
+                                                <input type="text" placeholder="Note for guest (optional)" value={forceExtendNote} onChange={(e) => setForceExtendNote(e.target.value)} className="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm text-white placeholder-zinc-500 w-full outline-none" data-testid={`input-force-extend-note-admin-${b.id}`}/>
+                                              </div>
+                                              <div className="flex gap-2">
+                                                <button onClick={() => handleForceExtend(b)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-confirm-force-extend-admin-${b.id}`}>Confirm Extension</button>
+                                                <button onClick={() => { setForceExtendingBookingId(null); setForceExtendDate(''); setForceExtendNote(''); }} className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-xs font-bold rounded-lg transition-colors">Cancel</button>
+                                              </div>
+                                            </div>
                                           )}
                                         </div>
                                       )}
@@ -13101,10 +13245,17 @@ export default function CarHopApp() {
                                   </div>
                                 )}
                                 {receiptBooking.details?.manualCharges && receiptBooking.details.manualCharges.map((charge, idx) => (
-                                  <div key={idx} className="flex justify-between text-sm">
-                                    <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
-                                    <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
-                                  </div>
+                                  charge.type === 'Late Return Fee' ? (
+                                    <div key={idx} className="flex justify-between text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded px-2 py-1 my-0.5">
+                                      <span className="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1"><AlertTriangle size={12}/> {charge.type}</span>
+                                      <span className="text-amber-700 dark:text-amber-400 font-bold">+${charge.amount.toFixed(2)}</span>
+                                    </div>
+                                  ) : (
+                                    <div key={idx} className="flex justify-between text-sm">
+                                      <span className="text-zinc-600 dark:text-zinc-400">{charge.type}</span>
+                                      <span className="text-orange-600 dark:text-orange-400">+${charge.amount.toFixed(2)}</span>
+                                    </div>
+                                  )
                                 ))}
                                 {receiptBooking.extraPayments && receiptBooking.extraPayments.map((payment, idx) => (
                                   <div key={`ep-${idx}`} className="flex justify-between text-sm">
