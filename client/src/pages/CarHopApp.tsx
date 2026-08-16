@@ -7863,13 +7863,16 @@ export default function CarHopApp() {
                                     if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
                                     const pricePerDay = vehicles.find(v => v.id === b.vehicleId)?.price || 0;
                                     const extraCost = pricePerDay * extraDays;
+                                    const protectionPerDay = (b.details?.protection || 0) / Math.max(1, b.days || 1);
+                                    const extraProtection = protectionPerDay * extraDays;
                                     const taxRate = (vehicles.find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
-                                    const extraTax = extraCost * taxRate;
+                                    const extraTax = (extraCost + extraProtection) * taxRate;
                                     return (
                                       <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
                                         <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
+                                        {extraProtection > 0 && <div className="flex justify-between text-zinc-300"><span>Protection ({b.details?.protectionType || 'plan'})</span><span>+${extraProtection.toFixed(2)}</span></div>}
                                         {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
-                                        <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraTax).toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraProtection + extraTax).toFixed(2)}</span></div>
                                       </div>
                                     );
                                   })()}
@@ -11325,13 +11328,16 @@ export default function CarHopApp() {
                                                 if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
                                                 const pricePerDay = (allVehicles || vehicles).find(v => v.id === b.vehicleId)?.price || 0;
                                                 const extraCost = pricePerDay * extraDays;
+                                                const protectionPerDay = (b.details?.protection || 0) / Math.max(1, b.days || 1);
+                                                const extraProtection = protectionPerDay * extraDays;
                                                 const taxRate = ((allVehicles || vehicles).find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
-                                                const extraTax = extraCost * taxRate;
+                                                const extraTax = (extraCost + extraProtection) * taxRate;
                                                 return (
                                                   <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
                                                     <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
+                                                    {extraProtection > 0 && <div className="flex justify-between text-zinc-300"><span>Protection ({b.details?.protectionType || 'plan'})</span><span>+${extraProtection.toFixed(2)}</span></div>}
                                                     {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
-                                                    <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraTax).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraProtection + extraTax).toFixed(2)}</span></div>
                                                   </div>
                                                 );
                                               })()}

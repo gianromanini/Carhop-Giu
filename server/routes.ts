@@ -1506,13 +1506,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const rateDifference = pricePerDay * daysDifference;
       const oldExtendedRate = booking.details?.extendedRate || 0;
       const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
-      
-      // Calculate tax adjustment
+
+      // Protection: charge the same per-day rate used at booking start.
+      const oldProtectionAmt = booking.details?.protection || 0;
+      const protectionPerDayAmt = oldProtectionAmt / Math.max(1, oldDays);
+      const protectionDeltaAmt = protectionPerDayAmt * daysDifference;
+      const newProtectionAmt = Math.max(0, oldProtectionAmt + protectionDeltaAmt);
+
+      // Calculate tax adjustment (rate delta + protection delta both taxed)
       const oldTax = booking.details?.tax || 0;
       let newTax = oldTax;
       if (daysDifference !== 0) {
         const taxRate = (settingsObj.taxes || 0) / 100;
-        const taxAdjustment = rateDifference * taxRate;
+        const taxAdjustment = (rateDifference + protectionDeltaAmt) * taxRate;
         newTax = oldTax + taxAdjustment;
       }
       
@@ -1520,18 +1526,18 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       updateData.details = {
         ...booking.details,
         extendedRate: newExtendedRate,
+        protection: newProtectionAmt,
         tax: newTax
       };
 
       // Calculate new total
       const baseRate = (booking.details?.rate || 0);
-      const protection = (booking.details?.protection || 0);
       const fees = (booking.details?.fees || 0);
       const deliveryFee = (booking.details?.deliveryFee || 0);
       const discount = (booking.details?.discount || 0);
       
-      // Sum everything up for the new total
-      updateData.total = baseRate + protection + fees + newExtendedRate + newTax + deliveryFee - discount;
+      // Sum everything up for the new total (use updated protection)
+      updateData.total = baseRate + newProtectionAmt + fees + newExtendedRate + newTax + deliveryFee - discount;
       
       // Preserve vehicle metadata
       updateData.carName = booking.carName;
@@ -1686,19 +1692,27 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const oldExtendedRate = booking.details?.extendedRate || 0;
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
 
+    // Protection: charge the same per-day rate that was selected at booking start.
+    const oldProtection = booking.details?.protection || 0;
+    const originalDays = Math.max(1, booking.days || 1);
+    const protectionPerDay = oldProtection / originalDays;
+    const protectionDifference = protectionPerDay * extraDays;
+    const newProtection = oldProtection + protectionDifference;
+
     const oldTax = booking.details?.tax || 0;
     const taxRate = (settingsObj.taxes || 0) / 100;
-    const taxAdjustment = rateDifference * taxRate;
+    // Tax applies to both the daily rate delta and the protection delta.
+    const taxAdjustment = (rateDifference + protectionDifference) * taxRate;
     const newTax = oldTax + taxAdjustment;
 
-    // Incremental total: add only the extension delta (rate difference + its tax) to the existing total.
-    // This preserves every component already in booking.total (extras, fees, delivery, discounts,
-    // manual charges, existing tax, etc.) without risk of recomputing them differently from the UI.
-    const newTotal = (booking.total || 0) + rateDifference + taxAdjustment;
+    // Incremental total: add rate delta + protection delta + combined tax.
+    // This preserves every other component already in booking.total (extras, fees, delivery,
+    // discounts, manual charges, existing tax, etc.) without recomputing them.
+    const newTotal = (booking.total || 0) + rateDifference + protectionDifference + taxAdjustment;
 
     // Append a system message notifying the guest
     const noteText = note ? ` Note: ${note}` : '';
-    const totalAddition = rateDifference + taxAdjustment;
+    const totalAddition = rateDifference + protectionDifference + taxAdjustment;
     const systemMsg = {
       id: `msg-${Date.now()}`,
       read: false,
@@ -1715,6 +1729,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       details: {
         ...booking.details,
         extendedRate: newExtendedRate,
+        protection: newProtection,
         tax: newTax,
       },
       total: newTotal,
