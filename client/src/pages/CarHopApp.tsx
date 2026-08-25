@@ -170,6 +170,27 @@ const calculateBillingDays = (start: string, startTime: string, end: string, end
   }
 };
 
+const getProtectionDailyRateForPreview = (booking: any, vehicle: any, settings: any): number => {
+  const storedRate = Number(booking?.details?.protectionDailyRate);
+  if (Number.isFinite(storedRate) && storedRate >= 0) return storedRate;
+
+  const protectionTotal = Number(booking?.details?.protection || 0);
+  const bookingDays = Math.max(1, Number(booking?.days) || 1);
+  const hasPreviousExtension = Number(booking?.details?.extendedRate || 0) > 0;
+  if (!hasPreviousExtension && protectionTotal > 0) return protectionTotal / bookingDays;
+
+  const vehicleStandard = Number(vehicle?.pricing?.prices?.insurance500);
+  const settingsStandard = Number(settings?.prices?.insurance500);
+  const standardRate = Number.isFinite(vehicleStandard)
+    ? vehicleStandard
+    : Number.isFinite(settingsStandard) ? settingsStandard : 25.90;
+  const protectionType = String(booking?.details?.protectionType || '').trim().toLowerCase();
+  if (protectionType === 'minimum') return 19.40;
+  if (protectionType === 'gold') return standardRate + 16.90;
+  if (protectionType === 'standard') return standardRate;
+  return protectionTotal / bookingDays;
+};
+
 const formatDisplayDate = (dateStr: string, timeStr: string) => {
   if (!dateStr) return "";
   const displayTime = timeStr || "10:00 AM";
@@ -2581,7 +2602,11 @@ export default function CarHopApp() {
     if (cart.extrasSelected.includes('childSeat')) runningTotal += (cart.car.pricing?.prices?.childSeat || settings.prices.childSeat);
     
     // Protection Plan Pricing Logic
-    const hostEmail = (cart.car as any).hostEmail || vehicles.find(v => v.id === cart.car?.id)?.hostName || '';
+    const selectedVehicle = (allVehicles.length > 0 ? allVehicles : vehicles).find(v => String(v.id) === String(cart.car?.id));
+    const selectedVehicleHost = selectedVehicle?.hostId
+      ? (hostsData as any[]).find((h: any) => String(h.id) === String(selectedVehicle.hostId))
+      : null;
+    const hostEmail = (cart.car as any).hostEmail || selectedVehicleHost?.email || selectedVehicle?.hostName || '';
     const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com' || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName === 'giuspfc123@gmail.com' || (vehicles || []).find(v => v.id === cart.car?.id)?.hostName === 'gianromanini@gmail.com';
 
     const minimumPlanPrice = 19.40;
@@ -2672,6 +2697,12 @@ export default function CarHopApp() {
       const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
       const finalGoldPrice = finalStandardPrice + 16.90;
       const minimumPlanPrice = 19.40;
+       // Store the exact daily price used by calculateTotal so extensions
+       // continue the same protection plan without reconstructing its price.
+       const protectionDailyRate =
+         cart.insuranceOption === '500' ? finalStandardPrice :
+         cart.insuranceOption === '1000' && isSpecialHost ? finalGoldPrice :
+         cart.insuranceOption === 'minimum' ? minimumPlanPrice : 0;
 
       const newBooking = { 
         bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
@@ -2701,7 +2732,8 @@ export default function CarHopApp() {
           rate: cart.car!.price * days, 
           extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
           childSeatSelected: cart.extrasSelected.includes('childSeat'),
-          protection: (cart.insuranceOption === '500' ? finalStandardPrice : cart.insuranceOption === '1000' ? finalGoldPrice : cart.insuranceOption === 'minimum' ? minimumPlanPrice : 0) * days, 
+          protection: protectionDailyRate * days,
+          protectionDailyRate,
           protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : cart.insuranceOption === 'minimum' ? 'Minimum' : 'None'), 
           fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
           deliveryFee: totalData.deliveryFee || 0, 
@@ -7863,7 +7895,7 @@ export default function CarHopApp() {
                                     if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
                                     const pricePerDay = vehicles.find(v => v.id === b.vehicleId)?.price || 0;
                                     const extraCost = pricePerDay * extraDays;
-                                    const protectionPerDay = (b.details?.protection || 0) / Math.max(1, b.days || 1);
+                                    const protectionPerDay = getProtectionDailyRateForPreview(b, vehicles.find(v => v.id === b.vehicleId), settings);
                                     const extraProtection = protectionPerDay * extraDays;
                                     const taxRate = (vehicles.find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
                                     const extraTax = (extraCost + extraProtection) * taxRate;
@@ -11328,7 +11360,8 @@ export default function CarHopApp() {
                                                 if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
                                                 const pricePerDay = (allVehicles || vehicles).find(v => v.id === b.vehicleId)?.price || 0;
                                                 const extraCost = pricePerDay * extraDays;
-                                                const protectionPerDay = (b.details?.protection || 0) / Math.max(1, b.days || 1);
+                                                const selectedVehicle = (allVehicles || vehicles).find(v => v.id === b.vehicleId);
+                                                const protectionPerDay = getProtectionDailyRateForPreview(b, selectedVehicle, settings);
                                                 const extraProtection = protectionPerDay * extraDays;
                                                 const taxRate = ((allVehicles || vehicles).find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
                                                 const extraTax = (extraCost + extraProtection) * taxRate;

@@ -19,6 +19,40 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+/**
+ * Returns the daily protection price that was used for a booking.
+ *
+ * New bookings persist this value explicitly. For older bookings, the
+ * original protection total is reliable only before the first extension;
+ * after an extension, use the selected plan to avoid dividing an already
+ * extended total by the new number of days.
+ */
+function getProtectionDailyRate(details: any, vehicle: any, settingsObj: any, bookingDays: number): number {
+  const storedRate = Number(details?.protectionDailyRate);
+  if (Number.isFinite(storedRate) && storedRate >= 0) return storedRate;
+
+  const protectionTotal = Number(details?.protection || 0);
+  const safeDays = Math.max(1, Number(bookingDays) || 1);
+  const hasPreviousExtension = Number(details?.extendedRate || 0) > 0;
+
+  if (!hasPreviousExtension && protectionTotal > 0) {
+    return protectionTotal / safeDays;
+  }
+
+  const vehicleStandard = Number(vehicle?.pricing?.prices?.insurance500);
+  const settingsStandard = Number(settingsObj?.prices?.insurance500);
+  const standardRate = Number.isFinite(vehicleStandard)
+    ? vehicleStandard
+    : Number.isFinite(settingsStandard) ? settingsStandard : 25.90;
+  const protectionType = String(details?.protectionType || '').trim().toLowerCase();
+
+  if (protectionType === 'minimum') return 19.40;
+  if (protectionType === 'gold') return standardRate + 16.90;
+  if (protectionType === 'standard') return standardRate;
+
+  return protectionTotal / safeDays;
+}
+
 // Email notification helper functions
 async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
   const clientEmail = booking.driver?.email;
@@ -1508,8 +1542,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
 
       // Protection: charge the same per-day rate used at booking start.
-      const oldProtectionAmt = booking.details?.protection || 0;
-      const protectionPerDayAmt = oldProtectionAmt / Math.max(1, oldDays);
+      const oldProtectionAmt = Number(booking.details?.protection || 0);
+      const protectionPerDayAmt = getProtectionDailyRate(booking.details, vehicle, settingsObj, oldDays);
       const protectionDeltaAmt = protectionPerDayAmt * daysDifference;
       const newProtectionAmt = Math.max(0, oldProtectionAmt + protectionDeltaAmt);
 
@@ -1527,6 +1561,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         ...booking.details,
         extendedRate: newExtendedRate,
         protection: newProtectionAmt,
+        protectionDailyRate: protectionPerDayAmt,
         tax: newTax
       };
 
@@ -1693,9 +1728,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
 
     // Protection: charge the same per-day rate that was selected at booking start.
-    const oldProtection = booking.details?.protection || 0;
+    const oldProtection = Number(booking.details?.protection || 0);
     const originalDays = Math.max(1, booking.days || 1);
-    const protectionPerDay = oldProtection / originalDays;
+    const protectionPerDay = getProtectionDailyRate(booking.details, vehicle, settingsObj, originalDays);
     const protectionDifference = protectionPerDay * extraDays;
     const newProtection = oldProtection + protectionDifference;
 
@@ -1730,6 +1765,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         ...booking.details,
         extendedRate: newExtendedRate,
         protection: newProtection,
+        protectionDailyRate: protectionPerDay,
         tax: newTax,
       },
       total: newTotal,
