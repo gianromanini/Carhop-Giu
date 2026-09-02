@@ -599,6 +599,7 @@ interface NotificationSettings {
   notifyExtensionRequests: boolean;
   notifyNewBookings: boolean;
   notifyMessages: boolean;
+  notifySupportRequests: boolean;
   showBookingDetails: boolean;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
@@ -618,6 +619,7 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   notifyExtensionRequests: true,
   notifyNewBookings: true,
   notifyMessages: true,
+  notifySupportRequests: true,
   showBookingDetails: true,
   quietHoursEnabled: false,
   quietHoursStart: '22:00',
@@ -1887,62 +1889,80 @@ export default function CarHopApp() {
     };
   }, [pushAudience, notificationPermission, notificationSettings.pushEnabled]);
 
+  const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'], refetchInterval: 30000 });
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const requestedView = params.get('view');
     const bookingId = Number(params.get('bookingId'));
-    if (!Number.isInteger(bookingId) || bookingId <= 0) return;
-    if (params.get('view') === 'admin' && (adminAuthenticated || authUser?.isAdmin === true)) {
+    if (requestedView === 'admin' && (adminAuthenticated || authUser?.isAdmin === true)) {
       setView('admin');
       setAdminTab(params.get('tab') || 'bookings');
-      setManageBookingId(bookingId);
-    } else if (params.get('view') === 'host-dashboard' && currentHost) {
+      if (Number.isInteger(bookingId) && bookingId > 0) setManageBookingId(bookingId);
+    } else if (requestedView === 'host-dashboard' && currentHost) {
       setView('host-dashboard');
-      setHostManageBookingId(bookingId);
+      if (Number.isInteger(bookingId) && bookingId > 0) setHostManageBookingId(bookingId);
     }
   }, [adminAuthenticated, authUser?.isAdmin, currentHost]);
 
   const knownExtensionAlertsRef = useRef<Record<string, number> | null>(null);
   useEffect(() => {
     const isAdminViewer = adminAuthenticated || authUser?.isAdmin === true;
-    if (!isAdminViewer || !bookings.length || !notificationSettings.enabled) return;
+    const isHostViewer = !isAdminViewer && Boolean(currentHost?.id);
+    const viewerAudience = isAdminViewer ? 'admin' : isHostViewer ? `host:${currentHost!.id}` : null;
+    if (!viewerAudience || (!bookings.length && !supportMessagesData.length) || !notificationSettings.enabled) return;
+
+    const viewerBookings = isAdminViewer ? bookings : bookings.filter((booking) => {
+      const vehicle = vehicles.find((candidate) => candidate.id === booking.vehicleId);
+      return String(vehicle?.hostId || booking.details?.hostId || '') === String(currentHost!.id);
+    });
 
     const now = Date.now();
     let history: Record<string, number> = {};
     try {
-      history = JSON.parse(localStorage.getItem('carhop_extension_notification_history') || '{}');
+      history = JSON.parse(localStorage.getItem('carhop_notification_history') || '{}');
     } catch {
       history = {};
     }
 
     const pendingEvents = [
-      ...(notificationSettings.notifyExtensionRequests ? bookings.flatMap((booking) =>
+      ...(notificationSettings.notifyExtensionRequests ? viewerBookings.flatMap((booking) =>
         (booking.extensionRequests || [])
           .filter((request: any) => request.status === 'pending')
           .map((request: any) => ({
             booking,
-            key: `extension:${booking.id}:${request.id}`,
+            key: `${viewerAudience}:extension:${booking.id}:${request.id}`,
             title: 'New extension request',
             body: `${booking.driver?.name || 'Guest'} requested ${request.type === 'reduction' ? 'a reduction' : 'an extension'} for ${booking.carName || 'your vehicle'} (${booking.bookingCode}).`,
           }))
       ) : []),
-      ...(notificationSettings.notifyNewBookings ? bookings
+      ...(notificationSettings.notifyNewBookings ? viewerBookings
         .filter((booking) => booking.details?.bookingApprovalStatus === 'pending')
         .map((booking) => ({
           booking,
-          key: `booking:${booking.id}`,
+          key: `${viewerAudience}:booking:${booking.id}`,
           title: 'New booking request',
           body: `${booking.driver?.name || 'Guest'} requested ${booking.carName || 'a vehicle'} (${booking.bookingCode}).`,
         })) : []),
-      ...(notificationSettings.notifyMessages ? bookings.flatMap((booking) =>
+      ...(notificationSettings.notifyMessages ? viewerBookings.flatMap((booking) =>
         (booking.messages || [])
           .filter((message: any) => message.sender === 'client' && !message.read)
           .map((message: any) => ({
             booking,
-            key: `message:${booking.id}:${message.id}`,
+            key: `${viewerAudience}:message:${booking.id}:${message.id}`,
             title: 'New guest message',
             body: `${booking.driver?.name || 'Guest'} sent a message about ${booking.carName || booking.bookingCode}.`,
           }))
       ) : []),
+      ...(isAdminViewer && notificationSettings.notifySupportRequests ? supportMessagesData
+        .filter((message: any) => !message.read && !message.adminReply)
+        .map((message: any) => ({
+          booking: null,
+          key: `${viewerAudience}:support:${message.id}`,
+          title: 'New support request',
+          body: `${message.senderName || 'A user'} sent a new support message.`,
+          support: true,
+        })) : []),
     ];
 
     if (knownExtensionAlertsRef.current === null) {
@@ -1958,12 +1978,12 @@ export default function CarHopApp() {
       if (!currentKeys.has(key) && now - history[key] > 24 * 60 * 60 * 1000) delete history[key];
     });
 
-    pendingEvents.forEach(({ booking, title, body, key }) => {
+    pendingEvents.forEach(({ booking, title, body, key, support }) => {
       if (knownExtensionAlertsRef.current![key]) return;
       knownExtensionAlertsRef.current![key] = now;
       const lastAlert = history[key] || 0;
       if (now - lastAlert < notificationSettings.duplicateIntervalMinutes * 60 * 1000) return;
-      history[key] = now;
+       history[key] = now;
 
       const quietHours = isNotificationQuietHours(notificationSettings);
       if (!quietHours && notificationSettings.popupEnabled && notificationSettings.pushEnabled && notificationPermission === 'granted') {
@@ -1971,12 +1991,22 @@ export default function CarHopApp() {
           body: notificationSettings.showBookingDetails ? body : 'A guest request needs your review.',
           icon: '/favicon.png',
           tag: `extension-${key}`,
-          data: { bookingId: booking.id },
+           data: { bookingId: booking?.id },
         });
         browserNotification.onclick = () => {
           window.focus();
-          setAdminTab('bookings');
-          setManageBookingId(booking.id);
+           if (support) {
+             setView('admin');
+             setAdminTab('support');
+           } else if (isAdminViewer) {
+             setView('admin');
+             setAdminTab('bookings');
+             setManageBookingId(booking?.id || null);
+           } else {
+             setView('host-dashboard');
+             setHostTab('bookings');
+             setHostManageBookingId(booking?.id || null);
+           }
           browserNotification.close();
         };
       }
@@ -1984,12 +2014,14 @@ export default function CarHopApp() {
       if (!quietHours && notificationSettings.vibrationEnabled && 'vibrate' in navigator) navigator.vibrate?.(180);
     });
 
-    localStorage.setItem('carhop_extension_notification_history', JSON.stringify(history));
+   localStorage.setItem('carhop_notification_history', JSON.stringify(history));
   }, [
     adminAuthenticated,
     authUser?.isAdmin,
     bookings,
     vehicles,
+    currentHost?.id,
+    supportMessagesData,
     notificationSettings,
     notificationPermission,
   ]);
@@ -1998,7 +2030,6 @@ export default function CarHopApp() {
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const { data: messagesData = [] } = useQuery<any[]>({ queryKey: ['/api/messages'] });
-  const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'], refetchInterval: 30000 });
   const [adminMessageText, setAdminMessageText] = useState("");
   const handleSendMessage = (booking: any, role: string) => {
     if (!adminMessageText.trim()) return;
@@ -4577,6 +4608,24 @@ export default function CarHopApp() {
                       <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentHost.firstName} {currentHost.lastName}</p>
                       <p className="text-xs text-zinc-500">@{currentHost.username}</p>
                     </div>
+                    <button
+                      onClick={() => { installCarHopGo(); setHostMobileMenuOpen(false); }}
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-green-50 dark:hover:bg-green-950 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
+                      data-testid="button-host-menu-install-app"
+                    >
+                      <Download size={18} className="text-green-600" />
+                      <span>Install CarHopGo</span>
+                    </button>
+                    {notificationPermission !== 'granted' && (
+                      <button
+                        onClick={() => { requestNotificationPermission(); setHostMobileMenuOpen(false); }}
+                        className="w-full px-4 py-3 text-left text-sm hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
+                        data-testid="button-host-menu-enable-notifications"
+                      >
+                        <Bell size={18} className="text-blue-600" />
+                        <span>Enable browser alerts</span>
+                      </button>
+                    )}
                     <button 
                       onClick={() => { 
                         setHostTab('chat'); 
@@ -6502,7 +6551,17 @@ export default function CarHopApp() {
               <p className="text-sm sm:text-base text-zinc-500 truncate">Welcome, <span className="font-semibold text-zinc-700 dark:text-zinc-300">{currentHost.firstName} {currentHost.lastName}</span></p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Desktop: Theme toggle and Logout button */}
+              {/* Desktop: Install, alerts, theme toggle and logout */}
+              {!isCarHopGoInstalled && installPromptEvent && (
+                <Button onClick={installCarHopGo} className="hidden sm:flex items-center gap-2 text-xs" data-testid="button-install-app-host">
+                  <Download size={15} /> Install CarHopGo
+                </Button>
+              )}
+              {notificationPermission !== 'granted' && (
+                <Button variant="outline" onClick={requestNotificationPermission} className="hidden sm:flex items-center gap-2 text-xs" data-testid="button-enable-browser-notifications-host">
+                  <Bell size={15} /> Enable alerts
+                </Button>
+              )}
               <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={() => setDarkMode(!darkMode)} data-testid="button-host-theme">
                 {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               </Button>
@@ -9610,8 +9669,13 @@ export default function CarHopApp() {
 
         {view === 'admin' && (
           <div className="max-w-7xl mx-auto px-2 sm:px-6 py-8">
-            <div className="flex items-start justify-between mb-8 gap-2">
-              <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin {adminUnit === '01' && 'Matriz'}</h1>
+             <div className="flex items-start justify-between mb-8 gap-2">
+               <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin {adminUnit === '01' && 'Matriz'}</h1>
+               {!isCarHopGoInstalled && installPromptEvent && (
+                 <Button onClick={installCarHopGo} className="flex items-center gap-2 shrink-0" data-testid="button-install-app-admin">
+                   <Download size={15} /> Install CarHopGo
+                 </Button>
+               )}
             </div>
             
             <div className="flex justify-start gap-0.5 sm:gap-1 md:gap-2 mb-6 overflow-x-auto pb-2 px-0 sm:px-2">
@@ -9662,8 +9726,8 @@ export default function CarHopApp() {
                       <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                         <Bell size={20} className="text-green-500" /> Notification Settings
                       </h2>
-                      <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-                        These controls apply globally to Admin notifications. Browser permission and device volume remain under the user's control.
+                       <p className="text-xs sm:text-sm text-zinc-500 mt-1">
+                         These controls apply to Admin and Host alerts. Browser permission and device volume remain under the user's control.
                       </p>
                     </div>
                     {!isCarHopGoInstalled && installPromptEvent && (
@@ -9683,7 +9747,8 @@ export default function CarHopApp() {
                       ['showBookingDetails', 'Include booking details', 'Show booking code and vehicle in the alert'],
                       ['notifyExtensionRequests', 'Extension requests', 'Guest trip extension/reduction requests'],
                       ['notifyNewBookings', 'New bookings', 'New booking approval requests'],
-                      ['notifyMessages', 'New messages', 'Unread client and host messages'],
+                     ['notifyMessages', 'New messages', 'Unread client and host messages'],
+                     ['notifySupportRequests', 'Support requests', 'New messages sent by Guests and Hosts to Admin'],
                     ].map(([key, label, description]) => (
                       <label key={key} className="flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 cursor-pointer hover:border-green-400">
                         <input
@@ -9753,7 +9818,7 @@ export default function CarHopApp() {
                         </span>
                       </span>
                     </label>
-                    <div className="grid min-w-0 grid-cols-2 gap-2">
+                    <div className="grid min-w-0 grid-cols-1 gap-2 sm:col-span-2 lg:col-span-1">
                       <label className="min-w-0 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                         From
                         <input type="time" value={notificationSettingsDraft.quietHoursStart} disabled={!notificationSettingsDraft.quietHoursEnabled} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursStart: event.target.value }))} className="mt-1 block w-full min-w-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm disabled:cursor-not-allowed disabled:opacity-50" data-testid="input-notification-quiet-hours-start" />

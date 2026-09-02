@@ -32,6 +32,7 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
   notifyExtensionRequests: true,
   notifyNewBookings: true,
   notifyMessages: true,
+  notifySupportRequests: true,
   showBookingDetails: true,
   quietHoursEnabled: false,
   quietHoursStart: '22:00',
@@ -146,6 +147,55 @@ async function sendWebPushNotification(audiences: string[], payload: {
   }
 
   return results.some(result => result.status === 'fulfilled' && result.value === true);
+}
+
+async function sendConfiguredStaffPush(
+  audiences: string[],
+  setting: 'notifyExtensionRequests' | 'notifyNewBookings' | 'notifyMessages' | 'notifySupportRequests',
+  payload: { title: string; body: string; bookingId?: number; targetUrl?: string },
+) {
+  const settings = await getNotificationSettings();
+  if (!settings.enabled || !settings.pushEnabled || !settings[setting]) return false;
+  return sendWebPushNotification(audiences, payload);
+}
+
+async function notifyBookingStaff(
+  booking: any,
+  vehicle: any,
+  setting: 'notifyNewBookings' | 'notifyMessages',
+  payload: { title: string; body: string },
+) {
+  const audiences = ['admin'];
+  const hostId = vehicle?.hostId || booking?.details?.hostId;
+  if (hostId) audiences.push(`host:${hostId}`);
+  return sendConfiguredStaffPush(audiences, setting, {
+    ...payload,
+    bookingId: booking?.id,
+    targetUrl: '/',
+  });
+}
+
+async function notifyAdminOfSupportRequest(message: any) {
+  return sendConfiguredStaffPush(['admin'], 'notifySupportRequests', {
+    title: 'New support request',
+    body: `${message.senderName || 'A user'} sent a new support message.`,
+    targetUrl: '/?view=admin&tab=support',
+  });
+}
+
+async function notifyHostOfSupportReply(message: any, reply: string) {
+  if (message?.senderType !== 'host') return false;
+  const email = message.senderEmail || message.senderIdentifier;
+  const host = email?.includes('@')
+    ? await storage.getHostByEmail(email).catch(() => null)
+    : null;
+  const hostId = host?.id || (String(message.senderId || '').match(/^\d+$/) ? message.senderId : null);
+  if (!hostId) return false;
+  return sendConfiguredStaffPush([`host:${hostId}`], 'notifySupportRequests', {
+    title: 'New support reply',
+    body: reply || 'CarHop Support replied to your message.',
+    targetUrl: '/?view=host-dashboard&tab=chat',
+  });
 }
 
 /**
@@ -736,8 +786,13 @@ async function sendCheckOutCompletedEmail(booking: any) {
 }
 
 async function sendNewBookingNotificationToHost(booking: any, vehicle: any) {
-  const hostEmail = process.env.EMAIL_USER; // Admin email
-  if (!hostEmail) return;
+  const recipients = new Set<string>();
+  if (process.env.EMAIL_USER) recipients.add(process.env.EMAIL_USER);
+  if (vehicle?.hostId) {
+    const host = await storage.getHost(parseInt(String(vehicle.hostId))).catch(() => null);
+    if (host?.email) recipients.add(host.email);
+  }
+  if (recipients.size === 0) return;
 
   const deliveryType = booking.details?.deliveryType || 'pickup';
   const deliveryAddress = booking.details?.deliveryAddress || '';
@@ -745,7 +800,7 @@ async function sendNewBookingNotificationToHost(booking: any, vehicle: any) {
   try {
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: hostEmail,
+      to: Array.from(recipients).join(', '),
       subject: `New Booking Received #${booking.bookingCode}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -889,13 +944,21 @@ async function notifyHostOfExtensionRequest(booking: any, vehicle: any, request:
   if (settings.enabled && settings.notifyExtensionRequests && settings.smsEnabled) {
     channels.push(sendExtensionRequestSmsToHost(booking, vehicle, host, request));
   }
-  if (webPushConfigured && settings.enabled && settings.notifyExtensionRequests && settings.pushEnabled && host?.id) {
-    channels.push(sendWebPushNotification([`host:${host.id}`], {
+  if (webPushConfigured && settings.enabled && settings.notifyExtensionRequests && settings.pushEnabled) {
+    channels.push(sendWebPushNotification(['admin'], {
       title: 'New extension request',
       body: `${booking.driver?.name || 'Guest'} requested a ${request.type === 'reduction' ? 'reduction' : 'trip extension'} for ${booking.carName || vehicle?.model || 'your vehicle'} (${booking.bookingCode}).`,
       bookingId: booking.id,
-      targetUrl: `/?view=host-dashboard&bookingId=${booking.id}`,
+      targetUrl: `/?view=admin&tab=bookings&bookingId=${booking.id}`,
     }));
+    if (host?.id) {
+      channels.push(sendWebPushNotification([`host:${host.id}`], {
+        title: 'New extension request',
+        body: `${booking.driver?.name || 'Guest'} requested a ${request.type === 'reduction' ? 'reduction' : 'trip extension'} for ${booking.carName || vehicle?.model || 'your vehicle'} (${booking.bookingCode}).`,
+        bookingId: booking.id,
+        targetUrl: `/?view=host-dashboard&bookingId=${booking.id}`,
+      }));
+    }
   }
 
   if (channels.length === 0) return { status: 'skipped' as const, sentAt: undefined };
@@ -1685,6 +1748,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
       sendBookingConfirmationEmail(booking, vehicle).catch(err => console.error("Error sending confirmation email:", err));
       sendNewBookingNotificationToHost(booking, vehicle).catch(err => console.error("Error sending host notification:", err));
+      notifyBookingStaff(booking, vehicle, 'notifyNewBookings', {
+        title: 'New booking request',
+        body: `${booking.driver?.name || 'Guest'} requested ${booking.carName || vehicle?.model || 'a vehicle'} (${booking.bookingCode}).`,
+      }).catch(err => console.error("Error sending booking push notification:", err));
 
       res.status(201).json(booking);
     } catch (error) {
@@ -2395,6 +2462,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     
     const messages = [...(booking.messages || []), newMessage];
     const updated = await storage.updateBooking(id, { messages });
+    if (newMessage.sender === 'client') {
+      const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
+      notifyBookingStaff(booking, vehicle, 'notifyMessages', {
+        title: 'New guest message',
+        body: `${booking.driver?.name || 'Guest'} sent a message about ${booking.carName || booking.bookingCode}.`,
+      }).catch(err => console.error("Error sending booking message push notification:", err));
+    }
     res.json(updated);
   });
 
@@ -3634,6 +3708,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         read: false,
         chatStartedAt: lastFinished?.chatStartedAt || undefined
       });
+
+      notifyAdminOfSupportRequest(newMessage)
+        .catch(err => console.error("Error sending support request push notification:", err));
       
       res.status(201).json(newMessage);
     } catch (error) {
@@ -3665,6 +3742,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       // Send email notification when admin replies to a host message
       if (adminReply && originalMessage.senderType === 'host') {
+        notifyHostOfSupportReply(originalMessage, adminReply)
+          .catch(err => console.error('Error sending support reply push notification to host:', err));
         const hostEmail = originalMessage.senderEmail || originalMessage.senderIdentifier;
         if (hostEmail && hostEmail.includes('@')) {
           try {
