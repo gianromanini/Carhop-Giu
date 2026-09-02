@@ -1415,6 +1415,7 @@ export default function CarHopApp() {
   );
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
   const [isCarHopGoInstalled, setIsCarHopGoInstalled] = useState(detectCarHopGoInstallation);
+  const shouldShowInstallOffer = !(isCarHopGoInstalled && notificationPermission === 'granted');
   const [pushConfigured, setPushConfigured] = useState(false);
   const [adminChatBookingId, setAdminChatBookingId] = useState<number | null>(null);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
@@ -2478,12 +2479,24 @@ export default function CarHopApp() {
   };
 
   const installCarHopGo = async () => {
-    if (isCarHopGoInstalled) {
-      toast({ title: 'Application already installed', description: 'CarHopGo is already installed on this device.' });
+    if (isCarHopGoInstalled && notificationPermission === 'granted') {
+      toast({ title: 'CarHopGo is ready', description: 'The app is installed and browser notifications are enabled.' });
       return;
     }
+    if (isCarHopGoInstalled) {
+      toast({ title: 'Enable notifications for CarHopGo', description: 'The shortcut is already installed. Allow browser notifications so you can receive booking updates.' });
+      await requestNotificationPermission();
+      return;
+    }
+    const confirmed = window.confirm(
+      "CarHopGo will add a shortcut to your phone's home screen. It is recommended so you can receive booking notifications even when you are not logged in. Continue?"
+    );
+    if (!confirmed) return;
     if (!installPromptEvent) {
-      toast({ title: 'Installation is not available yet', description: 'Use your browser menu to install CarHopGo when the option appears.' });
+      toast({
+        title: 'Install CarHop Go from your browser menu',
+        description: 'On your phone, open the browser menu and choose “Add to Home Screen” or “Install app”.',
+      });
       return;
     }
     installPromptEvent.prompt();
@@ -4821,14 +4834,16 @@ export default function CarHopApp() {
                       <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentHost.firstName} {currentHost.lastName}</p>
                       <p className="text-xs text-zinc-500">@{currentHost.username}</p>
                     </div>
-                    <button
-                      onClick={() => { installCarHopGo(); setHostMobileMenuOpen(false); }}
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-green-50 dark:hover:bg-green-950 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
-                      data-testid="button-host-menu-install-app"
-                    >
-                      <Download size={18} className="text-green-600" />
-                      <span>Install CarHopGo</span>
-                    </button>
+                    {shouldShowInstallOffer && (
+                      <button
+                        onClick={() => { installCarHopGo(); setHostMobileMenuOpen(false); }}
+                        className="w-full px-4 py-3 text-left text-sm hover:bg-green-50 dark:hover:bg-green-950 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800"
+                        data-testid="button-host-menu-install-app"
+                      >
+                        <Download size={18} className="text-green-600" />
+                        <span>Install CarHop Go</span>
+                      </button>
+                    )}
                     {notificationPermission !== 'granted' && (
                       <button
                         onClick={() => { requestNotificationPermission(); setHostMobileMenuOpen(false); }}
@@ -6793,9 +6808,9 @@ export default function CarHopApp() {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* Desktop: Install, alerts, theme toggle and logout */}
-              {!isCarHopGoInstalled && installPromptEvent && (
+              {shouldShowInstallOffer && (
                 <Button onClick={installCarHopGo} className="hidden sm:flex items-center gap-2 text-xs" data-testid="button-install-app-host">
-                  <Download size={15} /> Install CarHopGo
+                  <Download size={15} /> Install CarHop Go
                 </Button>
               )}
               {notificationPermission !== 'granted' && (
@@ -9535,12 +9550,12 @@ export default function CarHopApp() {
                       </div>
                     </div>
                   </div>
-                  {!isCarHopGoInstalled && installPromptEvent && (
+                  {shouldShowInstallOffer && (
                     <div className="max-w-xl rounded-xl border border-green-400/40 bg-black/40 p-4 backdrop-blur-sm" data-testid="guest-install-prompt">
                       <p className="text-sm font-semibold text-white">Keep your bookings close</p>
-                      <p className="mt-1 text-xs text-zinc-200">Install CarHopGo to follow your bookings and receive browser alerts more easily.</p>
+                      <p className="mt-1 text-xs text-zinc-200">Install CarHop Go to follow your bookings and receive browser alerts more easily.</p>
                       <button onClick={installCarHopGo} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-green-700" data-testid="button-install-app-guest">
-                        <Download size={15} /> Install CarHopGo
+                        <Download size={15} /> Install CarHop Go
                       </button>
                     </div>
                   )}
@@ -9922,9 +9937,9 @@ export default function CarHopApp() {
           <div className="max-w-7xl mx-auto px-2 sm:px-6 py-8">
              <div className="flex items-start justify-between mb-8 gap-2">
                <h1 className="text-lg font-bold text-zinc-900 dark:text-white" data-testid="text-admin-title">Admin {adminUnit === '01' && 'Matriz'}</h1>
-               {!isCarHopGoInstalled && installPromptEvent && (
+               {shouldShowInstallOffer && (
                  <Button onClick={installCarHopGo} className="flex items-center gap-2 shrink-0" data-testid="button-install-app-admin">
-                   <Download size={15} /> Install CarHopGo
+                   <Download size={15} /> Install CarHop Go
                  </Button>
                )}
             </div>
@@ -10050,9 +10065,9 @@ export default function CarHopApp() {
                          These controls apply to Admin and Host alerts. Browser permission and device volume remain under the user's control.
                       </p>
                     </div>
-                    {!isCarHopGoInstalled && installPromptEvent && (
+                    {shouldShowInstallOffer && (
                       <Button onClick={installCarHopGo} className="flex items-center gap-2 shrink-0" data-testid="button-install-app">
-                        <Download size={15} /> Install app
+                        <Download size={15} /> Install CarHop Go
                       </Button>
                     )}
                   </div>
@@ -10151,7 +10166,7 @@ export default function CarHopApp() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-5">
                     <Button onClick={() => updateNotificationSettingsMutation.mutate(notificationSettingsDraft)} disabled={updateNotificationSettingsMutation.isPending} data-testid="button-save-notification-settings">
-                      {updateNotificationSettingsMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save notification settings'}
+                        {updateNotificationSettingsMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save notification settings'}
                     </Button>
                     <Button variant="secondary" onClick={testNotification} className="flex items-center gap-2" data-testid="button-test-notification">
                       <Bell size={14} /> Test notification
@@ -14604,6 +14619,25 @@ export default function CarHopApp() {
         {view === 'bookings' && (
           <div className="max-w-4xl mx-auto px-2 sm:px-6 py-12">
             <h2 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white" data-testid="text-my-bookings">My Bookings</h2>
+            {isAuthenticated && shouldShowInstallOffer && (
+              <div className="mb-6 rounded-xl border border-green-500/30 bg-green-50 dark:bg-green-950/30 p-4" data-testid="bookings-install-prompt">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white">Install CarHop Go</p>
+                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+                      Add a shortcut to your phone and receive booking notifications even when you are not logged in.
+                    </p>
+                  </div>
+                  <button
+                    onClick={installCarHopGo}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-green-700"
+                    data-testid="button-install-app-bookings"
+                  >
+                    <Download size={15} /> Install CarHopGo
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="space-y-6">
                   {(() => {
                     // Get effective user identity from auth or client state
@@ -16799,7 +16833,7 @@ export default function CarHopApp() {
             
             <h2 className="text-3xl font-bold mb-4 text-white" data-testid="text-confirmation-title">Payment Confirmed!</h2>
             <p className="text-zinc-400 mb-10 text-lg">Your payment was processed successfully. Your booking is now confirmed.</p>
-            {!isCarHopGoInstalled && installPromptEvent && (
+            {shouldShowInstallOffer && (
               <div className="mb-6 rounded-xl border border-green-500/30 bg-green-950/30 p-4 text-left" data-testid="booking-install-reminder">
                 <p className="text-sm font-bold text-white">Follow this booking from the CarHopGo app</p>
                 <p className="mt-1 text-xs text-zinc-300">Install the app to keep your booking details and browser alerts close at hand.</p>
