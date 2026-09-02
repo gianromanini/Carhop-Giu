@@ -2889,6 +2889,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get("/api/hosts", async (_req, res) => {
     try {
       const hosts = await storage.getHosts();
+      // Host records are Admin reference data and should not remain in a
+      // browser cache after authentication or a host-management update.
+      res.set('Cache-Control', 'no-store');
       // Don't send password hashes or large base64 document images in list view.
       // Admin fetches full host (with documents) via /api/hosts/:id when needed.
       const safeHosts = hosts.map(h => ({

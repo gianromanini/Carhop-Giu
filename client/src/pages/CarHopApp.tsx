@@ -2039,13 +2039,29 @@ export default function CarHopApp() {
     queryKey: ['/api/financial/summary'],
     enabled: isAdminViewer,
   });
-  const { data: hostsData = [], isLoading: hostsLoading, isError: hostsError } = useQuery<any[]>({
+  const { data: hostsData = [], isLoading: hostsLoading, isError: hostsError, refetch: refetchHosts } = useQuery<any[]>({
     queryKey: ['/api/hosts'],
     enabled: isAdminViewer,
+    queryFn: async () => {
+      const response = await fetch('/api/hosts', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch hosts (${response.status})`);
+      }
+      return response.json();
+    },
     staleTime: 0,
     refetchOnMount: 'always',
     retry: 3,
   });
+
+  useEffect(() => {
+    if (isAdminViewer && view === 'admin' && adminTab === 'hosts') {
+      void refetchHosts();
+    }
+  }, [adminTab, isAdminViewer, refetchHosts, view]);
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'], enabled: isAdminViewer });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const [adminMessageText, setAdminMessageText] = useState("");
@@ -11391,7 +11407,18 @@ export default function CarHopApp() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                   <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Hosts ({hostsData.length})</h3>
-                  {hostsData.length > 0 ? (
+                  {hostsLoading ? (
+                    <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 py-8">
+                      <Loader size={14} className="animate-spin" /> Loading hosts...
+                    </div>
+                  ) : hostsError ? (
+                    <div className="text-center py-8">
+                      <p className="text-xs text-red-400 mb-3">Unable to load hosts.</p>
+                      <Button type="button" variant="outline" size="sm" onClick={() => void refetchHosts()}>
+                        Try again
+                      </Button>
+                    </div>
+                  ) : hostsData.length > 0 ? (
                     <div className="space-y-2">
                       {hostsData.map((host: any) => {
                         const hostVehicles = vehicles.filter(v => v.hostId === String(host.id));
