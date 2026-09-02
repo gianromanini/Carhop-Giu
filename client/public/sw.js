@@ -29,7 +29,11 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const bookingId = event.notification.data && event.notification.data.bookingId;
-  const targetUrl = bookingId ? `/?view=admin&tab=bookings&bookingId=${encodeURIComponent(bookingId)}` : '/';
+  const targetUrl = event.notification.data && event.notification.data.targetUrl
+    ? event.notification.data.targetUrl
+    : bookingId
+      ? `/?view=admin&tab=bookings&bookingId=${encodeURIComponent(bookingId)}`
+      : '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       const existing = clients.find(client => 'focus' in client);

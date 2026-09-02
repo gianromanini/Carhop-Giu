@@ -657,6 +657,13 @@ function isNotificationQuietHours(settings: NotificationSettings, now = new Date
   return start <= end ? current >= start && current < end : current >= start || current < end;
 }
 
+function urlBase64ToUint8Array(value: string) {
+  const padding = '='.repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(character => character.charCodeAt(0)));
+}
+
 interface FormDataType {
   model: string;
   year: number;
@@ -1309,6 +1316,7 @@ export default function CarHopApp() {
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
+  const [pushConfigured, setPushConfigured] = useState(false);
   const [adminChatBookingId, setAdminChatBookingId] = useState<number | null>(null);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
@@ -1729,16 +1737,60 @@ export default function CarHopApp() {
     return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
   }, []);
 
+  const pushAudience = adminAuthenticated || authUser?.isAdmin === true
+    ? 'admin'
+    : currentHost?.id
+      ? `host:${currentHost.id}`
+      : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const subscribeToBackgroundPush = async () => {
+      if (!pushAudience || notificationPermission !== 'granted' || !notificationSettings.pushEnabled || !('serviceWorker' in navigator)) return;
+      try {
+        const configResponse = await fetch('/api/push/config', { credentials: 'include' });
+        const config = await configResponse.json();
+        if (cancelled) return;
+        setPushConfigured(Boolean(config.configured));
+        if (!config.configured || !config.publicKey) return;
+
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(config.publicKey),
+          });
+        }
+        await fetch('/api/push/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ subscription: subscription.toJSON() }),
+        });
+      } catch (error) {
+        console.warn('CarHopGo background push subscription failed:', error);
+      }
+    };
+    subscribeToBackgroundPush();
+    return () => {
+      cancelled = true;
+    };
+  }, [pushAudience, notificationPermission, notificationSettings.pushEnabled]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const bookingId = Number(params.get('bookingId'));
-    if (params.get('view') !== 'admin' || !Number.isInteger(bookingId) || bookingId <= 0) return;
-    if (adminAuthenticated || authUser?.isAdmin === true) {
+    if (!Number.isInteger(bookingId) || bookingId <= 0) return;
+    if (params.get('view') === 'admin' && (adminAuthenticated || authUser?.isAdmin === true)) {
       setView('admin');
       setAdminTab(params.get('tab') || 'bookings');
       setManageBookingId(bookingId);
+    } else if (params.get('view') === 'host-dashboard' && currentHost) {
+      setView('host-dashboard');
+      setHostManageBookingId(bookingId);
     }
-  }, [adminAuthenticated, authUser?.isAdmin]);
+  }, [adminAuthenticated, authUser?.isAdmin, currentHost]);
 
   const knownExtensionAlertsRef = useRef<Record<string, number> | null>(null);
   useEffect(() => {
@@ -9528,9 +9580,12 @@ export default function CarHopApp() {
                     <span className="text-xs text-zinc-500">
                       Browser permission: <strong className={notificationPermission === 'granted' ? 'text-green-600' : 'text-orange-500'}>{notificationPermission}</strong>
                     </span>
+                    <span className="text-xs text-zinc-500">
+                      Push server: <strong className={pushConfigured ? 'text-green-600' : 'text-orange-500'}>{pushConfigured ? 'configured' : 'not configured'}</strong>
+                    </span>
                   </div>
                   <p className="text-[11px] text-zinc-500 mt-4">
-                    SMS status: provider not connected. Email uses the existing server mail configuration. Sound cannot override the device's volume or blocked autoplay permissions.
+                    Background push requires VAPID keys on the server. SMS status: provider not connected. Email uses the existing server mail configuration. Sound cannot override the device's volume or blocked autoplay permissions.
                   </p>
                 </Card>
               </div>

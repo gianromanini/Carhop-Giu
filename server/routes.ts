@@ -8,6 +8,7 @@ import { stripBookingImages } from "./bookingUtils";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import nodemailer from "nodemailer";
+import webpush from "web-push";
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || "smtp.gmail.com",
@@ -46,6 +47,87 @@ function isAdminRequest(req: any): boolean {
 async function getNotificationSettings() {
   const stored = await storage.getSetting('notifications');
   return { ...DEFAULT_NOTIFICATION_SETTINGS, ...(stored?.value || {}) };
+}
+
+const webPushConfigured = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+if (webPushConfigured) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:support@carhopgo.com',
+    process.env.VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!,
+  );
+}
+
+type StoredPushSubscription = webpush.PushSubscription & {
+  audience: string;
+  updatedAt: string;
+};
+
+async function getStoredPushSubscriptions(): Promise<StoredPushSubscription[]> {
+  const stored = await storage.getSetting('pushSubscriptions');
+  return Array.isArray(stored?.value) ? stored.value as StoredPushSubscription[] : [];
+}
+
+async function saveStoredPushSubscriptions(subscriptions: StoredPushSubscription[]) {
+  await storage.setSetting('pushSubscriptions', subscriptions);
+}
+
+async function getPushAudiencesForRequest(req: any): Promise<string[]> {
+  if (isAdminRequest(req)) return ['admin'];
+
+  const sessionHostId = req.session?.authenticatedHostId;
+  if (sessionHostId) return [`host:${sessionHostId}`];
+
+  if (req.isAuthenticated?.() && req.user?.isHost && req.user?.email) {
+    const host = await storage.getHostByEmail(req.user.email).catch(() => undefined);
+    if (host) return [`host:${host.id}`];
+  }
+
+  return [];
+}
+
+async function sendWebPushNotification(audiences: string[], payload: {
+  title: string;
+  body: string;
+  bookingId?: number;
+  targetUrl?: string;
+}) {
+  if (!webPushConfigured || audiences.length === 0) return false;
+
+  const subscriptions = await getStoredPushSubscriptions();
+  const matching = subscriptions.filter(subscription => audiences.includes(subscription.audience));
+  if (matching.length === 0) return false;
+
+  const staleEndpoints = new Set<string>();
+  const results = await Promise.allSettled(matching.map(async (subscription) => {
+    try {
+      await webpush.sendNotification(subscription, JSON.stringify({
+        title: payload.title,
+        body: payload.body,
+        icon: '/favicon.png',
+        badge: '/favicon.png',
+        tag: payload.bookingId ? `booking-${payload.bookingId}` : 'carhopgo-notification',
+        data: {
+          bookingId: payload.bookingId,
+          targetUrl: payload.targetUrl || '/',
+        },
+        vibrate: [180, 80, 180],
+      }));
+      return true;
+    } catch (error: any) {
+      if (error?.statusCode === 404 || error?.statusCode === 410) staleEndpoints.add(subscription.endpoint);
+      console.error('[Notifications] Web Push delivery failed:', error?.statusCode || error?.message || error);
+      return false;
+    }
+  }));
+
+  if (staleEndpoints.size > 0) {
+    await saveStoredPushSubscriptions(
+      subscriptions.filter(subscription => !staleEndpoints.has(subscription.endpoint))
+    );
+  }
+
+  return results.some(result => result.status === 'fulfilled' && result.value === true);
 }
 
 /**
@@ -788,6 +870,14 @@ async function notifyHostOfExtensionRequest(booking: any, vehicle: any, request:
   }
   if (settings.enabled && settings.notifyExtensionRequests && settings.smsEnabled) {
     channels.push(sendExtensionRequestSmsToHost(booking, vehicle, host, request));
+  }
+  if (webPushConfigured && settings.enabled && settings.notifyExtensionRequests && settings.pushEnabled && host?.id) {
+    channels.push(sendWebPushNotification([`host:${host.id}`], {
+      title: 'New extension request',
+      body: `${booking.driver?.name || 'Guest'} requested a ${request.type === 'reduction' ? 'reduction' : 'trip extension'} for ${booking.carName || vehicle?.model || 'your vehicle'} (${booking.bookingCode}).`,
+      bookingId: booking.id,
+      targetUrl: `/?view=host-dashboard&bookingId=${booking.id}`,
+    }));
   }
 
   if (channels.length === 0) return { status: 'skipped' as const, sentAt: undefined };
@@ -2450,6 +2540,61 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   });
 
   // ========== SETTINGS ==========
+  app.get("/api/push/config", async (_req, res) => {
+    res.json({
+      configured: webPushConfigured,
+      publicKey: webPushConfigured ? process.env.VAPID_PUBLIC_KEY : null,
+    });
+  });
+
+  app.post("/api/push/subscriptions", async (req: any, res) => {
+    const audiences = await getPushAudiencesForRequest(req);
+    if (audiences.length === 0) {
+      return res.status(401).json({ error: "Sign in as an Admin or Host before enabling background notifications" });
+    }
+    const subscription = req.body?.subscription;
+    if (
+      !subscription ||
+      typeof subscription.endpoint !== 'string' ||
+      !subscription.keys ||
+      typeof subscription.keys.p256dh !== 'string' ||
+      typeof subscription.keys.auth !== 'string'
+    ) {
+      return res.status(400).json({ error: "A valid browser push subscription is required" });
+    }
+
+    const subscriptions = await getStoredPushSubscriptions();
+    const withoutEndpoint = subscriptions.filter(item => item.endpoint !== subscription.endpoint);
+    const now = new Date().toISOString();
+    audiences.forEach(audience => {
+      withoutEndpoint.push({
+        endpoint: subscription.endpoint,
+        expirationTime: subscription.expirationTime || null,
+        keys: subscription.keys,
+        audience,
+        updatedAt: now,
+      });
+    });
+    await saveStoredPushSubscriptions(withoutEndpoint);
+    res.status(201).json({ success: true, audiences });
+  });
+
+  app.delete("/api/push/subscriptions", async (req: any, res) => {
+    const audiences = await getPushAudiencesForRequest(req);
+    if (audiences.length === 0) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const endpoint = req.body?.endpoint;
+    if (typeof endpoint !== 'string' || !endpoint) {
+      return res.status(400).json({ error: "Subscription endpoint is required" });
+    }
+    const subscriptions = await getStoredPushSubscriptions();
+    await saveStoredPushSubscriptions(
+      subscriptions.filter(item => item.endpoint !== endpoint || !audiences.includes(item.audience))
+    );
+    res.status(204).send();
+  });
+
   app.get("/api/settings", async (_req, res) => {
     const allSettings = await storage.getAllSettings();
     const settingsObj: Record<string, any> = {};
