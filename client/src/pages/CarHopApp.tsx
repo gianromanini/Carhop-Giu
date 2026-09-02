@@ -9302,6 +9302,16 @@ export default function CarHopApp() {
                   <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2">Host and Rent For The Best Prices</span>
                   <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-3 sm:mb-4" data-testid="text-hero-title">The Best car rental prices in Fairfield County <br/><span className="text-green-500">Starting from $39/day</span></h1>
                   <p className="text-xs sm:text-base lg:text-lg text-zinc-200 max-w-xl mb-6 sm:mb-8">Premium vehicles at unbeatable prices. Book your ride in just 3 simple steps.</p>
+                  <div className="max-w-xl rounded-xl border border-green-400/40 bg-green-950/50 p-3 sm:p-4 backdrop-blur-sm" data-testid="home-discount-program">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <TrendingUp size={18} className="mt-0.5 flex-shrink-0 text-green-400" />
+                      <div>
+                        <p className="text-sm sm:text-base font-bold text-green-300">Progressive discounts</p>
+                        <p className="mt-1 text-xs sm:text-sm text-green-100">Bookings longer than 3 days may qualify for greater savings.</p>
+                        <p className="mt-1 text-[10px] sm:text-xs text-green-300/80">Eligible discounts are applied automatically to the rental rate.</p>
+                      </div>
+                    </div>
+                  </div>
                   {!isCarHopGoInstalled && installPromptEvent && (
                     <div className="max-w-xl rounded-xl border border-green-400/40 bg-black/40 p-4 backdrop-blur-sm" data-testid="guest-install-prompt">
                       <p className="text-sm font-semibold text-white">Keep your bookings close</p>
@@ -15796,6 +15806,21 @@ export default function CarHopApp() {
                     </div>
                     <p className="text-xs text-zinc-500 mt-1 ml-6">{cart.car.pricing?.includedMiles || settings.includedMiles} miles/day included</p>
                     <p className="text-xs text-zinc-500 ml-6">Excess: ${(cart.car.pricing?.extraMileRate || settings.extraMileRate).toFixed(2)}/mile</p>
+                  </div>
+
+                  <div className="bg-green-950/40 border border-green-800/70 rounded-lg p-3 mb-6" data-testid="checkout-discount-program">
+                    <div className="flex items-start gap-2">
+                      <TrendingUp size={16} className="mt-0.5 flex-shrink-0 text-green-400" />
+                      <div>
+                        <p className="text-sm font-bold text-green-300">Progressive discounts</p>
+                        <p className="text-xs text-green-100 mt-1">Bookings longer than 3 days may qualify for greater savings. Any eligible discount is applied automatically below.</p>
+                        {calculateTotal().discountAmount > 0 && (
+                          <p className="text-xs font-bold text-green-400 mt-2">
+                            Current rental discount: {calculateTotal().discountPercent}% off (save ${calculateTotal().discountAmount.toFixed(2)})
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Price Breakdown */}
