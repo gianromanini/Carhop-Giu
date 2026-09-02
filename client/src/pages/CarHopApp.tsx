@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 const VehicleMap = lazy(() => import('@/components/VehicleMap'));
 import type { Vehicle, Booking } from '@shared/schema';
+import { calculateVehicleDiscount, type DiscountProgram } from '@shared/pricing';
 type User = typeof import('@shared/schema').users.$inferSelect;
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -562,7 +563,7 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
   );
 };
 
-const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}} };
+const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -661,7 +662,7 @@ function urlBase64ToUint8Array(value: string) {
   const padding = '='.repeat((4 - (value.length % 4)) % 4);
   const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(character => character.charCodeAt(0)));
+  return Uint8Array.from(Array.from(rawData, character => character.charCodeAt(0)));
 }
 
 interface FormDataType {
@@ -703,8 +704,86 @@ interface FormDataType {
   minDeliveryFee: number | undefined;
   deliveryPricePerMile: number | undefined;
   minDeliveryHours: number | undefined;
-  pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean } };
+  pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean }; discountPrograms?: DiscountProgram[] };
   [key: string]: any;
+}
+
+function DiscountProgramsEditor({ value, onChange }: { value?: DiscountProgram[]; onChange: (programs: DiscountProgram[]) => void }) {
+  const programs = value || [];
+
+  const updateProgram = (index: number, field: keyof DiscountProgram, rawValue: string) => {
+    const next = programs.map((program, programIndex) =>
+      programIndex === index
+        ? { ...program, [field]: Math.max(0, Number(rawValue) || 0) }
+        : program
+    );
+    onChange(next);
+  };
+
+  return (
+    <div className="border-t pt-3 sm:pt-4">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div>
+          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Discount Programs</label>
+          <p className="text-[10px] text-zinc-400 mt-0.5">Apply to the vehicle rental rate when the booking reaches the minimum days.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange([...programs, { minDays: 3, percent: 5 }])}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+          data-testid="button-add-discount-program"
+        >
+          <Plus size={13} /> Add line
+        </button>
+      </div>
+      {programs.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 px-3 py-3 text-[10px] sm:text-xs text-zinc-500">
+          No discount configured for this vehicle.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {programs.map((program, index) => (
+            <div key={`${index}-${program.minDays}-${program.percent}`} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 p-2">
+              <div>
+                <label className="block text-[9px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">More than (days)</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={program.minDays}
+                  onChange={(event) => updateProgram(index, 'minDays', event.target.value)}
+                  className="w-full px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs"
+                  data-testid={`input-discount-min-days-${index}`}
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase">Discount (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={program.percent}
+                  onChange={(event) => updateProgram(index, 'percent', event.target.value)}
+                  className="w-full px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs"
+                  data-testid={`input-discount-percent-${index}`}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => onChange(programs.filter((_, programIndex) => programIndex !== index))}
+                className="p-1.5 mb-0.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-950/40 rounded"
+                aria-label={`Remove discount program ${index + 1}`}
+                data-testid={`button-remove-discount-program-${index}`}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function StripePayoutPanel({ host, vehicles = [], bookings = [] }: { host: any; vehicles?: any[]; bookings?: any[] }) {
@@ -1637,26 +1716,28 @@ export default function CarHopApp() {
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
   // Load vehicles with availability filter based on search dates
+  const includeUnavailableVehicles = Boolean(currentHost || adminAuthenticated);
   const vehicleQueryKey = searchParams.start && searchParams.end 
-    ? ['/api/vehicles', searchParams.start, searchParams.end]
-    : ['/api/vehicles'];
+    ? ['/api/vehicles', searchParams.start, searchParams.end, includeUnavailableVehicles ? 'include-unavailable' : 'public']
+    : ['/api/vehicles', includeUnavailableVehicles ? 'include-unavailable' : 'public'];
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({ 
     queryKey: vehicleQueryKey,
     queryFn: async () => {
+      const availabilityParam = includeUnavailableVehicles ? '&includeUnavailable=true' : '';
       if (searchParams.start && searchParams.end) {
-        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}`);
+        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}${availabilityParam}`);
         return response.json();
       }
-      const response = await fetch('/api/vehicles');
+      const response = await fetch(`/api/vehicles${includeUnavailableVehicles ? '?includeUnavailable=true' : ''}`);
       return response.json();
     }
   });
 
   const { data: allVehicles = [] } = useQuery<Vehicle[]>({ 
-    queryKey: ['/api/vehicles/all'],
+    queryKey: ['/api/vehicles/all', includeUnavailableVehicles ? 'include-unavailable' : 'public'],
     queryFn: async () => {
-      const response = await fetch('/api/vehicles');
+      const response = await fetch(`/api/vehicles${includeUnavailableVehicles ? '?includeUnavailable=true' : ''}`);
       return response.json();
     }
   });
@@ -2045,9 +2126,44 @@ export default function CarHopApp() {
   });
 
   const toggleVehicleAvailabilityMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) => apiRequest('PUT', `/api/vehicles/${id}`, { availabilityStatus: status }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] }); }
+    mutationFn: ({ id, status }: { id: number; status: string; hadActiveBooking?: boolean }) => apiRequest('PUT', `/api/vehicles/${id}`, { availabilityStatus: status }).then((response) => response.json()),
+    onSuccess: (updatedVehicle: Vehicle, variables) => {
+      const updateCachedVehicles = (old: Vehicle[] | undefined) =>
+        old?.map((vehicle) => vehicle.id === updatedVehicle.id ? { ...vehicle, ...updatedVehicle } : vehicle);
+      queryClient.setQueriesData<Vehicle[]>({ queryKey: ['/api/vehicles'] }, updateCachedVehicles);
+      queryClient.setQueriesData<Vehicle[]>({ queryKey: ['/api/vehicles/all'] }, updateCachedVehicles);
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      if (variables.status === 'unavailable') {
+        toast({
+          title: 'Vehicle marked unavailable',
+          description: variables.hadActiveBooking
+            ? 'The active booking remains unchanged, but no new bookings will be accepted until this vehicle is made available again.'
+            : 'Guests will no longer be able to start a booking with this vehicle.',
+        });
+      } else {
+        toast({ title: 'Vehicle is available again' });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: 'Could not update vehicle availability', description: error?.message || 'Please try again.', variant: 'destructive' });
+    }
   });
+
+  const handleToggleVehicleAvailability = (vehicle: any, configuredStatus: string) => {
+    const nextStatus = configuredStatus === 'available' ? 'unavailable' : 'available';
+    if (nextStatus === 'unavailable') {
+      const activeBooking = bookings.find((booking: any) =>
+        booking.vehicleId === vehicle.id && (booking.status === 'Active' || booking.status === 'Extended')
+      );
+      const bookingWarning = activeBooking
+        ? `\n\nThis vehicle has an active booking (${activeBooking.bookingCode || 'active booking'}). The current booking will continue, but new bookings will not be accepted while the vehicle is unavailable.`
+        : '\n\nGuests will not be able to start new bookings for this vehicle.';
+      if (!window.confirm(`Set ${vehicle.model || 'this vehicle'} as unavailable?${bookingWarning}`)) return;
+      toggleVehicleAvailabilityMutation.mutate({ id: vehicle.id, status: nextStatus, hadActiveBooking: Boolean(activeBooking) } as any);
+      return;
+    }
+    toggleVehicleAvailabilityMutation.mutate({ id: vehicle.id, status: nextStatus, hadActiveBooking: false } as any);
+  };
 
   const deleteVehicleMutation = useMutation({
     mutationFn: (id: number) => apiRequest('DELETE', `/api/vehicles/${id}`),
@@ -2880,6 +2996,10 @@ export default function CarHopApp() {
   };
 
   const handleRent = (car: Vehicle) => { 
+    if ((car as any).availabilityStatus === 'unavailable') {
+      toast({ title: 'Vehicle unavailable', description: 'This vehicle is not accepting new bookings right now.', variant: 'destructive' });
+      return;
+    }
     if (!clientUser) { alert("Please sign in to make a reservation."); setShowLoginModal(true); return; } 
     const billingDays = calculateBillingDays(searchParams.start, searchParams.startTime, searchParams.end, searchParams.endTime); 
     setCart({ car, days: billingDays, billingDays: billingDays, extrasSelected: [], insuranceOption: '' }); 
@@ -2897,10 +3017,11 @@ export default function CarHopApp() {
   };
 
   const calculateTotal = () => { 
-    if (!cart.car) return { subtotal: 0, taxAmount: 0, total: 0, deliveryFee: 0 }; 
+    if (!cart.car) return { subtotal: 0, taxAmount: 0, total: 0, deliveryFee: 0, discountAmount: 0, discountPercent: 0, grossRental: 0 };
     const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
     const carPricing = cart.car.pricing || settings;
-    let runningTotal = cart.car.price * days; 
+    const rentalPricing = calculateVehicleDiscount(cart.car, days);
+    let runningTotal = rentalPricing.netRental;
     if (cart.extrasSelected.includes('childSeat')) runningTotal += (cart.car.pricing?.prices?.childSeat || settings.prices.childSeat);
     
     // Protection Plan Pricing Logic
@@ -2926,7 +3047,15 @@ export default function CarHopApp() {
     runningTotal += (carPricing.cleaningFee || settings.cleaningFee); 
     if (deliveryValidationStatus === 'valid') runningTotal += deliveryFee;
     const taxAmount = runningTotal * ((carPricing.taxes || settings.taxes) / 100); 
-    return { subtotal: runningTotal, taxAmount, total: runningTotal + taxAmount, deliveryFee: deliveryValidationStatus === 'valid' ? deliveryFee : 0 }; 
+    return {
+      subtotal: runningTotal,
+      taxAmount,
+      total: runningTotal + taxAmount,
+      deliveryFee: deliveryValidationStatus === 'valid' ? deliveryFee : 0,
+      discountAmount: rentalPricing.discountAmount,
+      discountPercent: rentalPricing.discountPercent,
+      grossRental: rentalPricing.grossRental,
+    };
   };
 
   const getMissingBookingFields = (): string[] => {
@@ -3011,6 +3140,8 @@ export default function CarHopApp() {
       deliveryType: selectedDeliveryType,
       details: {
         rate: dailyRate * days,
+         discount: totalData.discountAmount,
+         discountPercent: totalData.discountPercent,
         extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
         childSeatSelected: cart.extrasSelected.includes('childSeat'),
         protection: protectionDailyRate * days,
@@ -4153,8 +4284,6 @@ export default function CarHopApp() {
     setTimeout(() => { win.print(); }, 400);
   };
 
-  if (vehiclesLoading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-green-600"><Loader className="animate-spin" size={32} /> Loading CarHopGo...</div>;
-
   return (
     <div className={darkMode ? "dark" : ""}>
       <style>{` @page { size: letter; margin: 0.4in; } @media print { body * { visibility: hidden; } .printable-receipt, .printable-receipt *, .printable-agreement, .printable-agreement * { visibility: visible !important; } .printable-receipt, .printable-agreement { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; color: black !important; font-size: 9pt; line-height: 1.2; padding: 0.3in !important; } .no-print, .no-print * { display: none !important; visibility: hidden !important; } } `}</style>
@@ -4256,7 +4385,7 @@ export default function CarHopApp() {
                 )}
               </button>
             )}
-            <button onClick={() => {
+            {!currentHost && <button onClick={() => {
               if (adminAuthenticated) {
                 setView('admin');
               } else {
@@ -4264,7 +4393,7 @@ export default function CarHopApp() {
                 setAdminPasswordInput('');
                 setAdminPasswordError('');
               }
-            }} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>
+            }} className="text-zinc-400 hover:text-white" data-testid="button-admin"><Lock size={16}/></button>}
           </div>
 
           <div className="flex md:hidden items-center justify-end gap-1 sm:gap-2 flex-1">
@@ -6374,7 +6503,7 @@ export default function CarHopApp() {
                     setTimeout(() => queryClient.invalidateQueries({ queryKey: ['/api/support-messages'] }), 500);
                   }
                 }} 
-                className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${hostTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-host-tab-${tab}`}>
+                 className={`flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap border ${hostTab === tab ? 'bg-zinc-900 border-zinc-900 text-white shadow-md dark:bg-green-600 dark:border-green-600' : 'bg-zinc-100 border-zinc-300 text-zinc-900 hover:bg-zinc-800 hover:border-zinc-800 hover:text-white dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:border-zinc-600'}`} data-testid={`button-host-tab-${tab}`}>
                 <div className="flex items-center gap-1">
                   {tab === 'fleet' && <Car size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   {tab === 'bookings' && <Briefcase size={16} className="sm:w-[18px] sm:h-[18px]" />}
@@ -6529,22 +6658,22 @@ export default function CarHopApp() {
                                   const activeBooking = bookings.find((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
                                   const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
                                   const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
-                                  const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : ((car as any).availabilityStatus || 'available');
+                                   const configuredStatus = (car as any).availabilityStatus || 'available';
+                                   const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : configuredStatus;
                                   return (
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                       {effectiveStatus === 'on-trip' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700" data-testid={`badge-vehicle-status-${car.id}`}>On a Trip</span>}
                                       {effectiveStatus === 'booked' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700" data-testid={`badge-vehicle-status-${car.id}`}>Booked</span>}
                                       {effectiveStatus === 'available' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700" data-testid={`badge-vehicle-status-${car.id}`}>Available</span>}
                                       {effectiveStatus === 'unavailable' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700" data-testid={`badge-vehicle-status-${car.id}`}>Unavailable</span>}
-                                      {!isOnTrip && !isBooked && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); toggleVehicleAvailabilityMutation.mutate({ id: car.id, status: effectiveStatus === 'available' ? 'unavailable' : 'available' }); }}
-                                          className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
-                                          data-testid={`button-toggle-availability-${car.id}`}
-                                        >
-                                          {effectiveStatus === 'available' ? 'Set Unavailable' : 'Set Available'}
-                                        </button>
-                                      )}
+                                       {isBooked && configuredStatus === 'unavailable' && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700">Unavailable for new bookings</span>}
+                                       <button
+                                         onClick={(e) => { e.stopPropagation(); handleToggleVehicleAvailability(car, configuredStatus); }}
+                                         className="text-[10px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white underline"
+                                         data-testid={`button-toggle-availability-${car.id}`}
+                                       >
+                                         {configuredStatus === 'available' ? 'Set Unavailable' : 'Set Available'}
+                                       </button>
                                     </div>
                                   );
                                 })()}
@@ -6601,7 +6730,7 @@ export default function CarHopApp() {
                                       minDeliveryHours: car.minDeliveryHours || 6,
                                       locationLat: car.locationLat || null,
                                       locationLon: car.locationLon || null,
-                                      pricing: car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
+                                       pricing: fullCar.pricing || car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []}
                                     });
                                     setHostVehicleImages(fullCar.images || []);
                                   }
@@ -6634,12 +6763,13 @@ export default function CarHopApp() {
                       toast({ title: 'Error', description: 'VIN Number must be exactly 17 characters', variant: 'destructive' });
                       return;
                     }
-                    const vehiclePricing = priceConfigForm ? {
+                     const vehiclePricing = priceConfigForm ? {
                       taxes: priceConfigForm.taxes,
                       cleaningFee: priceConfigForm.cleaningFee,
                       includedMiles: priceConfigForm.includedMiles,
                       extraMileRate: priceConfigForm.extraMileRate,
-                      prices: priceConfigForm.prices
+                       prices: priceConfigForm.prices,
+                       discountPrograms: formData.pricing?.discountPrograms || []
                     } : formData.pricing;
                     const vehicleData = {
                       ...formData,
@@ -7132,6 +7262,11 @@ export default function CarHopApp() {
                           </div>
                         </div>
                       </div>
+
+                      <DiscountProgramsEditor
+                        value={formData.pricing?.discountPrograms}
+                        onChange={(discountPrograms) => setFormData((previous) => ({ ...previous, pricing: { ...previous.pricing, discountPrograms } }))}
+                      />
 
                       {/* Action Buttons - At the very bottom */}
                       <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
@@ -9978,22 +10113,21 @@ export default function CarHopApp() {
                                 const activeBooking = bookings.find((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
                                 const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
                                 const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
-                                const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : ((car as any).availabilityStatus || 'available');
+                                 const configuredStatus = (car as any).availabilityStatus || 'available';
+                                 const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : configuredStatus;
                                 return (
                                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                     {effectiveStatus === 'on-trip' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>On a Trip</span>}
                                     {effectiveStatus === 'booked' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Booked</span>}
                                     {effectiveStatus === 'available' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Available</span>}
                                     {effectiveStatus === 'unavailable' && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700" data-testid={`badge-admin-vehicle-status-${car.id}`}>Unavailable</span>}
-                                    {!isOnTrip && !isBooked && (
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); toggleVehicleAvailabilityMutation.mutate({ id: car.id, status: effectiveStatus === 'available' ? 'unavailable' : 'available' }); }}
-                                        className="text-[9px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
-                                        data-testid={`button-toggle-availability-admin-${car.id}`}
-                                      >
-                                        {effectiveStatus === 'available' ? 'Set Unavailable' : 'Set Available'}
-                                      </button>
-                                    )}
+                                     <button
+                                       onClick={(e) => { e.stopPropagation(); handleToggleVehicleAvailability(car, configuredStatus); }}
+                                       className="text-[9px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white underline"
+                                       data-testid={`button-toggle-availability-admin-${car.id}`}
+                                     >
+                                       {configuredStatus === 'available' ? 'Set Unavailable' : 'Set Available'}
+                                     </button>
                                   </div>
                                 );
                               })()}
@@ -10271,6 +10405,11 @@ export default function CarHopApp() {
                                     <p className="text-[8px] text-zinc-500 mt-1 uppercase italic">* Standard (SLI): $400k third-party protection. Gold: SLI + Damage/Theft. Admin only override.</p>
                                   </div>
                                 </div>
+
+                                 <DiscountProgramsEditor
+                                   value={formData.pricing?.discountPrograms}
+                                   onChange={(discountPrograms) => setFormData((previous) => ({ ...previous, pricing: { ...previous.pricing, discountPrograms } }))}
+                                 />
 
                                 <div className="flex gap-2 pt-2">
                                   <Button onClick={handleSaveVehicle} className="flex-1" data-testid="button-update-vehicle">
@@ -15505,6 +15644,12 @@ export default function CarHopApp() {
                       <span className="text-zinc-400">Rate ({cart.billingDays} days)</span>
                       <span className="text-white">${(cart.billingDays * cart.car.price).toFixed(2)}</span>
                     </div>
+                   {calculateTotal().discountAmount > 0 && (
+                     <div className="flex justify-between text-green-400">
+                       <span>Discount ({calculateTotal().discountPercent}%)</span>
+                       <span>-${calculateTotal().discountAmount.toFixed(2)}</span>
+                     </div>
+                   )}
                     {cart.insuranceOption === '' ? (
                       <div className="flex justify-between items-center text-yellow-500">
                         <span className="text-xs">Protection (not selected)</span>
@@ -15727,12 +15872,13 @@ export default function CarHopApp() {
           const protection = pendingBooking.details?.protection || 0;
           const extras = pendingBooking.details?.extras || 0;
           const cleaningFee = pendingBooking.details?.fees || 0;
+           const discount = pendingBooking.details?.discount || 0;
            const deliveryFee = !isBookingRejected && approvalStatus !== 'rejected' ? deliveryFeeAmount : 0;
-          const subtotal = rate + protection + extras + cleaningFee + deliveryFee;
+           const subtotal = rate - discount + protection + extras + cleaningFee + deliveryFee;
           const calculatedTax = subtotal * taxRate;
           
           // For rejected delivery, recalculate without delivery fee
-          const subtotalWithoutDelivery = rate + protection + extras + cleaningFee;
+           const subtotalWithoutDelivery = rate - discount + protection + extras + cleaningFee;
           const taxWithoutDelivery = subtotalWithoutDelivery * taxRate;
           
            const adjustedTotal = approvalStatus === 'rejected' || isBookingRejected
@@ -15828,6 +15974,12 @@ export default function CarHopApp() {
                             <span className="text-zinc-600 dark:text-zinc-400">Rental Rate ({pendingBooking.days} days)</span>
                             <span className="text-zinc-900 dark:text-white">${rate.toFixed(2)}</span>
                           </div>
+                       {discount > 0 && (
+                         <div className="flex justify-between text-green-600 dark:text-green-400">
+                           <span>Discount</span>
+                           <span>-${discount.toFixed(2)}</span>
+                         </div>
+                       )}
                           {protection > 0 && (
                             <div className="flex justify-between">
                               <span className="text-zinc-600 dark:text-zinc-400">Protection - {pendingBooking.details?.protectionType || 'Standard'}</span>
@@ -15931,11 +16083,12 @@ export default function CarHopApp() {
           const protection = pendingBooking.details?.protection || 0;
           const extras = pendingBooking.details?.extras || 0;
           const cleaningFee = pendingBooking.details?.fees || 0;
+           const discount = pendingBooking.details?.discount || 0;
           const deliveryFee = approvalStatus === 'pending' || approvalStatus === 'approved' ? deliveryFeeAmount : 0;
-          const subtotal = rate + protection + extras + cleaningFee + deliveryFee;
+           const subtotal = rate - discount + protection + extras + cleaningFee + deliveryFee;
           const calculatedTax = subtotal * taxRate;
           
-          const subtotalWithoutDelivery = rate + protection + extras + cleaningFee;
+           const subtotalWithoutDelivery = rate - discount + protection + extras + cleaningFee;
           const taxWithoutDelivery = subtotalWithoutDelivery * taxRate;
           
           const adjustedTax = approvalStatus === 'rejected'
@@ -16027,6 +16180,12 @@ export default function CarHopApp() {
                         <span className="text-zinc-400">Base Rate</span>
                         <span className="text-white">${(pendingBooking.details?.rate || 0).toFixed(2)}</span>
                       </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-green-400">
+                        <span>Discount</span>
+                        <span>-${discount.toFixed(2)}</span>
+                      </div>
+                    )}
                       {(pendingBooking.details as any)?.protection > 0 && (
                         <div className="flex justify-between">
                           <span className="text-zinc-400">Protection Package</span>

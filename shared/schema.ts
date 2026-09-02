@@ -94,6 +94,7 @@ export const vehicles = pgTable("vehicles", {
       stressFreePackage: number; 
       stressFreePackagePerTrip: boolean;
     };
+     discountPrograms?: { minDays: number; percent: number }[];
   }>(),
   expenses: jsonb("expenses").$type<{
     lease: number;

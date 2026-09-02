@@ -5,6 +5,7 @@ import { insertVehicleSchema, insertBookingSchema, insertHostSchema, insertPayou
 import { setupAuth, isAuthenticated } from "./googleAuth";
 import { getUncachableStripeClient, getStripePublishableKey, verifyStripePaymentIntent } from "./stripeClient";
 import { stripBookingImages } from "./bookingUtils";
+import { calculateVehicleDiscount } from "@shared/pricing";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -1368,7 +1369,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const hosts = await storage.getHosts();
     const hostsMap = new Map(hosts.map(h => [h.id.toString(), h]));
     
-    let filteredVehicles = vehicles;
+    const includeUnavailable = String(req.query.includeUnavailable || '').toLowerCase() === 'true';
+    let filteredVehicles = includeUnavailable
+      ? vehicles
+      : vehicles.filter((vehicle) => vehicle.availabilityStatus !== 'unavailable');
     
     const { startDate, endDate } = req.query;
     if (startDate && endDate) {
@@ -1592,6 +1596,15 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         requestedStatus === 'Pending Approval' ||
         (result.data as any).details?.bookingApprovalStatus === 'pending';
 
+      if (result.data.vehicleId) {
+        const requestedVehicle = await storage.getVehicle(result.data.vehicleId);
+        if (requestedVehicle?.availabilityStatus === 'unavailable') {
+          return res.status(409).json({
+            error: "This vehicle is currently unavailable and cannot accept new bookings.",
+          });
+        }
+      }
+
       if (requestedStatus === 'Active') {
         return res.status(409).json({
           error: "New bookings must be approved by the host or admin before payment.",
@@ -1719,6 +1732,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
 
     if (status === 'approved' && booking.vehicleId) {
+      const vehicle = await storage.getVehicle(booking.vehicleId);
+      if (vehicle?.availabilityStatus === 'unavailable') {
+        return res.status(409).json({
+          error: "This vehicle is currently unavailable and cannot accept new bookings.",
+        });
+      }
       const allBookings = await storage.getBookings();
       const blockingStatuses = ['Active', 'Extended'];
       const conflicting = allBookings.find((candidate) =>
@@ -1794,6 +1813,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         return res.status(409).json({ error: "The delivery request is still awaiting approval." });
       }
       if (previousBooking?.vehicleId) {
+        const vehicle = await storage.getVehicle(previousBooking.vehicleId);
+        if (vehicle?.availabilityStatus === 'unavailable') {
+          return res.status(409).json({
+            error: "This vehicle is currently unavailable and cannot accept new bookings.",
+          });
+        }
         const allBookings = await storage.getBookings();
         const blockingStatuses = ['Active', 'Extended'];
         const conflicting = allBookings.find((candidate) =>
@@ -1984,6 +2009,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const rateDifference = pricePerDay * daysDifference;
       const oldExtendedRate = booking.details?.extendedRate || 0;
       const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
+      const oldDiscount = Number(booking.details?.discount || 0);
+      const discountPricing = calculateVehicleDiscount(vehicle, updateData.days);
+      const newDiscount = discountPricing.discountAmount;
+      const discountDifference = newDiscount - oldDiscount;
 
       // Protection: charge the same per-day rate used at booking start.
       const oldProtectionAmt = Number(booking.details?.protection || 0);
@@ -1991,12 +2020,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const protectionDeltaAmt = protectionPerDayAmt * daysDifference;
       const newProtectionAmt = Math.max(0, oldProtectionAmt + protectionDeltaAmt);
 
-      // Calculate tax adjustment (rate delta + protection delta both taxed)
+      // Calculate tax adjustment after applying any new duration discount.
       const oldTax = booking.details?.tax || 0;
       let newTax = oldTax;
       if (daysDifference !== 0) {
         const taxRate = (settingsObj.taxes || 0) / 100;
-        const taxAdjustment = (rateDifference + protectionDeltaAmt) * taxRate;
+        const taxAdjustment = (rateDifference + protectionDeltaAmt - discountDifference) * taxRate;
         newTax = oldTax + taxAdjustment;
       }
       
@@ -2004,6 +2033,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       updateData.details = {
         ...booking.details,
         extendedRate: newExtendedRate,
+         discount: newDiscount,
+         discountPercent: discountPricing.discountPercent,
         protection: newProtectionAmt,
         protectionDailyRate: protectionPerDayAmt,
         tax: newTax
@@ -2013,7 +2044,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const baseRate = (booking.details?.rate || 0);
       const fees = (booking.details?.fees || 0);
       const deliveryFee = (booking.details?.deliveryFee || 0);
-      const discount = (booking.details?.discount || 0);
+      const discount = newDiscount;
       
       // Sum everything up for the new total (use updated protection)
       updateData.total = baseRate + newProtectionAmt + fees + newExtendedRate + newTax + deliveryFee - discount;
@@ -2170,6 +2201,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const rateDifference = pricePerDay * extraDays;
     const oldExtendedRate = booking.details?.extendedRate || 0;
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
+    const oldDiscount = Number(booking.details?.discount || 0);
+    const discountPricing = calculateVehicleDiscount(vehicle, newDays);
+    const newDiscount = discountPricing.discountAmount;
+    const discountDifference = newDiscount - oldDiscount;
 
     // Protection: charge the same per-day rate that was selected at booking start.
     const oldProtection = Number(booking.details?.protection || 0);
@@ -2180,18 +2215,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
     const oldTax = booking.details?.tax || 0;
     const taxRate = (settingsObj.taxes || 0) / 100;
-    // Tax applies to both the daily rate delta and the protection delta.
-    const taxAdjustment = (rateDifference + protectionDifference) * taxRate;
+    // Tax follows the discounted rental amount plus the protection delta.
+    const taxAdjustment = (rateDifference + protectionDifference - discountDifference) * taxRate;
     const newTax = oldTax + taxAdjustment;
 
-    // Incremental total: add rate delta + protection delta + combined tax.
+    // Incremental total: add the gross rate and protection deltas, then apply
+    // any newly earned discount and the corresponding tax adjustment.
     // This preserves every other component already in booking.total (extras, fees, delivery,
     // discounts, manual charges, existing tax, etc.) without recomputing them.
-    const newTotal = (booking.total || 0) + rateDifference + protectionDifference + taxAdjustment;
+    const newTotal = (booking.total || 0) + rateDifference + protectionDifference - discountDifference + taxAdjustment;
 
     // Append a system message notifying the guest
     const noteText = note ? ` Note: ${note}` : '';
-    const totalAddition = rateDifference + protectionDifference + taxAdjustment;
+    const totalAddition = rateDifference + protectionDifference - discountDifference + taxAdjustment;
     const systemMsg = {
       id: `msg-${Date.now()}`,
       read: false,
@@ -2208,6 +2244,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       details: {
         ...booking.details,
         extendedRate: newExtendedRate,
+         discount: newDiscount,
+         discountPercent: discountPricing.discountPercent,
         protection: newProtection,
         protectionDailyRate: protectionPerDay,
         tax: newTax,
