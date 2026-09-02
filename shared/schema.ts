@@ -167,6 +167,9 @@ export const bookings = pgTable("bookings", {
     deliveryType?: 'delivery' | 'pickup';
     deliveryApprovalStatus?: 'pending' | 'approved' | 'rejected';
     deliveryApprovalMessage?: string;
+    bookingApprovalStatus?: 'pending' | 'approved' | 'rejected';
+    bookingApprovalMessage?: string;
+    bookingApprovalRespondedAt?: string;
     deliveryAddress?: string;
     pickupAddress?: string;
     hostEmail?: string;

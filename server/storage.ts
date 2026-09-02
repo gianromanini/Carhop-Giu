@@ -596,8 +596,9 @@ export class MemStorage implements IStorage {
     // Filter out vehicles with conflicting bookings
     return allVehicles.filter(vehicle => {
       const hasConflict = allBookings.some(booking => {
-        // Skip cancelled/completed bookings
-        if (booking.status === 'Completed' || booking.status === 'Cancelled') return false;
+        // Pending requests do not reserve vehicles. They are revalidated when
+        // approved and again immediately before payment activates the booking.
+        if (booking.status !== 'Active' && booking.status !== 'Extended') return false;
         
         // Check for date overlap
         const bookingStart = new Date(booking.startDate).getTime();

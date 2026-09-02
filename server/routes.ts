@@ -58,6 +58,8 @@ async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
   const clientEmail = booking.driver?.email;
   if (!clientEmail) return;
 
+  const bookingIsPending = booking.status === 'Pending Approval' ||
+    booking.details?.bookingApprovalStatus === 'pending';
   const deliveryType = booking.details?.deliveryType || 'pickup';
   const deliveryAddress = booking.details?.deliveryAddress || '';
   const pickupAddress = booking.details?.pickupAddress || booking.location || '';
@@ -66,18 +68,20 @@ async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: clientEmail,
-      subject: `CarHop - Booking Confirmation #${booking.bookingCode}`,
+      subject: `CarHop - ${bookingIsPending ? 'Booking Request Received' : 'Booking Confirmation'} #${booking.bookingCode}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">Booking Confirmed!</h1>
+            <h1 style="margin: 0; font-size: 28px;">${bookingIsPending ? 'Booking Request Received' : 'Booking Confirmed!'}</h1>
           </div>
           
           <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
             <p style="font-size: 16px; color: #1f2937; margin: 0 0 20px 0;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
             
             <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0 0 20px 0;">
-              Your booking has been confirmed! Here are your rental details:
+              ${bookingIsPending
+                ? 'Your booking request has been received. The host or admin must release the vehicle before payment is available.'
+                : 'Your booking has been confirmed! Here are your rental details:'}
             </p>
             
             <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
@@ -96,7 +100,11 @@ async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
               <p style="margin: 0 0 10px 0; color: #6b7280;">
                 <strong style="color: #1f2937;">Duration:</strong> ${booking.days} day(s)
               </p>
-              ${deliveryType === 'delivery' ? `
+              ${bookingIsPending ? `
+                <p style="margin: 0; color: #f59e0b;">
+                  <strong>Next step:</strong> Wait for the host or admin to approve the vehicle. No payment has been taken.
+                </p>
+              ` : deliveryType === 'delivery' ? `
                 <p style="margin: 0 0 10px 0; color: #6b7280;">
                   <strong style="color: #1f2937;">Delivery Address:</strong> ${deliveryAddress}
                 </p>
@@ -205,6 +213,42 @@ async function sendDeliveryApprovalEmail(booking: any, status: 'approved' | 'rej
     console.log(`Delivery ${status} email sent to ${clientEmail}`);
   } catch (error) {
     console.error("Error sending delivery approval email:", error);
+  }
+}
+
+async function sendBookingApprovalEmail(booking: any, status: 'approved' | 'rejected') {
+  const clientEmail = booking.driver?.email;
+  if (!clientEmail) return;
+  const isApproved = status === 'approved';
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: clientEmail,
+      subject: `CarHop - Booking Request ${isApproved ? 'Approved' : 'Declined'} #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, ${isApproved ? '#22c55e 0%, #16a34a' : '#ef4444 0%, #b91c1c'} 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Booking Request ${isApproved ? 'Approved!' : 'Declined'}</h1>
+          </div>
+          <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937;">Hi <strong>${booking.driver?.name || 'Customer'}</strong>,</p>
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">
+              ${isApproved
+                ? 'The host has released the vehicle for your requested dates. Complete your payment in My Bookings to confirm the reservation.'
+                : 'The vehicle is not available for your requested dates. No payment was taken. Please choose another vehicle or dates.'}
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid ${isApproved ? '#22c55e' : '#ef4444'};">
+              <p style="margin: 0 0 10px; color: #6b7280;"><strong style="color: #1f2937;">Booking Code:</strong> ${booking.bookingCode}</p>
+              <p style="margin: 0 0 10px; color: #6b7280;"><strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || 'N/A'}</p>
+              <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">Dates:</strong> ${booking.startDate} to ${booking.returnDate}</p>
+            </div>
+            <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">CarHop LLC - Connecticut, USA</p>
+          </div>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Error sending booking approval email:", error);
   }
 }
 
@@ -1103,11 +1147,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const requestedStart = startDate as string;
       const requestedEnd = endDate as string;
       const allBookings = await storage.getBookings();
-      const activeStatuses = ['Cancelled', 'Declined', 'Completed'];
+       // Pending requests do not reserve a vehicle. Availability is checked
+       // again when the host approves and when payment activates the booking.
+       const blockingStatuses = ['Active', 'Extended'];
       const overlappingVehicleIds = new Set<number>();
       
       for (const booking of allBookings) {
-        if (activeStatuses.includes(booking.status)) continue;
+         if (!blockingStatuses.includes(booking.status)) continue;
         if (!booking.vehicleId) continue;
         if (booking.startDate < requestedEnd && booking.returnDate > requestedStart) {
           overlappingVehicleIds.add(booking.vehicleId);
@@ -1147,9 +1193,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get("/api/vehicles/:id/booked-dates", async (req, res) => {
     const id = parseInt(req.params.id);
     const allBookings = await storage.getBookings();
-    const inactive = ['Cancelled', 'Declined', 'Completed'];
+     const blockingStatuses = ['Active', 'Extended'];
     const ranges = allBookings
-      .filter(b => b.vehicleId === id && !inactive.includes(b.status))
+      .filter(b => b.vehicleId === id && blockingStatuses.includes(b.status))
       .map(b => ({ start: b.startDate, end: b.returnDate, status: b.status }));
     res.json(ranges);
   });
@@ -1313,12 +1359,43 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
 
     try {
+      const requestedStatus = String((result.data as any).status || '');
+      const bookingApprovalRequested =
+        requestedStatus === 'Pending Approval' ||
+        (result.data as any).details?.bookingApprovalStatus === 'pending';
+
+      if (requestedStatus === 'Active') {
+        return res.status(409).json({
+          error: "New bookings must be approved by the host or admin before payment.",
+        });
+      }
+
+      // A booking request is intentionally created before payment. It must not
+      // reserve the vehicle until a host/admin approves it and the guest pays.
+      if (bookingApprovalRequested) {
+        const driverEmail = String((result.data as any).driver?.email || '').toLowerCase().trim();
+        const existingBookings = await storage.getBookings();
+        const duplicate = existingBookings.find((existing) =>
+          existing.vehicleId === result.data.vehicleId &&
+          existing.startDate === result.data.startDate &&
+          existing.returnDate === result.data.returnDate &&
+          String((existing.driver as any)?.email || '').toLowerCase().trim() === driverEmail &&
+          !['Cancelled', 'Declined', 'Completed'].includes(existing.status)
+        );
+        if (duplicate) {
+          return res.status(409).json({
+            error: "A booking request for this vehicle and dates already exists.",
+            bookingId: duplicate.id,
+          });
+        }
+      }
+
       // Server-side Stripe payment verification before creating any booking marked as paid/active
       const paymentRaw: any = (result.data as any).paymentRaw;
       const stripePaymentIntentId: string | undefined = paymentRaw?.stripePaymentIntentId;
       const isPayPal = paymentRaw?.type === 'paypal' || (stripePaymentIntentId && stripePaymentIntentId.startsWith('PAYPAL-'));
 
-      if (!isPayPal) {
+      if (!bookingApprovalRequested && !isPayPal) {
         if (!stripePaymentIntentId) {
           console.warn("[API] Booking missing stripePaymentIntentId");
           return res.status(400).json({ error: "Payment missing. Complete the card payment before creating the booking." });
@@ -1344,7 +1421,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         } catch (replayErr) {
           console.error("[API] Replay check error:", replayErr);
         }
-      } else {
+      } else if (!bookingApprovalRequested) {
         console.log("[API] PayPal simulated payment — skipping Stripe verification");
       }
 
@@ -1375,6 +1452,91 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     }
   });
 
+  // ========== INITIAL BOOKING APPROVAL (Host/Admin only) ==========
+  app.put("/api/bookings/:id/booking-approval", async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const status = req.body?.status;
+    if (status !== 'approved' && status !== 'rejected') {
+      return res.status(400).json({ error: "Status must be approved or rejected." });
+    }
+
+    const booking = await storage.getBooking(id);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const passportAuth = typeof req.isAuthenticated === 'function' && req.isAuthenticated();
+    const sessionAdminAuth = req.session?.adminAuthenticated === true;
+    const sessionHostEmail = String(req.session?.authenticatedHostEmail || '').toLowerCase().trim();
+    const callerIsAdmin = (passportAuth && req.user?.isAdmin === true) || sessionAdminAuth;
+    const callerIsHostViaPassport = passportAuth && req.user?.isHost === true;
+    const callerIsHost = callerIsHostViaPassport || !!sessionHostEmail;
+
+    if (!callerIsAdmin && !callerIsHost) {
+      return res.status(401).json({ error: "Authentication required. Please sign in as a host or admin." });
+    }
+
+    if (!callerIsAdmin) {
+      const actorEmail = callerIsHostViaPassport
+        ? String(req.user?.email || '').toLowerCase().trim()
+        : sessionHostEmail;
+      const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
+      const host = vehicle?.hostId ? await storage.getHost(parseInt(vehicle.hostId)).catch(() => null) : null;
+      if (!host || String(host.email || '').toLowerCase().trim() !== actorEmail) {
+        return res.status(403).json({ error: "Only the vehicle's host or an admin may approve this booking." });
+      }
+    }
+
+    if (booking.status !== 'Pending Approval' ||
+        (booking.details as any)?.bookingApprovalStatus !== 'pending') {
+      return res.status(409).json({ error: "This booking is no longer awaiting approval." });
+    }
+
+    if (status === 'approved' && booking.vehicleId) {
+      const allBookings = await storage.getBookings();
+      const blockingStatuses = ['Active', 'Extended'];
+      const conflicting = allBookings.find((candidate) =>
+        candidate.id !== id &&
+        candidate.vehicleId === booking.vehicleId &&
+        blockingStatuses.includes(candidate.status) &&
+        candidate.startDate < booking.returnDate &&
+        candidate.returnDate > booking.startDate
+      );
+      if (conflicting) {
+        return res.status(409).json({
+          error: "Vehicle is no longer available for these dates.",
+          conflictingBooking: conflicting.bookingCode,
+        });
+      }
+    }
+
+    const updatedDetails = {
+      ...booking.details,
+      bookingApprovalStatus: status,
+      bookingApprovalMessage: status === 'approved'
+        ? 'Your booking request was approved. Complete payment to confirm the reservation.'
+        : 'The vehicle is not available for these dates. Please choose another vehicle or dates.',
+      bookingApprovalRespondedAt: new Date().toISOString(),
+    };
+    const newMessage = {
+      id: `msg-${Date.now()}`,
+      sender: callerIsAdmin ? 'admin' as const : 'host' as const,
+      text: updatedDetails.bookingApprovalMessage,
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    const updated = await storage.updateBooking(id, {
+      details: updatedDetails,
+      status: status === 'rejected' ? 'Declined' : 'Pending Approval',
+      messages: [...(booking.messages || []), newMessage],
+      unread: true,
+    });
+    if (!updated) return res.status(404).json({ error: "Booking not found" });
+
+    sendBookingApprovalEmail(updated, status).catch((error) =>
+      console.error("Error sending booking approval email:", error)
+    );
+    res.json(updated);
+  });
+
   app.put("/api/bookings/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const result = insertBookingSchema.partial().safeParse(req.body);
@@ -1392,6 +1554,32 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const incomingStatus: string | undefined = (result.data as any).status;
     const previousStatus: string | undefined = previousBooking?.status;
     const isActivating = incomingStatus === 'Active' && previousStatus !== 'Active';
+    const previousDetails: any = previousBooking?.details || {};
+
+    if (isActivating && previousStatus === 'Pending Approval') {
+      const bookingApprovalStatus = previousDetails.bookingApprovalStatus;
+      const deliveryApprovalStatus = previousDetails.deliveryApprovalStatus;
+      if (bookingApprovalStatus === 'pending' || bookingApprovalStatus === 'rejected') {
+        return res.status(409).json({ error: "The host or admin must approve this booking before payment." });
+      }
+      if (deliveryApprovalStatus === 'pending') {
+        return res.status(409).json({ error: "The delivery request is still awaiting approval." });
+      }
+      if (previousBooking?.vehicleId) {
+        const allBookings = await storage.getBookings();
+        const blockingStatuses = ['Active', 'Extended'];
+        const conflicting = allBookings.find((candidate) =>
+          candidate.id !== id &&
+          candidate.vehicleId === previousBooking.vehicleId &&
+          blockingStatuses.includes(candidate.status) &&
+          candidate.startDate < previousBooking.returnDate &&
+          candidate.returnDate > previousBooking.startDate
+        );
+        if (conflicting) {
+          return res.status(409).json({ error: "Vehicle is no longer available for these dates." });
+        }
+      }
+    }
 
     const isIncomingPayPal = incomingPaymentRaw?.type === 'paypal' || (incomingIntentId && incomingIntentId.startsWith('PAYPAL-'));
     if (incomingIntentId && incomingIntentId !== previousIntentId && !isIncomingPayPal) {

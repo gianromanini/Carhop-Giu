@@ -2659,11 +2659,117 @@ export default function CarHopApp() {
       });
       return;
     }
-    setView('payment');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await handleRequestBookingApproval();
   };
 
   const isCheckoutValid = () => driverDetails.name && driverDetails.email && driverDetails.phone && driverDetails.licenseNumber && driverDetails.licenseImages.length >= 2 && cart.insuranceOption !== '';
+
+  const buildBookingPayload = (stripePayment?: StripePaymentResult) => {
+    const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
+    const totalData = calculateTotal();
+    const bookingLocation = selectedDeliveryType === 'delivery' ? (deliveryAddressBooking || pickupAddress || "Default Location") : (pickupAddress || "Default Location");
+    const dailyRate = cart.car!.price;
+    const vehicleForHost = (allVehicles.length > 0 ? allVehicles : vehicles).find(v => String(v.id) === String(cart.car?.id)) || vehicles.find(v => String(v.id) === String(cart.car?.id));
+    const hostForBooking = vehicleForHost?.hostId ? (hostsData as any[]).find((h: any) => String(h.id) === String(vehicleForHost.hostId)) : null;
+    const hostEmail = (cart.car as any).hostEmail || hostForBooking?.email || '';
+    const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
+    const standardPlanPrice = 25.90;
+    const vehicleStandardPrice = cart.car!.pricing?.prices?.insurance500;
+    const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
+    const finalGoldPrice = finalStandardPrice + 16.90;
+    const minimumPlanPrice = 19.40;
+    const protectionDailyRate =
+      cart.insuranceOption === '500' ? finalStandardPrice :
+      cart.insuranceOption === '1000' && isSpecialHost ? finalGoldPrice :
+      cart.insuranceOption === 'minimum' ? minimumPlanPrice : 0;
+
+    return {
+      bookingCode: 'BK-' + Math.floor(Math.random() * 10000),
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      status: stripePayment ? 'Active' : 'Pending Approval',
+      carName: cart.car!.model,
+      vehicleId: cart.car!.id,
+      userId: authUser?.id || undefined,
+      location: bookingLocation,
+      startDate: searchParams.start,
+      startTime: searchParams.startTime,
+      returnDate: searchParams.end,
+      returnTime: searchParams.endTime,
+      days,
+      total: totalData.total,
+      image: cart.car!.images?.[0] || '',
+      driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages },
+      paymentRaw: stripePayment ? {
+        type: (stripePayment.brand || 'card').toLowerCase(),
+        cardName: stripePayment.cardName,
+        last4: stripePayment.last4,
+        stripePaymentIntentId: stripePayment.paymentIntentId,
+      } : undefined,
+      paymentMethod: stripePayment ? `${(stripePayment.brand || 'card').toUpperCase()} **** ${stripePayment.last4 || '----'}` : undefined,
+      deliveryType: selectedDeliveryType,
+      details: {
+        rate: dailyRate * days,
+        extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
+        childSeatSelected: cart.extrasSelected.includes('childSeat'),
+        protection: protectionDailyRate * days,
+        protectionDailyRate,
+        protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : cart.insuranceOption === 'minimum' ? 'Minimum' : 'None'),
+        fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee),
+        deliveryFee: totalData.deliveryFee || 0,
+        tax: totalData.taxAmount,
+        deliveryType: selectedDeliveryType,
+        deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined,
+        bookingApprovalStatus: stripePayment ? 'approved' : 'pending',
+        deliveryAddress: selectedDeliveryType === 'delivery' ? deliveryAddressBooking : undefined,
+        pickupAddress,
+        hostEmail,
+        hostId: vehicleForHost?.hostId || '',
+        hostName: hostForBooking ? `${hostForBooking.firstName} ${hostForBooking.lastName}` : '',
+        authEmail: authUser?.email || '',
+      },
+      messages: [{
+        id: crypto.randomUUID(),
+        sender: 'admin' as const,
+        text: stripePayment
+          ? 'Your booking has been confirmed after payment.'
+          : 'Your booking request was submitted. The host or admin must release the vehicle before payment can be completed.',
+        createdAt: new Date().toISOString(),
+        read: false,
+      }],
+      carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
+      checkInStatus: 'pending',
+      checkOutStatus: 'pending',
+      checkInData: null,
+      checkOutData: null,
+      hostCheckInData: null,
+      hostCheckOutData: null,
+      hostCheckInStatus: 'pending',
+      hostCheckOutStatus: 'pending',
+    };
+  };
+
+  const handleRequestBookingApproval = async () => {
+    if (isProcessingPayment) return;
+    const missing = getMissingBookingFields();
+    if (missing.length > 0) {
+      toast({ title: 'Dados incompletos', description: `Preencha antes de enviar: ${missing.join(', ')}.`, variant: 'destructive' });
+      return;
+    }
+    setIsProcessingPayment(true);
+    try {
+      const createdBooking = await createBookingMutation.mutateAsync(buildBookingPayload());
+      setIsProcessingPayment(false);
+      setBookingResult(createdBooking);
+      setPendingDeliveryBookingId(createdBooking.id);
+      setPickupAddress('');
+      setView('awaiting-approval');
+      window.scrollTo(0, 0);
+      toast({ title: 'Request sent for approval', description: 'The host must release the vehicle before payment is available.' });
+    } catch (error: any) {
+      setIsProcessingPayment(false);
+      toast({ title: "Error sending booking request", description: error?.message || "Please try again.", variant: "destructive" });
+    }
+  };
 
   const handleConfirmBooking = async (stripePayment: StripePaymentResult) => {
     const missing = getMissingBookingFields();
@@ -2679,85 +2785,7 @@ export default function CarHopApp() {
     setIsProcessingPayment(true);
 
     try {
-      const days = isNaN(cart.billingDays) ? 1 : cart.billingDays;
-      const totalData = calculateTotal();
-      const bookingLocation = selectedDeliveryType === 'delivery' ? (deliveryAddressBooking || pickupAddress || "Default Location") : (pickupAddress || "Default Location");
-      const paymentBrand = (stripePayment.brand || 'card').toUpperCase();
-      const paymentMethodDisplay = `${paymentBrand} **** ${stripePayment.last4 || '----'}`;
-      
-      const dailyRate = cart.car!.price;
-      const vehicleForHost = (allVehicles.length > 0 ? allVehicles : vehicles).find(v => String(v.id) === String(cart.car?.id)) || vehicles.find(v => String(v.id) === String(cart.car?.id));
-      const hostForBooking = vehicleForHost?.hostId ? (hostsData as any[]).find((h: any) => String(h.id) === String(vehicleForHost.hostId)) : null;
-      const hostEmail = (cart.car as any).hostEmail || hostForBooking?.email || '';
-      console.log("[Booking] Final host email used:", hostEmail);
-      const isSpecialHost = hostEmail === 'giuspfc123@gmail.com' || hostEmail === 'gianromanini@gmail.com';
-
-      const standardPlanPrice = 25.90;
-      const vehicleStandardPrice = cart.car!.pricing?.prices?.insurance500;
-      const finalStandardPrice = (vehicleStandardPrice !== undefined && vehicleStandardPrice !== null) ? vehicleStandardPrice : standardPlanPrice;
-      const finalGoldPrice = finalStandardPrice + 16.90;
-      const minimumPlanPrice = 19.40;
-       // Store the exact daily price used by calculateTotal so extensions
-       // continue the same protection plan without reconstructing its price.
-       const protectionDailyRate =
-         cart.insuranceOption === '500' ? finalStandardPrice :
-         cart.insuranceOption === '1000' && isSpecialHost ? finalGoldPrice :
-         cart.insuranceOption === 'minimum' ? minimumPlanPrice : 0;
-
-      const newBooking = { 
-        bookingCode: 'BK-' + Math.floor(Math.random() * 10000), 
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 
-        status: 'Active', 
-        carName: cart.car!.model, 
-        vehicleId: cart.car!.id,
-        userId: authUser?.id || undefined,
-        location: bookingLocation, 
-        startDate: searchParams.start, 
-        startTime: searchParams.startTime, 
-        returnDate: searchParams.end, 
-        returnTime: searchParams.endTime, 
-        days: days, 
-        total: totalData.total, 
-        image: cart.car!.images?.[0] || '', 
-        driver: { name: driverDetails.name, phone: driverDetails.phone, email: driverDetails.email, licenseNumber: driverDetails.licenseNumber, licenseImages: driverDetails.licenseImages },
-        paymentRaw: {
-          type: (stripePayment.brand || 'card').toLowerCase(),
-          cardName: stripePayment.cardName,
-          last4: stripePayment.last4,
-          stripePaymentIntentId: stripePayment.paymentIntentId,
-        },
-        paymentMethod: paymentMethodDisplay, 
-        deliveryType: selectedDeliveryType,
-        details: { 
-          rate: cart.car!.price * days, 
-          extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
-          childSeatSelected: cart.extrasSelected.includes('childSeat'),
-          protection: protectionDailyRate * days,
-          protectionDailyRate,
-          protectionType: (cart.insuranceOption === '500' ? 'Standard' : cart.insuranceOption === '1000' ? 'Gold' : cart.insuranceOption === 'minimum' ? 'Minimum' : 'None'), 
-          fees: (cart.car!.pricing?.cleaningFee || settings.cleaningFee), 
-          deliveryFee: totalData.deliveryFee || 0, 
-          tax: totalData.taxAmount, 
-          deliveryType: selectedDeliveryType, 
-          deliveryApprovalStatus: selectedDeliveryType === 'delivery' ? 'pending' : undefined, 
-          deliveryAddress: selectedDeliveryType === 'delivery' ? deliveryAddressBooking : undefined,
-          pickupAddress: pickupAddress,
-          hostEmail: hostEmail,
-          hostId: vehicleForHost?.hostId || '',
-          hostName: hostForBooking ? `${hostForBooking.firstName} ${hostForBooking.lastName}` : '',
-          authEmail: authUser?.email || '',
-        },
-        messages: selectedDeliveryType === 'delivery' ? [{ id: crypto.randomUUID(), sender: 'admin' as const, text: 'Your delivery request is pending approval. The host will review and confirm within the required time. If declined, you may pick up the vehicle at the location or request a different delivery time.', createdAt: new Date().toISOString(), read: false }] : [], 
-        carRentalAgreement: carRentalAgreementAccepted ? { accepted: true, clientName: driverDetails.name, acceptedAt: new Date().toISOString() } : undefined,
-        checkInStatus: 'pending', 
-        checkOutStatus: 'pending', 
-        checkInData: null, 
-        checkOutData: null,
-        hostCheckInData: null,
-        hostCheckOutData: null,
-        hostCheckInStatus: 'pending',
-        hostCheckOutStatus: 'pending'
-      };
+      const newBooking = buildBookingPayload(stripePayment);
       
       const createdBooking = await createBookingMutation.mutateAsync(newBooking);
       setIsProcessingPayment(false);
@@ -3130,6 +3158,26 @@ export default function CarHopApp() {
     });
   };
 
+  const handleBookingApproval = async (bookingId: number, status: 'approved' | 'rejected') => {
+    try {
+      await apiRequest('PUT', `/api/bookings/${bookingId}/booking-approval`, { status });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      toast({
+        title: status === 'approved' ? 'Booking Approved' : 'Booking Declined',
+        description: status === 'approved'
+          ? 'The guest has been notified and can complete payment.'
+          : 'The guest has been notified that the vehicle is unavailable.',
+        variant: status === 'approved' ? 'default' : 'destructive',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Approval failed',
+        description: error?.message || 'The booking may have already been reviewed.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const markMessagesAsRead = async (bookingId: number, reader: 'client' | 'admin' | 'host') => {
     await apiRequest('PUT', `/api/bookings/${bookingId}/messages/read`, { reader });
     queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
@@ -3230,6 +3278,26 @@ export default function CarHopApp() {
       const vehicle = vehicles.find(v => v.id === booking.vehicleId);
       const carName = vehicle?.model || 'Your vehicle';
       
+      // Initial booking approval notifications
+      const bookingApprovalStatus = (booking.details as any)?.bookingApprovalStatus;
+      if (bookingApprovalStatus === 'approved') {
+        notifications.push({
+          id: `booking-approved-${booking.id}-${(booking.details as any)?.bookingApprovalRespondedAt || 'approved'}`,
+          type: 'booking-approved',
+          message: `Booking approved for ${carName}. Payment is now available.`,
+          timestamp: (booking.details as any)?.bookingApprovalRespondedAt || booking.startDate,
+          bookingCode: booking.bookingCode,
+        });
+      } else if (bookingApprovalStatus === 'rejected' || booking.status === 'Declined') {
+        notifications.push({
+          id: `booking-rejected-${booking.id}-${(booking.details as any)?.bookingApprovalRespondedAt || 'declined'}`,
+          type: 'booking-rejected',
+          message: `Booking declined for ${carName}. No payment was taken.`,
+          timestamp: (booking.details as any)?.bookingApprovalRespondedAt || booking.startDate,
+          bookingCode: booking.bookingCode,
+        });
+      }
+
       // Delivery approval/rejection notifications
       const deliveryStatus = (booking.details as any)?.deliveryApprovalStatus;
       if (deliveryStatus === 'approved') {
@@ -3338,7 +3406,8 @@ export default function CarHopApp() {
     });
     let count = 0;
     hostBookings.forEach(b => {
-      if ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending') count++;
+       if ((b.details as any)?.bookingApprovalStatus === 'pending' ||
+           ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending')) count++;
       const pendingExtensions = (b.extensionRequests || []).filter((r: any) => r.status === 'pending');
       count += pendingExtensions.length;
       const unreadMsgs = (b.messages || []).filter((m: any) => m.sender === 'client' && !m.read);
@@ -3350,7 +3419,8 @@ export default function CarHopApp() {
   const getAdminBookingsAlertCount = () => {
     let count = 0;
     bookings.forEach(b => {
-      if ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending') count++;
+      if ((b.details as any)?.bookingApprovalStatus === 'pending' ||
+          ((b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending')) count++;
       const pendingExtensions = (b.extensionRequests || []).filter((r: any) => r.status === 'pending');
       count += pendingExtensions.length;
       const unreadMsgs = (b.messages || []).filter((m: any) => m.sender === 'client' && !m.read);
@@ -3370,6 +3440,9 @@ export default function CarHopApp() {
     clientBookings.forEach(b => {
       const unreadMsgs = (b.messages || []).filter((m: any) => (m.sender === 'admin' || m.sender === 'host') && !m.read);
       count += unreadMsgs.length;
+      const bookingApprovalStatus = (b.details as any)?.bookingApprovalStatus;
+      if ((bookingApprovalStatus === 'approved' || bookingApprovalStatus === 'rejected' || b.status === 'Declined') &&
+          !readNotificationIds.some(id => id.startsWith(`booking-${bookingApprovalStatus === 'approved' ? 'approved' : 'rejected'}-${b.id}-`))) count++;
       const deliveryStatus = (b.details as any)?.deliveryApprovalStatus;
       if (deliveryStatus === 'approved' || deliveryStatus === 'rejected') {
         if (!readNotificationIds.includes(`delivery-${deliveryStatus}-${b.id}`)) count++;
@@ -6896,7 +6969,7 @@ export default function CarHopApp() {
                             if (status === "active") matches = normalizedBookingStatus === 'active' || normalizedBookingStatus === 'extended';
                             else if (status === 'completed') matches = normalizedBookingStatus === 'completed';
                             else if (status === 'cancelled') matches = normalizedBookingStatus === 'cancelled';
-                            else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                            else if (status === 'pending-approval') matches = normalizedBookingStatus === 'pending approval' || (b.details as any)?.bookingApprovalStatus === 'pending' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                           }
                           if (bookingFilterNumber) {
                             const searchTerm = bookingFilterNumber.toLowerCase();
@@ -7053,7 +7126,12 @@ export default function CarHopApp() {
                                 {unreadMessages > 0 && <span>{unreadMessages} message{unreadMessages > 1 ? 's' : ''}</span>}
                               </div>
                             )}
-                            {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                             {(b.details as any)?.bookingApprovalStatus === 'pending' && (
+                               <div className="mt-2 text-[10px] text-yellow-400 flex items-center gap-1 font-bold">
+                                 <Clock size={10}/> Booking Awaiting Approval
+                               </div>
+                             )}
+                             {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                               <div className="mt-2 text-[10px] text-orange-400 flex items-center gap-1 font-bold">
                                 <Route size={10}/> Delivery Pending Approval
                               </div>
@@ -7116,7 +7194,25 @@ export default function CarHopApp() {
                                       return `$${total.toFixed(2)}`;
                                     })()}
                                   </span></p>
-                                  {((b.details as any)?.deliveryApprovalStatus === 'pending' || (b.details as any)?.deliveryType === 'delivery') && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (
+                              {(b.details as any)?.bookingApprovalStatus === 'pending' && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); void handleBookingApproval(b.id, 'approved'); }}
+                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold rounded transition-colors"
+                                    data-testid={`button-approve-booking-${b.id}`}
+                                  >
+                                    Approve Booking
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); void handleBookingApproval(b.id, 'rejected'); }}
+                                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded transition-colors"
+                                    data-testid={`button-reject-booking-${b.id}`}
+                                  >
+                                    Decline Booking
+                                  </button>
+                                </div>
+                              )}
+                              {((b.details as any)?.deliveryApprovalStatus === 'pending' || (b.details as any)?.deliveryType === 'delivery') && (b.details as any)?.deliveryApprovalStatus !== 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (
                                 <div className="mt-2 flex gap-2">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleDeliveryApproval(b.id, 'approved'); }}
@@ -10930,7 +11026,7 @@ export default function CarHopApp() {
                             if (status === "active") matches = (normalizedStatusForFilter === 'active' || normalizedStatusForFilter === 'extended');
                             else if (status === 'completed') matches = (normalizedStatusForFilter === 'completed');
                             else if (status === 'cancelled') matches = (normalizedStatusForFilter === 'cancelled' || normalizedStatusForFilter === 'cancelado');
-                            else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending');
+                            else if (status === 'pending-approval') matches = (normalizedStatusForFilter === 'pending approval' || (b.details as any)?.bookingApprovalStatus === 'pending' || (b.details as any)?.deliveryApprovalStatus === 'pending');
                           }
                           if (bookingFilterCarModel && bookingFilterCarModel !== "") {
                             const bVehicleId = String(b.vehicleId || '');
@@ -10960,8 +11056,8 @@ export default function CarHopApp() {
                       return (<>
                         {adminPagedBookings.map(b => {
                         const isAwaitingPickupApproval = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted && b.status !== 'Cancelled';
-                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : isAwaitingPickupApproval ? 'bg-orange-400 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
-                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : isAwaitingPickupApproval ? 'PENDING PICKUP' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
+                        const statusColor = b.status === 'Completed' ? 'bg-green-600 text-white' : b.status === 'Active' ? 'bg-blue-400/20 text-blue-400 border border-blue-400/20 font-normal' : b.status === 'Extended' ? 'bg-yellow-400 text-white' : isAwaitingPickupApproval ? 'bg-orange-400 text-white' : (b.details as any)?.bookingApprovalStatus === 'approved' ? 'bg-green-600 text-white' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'bg-fuchsia-600 text-white' : (b.status === 'Pending Approval' || (b.details as any)?.bookingApprovalStatus === 'pending' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'bg-orange-400 text-white' : 'bg-zinc-500 text-white';
+                        const statusText = b.status === 'Completed' ? 'COMPLETED' : b.status === 'Active' ? 'ACTIVE' : isAwaitingPickupApproval ? 'PENDING PICKUP' : (b.details as any)?.bookingApprovalStatus === 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'pending' ? 'APPROVED - PENDING PAYMENT' : (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'DELIVERY APPROVED' : (b.status === 'Pending Approval' || (b.details as any)?.bookingApprovalStatus === 'pending' || (b.details as any)?.deliveryApprovalStatus === 'pending') ? 'AWAITING APPROVAL' : b.status;
                         const pendingRequests = getPendingRequestsCount(b);
                         const unreadMessages = getUnreadMessagesCount(b, 'admin');
                         const hasNotifications = b.status !== 'Cancelled' && (pendingRequests > 0 || unreadMessages > 0);
@@ -11113,6 +11209,9 @@ export default function CarHopApp() {
                               {hasNotifications && (
                                 <div className="mt-1 text-[9px] text-yellow-400 flex items-center gap-1"><Bell size={9}/>{pendingRequests > 0 && <span>{pendingRequests} req</span>}{pendingRequests > 0 && unreadMessages > 0 && <span>|</span>}{unreadMessages > 0 && <span>{unreadMessages} msg</span>}</div>
                               )}
+                              {(b.details as any)?.bookingApprovalStatus === 'pending' && (
+                                <div className="mt-1 text-[9px] text-yellow-400 flex items-center gap-1 font-bold"><Clock size={9}/> Booking Approval Required</div>
+                              )}
                               {(b.details as any)?.deliveryApprovalStatus === 'pending' && (
                                 <div className="mt-1 text-[9px] text-orange-400 flex items-center gap-1 font-bold"><Route size={9}/> Delivery Pending</div>
                               )}
@@ -11259,11 +11358,24 @@ export default function CarHopApp() {
                                       {(() => {
                                         const pendingExt = (b.extensionRequests || []).filter(r => r.status === 'pending');
                                         const isDeliveryPending = (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'pending';
+                                        const isBookingPending = (b.details as any)?.bookingApprovalStatus === 'pending';
                                         
-                                        if (pendingExt.length === 0 && !isDeliveryPending) return null;
+                                        if (pendingExt.length === 0 && !isDeliveryPending && !isBookingPending) return null;
                                         
                                         return (
                                           <div className="space-y-3 mb-4">
+                                            {isBookingPending && (
+                                              <div className="p-4 rounded-lg border bg-yellow-950/30 border-yellow-900/50">
+                                                <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-yellow-400">
+                                                  <Clock size={14}/> Vehicle Release Required
+                                                </h4>
+                                                <p className="text-xs text-zinc-300 mb-3">Review the dates and confirm that this vehicle is available. Payment is locked until you approve the request.</p>
+                                                <div className="flex gap-2">
+                                                  <button onClick={() => void handleBookingApproval(b.id, 'approved')} className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-admin-approve-booking-${b.id}`}>Release & Approve</button>
+                                                  <button onClick={() => void handleBookingApproval(b.id, 'rejected')} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors" data-testid={`button-admin-reject-booking-${b.id}`}>Decline</button>
+                                                </div>
+                                              </div>
+                                            )}
                                             {isDeliveryPending && (
                                               <div className="p-4 rounded-lg border bg-orange-950/30 border-orange-900/50">
                                                 <h4 className="text-xs font-bold uppercase flex items-center gap-2 mb-3 text-orange-400">
@@ -13514,7 +13626,7 @@ export default function CarHopApp() {
                           if (clientBookingFilter === 'active') return normalizedStatus === 'active' || normalizedStatus === 'extended';
                           if (clientBookingFilter === 'completed') return normalizedStatus === 'completed';
                           if (clientBookingFilter === 'cancelled') return normalizedStatus === 'cancelled';
-                          if (clientBookingFilter === 'pending') return normalizedStatus === 'pending approval' || (b.details as any)?.deliveryApprovalStatus === 'pending';
+                           if (clientBookingFilter === 'pending') return normalizedStatus === 'pending approval' || (b.details as any)?.bookingApprovalStatus === 'pending' || (b.details as any)?.deliveryApprovalStatus === 'pending';
                           return true;
                         })
                     .sort((a, b) => {
@@ -13534,8 +13646,10 @@ export default function CarHopApp() {
                     const normalizedStatus = b.status?.toLowerCase().trim();
                     const isCompleted = normalizedStatus === 'completed';
                     const isCancelled = normalizedStatus === 'cancelled';
-                    const isActive = normalizedStatus === 'active' || normalizedStatus === 'extended';
-                    const isCollapsed = (isCompleted || isCancelled) && expandedBookingId !== b.id;
+                     const isActive = normalizedStatus === 'active' || normalizedStatus === 'extended';
+                     const isPendingApproval = normalizedStatus === 'pending approval';
+                     const isDeclined = normalizedStatus === 'declined';
+                     const isCollapsed = (isCompleted || isCancelled || isDeclined) && expandedBookingId !== b.id;
 
                     return (
                     <Card 
@@ -13543,7 +13657,8 @@ export default function CarHopApp() {
                       className={`p-3 md:p-6 transition-all duration-300 relative ${
                         isActive ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800' : 
                         isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 
-                        normalizedStatus === 'pending approval' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
+                         isPendingApproval ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
+                         isDeclined ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
                         'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800'
                       } ${b.unread ? 'border-amber-500 shadow-[0_0_14px_rgba(245,158,11,0.35)]' : ''}`} 
                       data-testid={`card-my-booking-${b.id}`}
@@ -13554,7 +13669,7 @@ export default function CarHopApp() {
                       <div 
                         className={`flex items-center justify-between gap-3 ${isCollapsed ? '' : 'mb-3'} cursor-pointer md:cursor-default`}
                         onClick={() => {
-                          if (isCompleted || isCancelled || normalizedStatus === 'pending approval') {
+                           if (isCompleted || isCancelled || isDeclined || isPendingApproval) {
                             setExpandedBookingId(expandedBookingId === b.id ? null : b.id);
                           }
                           if (b.unread) {
@@ -13563,18 +13678,18 @@ export default function CarHopApp() {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : isCancelled ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600'}`}>{isCancelled ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
+                           <div className={`p-2 md:p-3 rounded-full flex-shrink-0 ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : normalizedStatus === 'extended' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600' : (isCancelled || isDeclined) ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600'}`}>{(isCancelled || isDeclined) ? <X size={14} className="md:w-6 md:h-6"/> : <Check size={14} className="md:w-6 md:h-6"/>}</div>
                           <div>
                                   <div className={`text-[10px] md:text-xs font-normal uppercase tracking-wider ${
                                     isCompleted ? 'text-green-600' : 
                                     normalizedStatus === 'extended' ? 'text-yellow-600' : 
-                                    isCancelled ? 'text-red-600' : 
+                                     (isCancelled || isDeclined) ? 'text-red-600' :
                                     (b.status === 'Active' && (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted) ? 'text-orange-500' :
                                     'text-blue-400'
                                   }`}>
-                                    {(b.status === 'Active' && (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted) 
+                                     {(b.status === 'Active' && (b.details as any)?.deliveryType === 'delivery' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && !(b.details as any)?.pickupAccepted)
                                       ? 'PENDING PICKUP APPROVAL' 
-                                      : (normalizedStatus === 'pending approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' ? 'PENDING PAYMENT' : b.status)
+                                       : (normalizedStatus === 'pending approval' && (b.details as any)?.bookingApprovalStatus === 'approved' && (b.details as any)?.deliveryApprovalStatus !== 'pending' ? 'PENDING PAYMENT' : b.status)
                                     }
                                   </div>
                             {!isCollapsed && normalizedStatus === 'active' && b.checkInStatus !== 'completed' && (
@@ -13722,14 +13837,22 @@ export default function CarHopApp() {
                         })()}
                       </div>
                       
-                      {/* Pending Approval - Show button to check status and complete payment */}
-                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'pending' && (
+                      {/* Pending Approval - payment stays locked until the vehicle is released */}
+                      {b.status === 'Pending Approval' && (
                         <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
                           <div className="flex items-center gap-2 mb-3">
                             <Clock size={18} className="text-yellow-600" />
-                            <span className="font-bold text-yellow-700 dark:text-yellow-400">Awaiting Delivery Approval</span>
+                            <span className="font-bold text-yellow-700 dark:text-yellow-400">
+                              {(b.details as any)?.bookingApprovalStatus === 'approved' && (b.details as any)?.deliveryApprovalStatus === 'pending'
+                                ? 'Awaiting Delivery Approval'
+                                : 'Awaiting Host Approval'}
+                            </span>
                           </div>
-                          <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-3">Your booking is waiting for delivery approval. Once approved or declined, you can complete payment.</p>
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-3">
+                            {(b.details as any)?.bookingApprovalStatus === 'approved' && (b.details as any)?.deliveryApprovalStatus === 'pending'
+                              ? 'The vehicle was released, but the delivery request is still being reviewed.'
+                              : 'The host or admin must release the vehicle before payment is available.'}
+                          </p>
                           <Button 
                             className="w-full bg-yellow-600 hover:bg-yellow-700"
                             onClick={() => { setPendingDeliveryBookingId(b.id); setView('awaiting-approval'); }}
@@ -13740,8 +13863,19 @@ export default function CarHopApp() {
                         </div>
                       )}
 
+                      {/* Booking declined - no payment was taken */}
+                      {b.status === 'Declined' && (
+                        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-700">
+                          <div className="flex items-center gap-2 mb-2">
+                            <X size={18} className="text-red-600" />
+                            <span className="font-bold text-red-700 dark:text-red-400">VEHICLE UNAVAILABLE</span>
+                          </div>
+                          <p className="text-xs text-red-600 dark:text-red-400">The host or admin could not release this vehicle for these dates. No payment was taken.</p>
+                        </div>
+                      )}
+
                       {/* Delivery Declined - Show Choose Pickup and Cancel buttons */}
-                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && (
+                      {b.status === 'Pending Approval' && (b.details as any)?.bookingApprovalStatus === 'approved' && (b.details as any)?.deliveryApprovalStatus === 'rejected' && (
                         <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-700">
                           <div className="flex items-center gap-2 mb-3">
                             <AlertCircle size={18} className="text-red-600" />
@@ -13775,14 +13909,17 @@ export default function CarHopApp() {
                         </div>
                       )}
                       
-                      {/* Delivery Approved - Show proceed to payment button */}
-                      {b.status === 'Pending Approval' && (b.details as any)?.deliveryApprovalStatus === 'approved' && (
+                      {/* Approved pickup or delivery - Show proceed to payment button */}
+                      {b.status === 'Pending Approval' &&
+                        (b.details as any)?.bookingApprovalStatus === 'approved' &&
+                        (b.details as any)?.deliveryApprovalStatus !== 'pending' &&
+                        (b.details as any)?.deliveryApprovalStatus !== 'rejected' && (
                         <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
                           <div className="flex items-center gap-2 mb-3">
                             <Check size={18} className="text-green-600" />
-                            <span className="font-bold text-green-700 dark:text-green-400">Delivery Approved</span>
+                            <span className="font-bold text-green-700 dark:text-green-400">Booking Approved</span>
                           </div>
-                          <p className="text-xs text-green-600 dark:text-green-400 mb-3">Your delivery has been approved! Complete your payment to finalize the booking.</p>
+                          <p className="text-xs text-green-600 dark:text-green-400 mb-3">The vehicle has been released. Complete your payment to finalize the booking.</p>
                           <Button 
                             className="w-full bg-green-600 hover:bg-green-700"
                             onClick={() => { setPendingDeliveryBookingId(b.id); setView('awaiting-approval'); }}
@@ -15143,7 +15280,12 @@ export default function CarHopApp() {
           const pendingBooking = bookings.find(b => b.id === pendingDeliveryBookingId);
           if (!pendingBooking) return null;
           
-          const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
+           const bookingApprovalStatus = (pendingBooking.details as any)?.bookingApprovalStatus;
+           const approvalStatus = (pendingBooking.details as any)?.deliveryApprovalStatus;
+           const isBookingPending = bookingApprovalStatus === 'pending' ||
+             (!bookingApprovalStatus && pendingBooking.status === 'Pending Approval' && approvalStatus === 'pending');
+           const isBookingRejected = bookingApprovalStatus === 'rejected' || pendingBooking.status === 'Declined';
+           const isDeliveryPending = approvalStatus === 'pending';
           const deliveryFeeAmount = (pendingBooking.details as any)?.deliveryFee || 0;
           const originalPickupAddress = (pendingBooking.details as any)?.pickupAddress || '';
           
@@ -15156,7 +15298,7 @@ export default function CarHopApp() {
           const protection = pendingBooking.details?.protection || 0;
           const extras = pendingBooking.details?.extras || 0;
           const cleaningFee = pendingBooking.details?.fees || 0;
-          const deliveryFee = approvalStatus === 'pending' || approvalStatus === 'approved' ? deliveryFeeAmount : 0;
+           const deliveryFee = !isBookingRejected && approvalStatus !== 'rejected' ? deliveryFeeAmount : 0;
           const subtotal = rate + protection + extras + cleaningFee + deliveryFee;
           const calculatedTax = subtotal * taxRate;
           
@@ -15164,10 +15306,10 @@ export default function CarHopApp() {
           const subtotalWithoutDelivery = rate + protection + extras + cleaningFee;
           const taxWithoutDelivery = subtotalWithoutDelivery * taxRate;
           
-          const adjustedTotal = approvalStatus === 'rejected' 
+           const adjustedTotal = approvalStatus === 'rejected' || isBookingRejected
             ? subtotalWithoutDelivery + taxWithoutDelivery
             : subtotal + calculatedTax;
-          const adjustedTax = approvalStatus === 'rejected'
+           const adjustedTax = approvalStatus === 'rejected' || isBookingRejected
             ? taxWithoutDelivery
             : calculatedTax;
           
@@ -15176,33 +15318,42 @@ export default function CarHopApp() {
               <Card className="p-8">
                 {/* Status Header */}
                 <div className="text-center mb-8">
-                  {approvalStatus === 'pending' && (
+                   {isBookingPending && (
                     <>
                       <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Clock size={40} className="text-yellow-500 animate-pulse" />
                       </div>
-                      <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Awaiting Delivery Approval</h2>
-                      <p className="text-zinc-500">Your delivery request is being reviewed by the host. You'll be notified once it's approved or if pickup is required.</p>
+                       <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Awaiting Host Approval</h2>
+                       <p className="text-zinc-500">The host or admin must release the vehicle before payment is available. You will be notified when the booking is approved.</p>
                     </>
                   )}
+                   {!isBookingPending && !isBookingRejected && isDeliveryPending && (
+                     <>
+                       <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                         <Clock size={40} className="text-yellow-500 animate-pulse" />
+                       </div>
+                       <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Awaiting Delivery Approval</h2>
+                       <p className="text-zinc-500">The vehicle was released. The delivery request is still being reviewed before payment can be completed.</p>
+                     </>
+                   )}
                   
-                  {approvalStatus === 'approved' && (
+                   {!isBookingPending && !isBookingRejected && !isDeliveryPending && (
                     <>
                       <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Check size={40} className="text-green-500" />
                       </div>
-                      <h2 className="text-2xl font-bold text-green-500 mb-2">Delivery Approved!</h2>
-                      <p className="text-zinc-500">Great news! Your delivery request has been approved. Complete your payment to confirm the booking.</p>
+                       <h2 className="text-2xl font-bold text-green-500 mb-2">Vehicle Released!</h2>
+                       <p className="text-zinc-500">Great news! Your booking was approved. Complete your payment to confirm the reservation.</p>
                     </>
                   )}
                   
-                  {approvalStatus === 'rejected' && (
+                   {isBookingRejected && (
                     <>
                       <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <MapPin size={40} className="text-orange-500" />
                       </div>
-                      <h2 className="text-2xl font-bold text-orange-500 mb-2">Pickup Only Available</h2>
-                      <p className="text-zinc-500 mb-4">Delivery was not available at this time. You can pick up the vehicle at the location below.</p>
+                       <h2 className="text-2xl font-bold text-red-500 mb-2">Booking Not Available</h2>
+                       <p className="text-zinc-500 mb-4">The host or admin could not release this vehicle for your requested dates. No payment was taken.</p>
                       {originalPickupAddress && (
                         <div className="mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
                           <p className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Pickup Location:</p>
@@ -15293,7 +15444,7 @@ export default function CarHopApp() {
                 </div>
                 
                 {/* Action Buttons */}
-                {approvalStatus === 'pending' && (
+                 {(isBookingPending || (!isBookingRejected && isDeliveryPending)) && (
                   <div className="space-y-3">
                     <Button 
                       variant="outline" 
@@ -15307,11 +15458,11 @@ export default function CarHopApp() {
                   </div>
                 )}
                 
-                {(approvalStatus === 'approved' || approvalStatus === 'rejected') && (
+                 {!isBookingPending && !isBookingRejected && !isDeliveryPending && (
                   <div className="space-y-3">
                     <Button 
                       className="w-full bg-green-600 hover:bg-green-700"
-                      onClick={() => {
+                       onClick={() => {
                         toast({ description: "Proceeding to payment..." });
                         setView('awaiting-payment');
                       }}
@@ -15491,23 +15642,51 @@ export default function CarHopApp() {
                   <span className="text-3xl font-bold text-green-500">${adjustedTotal.toFixed(2)}</span>
                 </div>
 
-                {/* Stripe Card Form */}
-                <div className="flex items-center gap-3 mb-4">
-                  <CreditCard size={20} className="text-green-500" />
-                  <h3 className="text-lg font-bold text-white">Card payment</h3>
-                </div>
-                <StripeCardForm
-                  amount={adjustedTotal}
-                  description={`CarHop - ${pendingBooking.carName} (${pendingBooking.bookingCode})`}
-                  metadata={{
-                    bookingId: pendingDeliveryBookingId,
-                    bookingCode: pendingBooking.bookingCode,
-                    vehicleId: pendingBooking.vehicleId,
-                  }}
-                  isParentProcessing={isProcessingPayment}
-                  buttonLabel={`Pay $${adjustedTotal.toFixed(2)}`}
-                  onPaymentSuccess={(info) => { void handleFinalPayment(info); }}
-                />
+                 {/* Payment method selection is available only after approval */}
+                 <div className="flex gap-3 mb-5">
+                   <button
+                     onClick={() => setPaymentMethod('credit')}
+                     className={`flex-1 py-3 rounded-lg border text-sm font-semibold ${paymentMethod === 'credit' ? 'bg-green-600 border-green-600 text-white' : 'border-zinc-700 text-zinc-400'}`}
+                     data-testid="button-approved-payment-credit"
+                   >
+                     <CreditCard size={16} className="inline mr-2" />Card
+                   </button>
+                   <button
+                     onClick={() => setPaymentMethod('paypal')}
+                     className={`flex-1 py-3 rounded-lg border text-sm font-semibold ${paymentMethod === 'paypal' ? 'bg-blue-600 border-blue-600 text-white' : 'border-zinc-700 text-zinc-400'}`}
+                     data-testid="button-approved-payment-paypal"
+                   >
+                     PayPal
+                   </button>
+                 </div>
+                 {paymentMethod === 'credit' ? (
+                   <StripeCardForm
+                     amount={adjustedTotal}
+                     description={`CarHop - ${pendingBooking.carName} (${pendingBooking.bookingCode})`}
+                     metadata={{
+                       bookingId: pendingDeliveryBookingId,
+                       bookingCode: pendingBooking.bookingCode,
+                       vehicleId: pendingBooking.vehicleId,
+                     }}
+                     isParentProcessing={isProcessingPayment}
+                     buttonLabel={`Pay $${adjustedTotal.toFixed(2)}`}
+                     onPaymentSuccess={(info) => { void handleFinalPayment(info); }}
+                   />
+                 ) : (
+                   <button
+                     disabled={isProcessingPayment}
+                     onClick={() => void handleFinalPayment({
+                       brand: 'paypal',
+                       last4: '',
+                       cardName: pendingBooking.driver.name,
+                       paymentIntentId: `PAYPAL-SIM-${Date.now()}`,
+                     })}
+                     className="w-full py-4 rounded-lg font-bold bg-[#0070ba] hover:bg-[#005ea6] text-white disabled:opacity-50"
+                     data-testid="button-approved-paypal"
+                   >
+                     {isProcessingPayment ? 'Processing…' : `Pay $${adjustedTotal.toFixed(2)} with PayPal`}
+                   </button>
+                 )}
               </div>
             </div>
           );
