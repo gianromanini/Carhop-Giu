@@ -1725,6 +1725,7 @@ export default function CarHopApp() {
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordError, setAdminPasswordError] = useState('');
+  const [showAdminLoginPassword, setShowAdminLoginPassword] = useState(false);
 
   const [cart, setCart] = useState<{ car: Vehicle | null; days: number; billingDays: number; extrasSelected: string[]; insuranceOption: string }>({ car: null, days: 3, billingDays: 3, extrasSelected: [], insuranceOption: '' });
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
@@ -5579,17 +5580,28 @@ export default function CarHopApp() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Admin Password</label>
-                <input
-                  type="password"
-                  value={adminLoginForm.password}
-                  onChange={(e) => {
-                    setAdminLoginForm({...adminLoginForm, password: e.target.value});
-                    setAdminPasswordError('');
-                  }}
-                  placeholder="Enter admin password"
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
-                  data-testid="input-admin-login-password"
-                />
+                <div className="relative">
+                  <input
+                    type={showAdminLoginPassword ? "text" : "password"}
+                    value={adminLoginForm.password}
+                    onChange={(e) => {
+                      setAdminLoginForm({...adminLoginForm, password: e.target.value});
+                      setAdminPasswordError('');
+                    }}
+                    placeholder="Enter admin password"
+                    className="w-full px-3 py-2 pr-10 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                    data-testid="input-admin-login-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminLoginPassword(!showAdminLoginPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                    data-testid="button-toggle-admin-login-password"
+                    aria-label={showAdminLoginPassword ? "Hide admin password" : "Show admin password"}
+                  >
+                    {showAdminLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
               {adminPasswordError && (
                 <p className="text-sm text-red-500 text-center" data-testid="text-admin-login-error">{adminPasswordError}</p>
