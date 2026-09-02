@@ -3175,9 +3175,55 @@ export default function CarHopApp() {
     }
 
     const reader = new FileReader();
-    reader.onload = async () => {
-      const compressed = await compressImage(reader.result as string, 1200, 0.75);
-      setBrandingDraft(current => ({ ...current, [type]: compressed }));
+    reader.onload = () => {
+      const source = new window.Image();
+      source.onload = () => {
+        const maxDimension = type === 'faviconUrl' ? 512 : 1400;
+        const scale = Math.min(1, maxDimension / Math.max(source.width, source.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(source.width * scale));
+        canvas.height = Math.max(1, Math.round(source.height * scale));
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) return;
+        context.drawImage(source, 0, 0, canvas.width, canvas.height);
+
+        // Remove only near-white pixels connected to the outside edge. This keeps
+        // white details inside the cart/logo while removing a white backdrop.
+        const image = context.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = image.data;
+        const visited = new Uint8Array(canvas.width * canvas.height);
+        const queue: number[] = [];
+        const isEdge = (x: number, y: number) => x === 0 || y === 0 || x === canvas.width - 1 || y === canvas.height - 1;
+        const isWhite = (index: number) =>
+          pixels[index + 3] > 0 && pixels[index] >= 245 && pixels[index + 1] >= 245 && pixels[index + 2] >= 245;
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            if (!isEdge(x, y)) continue;
+            const pixelIndex = y * canvas.width + x;
+            const dataIndex = pixelIndex * 4;
+            if (!visited[pixelIndex] && isWhite(dataIndex)) {
+              visited[pixelIndex] = 1;
+              queue.push(pixelIndex);
+            }
+          }
+        }
+        for (let cursor = 0; cursor < queue.length; cursor++) {
+          const pixelIndex = queue[cursor];
+          const x = pixelIndex % canvas.width;
+          const y = Math.floor(pixelIndex / canvas.width);
+          pixels[pixelIndex * 4 + 3] = 0;
+          for (const [nextX, nextY] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+            if (nextX < 0 || nextY < 0 || nextX >= canvas.width || nextY >= canvas.height) continue;
+            const nextPixelIndex = nextY * canvas.width + nextX;
+            if (visited[nextPixelIndex] || !isWhite(nextPixelIndex * 4)) continue;
+            visited[nextPixelIndex] = 1;
+            queue.push(nextPixelIndex);
+          }
+        }
+        context.putImageData(image, 0, 0);
+        setBrandingDraft(current => ({ ...current, [type]: canvas.toDataURL('image/png') }));
+      };
+      source.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
