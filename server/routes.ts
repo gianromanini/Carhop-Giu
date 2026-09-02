@@ -49,13 +49,30 @@ async function getNotificationSettings() {
   return { ...DEFAULT_NOTIFICATION_SETTINGS, ...(stored?.value || {}) };
 }
 
-const webPushConfigured = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
-if (webPushConfigured) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:support@carhopgo.com',
-    process.env.VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!,
-  );
+function normalizeVapidKey(value: string | undefined) {
+  if (!value) return '';
+  const trimmed = value.trim();
+  const jsonKeyMatch = trimmed.match(/["'](?:publicKey|privateKey)["']\s*:\s*["']([^"']+)["']/);
+  return (jsonKeyMatch?.[1] || trimmed)
+    .replace(/^["']|["']$/g, '')
+    .replace(/\s+/g, '')
+    .replace(/=+$/g, '');
+}
+
+const vapidPublicKey = normalizeVapidKey(process.env.VAPID_PUBLIC_KEY);
+const vapidPrivateKey = normalizeVapidKey(process.env.VAPID_PRIVATE_KEY);
+let webPushConfigured = false;
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || 'mailto:support@carhopgo.com',
+      vapidPublicKey,
+      vapidPrivateKey,
+    );
+    webPushConfigured = true;
+  } catch (error: any) {
+    console.error('[Notifications] Invalid VAPID configuration; background push is disabled:', error?.message || 'invalid VAPID keys');
+  }
 }
 
 type StoredPushSubscription = webpush.PushSubscription & {
@@ -2543,7 +2560,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   app.get("/api/push/config", async (_req, res) => {
     res.json({
       configured: webPushConfigured,
-      publicKey: webPushConfigured ? process.env.VAPID_PUBLIC_KEY : null,
+      publicKey: webPushConfigured ? vapidPublicKey : null,
     });
   });
 
