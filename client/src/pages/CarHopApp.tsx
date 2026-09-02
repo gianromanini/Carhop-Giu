@@ -9968,8 +9968,8 @@ export default function CarHopApp() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="45" required data-testid="input-vehicle-price" />
                         <div className="space-y-1">
-                          <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category</label>
-                          <select name="category" value={formData.category} onChange={handleInputChange} className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-category">
+                          <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
+                          <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none" data-testid="select-vehicle-category">
                             <option value="Economy">Economy</option>
                             <option value="Standard">Standard</option>
                             <option value="SUV">SUV</option>
@@ -10182,6 +10182,11 @@ export default function CarHopApp() {
                         </div>
                       </div>
 
+                      <DiscountProgramsEditor
+                        value={formData.pricing?.discountPrograms}
+                        onChange={(discountPrograms) => setFormData((previous) => ({ ...previous, pricing: { ...previous.pricing, discountPrograms } }))}
+                      />
+
                       <Button onClick={handleSaveVehicle} className="w-full mt-4" data-testid="button-save-vehicle">
                         Add Vehicle
                       </Button>
@@ -10351,8 +10356,8 @@ export default function CarHopApp() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                   <Input label="Daily Rate ($)" name="price" type="number" value={formData.price} onChange={handleInputChange} placeholder="45" required data-testid="input-edit-vehicle-price" />
                                   <div className="space-y-1">
-                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category</label>
-                                    <select name="category" value={formData.category} onChange={handleInputChange} className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm">
+                                    <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Category <span className="text-red-500">*</span></label>
+                                    <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm">
                                       <option value="Economy">Economy</option>
                                       <option value="Standard">Standard</option>
                                       <option value="SUV">SUV</option>
