@@ -1731,10 +1731,27 @@ export default function CarHopApp() {
   const [viewHostProfile, setViewHostProfile] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
+  const { data: adminSession } = useQuery<{ authenticated: boolean }>({
+    queryKey: ['/api/admin/session-status'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/session-status', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error(`Failed to check admin session (${response.status})`);
+      return response.json();
+    },
+    retry: false,
+    staleTime: 0,
+  });
+  useEffect(() => {
+    if (adminSession?.authenticated) setAdminAuthenticated(true);
+  }, [adminSession?.authenticated]);
+
   // Load vehicles with availability filter based on search dates.
   // The public list remains available to visitors; the all-vehicles query is
   // reserved for staff views so visitors do not download the same list twice.
-  const isAdminViewer = adminAuthenticated || authUser?.isAdmin === true;
+  const isAdminViewer = adminAuthenticated || adminSession?.authenticated === true || authUser?.isAdmin === true;
   const isStaffViewer = Boolean(currentHost || isAdminViewer);
   const includeUnavailableVehicles = isStaffViewer;
   const vehicleQueryKey = searchParams.start && searchParams.end 
@@ -2062,7 +2079,33 @@ export default function CarHopApp() {
       void refetchHosts();
     }
   }, [adminTab, isAdminViewer, refetchHosts, view]);
-  const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'], enabled: isAdminViewer });
+  const {
+    data: usersData = [],
+    isLoading: usersLoading,
+    isError: usersError,
+    refetch: refetchUsers,
+  } = useQuery<User[]>({
+    queryKey: ['/api/admin/users'],
+    enabled: isAdminViewer,
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch clients (${response.status})`);
+      }
+      return response.json();
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+    retry: 3,
+  });
+  useEffect(() => {
+    if (isAdminViewer && view === 'admin' && adminTab === 'clients') {
+      void refetchUsers();
+    }
+  }, [adminTab, isAdminViewer, refetchUsers, view]);
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const [adminMessageText, setAdminMessageText] = useState("");
   const handleSendMessage = (booking: any, role: string) => {
@@ -10672,6 +10715,20 @@ export default function CarHopApp() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card className="p-3 sm:p-4 md:col-span-1 max-h-[85vh] overflow-y-auto">
                     <h3 className="text-sm font-bold mb-4 text-zinc-900 dark:text-white">Registered Clients ({usersData.length})</h3>
+                    {usersLoading ? (
+                      <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 py-8">
+                        <Loader size={14} className="animate-spin" /> Loading clients...
+                      </div>
+                    ) : usersError ? (
+                      <div className="text-center py-8">
+                        <p className="text-xs text-red-400 mb-3">Unable to load clients.</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => void refetchUsers()}>
+                          Try again
+                        </Button>
+                      </div>
+                    ) : usersData.length === 0 ? (
+                      <div className="text-xs text-zinc-500 text-center py-8">No clients registered yet</div>
+                    ) : (
                     <div className="space-y-2">
                       {usersData.map((user) => {
                         const { trips, total } = getUserTripsAndTotal(user.email);
@@ -10702,6 +10759,7 @@ export default function CarHopApp() {
                         );
                       })}
                     </div>
+                    )}
                   </Card>
 
                   <Card className="p-3 sm:p-6 md:col-span-2 max-h-[85vh] overflow-y-auto">
