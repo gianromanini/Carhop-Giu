@@ -2801,6 +2801,32 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     res.json(setting.value);
   });
 
+  app.put("/api/admin/branding", async (req: any, res) => {
+    if (!isAdminRequest(req)) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const value = req.body?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return res.status(400).json({ error: "Branding object is required" });
+    }
+
+    const branding = {
+      logoUrl: typeof value.logoUrl === 'string' ? value.logoUrl : '',
+      faviconUrl: typeof value.faviconUrl === 'string' ? value.faviconUrl : '',
+    };
+    const dataUrlPattern = /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=\s]+$/i;
+    for (const [key, image] of Object.entries(branding)) {
+      if (image && (!dataUrlPattern.test(image) || image.length > 4_000_000)) {
+        return res.status(400).json({ error: `${key} must be a valid image smaller than 3 MB` });
+      }
+    }
+
+    const setting = await storage.setSetting('branding', branding);
+    res.set('Cache-Control', 'no-store');
+    res.json(setting.value);
+  });
+
   app.get("/api/settings/:key", async (req, res) => {
     const setting = await storage.getSetting(req.params.key);
     if (!setting) return res.status(404).json({ error: "Setting not found" });

@@ -586,6 +586,10 @@ interface SettingsType {
   };
   locations: string[];
   notifications?: NotificationSettings;
+  branding?: {
+    logoUrl?: string;
+    faviconUrl?: string;
+  };
 }
 
 interface NotificationSettings {
@@ -1840,6 +1844,8 @@ export default function CarHopApp() {
   
   
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
+  const [brandingDraft, setBrandingDraft] = useState({ logoUrl: '', faviconUrl: '' });
+  const branding = settingsData?.branding || {};
   const notificationSettings = useMemo<NotificationSettings>(() => ({
     ...DEFAULT_NOTIFICATION_SETTINGS,
     ...(settingsData?.notifications || {}),
@@ -1848,6 +1854,20 @@ export default function CarHopApp() {
   useEffect(() => {
     setNotificationSettingsDraft(notificationSettings);
   }, [notificationSettings]);
+
+  useEffect(() => {
+    setBrandingDraft({
+      logoUrl: branding.logoUrl || '',
+      faviconUrl: branding.faviconUrl || '',
+    });
+  }, [branding.faviconUrl, branding.logoUrl]);
+
+  useEffect(() => {
+    const faviconUrl = branding.faviconUrl || '/favicon.png';
+    document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]').forEach((link) => {
+      link.href = faviconUrl;
+    });
+  }, [branding.faviconUrl]);
 
   useEffect(() => {
     setIsCarHopGoInstalled(detectCarHopGoInstallation());
@@ -2420,6 +2440,26 @@ export default function CarHopApp() {
     },
     onError: () => {
       toast({ title: 'Could not update notification settings', variant: 'destructive' });
+    },
+  });
+
+  const updateBrandingMutation = useMutation({
+    mutationFn: (value: { logoUrl: string; faviconUrl: string }) =>
+      apiRequest('PUT', '/api/admin/branding', { value }),
+    onSuccess: async (response) => {
+      const saved = await response.json();
+      setBrandingDraft({
+        logoUrl: saved.logoUrl || '',
+        faviconUrl: saved.faviconUrl || '',
+      });
+      queryClient.setQueryData<SettingsType>(['/api/settings'], (current) => ({
+        ...(current || {}),
+        branding: saved,
+      } as SettingsType));
+      toast({ title: 'Logo and favicon updated' });
+    },
+    onError: async (error: any) => {
+      toast({ title: 'Could not update branding', description: error?.message, variant: 'destructive' });
     },
   });
 
@@ -3122,6 +3162,24 @@ export default function CarHopApp() {
         resolve(result);
       };
     });
+  };
+
+  const handleBrandingImageUpload = async (file: File, type: 'logoUrl' | 'faviconUrl') => {
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid image', description: 'Please choose an image file.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'Image too large', description: 'Please choose an image smaller than 10 MB.', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const compressed = await compressImage(reader.result as string, 1200, 0.75);
+      setBrandingDraft(current => ({ ...current, [type]: compressed }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -4472,7 +4530,11 @@ export default function CarHopApp() {
       <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center gap-2">
           <div className="flex items-center gap-1 sm:gap-2 cursor-pointer flex-shrink-0" onClick={() => setView('home')} data-testid="link-home">
-            <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt="CarHopGo" className="max-w-[150px] sm:max-w-[210px] max-h-10 sm:max-h-14 object-contain" />
+            ) : (
+              <span className="text-base sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">CarHop<span className="text-green-600">Go</span></span>
+            )}
           </div>
           <div className="hidden md:flex items-center gap-4 lg:gap-8 text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
             <button onClick={handleManageBookingClick} className="relative hover:text-green-600 dark:hover:text-white transition-colors font-bold text-xs uppercase tracking-wide" data-testid="button-manage-booking">
@@ -9863,6 +9925,75 @@ export default function CarHopApp() {
 
             {adminTab === 'settings' && (
               <div className="max-w-4xl space-y-4 sm:space-y-6">
+                <Card className="p-4 sm:p-6 border-green-500/20">
+                  <div className="mb-5">
+                    <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                      <Image size={20} className="text-green-500" /> Branding
+                    </h2>
+                    <p className="text-xs sm:text-sm text-zinc-500 mt-1">
+                      Upload a logo for the header and a square image for the browser favicon. Changes apply across the app after saving.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {([
+                      ['logoUrl', 'Logo', 'Recommended: transparent PNG or WEBP.'],
+                      ['faviconUrl', 'Browser favicon', 'Recommended: square PNG, JPG or WEBP.'],
+                    ] as const).map(([type, label, hint]) => (
+                      <div key={type} className="rounded-xl border border-zinc-200 dark:border-zinc-700 p-4">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{label}</h3>
+                            <p className="text-xs text-zinc-500 mt-0.5">{hint}</p>
+                          </div>
+                          {brandingDraft[type] && (
+                            <img
+                              src={brandingDraft[type]}
+                              alt={`${label} preview`}
+                              className={type === 'faviconUrl' ? 'h-12 w-12 rounded-lg object-contain bg-zinc-100 dark:bg-zinc-800 p-1' : 'h-12 max-w-[150px] object-contain'}
+                            />
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700">
+                            <Upload size={14} /> Upload {label}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp,image/gif"
+                              className="hidden"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) void handleBrandingImageUpload(file, type);
+                                event.currentTarget.value = '';
+                              }}
+                              data-testid={`input-upload-${type}`}
+                            />
+                          </label>
+                          {brandingDraft[type] && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => setBrandingDraft(current => ({ ...current, [type]: '' }))}
+                              data-testid={`button-remove-${type}`}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5">
+                    <Button
+                      onClick={() => updateBrandingMutation.mutate(brandingDraft)}
+                      disabled={updateBrandingMutation.isPending}
+                      data-testid="button-save-branding"
+                    >
+                      {updateBrandingMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save branding'}
+                    </Button>
+                  </div>
+                </Card>
+
                 <Card className="p-4 sm:p-6 border-green-500/20">
                   <div className="flex items-start justify-between gap-4 mb-5">
                     <div>
