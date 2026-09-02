@@ -9677,27 +9677,38 @@ export default function CarHopApp() {
 
                 <Card className="p-4 sm:p-6">
                   <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white mb-4">Sound, quiet hours and duplicate protection</h3>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="min-w-0 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                       Sound
-                      <select value={notificationSettingsDraft.sound} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, sound: event.target.value }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" data-testid="select-notification-sound">
+                      <select value={notificationSettingsDraft.sound} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, sound: event.target.value }))} className="mt-1 block w-full min-w-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" data-testid="select-notification-sound">
                         <option value="chime">Chime</option>
                         <option value="bell">Bell</option>
                         <option value="double">Double tone</option>
                         <option value="soft">Soft</option>
                       </select>
                     </label>
-                    <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                    <label className="min-w-0 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                       Duplicate interval (minutes)
-                      <input type="number" min="0" max="1440" value={notificationSettingsDraft.duplicateIntervalMinutes} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, duplicateIntervalMinutes: Math.max(0, Number(event.target.value) || 0) }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" data-testid="input-notification-duplicate-interval" />
+                      <input type="number" min="0" max="1440" value={notificationSettingsDraft.duplicateIntervalMinutes} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, duplicateIntervalMinutes: Math.max(0, Number(event.target.value) || 0) }))} className="mt-1 block w-full min-w-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" data-testid="input-notification-duplicate-interval" />
                     </label>
-                    <label className="flex items-center gap-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                    <label className="flex min-w-0 items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 text-xs font-semibold text-zinc-600 dark:text-zinc-300 cursor-pointer">
                       <input type="checkbox" checked={notificationSettingsDraft.quietHoursEnabled} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursEnabled: event.target.checked }))} className="w-4 h-4 accent-green-600" data-testid="checkbox-notification-quiet-hours" />
-                      Quiet hours
+                      <span className="min-w-0">
+                        <span className="block">Enable quiet hours</span>
+                        <span className="block text-[11px] font-normal text-zinc-500">
+                          {notificationSettingsDraft.quietHoursEnabled ? 'Notifications pause during this period.' : 'Notifications stay active all the time.'}
+                        </span>
+                      </span>
                     </label>
-                    <div className="flex gap-2">
-                      <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex-1">From<input type="time" value={notificationSettingsDraft.quietHoursStart} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursStart: event.target.value }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" /></label>
-                      <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex-1">To<input type="time" value={notificationSettingsDraft.quietHoursEnd} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursEnd: event.target.value }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" /></label>
+                    <div className="grid min-w-0 grid-cols-2 gap-2">
+                      <label className="min-w-0 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                        From
+                        <input type="time" value={notificationSettingsDraft.quietHoursStart} disabled={!notificationSettingsDraft.quietHoursEnabled} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursStart: event.target.value }))} className="mt-1 block w-full min-w-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm disabled:cursor-not-allowed disabled:opacity-50" data-testid="input-notification-quiet-hours-start" />
+                      </label>
+                      <label className="min-w-0 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                        To
+                        <input type="time" value={notificationSettingsDraft.quietHoursEnd} disabled={!notificationSettingsDraft.quietHoursEnabled} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursEnd: event.target.value }))} className="mt-1 block w-full min-w-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm disabled:cursor-not-allowed disabled:opacity-50" data-testid="input-notification-quiet-hours-end" />
+                      </label>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-5">
