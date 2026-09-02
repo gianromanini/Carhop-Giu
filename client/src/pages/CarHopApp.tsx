@@ -2039,7 +2039,13 @@ export default function CarHopApp() {
     queryKey: ['/api/financial/summary'],
     enabled: isAdminViewer,
   });
-  const { data: hostsData = [], isLoading: hostsLoading, isError: hostsError } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
+  const { data: hostsData = [], isLoading: hostsLoading, isError: hostsError } = useQuery<any[]>({
+    queryKey: ['/api/hosts'],
+    enabled: isAdminViewer,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    retry: 3,
+  });
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'], enabled: isAdminViewer });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
   const [adminMessageText, setAdminMessageText] = useState("");
