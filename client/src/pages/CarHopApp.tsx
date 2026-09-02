@@ -1871,7 +1871,7 @@ export default function CarHopApp() {
     };
   }, []);
 
-  const pushAudience = adminAuthenticated || authUser?.isAdmin === true
+  const pushAudience = isAdminViewer
     ? 'admin'
     : currentHost?.id
       ? `host:${currentHost.id}`
@@ -1922,7 +1922,7 @@ export default function CarHopApp() {
     const params = new URLSearchParams(window.location.search);
     const requestedView = params.get('view');
     const bookingId = Number(params.get('bookingId'));
-    if (requestedView === 'admin' && (adminAuthenticated || authUser?.isAdmin === true)) {
+    if (requestedView === 'admin' && isAdminViewer) {
       setView('admin');
       setAdminTab(params.get('tab') || 'bookings');
       if (Number.isInteger(bookingId) && bookingId > 0) setManageBookingId(bookingId);
@@ -1930,11 +1930,10 @@ export default function CarHopApp() {
       setView('host-dashboard');
       if (Number.isInteger(bookingId) && bookingId > 0) setHostManageBookingId(bookingId);
     }
-  }, [adminAuthenticated, authUser?.isAdmin, currentHost]);
+  }, [isAdminViewer, currentHost]);
 
   const knownExtensionAlertsRef = useRef<Record<string, number> | null>(null);
   useEffect(() => {
-    const isAdminViewer = adminAuthenticated || authUser?.isAdmin === true;
     const isHostViewer = !isAdminViewer && Boolean(currentHost?.id);
     const viewerAudience = isAdminViewer ? 'admin' : isHostViewer ? `host:${currentHost!.id}` : null;
     if (!viewerAudience || (!bookings.length && !supportMessagesData.length) || !notificationSettings.enabled) return;
@@ -2043,8 +2042,7 @@ export default function CarHopApp() {
 
    localStorage.setItem('carhop_notification_history', JSON.stringify(history));
   }, [
-    adminAuthenticated,
-    authUser?.isAdmin,
+    isAdminViewer,
     bookings,
     vehicles,
     currentHost?.id,
@@ -2918,14 +2916,37 @@ export default function CarHopApp() {
   };
 
 
-  const handleAdminLoginSubmit = () => {
-    if (adminLoginForm.unit === '01') {
+  const handleAdminLoginSubmit = async () => {
+    if (adminLoginForm.unit !== '01') {
+      setAdminPasswordError('Invalid operating unit');
+      return;
+    }
+    if (!adminLoginForm.password) {
+      setAdminPasswordError('Password is required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/session-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password: adminLoginForm.password }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        setAdminPasswordError(error.error || 'Incorrect password');
+        return;
+      }
+
+      setAdminAuthenticated(true);
       setShowAdminLoginModal(false);
       setAdminUnit('01');
       setAdminLoginForm({ unit: '', password: '' });
+      setAdminPasswordError('');
       setView('admin');
-    } else {
-      alert('Invalid unit');
+    } catch {
+      setAdminPasswordError('Connection error. Please try again.');
     }
   };
   const handleManageBookingClick = () => { if (clientUser) { setView('bookings'); } else { setView('manage-redirect'); setShowLoginModal(true); } };
@@ -5556,6 +5577,23 @@ export default function CarHopApp() {
                   data-testid="input-admin-unit" 
                 />
               </div>
+              <div>
+                <label className="block text-sm font-bold text-zinc-900 dark:text-white mb-2">Admin Password</label>
+                <input
+                  type="password"
+                  value={adminLoginForm.password}
+                  onChange={(e) => {
+                    setAdminLoginForm({...adminLoginForm, password: e.target.value});
+                    setAdminPasswordError('');
+                  }}
+                  placeholder="Enter admin password"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm"
+                  data-testid="input-admin-login-password"
+                />
+              </div>
+              {adminPasswordError && (
+                <p className="text-sm text-red-500 text-center" data-testid="text-admin-login-error">{adminPasswordError}</p>
+              )}
               <Button 
                 onClick={handleAdminLoginSubmit}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 mt-4" 
