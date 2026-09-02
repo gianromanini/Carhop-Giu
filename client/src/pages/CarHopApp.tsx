@@ -665,6 +665,19 @@ function urlBase64ToUint8Array(value: string) {
   return Uint8Array.from(Array.from(rawData, character => character.charCodeAt(0)));
 }
 
+const CARHOPGO_INSTALLED_STORAGE_KEY = 'carhopgo-installed';
+
+function detectCarHopGoInstallation() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone === true
+      || window.localStorage.getItem(CARHOPGO_INSTALLED_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 interface FormDataType {
   model: string;
   year: number;
@@ -1395,6 +1408,7 @@ export default function CarHopApp() {
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
+  const [isCarHopGoInstalled, setIsCarHopGoInstalled] = useState(detectCarHopGoInstallation);
   const [pushConfigured, setPushConfigured] = useState(false);
   const [adminChatBookingId, setAdminChatBookingId] = useState<number | null>(null);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
@@ -1810,12 +1824,26 @@ export default function CarHopApp() {
   }, [notificationSettings]);
 
   useEffect(() => {
+    setIsCarHopGoInstalled(detectCarHopGoInstallation());
     const handleInstallPrompt = (event: Event) => {
       event.preventDefault();
-      setInstallPromptEvent(event);
+      if (!detectCarHopGoInstallation()) setInstallPromptEvent(event);
+    };
+    const handleAppInstalled = () => {
+      try {
+        window.localStorage.setItem(CARHOPGO_INSTALLED_STORAGE_KEY, 'true');
+      } catch {
+        // Installation state is still tracked for this session.
+      }
+      setIsCarHopGoInstalled(true);
+      setInstallPromptEvent(null);
     };
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   const pushAudience = adminAuthenticated || authUser?.isAdmin === true
@@ -2303,10 +2331,26 @@ export default function CarHopApp() {
   };
 
   const installCarHopGo = async () => {
-    if (!installPromptEvent) return;
+    if (isCarHopGoInstalled) {
+      toast({ title: 'Application already installed', description: 'CarHopGo is already installed on this device.' });
+      return;
+    }
+    if (!installPromptEvent) {
+      toast({ title: 'Installation is not available yet', description: 'Use your browser menu to install CarHopGo when the option appears.' });
+      return;
+    }
     installPromptEvent.prompt();
     const result = await installPromptEvent.userChoice;
-    if (result?.outcome === 'accepted') setInstallPromptEvent(null);
+    setInstallPromptEvent(null);
+    if (result?.outcome === 'accepted') {
+      try {
+        window.localStorage.setItem(CARHOPGO_INSTALLED_STORAGE_KEY, 'true');
+      } catch {
+        // Installation state remains active for the current session.
+      }
+      setIsCarHopGoInstalled(true);
+      toast({ title: 'CarHopGo installed', description: 'You can now follow your bookings from the installed app.' });
+    }
   };
 
   const testNotification = () => {
@@ -9181,6 +9225,15 @@ export default function CarHopApp() {
                   <span className="inline-block bg-white/10 backdrop-blur border border-white/20 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2">Host and Rent For The Best Prices</span>
                   <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-3 sm:mb-4" data-testid="text-hero-title">The Best car rental prices in Fairfield County <br/><span className="text-green-500">Starting from $39/day</span></h1>
                   <p className="text-xs sm:text-base lg:text-lg text-zinc-200 max-w-xl mb-6 sm:mb-8">Premium vehicles at unbeatable prices. Book your ride in just 3 simple steps.</p>
+                  {!isCarHopGoInstalled && installPromptEvent && (
+                    <div className="max-w-xl rounded-xl border border-green-400/40 bg-black/40 p-4 backdrop-blur-sm" data-testid="guest-install-prompt">
+                      <p className="text-sm font-semibold text-white">Keep your bookings close</p>
+                      <p className="mt-1 text-xs text-zinc-200">Install CarHopGo to follow your bookings and receive browser alerts more easily.</p>
+                      <button onClick={installCarHopGo} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-green-700" data-testid="button-install-app-guest">
+                        <Download size={15} /> Install CarHopGo
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <Card className="p-4 sm:p-6 bg-white/95 dark:bg-zinc-900/95 backdrop-blur w-full">
                   <h3 className="text-base sm:text-lg font-bold mb-4 text-zinc-900 dark:text-white">Find Your Perfect Ride</h3>
@@ -9613,7 +9666,7 @@ export default function CarHopApp() {
                         These controls apply globally to Admin notifications. Browser permission and device volume remain under the user's control.
                       </p>
                     </div>
-                    {installPromptEvent && (
+                    {!isCarHopGoInstalled && installPromptEvent && (
                       <Button onClick={installCarHopGo} className="flex items-center gap-2 shrink-0" data-testid="button-install-app">
                         <Download size={15} /> Install app
                       </Button>
@@ -16307,6 +16360,15 @@ export default function CarHopApp() {
             
             <h2 className="text-3xl font-bold mb-4 text-white" data-testid="text-confirmation-title">Payment Confirmed!</h2>
             <p className="text-zinc-400 mb-10 text-lg">Your payment was processed successfully. Your booking is now confirmed.</p>
+            {!isCarHopGoInstalled && installPromptEvent && (
+              <div className="mb-6 rounded-xl border border-green-500/30 bg-green-950/30 p-4 text-left" data-testid="booking-install-reminder">
+                <p className="text-sm font-bold text-white">Follow this booking from the CarHopGo app</p>
+                <p className="mt-1 text-xs text-zinc-300">Install the app to keep your booking details and browser alerts close at hand.</p>
+                <button onClick={installCarHopGo} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-green-700" data-testid="button-install-app-confirmation">
+                  <Download size={15} /> Install CarHopGo
+                </button>
+              </div>
+            )}
             
             <div className="flex flex-col gap-3">
               <button 
