@@ -10,11 +10,21 @@ import {
   type Payout, type InsertPayout
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, ilike, or, and, inArray, sql, desc } from "drizzle-orm";
+import { eq, ilike, or, and, inArray, sql, desc, getTableColumns } from "drizzle-orm";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 
 const DEMO_PASSWORD_HASH = bcrypt.hashSync("demo123", 10);
+
+export type VehicleSummary = Omit<Vehicle, "images"> & {
+  images: string[];
+  imagesCount: number;
+};
+
+export type BookingFinancialSummary = Pick<
+  Booking,
+  "status" | "carName" | "startDate" | "total" | "checkInStatus" | "checkOutStatus"
+>;
 
 export interface IStorage {
   // Users (required for Replit Auth)
@@ -29,6 +39,7 @@ export interface IStorage {
 
   // Vehicles
   getVehicles(): Promise<Vehicle[]>;
+  getVehicleSummaries(): Promise<VehicleSummary[]>;
   getVehicle(id: number): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
@@ -36,6 +47,7 @@ export interface IStorage {
 
   // Bookings
   getBookings(): Promise<Booking[]>;
+  getBookingFinancialSummaries(): Promise<BookingFinancialSummary[]>;
   getBooking(id: number): Promise<Booking | undefined>;
   getBookingByCode(code: string): Promise<Booking | undefined>;
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -588,6 +600,14 @@ export class MemStorage implements IStorage {
     return Array.from(this.vehicles.values());
   }
 
+  async getVehicleSummaries(): Promise<VehicleSummary[]> {
+    return Array.from(this.vehicles.values()).map((vehicle) => ({
+      ...vehicle,
+      images: [],
+      imagesCount: Array.isArray(vehicle.images) ? vehicle.images.length : 0,
+    }));
+  }
+
   // Get available vehicles for specific date range (filters out booked vehicles)
   async getAvailableVehicles(startDate: string, endDate: string): Promise<Vehicle[]> {
     const allVehicles = Array.from(this.vehicles.values());
@@ -685,6 +705,17 @@ export class MemStorage implements IStorage {
   // Bookings
   async getBookings(): Promise<Booking[]> {
     return Array.from(this.bookings.values());
+  }
+
+  async getBookingFinancialSummaries(): Promise<BookingFinancialSummary[]> {
+    return Array.from(this.bookings.values()).map((booking) => ({
+      status: booking.status,
+      carName: booking.carName,
+      startDate: booking.startDate,
+      total: booking.total,
+      checkInStatus: booking.checkInStatus,
+      checkOutStatus: booking.checkOutStatus,
+    }));
   }
 
   async getBooking(id: number): Promise<Booking | undefined> {
@@ -1391,6 +1422,29 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getVehicleSummaries(): Promise<VehicleSummary[]> {
+    if (!this.initialized) return [];
+    try {
+      // Avoid transferring large base64 photos for the fleet list. The
+      // cardinality expression keeps image availability without selecting the
+      // image array itself.
+      const { images: _images, ...vehicleColumns } = getTableColumns(vehicles);
+      const rows = await this.db.select({
+        ...vehicleColumns,
+        imagesCount: sql<number>`coalesce(cardinality(${vehicles.images}), 0)`,
+      }).from(vehicles);
+
+      return rows.map((vehicle: any) => ({
+        ...vehicle,
+        images: [],
+        imagesCount: Number(vehicle.imagesCount || 0),
+      })) as VehicleSummary[];
+    } catch (error) {
+      console.error("Error getting vehicle summaries:", error);
+      return [];
+    }
+  }
+
   async getVehicle(id: number): Promise<Vehicle | undefined> {
     if (!this.initialized) return undefined;
     try {
@@ -1460,6 +1514,27 @@ export class DatabaseStorage implements IStorage {
       console.error("[Storage] Error getting bookings:", error);
       console.error("[Storage] Error details:", error?.message || "No message");
       console.error("[Storage] Error stack:", error?.stack || "No stack");
+      return [];
+    }
+  }
+
+  async getBookingFinancialSummaries(): Promise<BookingFinancialSummary[]> {
+    if (!this.initialized) {
+      await this.init();
+    }
+    if (!this.initialized || !this.db) return [];
+
+    try {
+      return await this.db.select({
+        status: bookings.status,
+        carName: bookings.carName,
+        startDate: bookings.startDate,
+        total: bookings.total,
+        checkInStatus: bookings.checkInStatus,
+        checkOutStatus: bookings.checkOutStatus,
+      }).from(bookings);
+    } catch (error) {
+      console.error("Error getting booking financial summaries:", error);
       return [];
     }
   }

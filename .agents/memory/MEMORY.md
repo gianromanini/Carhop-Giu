@@ -4,3 +4,5 @@
 - [Booking approval gate](booking-approval-gate.md) — initial requests stay unpaid and non-reserving until host/admin approval, with availability checked again before activation.
 - [Notification channel safety](notification-channel-safety.md) — never report SMS delivery without a configured provider; keep unavailable channels explicit and opt-in.
 - [Web Push key handling](web-push-key-handling.md) — VAPID keys stay in Secrets; invalid configuration must disable push without taking down the application.
+- [Media list payloads](media-list-payloads.md) — collection endpoints should return media metadata and cacheable URLs, not embedded base64 content.
+- [Admin UI access](admin-ui-access.md) — admin-only controls must use the unified admin viewer state, not only the legacy password-session flag.

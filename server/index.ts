@@ -71,23 +71,12 @@ export function log(message: string, source = "express") {
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+      const contentLength = res.get("content-length");
+      log(`${req.method} ${path} ${res.statusCode} in ${duration}ms${contentLength ? ` (${contentLength} bytes)` : ""}`);
     }
   });
 
@@ -114,6 +103,12 @@ app.use((req, res, next) => {
       console.log(`[Server] Storage initialization complete. Database connected: ${dbConnected}`);
       
       await registerRoutes(httpServer, app);
+
+      // Keep unknown API requests as JSON 404s instead of letting the SPA
+      // fallback return index.html with a misleading 200 response.
+      app.use("/api", (_req, res) => {
+        res.status(404).json({ message: "API route not found" });
+      });
 
       app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
         const status = err.status || err.statusCode || 500;

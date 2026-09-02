@@ -1428,7 +1428,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
   // ========== VEHICLES ==========
   app.get("/api/vehicles", async (req, res) => {
-    const vehicles = await storage.getVehicles();
+    const useImageUrls = String(req.query.imageMode || 'urls').toLowerCase() !== 'full';
+    const vehicles = useImageUrls
+      ? await storage.getVehicleSummaries()
+      : await storage.getVehicles();
     const hosts = await storage.getHosts();
     const hostsMap = new Map(hosts.map(h => [h.id.toString(), h]));
     
@@ -1460,11 +1463,17 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     
     const vehiclesWithHost = filteredVehicles.map(v => {
       const allImages = Array.isArray(v.images) ? v.images : [];
-      const slimImages = allImages.length > 0 ? [allImages[0]] : [];
+      const imagesCount = Number((v as any).imagesCount || allImages.length);
+      // Keep large base64 photos out of the fleet payload. The detail endpoint
+      // still returns the original images, while list cards load only the
+      // first photo they need through the cacheable image route below.
+      const slimImages = imagesCount > 0
+        ? [useImageUrls ? `/api/vehicles/${v.id}/image/0` : allImages[0]]
+        : [];
       return {
         ...v,
         images: slimImages,
-        imagesCount: allImages.length,
+        imagesCount,
         hostInfo: v.hostId ? {
           id: hostsMap.get(v.hostId)?.id,
           firstName: hostsMap.get(v.hostId)?.firstName,
@@ -1476,6 +1485,35 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     });
 
     res.json(vehiclesWithHost);
+  });
+
+  app.get("/api/vehicles/:id/image/:index", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = parseInt(req.params.index);
+    if (!Number.isInteger(id) || !Number.isInteger(index) || index < 0) {
+      return res.status(400).json({ error: "Invalid vehicle image" });
+    }
+
+    const vehicle = await storage.getVehicle(id);
+    const image = vehicle?.images?.[index];
+    if (!image) return res.status(404).json({ error: "Vehicle image not found" });
+
+    // Older records may already contain hosted image URLs.
+    if (/^https?:\/\//i.test(image)) {
+      return res.redirect(image);
+    }
+
+    const match = image.match(/^data:([^;,]+);base64,([\s\S]+)$/i);
+    if (!match) return res.status(404).json({ error: "Vehicle image is unavailable" });
+
+    try {
+      const imageBuffer = Buffer.from(match[2], "base64");
+      if (imageBuffer.length === 0) return res.status(404).json({ error: "Vehicle image is unavailable" });
+      res.set("Cache-Control", "public, max-age=3600");
+      res.type(match[1]).send(imageBuffer);
+    } catch {
+      res.status(404).json({ error: "Vehicle image is unavailable" });
+    }
   });
 
   app.get("/api/vehicles/:id", async (req, res) => {
@@ -2780,8 +2818,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
   // ========== FINANCIAL SUMMARY ==========
   app.get("/api/financial/summary", async (_req, res) => {
-    const bookings = await storage.getBookings();
-    const vehicles = await storage.getVehicles();
+    const [bookings, vehicles] = await Promise.all([
+      storage.getBookingFinancialSummaries(),
+      storage.getVehicleSummaries(),
+    ]);
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthlyData: Record<string, { gross: number; expenses: number; net: number; pending: number }> = {};

@@ -1731,8 +1731,12 @@ export default function CarHopApp() {
   const [viewHostProfile, setViewHostProfile] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
   const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
-  // Load vehicles with availability filter based on search dates
-  const includeUnavailableVehicles = Boolean(currentHost || adminAuthenticated);
+  // Load vehicles with availability filter based on search dates.
+  // The public list remains available to visitors; the all-vehicles query is
+  // reserved for staff views so visitors do not download the same list twice.
+  const isAdminViewer = adminAuthenticated || authUser?.isAdmin === true;
+  const isStaffViewer = Boolean(currentHost || isAdminViewer);
+  const includeUnavailableVehicles = isStaffViewer;
   const vehicleQueryKey = searchParams.start && searchParams.end 
     ? ['/api/vehicles', searchParams.start, searchParams.end, includeUnavailableVehicles ? 'include-unavailable' : 'public']
     : ['/api/vehicles', includeUnavailableVehicles ? 'include-unavailable' : 'public'];
@@ -1742,10 +1746,10 @@ export default function CarHopApp() {
     queryFn: async () => {
       const availabilityParam = includeUnavailableVehicles ? '&includeUnavailable=true' : '';
       if (searchParams.start && searchParams.end) {
-        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}${availabilityParam}`);
+        const response = await fetch(`/api/vehicles?startDate=${searchParams.start}&endDate=${searchParams.end}${availabilityParam}&imageMode=urls`);
         return response.json();
       }
-      const response = await fetch(`/api/vehicles${includeUnavailableVehicles ? '?includeUnavailable=true' : ''}`);
+      const response = await fetch(`/api/vehicles?${includeUnavailableVehicles ? 'includeUnavailable=true&' : ''}imageMode=urls`);
       return response.json();
     }
   });
@@ -1753,9 +1757,10 @@ export default function CarHopApp() {
   const { data: allVehicles = [] } = useQuery<Vehicle[]>({ 
     queryKey: ['/api/vehicles/all', includeUnavailableVehicles ? 'include-unavailable' : 'public'],
     queryFn: async () => {
-      const response = await fetch(`/api/vehicles${includeUnavailableVehicles ? '?includeUnavailable=true' : ''}`);
+      const response = await fetch(`/api/vehicles?${includeUnavailableVehicles ? 'includeUnavailable=true&' : ''}imageMode=urls`);
       return response.json();
-    }
+    },
+    enabled: isStaffViewer,
   });
 
   const { data: viewCarBookedDates = [] } = useQuery<{start: string; end: string; status: string}[]>({
@@ -1800,7 +1805,8 @@ export default function CarHopApp() {
     staleTime: 10000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 30000 
+    refetchInterval: 30000,
+    enabled: isStaffViewer || isAuthenticated || view !== 'home',
   });
 
   const adminFleetFiltered = useMemo(() => {
@@ -1889,7 +1895,11 @@ export default function CarHopApp() {
     };
   }, [pushAudience, notificationPermission, notificationSettings.pushEnabled]);
 
-  const { data: supportMessagesData = [] } = useQuery<any[]>({ queryKey: ['/api/support-messages'], refetchInterval: 30000 });
+  const { data: supportMessagesData = [] } = useQuery<any[]>({
+    queryKey: ['/api/support-messages'],
+    refetchInterval: isStaffViewer || isAuthenticated ? 30000 : false,
+    enabled: isStaffViewer || isAuthenticated || showClientChatModal,
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2025,11 +2035,13 @@ export default function CarHopApp() {
     notificationSettings,
     notificationPermission,
   ]);
-  const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
-  const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
-  const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
+  const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({
+    queryKey: ['/api/financial/summary'],
+    enabled: isAdminViewer,
+  });
+  const { data: hostsData = [], isLoading: hostsLoading, isError: hostsError } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
+  const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'], enabled: isAdminViewer });
   const { data: ratingsData = [] } = useQuery<any[]>({ queryKey: ['/api/ratings'] });
-  const { data: messagesData = [] } = useQuery<any[]>({ queryKey: ['/api/messages'] });
   const [adminMessageText, setAdminMessageText] = useState("");
   const handleSendMessage = (booking: any, role: string) => {
     if (!adminMessageText.trim()) return;
@@ -2939,7 +2951,10 @@ export default function CarHopApp() {
     if (!userCoords && !searchParams.location) { alert("Please select a Pick-up Location or use Current Location."); return; } 
     setIsSearching(true); 
     setShowVehiclesMap(true);
-    setTimeout(() => { setIsSearching(false); const fleetSection = document.getElementById('fleet'); if (fleetSection) fleetSection.scrollIntoView({behavior:'smooth'}); }, 1500); 
+    setIsSearching(false);
+    requestAnimationFrame(() => {
+      document.getElementById('fleet')?.scrollIntoView({ behavior: 'smooth' });
+    });
   };
   
   const handleViewDetails = (car: Vehicle) => {
@@ -4128,6 +4143,9 @@ export default function CarHopApp() {
     }
     if (!formData.transmission || formData.transmission.trim() === '') {
       missingFields.push('Transmission');
+    }
+    if (isAdminViewer && !formData.hostId) {
+      missingFields.push('Host');
     }
     
     if (missingFields.length > 0) {
@@ -6888,7 +6906,7 @@ export default function CarHopApp() {
                     // In admin mode, make sure hostId is set even if not provided by currentHost
                     const finalVehicleData = {
                       ...vehicleData,
-                      hostId: adminAuthenticated ? (formData.hostId || vehicleData.hostId) : vehicleData.hostId
+                       hostId: isAdminViewer ? (formData.hostId || vehicleData.hostId) : vehicleData.hostId
                     };
 
                     if (editingHostVehicle) {
@@ -6948,7 +6966,7 @@ export default function CarHopApp() {
                             <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Daily Rate ($) *</label>
                             <input type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="e.g. 45" required className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm" data-testid="input-host-vehicle-price" />
                           </div>
-                          {adminAuthenticated && (
+                          {isAdminViewer && (
                             <div>
                               <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wider">Assign to Host (Admin Only)</label>
                               <select 
@@ -9924,7 +9942,7 @@ export default function CarHopApp() {
                         <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-vehicle-plate" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host {adminAuthenticated && <span className="text-red-500">*</span>}</label>
+                         <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host {isAdminViewer && <span className="text-red-500">*</span>}</label>
                         <select 
                           name="hostId" 
                           value={formData.hostId ? String(formData.hostId) : ''} 
@@ -9934,9 +9952,13 @@ export default function CarHopApp() {
                           }} 
                           className="w-full p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                           data-testid="select-vehicle-host"
-                          disabled={!adminAuthenticated}
+                           disabled={!isAdminViewer || hostsLoading || hostsError}
+                           required={isAdminViewer}
                         >
-                          <option value="">Select a Host</option>
+                           <option value="">Select a Host</option>
+                           {hostsLoading && <option value="" disabled>Loading Hosts...</option>}
+                           {hostsError && <option value="" disabled>Could not load Hosts</option>}
+                           {!hostsLoading && !hostsError && hostsData.length === 0 && <option value="" disabled>No registered Hosts</option>}
                           {hostsData.map((host: any) => (
                             <option key={host.id} value={host.id}>{host.firstName} {host.lastName} ({host.email})</option>
                           ))}
@@ -10303,7 +10325,7 @@ export default function CarHopApp() {
                                   <Input label="License Plate" name="licensePlate" value={formData.licensePlate} onChange={handleInputChange} placeholder="License Plate" data-testid="input-edit-vehicle-plate" />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host {adminAuthenticated && <span className="text-red-500">*</span>}</label>
+                                  <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Host {isAdminViewer && <span className="text-red-500">*</span>}</label>
                                   <select 
                                     name="hostId" 
                                     value={formData.hostId ? String(formData.hostId) : ''} 
@@ -10313,9 +10335,13 @@ export default function CarHopApp() {
                                     }} 
                                     className="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-lg text-sm"
                                     data-testid="select-edit-vehicle-host"
-                                    disabled={!adminAuthenticated}
+                                    disabled={!isAdminViewer || hostsLoading || hostsError}
+                                    required={isAdminViewer}
                                   >
                                     <option value="">Select a Host</option>
+                                    {hostsLoading && <option value="" disabled>Loading Hosts...</option>}
+                                    {hostsError && <option value="" disabled>Could not load Hosts</option>}
+                                    {!hostsLoading && !hostsError && hostsData.length === 0 && <option value="" disabled>No registered Hosts</option>}
                                     {hostsData.map((host: any) => (
                                       <option key={host.id} value={host.id}>{host.firstName} {host.lastName} ({host.email})</option>
                                     ))}
