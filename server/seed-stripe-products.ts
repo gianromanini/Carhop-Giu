@@ -15,9 +15,7 @@ if (!stripeSecretKey) {
   throw new Error('STRIPE_SECRET_KEY environment variable is required');
 }
 
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2025-08-27.basil',
-});
+const stripe = new Stripe(stripeSecretKey);
 
 async function createCarRentalProducts() {
   console.log('Creating CarHop Stripe products...\n');
