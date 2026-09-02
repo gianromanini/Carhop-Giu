@@ -216,6 +216,8 @@ export const bookings = pgTable("bookings", {
     status: 'pending' | 'approved' | 'rejected';
     createdAt: string;
     respondedAt?: string;
+    hostNotificationStatus?: 'pending' | 'sent' | 'partial' | 'skipped';
+    hostNotificationSentAt?: string;
   }[]>().default([]),
   messages: jsonb("messages").$type<{
     id: string;

@@ -19,6 +19,35 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  enabled: true,
+  emailEnabled: true,
+  smsEnabled: false,
+  pushEnabled: true,
+  popupEnabled: true,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  notifyExtensionRequests: true,
+  notifyNewBookings: true,
+  notifyMessages: true,
+  showBookingDetails: true,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00',
+  sound: 'chime',
+  duplicateIntervalMinutes: 10,
+};
+
+function isAdminRequest(req: any): boolean {
+  return (req.isAuthenticated?.() && req.user?.isAdmin === true) ||
+    req.session?.adminAuthenticated === true;
+}
+
+async function getNotificationSettings() {
+  const stored = await storage.getSetting('notifications');
+  return { ...DEFAULT_NOTIFICATION_SETTINGS, ...(stored?.value || {}) };
+}
+
 /**
  * Returns the daily protection price that was used for a booking.
  *
@@ -676,6 +705,98 @@ async function sendNewBookingNotificationToHost(booking: any, vehicle: any) {
   } catch (error) {
     console.error("Error sending new booking notification:", error);
   }
+}
+
+async function sendExtensionRequestEmailToHost(booking: any, vehicle: any, host: any, request: any) {
+  const hostEmail = host?.email || process.env.EMAIL_USER;
+  if (!hostEmail) return false;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: hostEmail,
+      subject: `Extension Request #${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Extension Request</h1>
+          </div>
+          <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #1f2937;">Hi <strong>${host?.firstName || host?.name || 'Host'}</strong>,</p>
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">
+              ${booking.driver?.name || 'Your guest'} requested a ${request.type === 'reduction' ? 'reduction' : 'trip extension'}.
+              Review the request in the Host dashboard before the requested return date.
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #7c3aed;">
+              <p style="margin: 0 0 10px; color: #6b7280;"><strong style="color: #1f2937;">Booking:</strong> ${booking.bookingCode}</p>
+              <p style="margin: 0 0 10px; color: #6b7280;"><strong style="color: #1f2937;">Vehicle:</strong> ${booking.carName || vehicle?.model || 'N/A'}</p>
+              <p style="margin: 0 0 10px; color: #6b7280;"><strong style="color: #1f2937;">Guest:</strong> ${booking.driver?.name || 'N/A'}</p>
+              <p style="margin: 0 0 10px; color: #6b7280;"><strong style="color: #1f2937;">Requested return:</strong> ${request.requestedReturnDate} at ${request.requestedReturnTime}</p>
+              <p style="margin: 0; color: #6b7280;"><strong style="color: #1f2937;">Reason:</strong> ${request.reason || 'No reason provided'}</p>
+            </div>
+            <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">Log in to CarHopGo to approve or decline this request.</p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`Extension request email sent to host for booking ${booking.bookingCode}`);
+    return true;
+  } catch (error) {
+    console.error("Error sending extension request email to host:", error);
+    return false;
+  }
+}
+
+/**
+ * SMS is deliberately opt-in and provider-agnostic. The app never pretends
+ * that an SMS was sent when no provider is configured. A deployment can
+ * provide an internal SMS webhook later without changing the booking flow.
+ */
+async function sendExtensionRequestSmsToHost(booking: any, vehicle: any, host: any, request: any) {
+  const webhookUrl = process.env.SMS_WEBHOOK_URL;
+  const hostPhone = host?.phone;
+  if (!webhookUrl || !hostPhone) {
+    console.warn(`[Notifications] SMS skipped for booking ${booking.bookingCode}: SMS provider is not configured`);
+    return false;
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: hostPhone,
+        message: `CarHopGo: ${booking.driver?.name || 'Guest'} requested a ${request.type === 'reduction' ? 'reduction' : 'trip extension'} for ${booking.carName || vehicle?.model || 'your vehicle'} (${booking.bookingCode}) until ${request.requestedReturnDate} ${request.requestedReturnTime}.`,
+      }),
+    });
+    if (!response.ok) throw new Error(`SMS webhook returned ${response.status}`);
+    console.log(`Extension request SMS sent to host for booking ${booking.bookingCode}`);
+    return true;
+  } catch (error) {
+    console.error("Error sending extension request SMS to host:", error);
+    return false;
+  }
+}
+
+async function notifyHostOfExtensionRequest(booking: any, vehicle: any, request: any) {
+  const settings = await getNotificationSettings();
+  const host = vehicle?.hostId ? await storage.getHost(parseInt(String(vehicle.hostId))).catch(() => null) : null;
+  const channels: Promise<boolean>[] = [];
+
+  if (settings.enabled && settings.notifyExtensionRequests && settings.emailEnabled) {
+    channels.push(sendExtensionRequestEmailToHost(booking, vehicle, host, request));
+  }
+  if (settings.enabled && settings.notifyExtensionRequests && settings.smsEnabled) {
+    channels.push(sendExtensionRequestSmsToHost(booking, vehicle, host, request));
+  }
+
+  if (channels.length === 0) return { status: 'skipped' as const, sentAt: undefined };
+  const results = await Promise.all(channels);
+  const sentCount = results.filter(Boolean).length;
+  return {
+    status: sentCount === results.length ? 'sent' as const : sentCount > 0 ? 'partial' as const : 'skipped' as const,
+    sentAt: sentCount > 0 ? new Date().toISOString() : undefined,
+  };
 }
 
 const signupSchema = z.object({
@@ -1667,6 +1788,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
     }
 
+    const duplicateRequest = (booking.extensionRequests || []).find((request: any) =>
+      request.status === 'pending' &&
+      request.type === type &&
+      request.requestedReturnDate === requestedReturnDate &&
+      request.requestedReturnTime === requestedReturnTime
+    );
+    if (duplicateRequest) {
+      return res.status(409).json({
+        error: "An identical extension request is already pending",
+        request: duplicateRequest,
+      });
+    }
+
     const newRequest = {
       id: `ext-${Date.now()}`,
       type: type as 'extension' | 'reduction',
@@ -1675,11 +1809,26 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       reason: reason || '',
       status: 'pending' as const,
       createdAt: new Date().toISOString(),
+      hostNotificationStatus: 'pending' as const,
     };
     
     const extensionRequests = [...(booking.extensionRequests || []), newRequest];
     const updated = await storage.updateBooking(id, { extensionRequests });
-    res.json(updated);
+    if (!updated) return res.status(404).json({ error: "Booking not found" });
+
+    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId).catch(() => null) : null;
+    const notificationResult = await notifyHostOfExtensionRequest(updated, vehicle, newRequest);
+    const notifiedRequests = (updated.extensionRequests || []).map((request: any) =>
+      request.id === newRequest.id
+        ? {
+            ...request,
+            hostNotificationStatus: notificationResult.status,
+            ...(notificationResult.sentAt ? { hostNotificationSentAt: notificationResult.sentAt } : {}),
+          }
+        : request
+    );
+    const finalBooking = await storage.updateBooking(id, { extensionRequests: notifiedRequests });
+    res.json(finalBooking || updated);
   });
 
   app.put("/api/bookings/:id/extension-request/:requestId", async (req, res) => {
@@ -2307,7 +2456,37 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     allSettings.forEach(s => {
       settingsObj[s.key] = s.value;
     });
+    settingsObj.notifications = {
+      ...DEFAULT_NOTIFICATION_SETTINGS,
+      ...(settingsObj.notifications || {}),
+    };
     res.json(settingsObj);
+  });
+
+  app.get("/api/admin/notification-settings", async (req: any, res) => {
+    if (!isAdminRequest(req)) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    res.json(await getNotificationSettings());
+  });
+
+  app.put("/api/admin/notification-settings", async (req: any, res) => {
+    if (!isAdminRequest(req)) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const value = req.body?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return res.status(400).json({ error: "Notification settings object is required" });
+    }
+
+    const current = await getNotificationSettings();
+    const next = {
+      ...current,
+      ...value,
+      duplicateIntervalMinutes: Math.max(0, Math.min(1440, Number(value.duplicateIntervalMinutes ?? current.duplicateIntervalMinutes) || 0)),
+    };
+    const setting = await storage.setSetting('notifications', next);
+    res.json(setting.value);
   });
 
   app.get("/api/settings/:key", async (req, res) => {

@@ -584,6 +584,77 @@ interface SettingsType {
     stressFreePackagePerTrip: boolean;
   };
   locations: string[];
+  notifications?: NotificationSettings;
+}
+
+interface NotificationSettings {
+  enabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  pushEnabled: boolean;
+  popupEnabled: boolean;
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  notifyExtensionRequests: boolean;
+  notifyNewBookings: boolean;
+  notifyMessages: boolean;
+  showBookingDetails: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  sound: string;
+  duplicateIntervalMinutes: number;
+}
+
+const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  enabled: true,
+  emailEnabled: true,
+  smsEnabled: false,
+  pushEnabled: true,
+  popupEnabled: true,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  notifyExtensionRequests: true,
+  notifyNewBookings: true,
+  notifyMessages: true,
+  showBookingDetails: true,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00',
+  sound: 'chime',
+  duplicateIntervalMinutes: 10,
+};
+
+function playNotificationSound(sound: string = 'chime') {
+  if (typeof window === 'undefined') return;
+  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContextConstructor) return;
+  const audioContext = new AudioContextConstructor();
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const frequency = sound === 'bell' ? 880 : sound === 'double' ? 660 : 740;
+  oscillator.frequency.value = frequency;
+  oscillator.type = sound === 'soft' ? 'sine' : 'triangle';
+  gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + (sound === 'double' ? 0.22 : 0.35));
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + (sound === 'double' ? 0.22 : 0.35));
+  if (sound === 'double') {
+    window.setTimeout(() => playNotificationSound('bell'), 260);
+  }
+}
+
+function isNotificationQuietHours(settings: NotificationSettings, now = new Date()) {
+  if (!settings.quietHoursEnabled) return false;
+  const current = now.getHours() * 60 + now.getMinutes();
+  const [startHour, startMinute] = settings.quietHoursStart.split(':').map(Number);
+  const [endHour, endMinute] = settings.quietHoursEnd.split(':').map(Number);
+  const start = (startHour || 0) * 60 + (startMinute || 0);
+  const end = (endHour || 0) * 60 + (endMinute || 0);
+  return start <= end ? current >= start && current < end : current >= start || current < end;
 }
 
 interface FormDataType {
@@ -1233,6 +1304,11 @@ export default function CarHopApp() {
   const [darkMode, setDarkMode] = useState(true);
   const [adminUnit, setAdminUnit] = useState('');
   const [adminTab, setAdminTab] = useState<string | null>(null);
+  const [notificationSettingsDraft, setNotificationSettingsDraft] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
+  const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
   const [adminChatBookingId, setAdminChatBookingId] = useState<number | null>(null);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
   const [supportSubTab, setSupportSubTab] = useState<'client' | 'host'>('client');
@@ -1635,6 +1711,127 @@ export default function CarHopApp() {
   
   
   const { data: settingsData } = useQuery<SettingsType>({ queryKey: ['/api/settings'] });
+  const notificationSettings = useMemo<NotificationSettings>(() => ({
+    ...DEFAULT_NOTIFICATION_SETTINGS,
+    ...(settingsData?.notifications || {}),
+  }), [settingsData?.notifications]);
+
+  useEffect(() => {
+    setNotificationSettingsDraft(notificationSettings);
+  }, [notificationSettings]);
+
+  useEffect(() => {
+    const handleInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+    };
+    window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = Number(params.get('bookingId'));
+    if (params.get('view') !== 'admin' || !Number.isInteger(bookingId) || bookingId <= 0) return;
+    if (adminAuthenticated || authUser?.isAdmin === true) {
+      setView('admin');
+      setAdminTab(params.get('tab') || 'bookings');
+      setManageBookingId(bookingId);
+    }
+  }, [adminAuthenticated, authUser?.isAdmin]);
+
+  const knownExtensionAlertsRef = useRef<Record<string, number> | null>(null);
+  useEffect(() => {
+    const isAdminViewer = adminAuthenticated || authUser?.isAdmin === true;
+    if (!isAdminViewer || !bookings.length || !notificationSettings.enabled) return;
+
+    const now = Date.now();
+    let history: Record<string, number> = {};
+    try {
+      history = JSON.parse(localStorage.getItem('carhop_extension_notification_history') || '{}');
+    } catch {
+      history = {};
+    }
+
+    const pendingEvents = [
+      ...(notificationSettings.notifyExtensionRequests ? bookings.flatMap((booking) =>
+        (booking.extensionRequests || [])
+          .filter((request: any) => request.status === 'pending')
+          .map((request: any) => ({
+            booking,
+            key: `extension:${booking.id}:${request.id}`,
+            title: 'New extension request',
+            body: `${booking.driver?.name || 'Guest'} requested ${request.type === 'reduction' ? 'a reduction' : 'an extension'} for ${booking.carName || 'your vehicle'} (${booking.bookingCode}).`,
+          }))
+      ) : []),
+      ...(notificationSettings.notifyNewBookings ? bookings
+        .filter((booking) => booking.details?.bookingApprovalStatus === 'pending')
+        .map((booking) => ({
+          booking,
+          key: `booking:${booking.id}`,
+          title: 'New booking request',
+          body: `${booking.driver?.name || 'Guest'} requested ${booking.carName || 'a vehicle'} (${booking.bookingCode}).`,
+        })) : []),
+      ...(notificationSettings.notifyMessages ? bookings.flatMap((booking) =>
+        (booking.messages || [])
+          .filter((message: any) => message.sender === 'client' && !message.read)
+          .map((message: any) => ({
+            booking,
+            key: `message:${booking.id}:${message.id}`,
+            title: 'New guest message',
+            body: `${booking.driver?.name || 'Guest'} sent a message about ${booking.carName || booking.bookingCode}.`,
+          }))
+      ) : []),
+    ];
+
+    if (knownExtensionAlertsRef.current === null) {
+      knownExtensionAlertsRef.current = {};
+      pendingEvents.forEach(({ key }) => {
+        knownExtensionAlertsRef.current![key] = now;
+      });
+      return;
+    }
+
+    const currentKeys = new Set(pendingEvents.map(({ key }) => key));
+    Object.keys(history).forEach(key => {
+      if (!currentKeys.has(key) && now - history[key] > 24 * 60 * 60 * 1000) delete history[key];
+    });
+
+    pendingEvents.forEach(({ booking, title, body, key }) => {
+      if (knownExtensionAlertsRef.current![key]) return;
+      knownExtensionAlertsRef.current![key] = now;
+      const lastAlert = history[key] || 0;
+      if (now - lastAlert < notificationSettings.duplicateIntervalMinutes * 60 * 1000) return;
+      history[key] = now;
+
+      const quietHours = isNotificationQuietHours(notificationSettings);
+      if (!quietHours && notificationSettings.popupEnabled && notificationSettings.pushEnabled && notificationPermission === 'granted') {
+        const browserNotification = new Notification(title, {
+          body: notificationSettings.showBookingDetails ? body : 'A guest request needs your review.',
+          icon: '/favicon.png',
+          tag: `extension-${key}`,
+          data: { bookingId: booking.id },
+        });
+        browserNotification.onclick = () => {
+          window.focus();
+          setAdminTab('bookings');
+          setManageBookingId(booking.id);
+          browserNotification.close();
+        };
+      }
+      if (!quietHours && notificationSettings.soundEnabled) playNotificationSound(notificationSettings.sound);
+      if (!quietHours && notificationSettings.vibrationEnabled && 'vibrate' in navigator) navigator.vibrate?.(180);
+    });
+
+    localStorage.setItem('carhop_extension_notification_history', JSON.stringify(history));
+  }, [
+    adminAuthenticated,
+    authUser?.isAdmin,
+    bookings,
+    vehicles,
+    notificationSettings,
+    notificationPermission,
+  ]);
   const { data: financialData } = useQuery<{ monthly: Record<string, any>; byVehicle: Record<string, { gross: number; pending: number; expenses: number }>; fixedMonthly: number }>({ queryKey: ['/api/financial/summary'] });
   const { data: hostsData = [] } = useQuery<any[]>({ queryKey: ['/api/hosts'] });
   const { data: usersData = [] } = useQuery<User[]>({ queryKey: ['/api/admin/users'] });
@@ -1905,6 +2102,59 @@ export default function CarHopApp() {
       toast({ title: 'Settings updated successfully' });
     }
   });
+
+  const updateNotificationSettingsMutation = useMutation({
+    mutationFn: (value: NotificationSettings) =>
+      apiRequest('PUT', '/api/admin/notification-settings', { value }),
+    onSuccess: async (response) => {
+      const saved = await response.json();
+      setNotificationSettingsDraft({ ...DEFAULT_NOTIFICATION_SETTINGS, ...saved });
+      queryClient.setQueryData<SettingsType>(['/api/settings'], (current) => ({
+        ...(current || {}),
+        notifications: { ...DEFAULT_NOTIFICATION_SETTINGS, ...saved },
+      } as SettingsType));
+      toast({ title: 'Notification settings updated' });
+    },
+    onError: () => {
+      toast({ title: 'Could not update notification settings', variant: 'destructive' });
+    },
+  });
+
+  const requestNotificationPermission = async () => {
+    if (typeof Notification === 'undefined') {
+      toast({ title: 'Browser notifications are not supported here', variant: 'destructive' });
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission === 'granted') {
+      toast({ title: 'Browser notifications enabled' });
+    } else {
+      toast({ title: 'Browser notifications remain blocked', variant: 'destructive' });
+    }
+  };
+
+  const installCarHopGo = async () => {
+    if (!installPromptEvent) return;
+    installPromptEvent.prompt();
+    const result = await installPromptEvent.userChoice;
+    if (result?.outcome === 'accepted') setInstallPromptEvent(null);
+  };
+
+  const testNotification = () => {
+    if (notificationSettingsDraft.soundEnabled) playNotificationSound(notificationSettingsDraft.sound);
+    if (notificationSettingsDraft.vibrationEnabled && 'vibrate' in navigator) navigator.vibrate?.(180);
+    if (typeof Notification !== 'undefined' && notificationPermission === 'granted') {
+      const test = new Notification('CarHopGo notification test', {
+        body: notificationSettingsDraft.showBookingDetails ? 'Popup, sound and vibration settings are working.' : 'Your notification settings are working.',
+        icon: '/icons/icon-192.png',
+        tag: 'carhop-test-notification',
+      });
+      window.setTimeout(() => test.close(), 5000);
+    } else {
+      toast({ title: 'Sound tested. Enable browser permission for popup notifications.' });
+    }
+  };
 
   // Rating mutations
   const createRatingMutation = useMutation({
@@ -9125,7 +9375,7 @@ export default function CarHopApp() {
             </div>
             
             <div className="flex justify-start gap-0.5 sm:gap-1 md:gap-2 mb-6 overflow-x-auto pb-2 px-0 sm:px-2">
-              {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'support'].map(tab => {
+              {['fleet', 'bookings', 'clients', 'hosts', 'earnings', 'support', 'settings'].map(tab => {
                 const unreadSupportCount = tab === 'support' ? supportMessagesData.filter((m: any) => !m.read).length : 0;
                 return (
                 <button key={tab} onClick={() => { setAdminTab(tab); setSelectedClient(null); setSelectedHost(null); window.scrollTo(0, 0); }} className={`relative flex flex-col items-center gap-0.5 md:gap-1 px-2 sm:px-3 py-2 rounded-lg font-bold text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${adminTab === tab ? 'bg-green-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`} data-testid={`button-tab-${tab}`}>
@@ -9136,6 +9386,7 @@ export default function CarHopApp() {
                     {tab === 'hosts' && <Building2 size={18} />}
                     {tab === 'earnings' && <TrendingUp size={18} />}
                     {tab === 'support' && <MessageSquare size={18} />}
+                     {tab === 'settings' && <Settings size={18} />}
                   </div>
                   <div className="md:hidden">
                     {tab === 'fleet' && <Car size={14} />}
@@ -9144,9 +9395,10 @@ export default function CarHopApp() {
                     {tab === 'hosts' && <Building2 size={14} />}
                     {tab === 'earnings' && <TrendingUp size={14} />}
                     {tab === 'support' && <MessageSquare size={14} />}
+                     {tab === 'settings' && <Settings size={14} />}
                   </div>
                   <div className="relative">
-                    <span>{tab === 'support' ? 'Support' : tab}</span>
+                     <span>{tab === 'support' ? 'Support' : tab === 'settings' ? 'Settings' : tab}</span>
                     {tab === 'support' && supportMessagesData.filter((m: any) => !m.read && !m.adminReply).length > 0 && (
                       <span className="absolute -top-4 -right-1 w-4 h-4 bg-orange-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                         !
@@ -9161,6 +9413,128 @@ export default function CarHopApp() {
                 </button>
               );})}
             </div>
+
+            {adminTab === 'settings' && (
+              <div className="max-w-4xl space-y-4 sm:space-y-6">
+                <Card className="p-4 sm:p-6 border-green-500/20">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                        <Bell size={20} className="text-green-500" /> Notification Settings
+                      </h2>
+                      <p className="text-xs sm:text-sm text-zinc-500 mt-1">
+                        These controls apply globally to Admin notifications. Browser permission and device volume remain under the user's control.
+                      </p>
+                    </div>
+                    {installPromptEvent && (
+                      <Button onClick={installCarHopGo} className="flex items-center gap-2 shrink-0" data-testid="button-install-app">
+                        <Download size={15} /> Install app
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      ['enabled', 'Notifications enabled', 'Master switch for alert processing'],
+                      ['pushEnabled', 'Browser/PWA alerts', 'Show alerts when browser permission is granted'],
+                      ['popupEnabled', 'Popup notification', 'Display a native browser notification'],
+                      ['soundEnabled', 'Sound alert', 'Play an alert sound while the dashboard is open'],
+                      ['vibrationEnabled', 'Vibration', 'Use vibration where the device supports it'],
+                      ['showBookingDetails', 'Include booking details', 'Show booking code and vehicle in the alert'],
+                      ['notifyExtensionRequests', 'Extension requests', 'Guest trip extension/reduction requests'],
+                      ['notifyNewBookings', 'New bookings', 'New booking approval requests'],
+                      ['notifyMessages', 'New messages', 'Unread client and host messages'],
+                    ].map(([key, label, description]) => (
+                      <label key={key} className="flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 cursor-pointer hover:border-green-400">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(notificationSettingsDraft[key as keyof NotificationSettings])}
+                          onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, [key]: event.target.checked }))}
+                          className="mt-0.5 w-4 h-4 accent-green-600"
+                          data-testid={`checkbox-notification-${key}`}
+                        />
+                        <span>
+                          <span className="block text-sm font-semibold text-zinc-900 dark:text-white">{label}</span>
+                          <span className="block text-xs text-zinc-500 mt-0.5">{description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white mb-4">Delivery channels</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettingsDraft.emailEnabled}
+                        onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, emailEnabled: event.target.checked }))}
+                        className="mt-0.5 w-4 h-4 accent-green-600"
+                        data-testid="checkbox-notification-email"
+                      />
+                      <span><span className="block text-sm font-semibold"><Mail size={14} className="inline mr-1 text-blue-500" />Email</span><span className="block text-xs text-zinc-500 mt-0.5">Notify the vehicle Host about extension requests.</span></span>
+                    </label>
+                    <label className="flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3">
+                      <input
+                        type="checkbox"
+                        checked={notificationSettingsDraft.smsEnabled}
+                        onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, smsEnabled: event.target.checked }))}
+                        className="mt-0.5 w-4 h-4 accent-green-600"
+                        data-testid="checkbox-notification-sms"
+                      />
+                      <span><span className="block text-sm font-semibold"><Phone size={14} className="inline mr-1 text-orange-500" />SMS</span><span className="block text-xs text-zinc-500 mt-0.5">Requires an SMS webhook configured by the deployment. No fake SMS is generated.</span></span>
+                    </label>
+                  </div>
+                </Card>
+
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white mb-4">Sound, quiet hours and duplicate protection</h3>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                      Sound
+                      <select value={notificationSettingsDraft.sound} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, sound: event.target.value }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" data-testid="select-notification-sound">
+                        <option value="chime">Chime</option>
+                        <option value="bell">Bell</option>
+                        <option value="double">Double tone</option>
+                        <option value="soft">Soft</option>
+                      </select>
+                    </label>
+                    <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                      Duplicate interval (minutes)
+                      <input type="number" min="0" max="1440" value={notificationSettingsDraft.duplicateIntervalMinutes} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, duplicateIntervalMinutes: Math.max(0, Number(event.target.value) || 0) }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" data-testid="input-notification-duplicate-interval" />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                      <input type="checkbox" checked={notificationSettingsDraft.quietHoursEnabled} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursEnabled: event.target.checked }))} className="w-4 h-4 accent-green-600" data-testid="checkbox-notification-quiet-hours" />
+                      Quiet hours
+                    </label>
+                    <div className="flex gap-2">
+                      <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex-1">From<input type="time" value={notificationSettingsDraft.quietHoursStart} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursStart: event.target.value }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" /></label>
+                      <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex-1">To<input type="time" value={notificationSettingsDraft.quietHoursEnd} onChange={(event) => setNotificationSettingsDraft(current => ({ ...current, quietHoursEnd: event.target.value }))} className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-2 text-sm" /></label>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-5">
+                    <Button onClick={() => updateNotificationSettingsMutation.mutate(notificationSettingsDraft)} disabled={updateNotificationSettingsMutation.isPending} data-testid="button-save-notification-settings">
+                      {updateNotificationSettingsMutation.isPending ? <Loader size={14} className="animate-spin" /> : 'Save notification settings'}
+                    </Button>
+                    <Button variant="secondary" onClick={testNotification} className="flex items-center gap-2" data-testid="button-test-notification">
+                      <Bell size={14} /> Test notification
+                    </Button>
+                    {notificationPermission !== 'granted' && (
+                      <Button variant="secondary" onClick={requestNotificationPermission} data-testid="button-enable-browser-notifications">
+                        Enable browser permission
+                      </Button>
+                    )}
+                    <span className="text-xs text-zinc-500">
+                      Browser permission: <strong className={notificationPermission === 'granted' ? 'text-green-600' : 'text-orange-500'}>{notificationPermission}</strong>
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 mt-4">
+                    SMS status: provider not connected. Email uses the existing server mail configuration. Sound cannot override the device's volume or blocked autoplay permissions.
+                  </p>
+                </Card>
+              </div>
+            )}
 
             {adminTab === 'fleet' && (
               <div className="space-y-4 sm:space-y-6">

@@ -1,3 +1,4 @@
 - [Booking check-in media](booking-checkin-media.md) — every role's booking detail must fetch the full booking before rendering Host/Guest photos, gas, or mileage.
 - [Protection extension pricing](protection-extension-pricing.md) — preserve the original plan's daily rate; never infer it from cumulative protection after extensions.
 - [Booking approval gate](booking-approval-gate.md) — initial requests stay unpaid and non-reserving until host/admin approval, with availability checked again before activation.
+- [Notification channel safety](notification-channel-safety.md) — never report SMS delivery without a configured provider; keep unavailable channels explicit and opt-in.
