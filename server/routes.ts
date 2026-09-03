@@ -102,6 +102,10 @@ async function getPushAudiencesForRequest(req: any): Promise<string[]> {
     if (host) return [`host:${host.id}`];
   }
 
+  if (req.isAuthenticated?.() && req.user?.id && !req.user?.isHost) {
+    return [`client:${String(req.user.id)}`];
+  }
+
   return [];
 }
 
@@ -172,6 +176,27 @@ async function notifyBookingStaff(
     ...payload,
     bookingId: booking?.id,
     targetUrl: '/',
+  });
+}
+
+async function notifyBookingClient(
+  booking: any,
+  payload: { title: string; body: string },
+) {
+  const userId = booking?.userId || (
+    booking?.driver?.email
+      ? (await storage.getUserByEmail(String(booking.driver.email)).catch(() => undefined))?.id
+      : undefined
+  );
+  if (!userId) return false;
+
+  const settings = await getNotificationSettings();
+  if (!settings.enabled || !settings.pushEnabled) return false;
+
+  return sendWebPushNotification([`client:${String(userId)}`], {
+    ...payload,
+    bookingId: booking.id,
+    targetUrl: `/?view=bookings&bookingId=${encodeURIComponent(booking.id)}`,
   });
 }
 
@@ -1778,6 +1803,14 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       // Initialize license verification as pending for host review
       (result.data as any).licenseVerification = { status: 'pending' };
+      if (
+        (req as any).isAuthenticated?.() &&
+        (req as any).user?.id &&
+        !(req as any).user?.isAdmin &&
+        !(req as any).user?.isHost
+      ) {
+        (result.data as any).userId = String((req as any).user.id);
+      }
 
       const booking = await storage.createBooking(result.data);
       console.log("[API] Booking created successfully:", booking.id);
@@ -1886,6 +1919,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     sendBookingApprovalEmail(updated, status).catch((error) =>
       console.error("Error sending booking approval email:", error)
     );
+    notifyBookingClient(updated, {
+      title: status === 'approved' ? 'Booking request approved' : 'Booking request declined',
+      body: updatedDetails.bookingApprovalMessage,
+    }).catch((error) => console.error("Error sending booking approval push notification:", error));
     res.json(updated);
   });
 
@@ -1978,6 +2015,30 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Check-out completed
       if (previousBooking.checkOutStatus !== 'completed' && booking.checkOutStatus === 'completed') {
         sendCheckOutCompletedEmail(booking);
+      }
+
+      if (previousBooking.status !== booking.status) {
+        const statusMessages: Record<string, string> = {
+          Active: 'Your booking is confirmed and active.',
+          Extended: 'Your booking dates were extended.',
+          Cancelled: 'Your booking was cancelled.',
+          Completed: 'Your booking has been completed.',
+          Declined: 'Your booking was declined.',
+        };
+        notifyBookingClient(booking, {
+          title: `Booking ${booking.status}`,
+          body: statusMessages[booking.status] || `Your booking status changed to ${booking.status}.`,
+        }).catch((error) => console.error("Error sending booking status push notification:", error));
+      } else if (previousBooking.checkInStatus !== booking.checkInStatus && booking.checkInStatus === 'completed') {
+        notifyBookingClient(booking, {
+          title: 'Check-in completed',
+          body: `Check-in for booking ${booking.bookingCode} has been completed.`,
+        }).catch((error) => console.error("Error sending check-in push notification:", error));
+      } else if (previousBooking.checkOutStatus !== booking.checkOutStatus && booking.checkOutStatus === 'completed') {
+        notifyBookingClient(booking, {
+          title: 'Check-out completed',
+          body: `Check-out for booking ${booking.bookingCode} has been completed.`,
+        }).catch((error) => console.error("Error sending check-out push notification:", error));
       }
     }
     
@@ -2165,6 +2226,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const respondedRequest = extensionRequests.find(r => r.id === requestId);
     if (respondedRequest && (status === 'approved' || status === 'rejected')) {
       sendExtensionResponseEmail(updated, status, respondedRequest);
+      notifyBookingClient(updated, {
+        title: status === 'approved' ? 'Extension approved' : 'Extension declined',
+        body: status === 'approved'
+          ? `Your booking extension was approved through ${respondedRequest.requestedReturnDate}.`
+          : 'Your booking extension request was declined.',
+      }).catch((error) => console.error("Error sending extension push notification:", error));
     }
     
     res.json(updated);
@@ -2370,6 +2437,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         await sendForceExtendEmail(updated, returnDate, returnTime, extraDays, totalAddition, note);
       } catch {}
     })();
+    notifyBookingClient(updated, {
+      title: 'Booking extended',
+      body: systemMsg.text,
+    }).catch((error) => console.error("Error sending forced extension push notification:", error));
 
     res.json(updated);
   });
@@ -2424,6 +2495,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         console.error("Error sending pickup decline email to host:", error);
       }
     }
+    notifyBookingClient(updated, {
+      title: 'Booking cancelled',
+      body: `Booking ${booking.bookingCode} was cancelled because the pickup request was declined.`,
+    }).catch((error) => console.error("Error sending pickup cancellation push notification:", error));
     
     res.json({ success: true, booking: updated });
   });
@@ -2479,6 +2554,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     // Send email notification for delivery approval/rejection
     const pickupLocation = booking.details?.pickupAddress || booking.location || '';
     sendDeliveryApprovalEmail(updated, status, pickupLocation);
+    notifyBookingClient(updated, {
+      title: status === 'approved' ? 'Delivery approved' : 'Delivery request declined',
+      body: messageText,
+    }).catch((error) => console.error("Error sending delivery push notification:", error));
     
     res.json(updated);
   });
@@ -2506,6 +2585,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         title: 'New guest message',
         body: `${booking.driver?.name || 'Guest'} sent a message about ${booking.carName || booking.bookingCode}.`,
       }).catch(err => console.error("Error sending booking message push notification:", err));
+    } else {
+      notifyBookingClient(updated, {
+        title: 'New booking message',
+        body: `You have a new message about booking ${booking.bookingCode}.`,
+      }).catch(err => console.error("Error sending guest message push notification:", err));
     }
     res.json(updated);
   });
@@ -2542,6 +2626,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       extraPayments,
       total: correctTotal 
     });
+    notifyBookingClient(updated, {
+      title: 'Additional charge added',
+      body: `$${Number(amount).toFixed(2)} was added to booking ${booking.bookingCode}.`,
+    }).catch((error) => console.error("Error sending extra charge push notification:", error));
     
     res.json({ 
       success: true, 
@@ -2680,6 +2768,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         total: newTotal,
         messages,
       } as any);
+      notifyBookingClient(updated, {
+        title: 'Vehicle replacement approved',
+        body: messageText,
+      }).catch((error) => console.error("Error sending vehicle replacement push notification:", error));
       
       res.json(updated);
     } else if (status === 'rejected') {
@@ -2700,6 +2792,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       const messages = [...(booking.messages || []), newMessage];
       const updated = await storage.updateBooking(id, { vehicleReplaceRequests: requests, messages } as any);
+      notifyBookingClient(updated, {
+        title: 'Vehicle replacement declined',
+        body: messageText,
+      }).catch((error) => console.error("Error sending vehicle replacement push notification:", error));
       res.json(updated);
     } else {
       return res.status(400).json({ error: "Invalid status or missing newVehicleId for approval" });

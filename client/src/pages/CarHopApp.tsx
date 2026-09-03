@@ -1907,7 +1907,9 @@ export default function CarHopApp() {
     ? 'admin'
     : currentHost?.id
       ? `host:${currentHost.id}`
-      : null;
+      : isAuthenticated && authUser?.id && !authUser.isHost
+        ? `client:${authUser.id}`
+        : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -1961,8 +1963,11 @@ export default function CarHopApp() {
     } else if (requestedView === 'host-dashboard' && currentHost) {
       setView('host-dashboard');
       if (Number.isInteger(bookingId) && bookingId > 0) setHostManageBookingId(bookingId);
+    } else if (requestedView === 'bookings' && isAuthenticated) {
+      setView('bookings');
+      if (Number.isInteger(bookingId) && bookingId > 0) setViewingReceiptBookingId(bookingId);
     }
-  }, [isAdminViewer, currentHost]);
+  }, [isAdminViewer, currentHost, isAuthenticated]);
 
   const knownExtensionAlertsRef = useRef<Record<string, number> | null>(null);
   useEffect(() => {
