@@ -684,6 +684,15 @@ function detectCarHopGoInstallation() {
   }
 }
 
+function isIOSSafariBrowser() {
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent;
+  const isIOSDevice = /iPhone|iPad|iPod/i.test(userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAnotherIOSBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|GSA/i.test(userAgent);
+  return isIOSDevice && !isAnotherIOSBrowser && /Safari/i.test(userAgent);
+}
+
 interface FormDataType {
   model: string;
   year: number;
@@ -1415,6 +1424,7 @@ export default function CarHopApp() {
   );
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
   const [isCarHopGoInstalled, setIsCarHopGoInstalled] = useState(detectCarHopGoInstallation);
+  const [showSafariInstallGuide, setShowSafariInstallGuide] = useState(false);
   const shouldShowInstallOffer = !(isCarHopGoInstalled && notificationPermission === 'granted');
   const [pushConfigured, setPushConfigured] = useState(false);
   const [adminChatBookingId, setAdminChatBookingId] = useState<number | null>(null);
