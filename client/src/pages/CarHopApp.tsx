@@ -1990,7 +1990,15 @@ export default function CarHopApp() {
       history = {};
     }
 
-    const pendingEvents = [
+    type PendingNotificationEvent = {
+      booking: Booking | null;
+      key: string;
+      title: string;
+      body: string;
+      support?: boolean;
+    };
+
+    const pendingEvents: PendingNotificationEvent[] = [
       ...(notificationSettings.notifyExtensionRequests ? viewerBookings.flatMap((booking) =>
         (booking.extensionRequests || [])
           .filter((request: any) => request.status === 'pending')

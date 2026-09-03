@@ -679,11 +679,13 @@ export class MemStorage implements IStorage {
       minDeliveryFee: vehicle.minDeliveryFee ?? 15,
       deliveryPricePerMile: vehicle.deliveryPricePerMile ?? 2.50,
       minDeliveryHours: vehicle.minDeliveryHours ?? 6,
+      pickupInstructions: vehicle.pickupInstructions ?? '',
       locationLat: vehicle.locationLat ?? null,
       locationLon: vehicle.locationLon ?? null,
-      pricing: vehicle.pricing ?? null,
+      pricing: (vehicle.pricing as Vehicle["pricing"] | null | undefined) ?? null,
       expenses: vehicle.expenses ?? null,
       transferRequests: [],
+      availabilityStatus: vehicle.availabilityStatus ?? 'available',
       createdAt: new Date(),
     };
     this.vehicles.set(id, newVehicle);
@@ -767,8 +769,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       vehicleId: booking.vehicleId ?? null,
       image: booking.image ?? null,
-      paymentRaw: booking.paymentRaw ?? null,
+      paymentRaw: (booking.paymentRaw as Booking["paymentRaw"] | null | undefined) ?? null,
       paymentMethod: booking.paymentMethod ?? null,
+      licenseVerification: (booking.licenseVerification as Booking["licenseVerification"] | null | undefined) ?? null,
       checkInData: booking.checkInData ? {
         miles: booking.checkInData.miles,
         gas: booking.checkInData.gas,
@@ -844,6 +847,12 @@ export class MemStorage implements IStorage {
       ...booking,
       driver,
       details,
+      paymentRaw: booking.paymentRaw !== undefined
+        ? (booking.paymentRaw as Booking["paymentRaw"] | null)
+        : existing.paymentRaw,
+      licenseVerification: booking.licenseVerification !== undefined
+        ? (booking.licenseVerification as Booking["licenseVerification"] | null)
+        : existing.licenseVerification,
       checkInData: booking.checkInData ? {
         miles: booking.checkInData.miles,
         gas: booking.checkInData.gas,
@@ -1192,7 +1201,15 @@ export class MemStorage implements IStorage {
 
   async createPayout(payout: InsertPayout): Promise<Payout> {
     const id = this.payoutCounter++;
-    const record: Payout = { ...payout, id, createdAt: new Date() };
+    const record: Payout = {
+      ...payout,
+      id,
+      type: payout.type ?? 'instant',
+      status: payout.status ?? 'completed',
+      note: payout.note ?? null,
+      stripeTransferId: payout.stripeTransferId ?? null,
+      createdAt: new Date(),
+    };
     this.payoutsMap.set(id, record);
     return record;
   }

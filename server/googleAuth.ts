@@ -1,10 +1,9 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy, Profile } from "passport-google-oauth20";
+// passport-apple does not publish TypeScript declarations.
+// @ts-expect-error -- the runtime package is intentionally used without types
 import { Strategy as AppleStrategy } from "passport-apple";
 import session from "express-session";
-
-// @ts-ignore - passport-apple doesn't have types
-declare module 'passport-apple';
 
 // Extend Express.User to include our User type
 declare global {

@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 
 export interface Filters {
   priceRange: [number, number];
+  fuelSaverOnly: boolean;
   transmission: string[];
   drivetrain: string[];
   passengers: number | null;
@@ -53,6 +54,21 @@ function FilterContent({ filters, onFiltersChange }: Omit<FilterSidebarProps, "v
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>${filters.priceRange[0]}</span>
           <span>${filters.priceRange[1]}</span>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="fuel-saver-only" className="flex items-center gap-2 cursor-pointer">
+            <Leaf className="h-4 w-4 text-green-600" />
+            Fuel-efficient only
+          </Label>
+          <Switch
+            id="fuel-saver-only"
+            checked={filters.fuelSaverOnly}
+            onCheckedChange={(checked) => onFiltersChange({ ...filters, fuelSaverOnly: checked })}
+            data-testid="switch-fuel-saver-only"
+          />
         </div>
       </div>
 
@@ -168,6 +184,7 @@ function FilterContent({ filters, onFiltersChange }: Omit<FilterSidebarProps, "v
         onClick={() =>
           onFiltersChange({
             priceRange: [15, 100],
+            fuelSaverOnly: false,
             transmission: [],
             drivetrain: [],
             passengers: null,

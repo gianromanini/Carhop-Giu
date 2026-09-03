@@ -12,6 +12,7 @@ const mockVehicle: Vehicle = {
   mpg: 32,
   passengers: 5,
   transmission: "Automatic",
+  drivetrain: "FWD",
   luggage: 2,
   fuelEfficient: true,
 };

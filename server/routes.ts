@@ -2818,7 +2818,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const updated = await storage.updateBooking(id, { vehicleReplaceRequests: requests, messages } as any);
       notifyBookingClient(updated, {
         title: 'Vehicle replacement declined',
-        body: messageText,
+        body: newMessage.text,
       }).catch((error) => console.error("Error sending vehicle replacement push notification:", error));
       res.json(updated);
     } else {

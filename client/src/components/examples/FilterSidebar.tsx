@@ -7,6 +7,7 @@ export default function FilterSidebarExample() {
     priceRange: [15, 100],
     fuelSaverOnly: false,
     transmission: [],
+    drivetrain: [],
     passengers: null,
     sortBy: "price-low",
   });

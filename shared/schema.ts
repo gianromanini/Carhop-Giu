@@ -35,6 +35,60 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+export type VehiclePricing = {
+  taxes: number;
+  cleaningFee: number;
+  includedMiles: number;
+  extraMileRate: number;
+  prices: {
+    insurance500: number;
+    insurance1000: number;
+    childSeat: number;
+    childSeatPerTrip: boolean;
+    prepaidFuel: number;
+    prepaidFuelPerTrip: boolean;
+    lateReturnGrace: number;
+    lateReturnGracePerTrip: boolean;
+    stressFreePackage: number;
+    stressFreePackagePerTrip: boolean;
+  };
+  discountPrograms?: { minDays: number; percent: number }[];
+};
+
+export type PaymentRaw = {
+  cardName?: string;
+  cardNumber?: string;
+  expiry?: string;
+  cvc?: string;
+  last4?: string;
+  stripePaymentIntentId?: string;
+  type: string;
+};
+
+export type BookingDetails = {
+  rate: number;
+  extras: number;
+  childSeatSelected?: boolean;
+  protection: number;
+  protectionType?: string;
+  fees: number;
+  tax: number;
+  discount?: number;
+  extendedRate?: number;
+  manualCharges?: { type: string; amount: number }[];
+  deliveryFee?: number;
+  deliveryType?: 'delivery' | 'pickup';
+  deliveryApprovalStatus?: 'pending' | 'approved' | 'rejected';
+  deliveryApprovalMessage?: string;
+  bookingApprovalStatus?: 'pending' | 'approved' | 'rejected';
+  bookingApprovalMessage?: string;
+  bookingApprovalRespondedAt?: string;
+  deliveryAddress?: string;
+  pickupAddress?: string;
+  hostEmail?: string;
+  hostId?: string;
+};
+
 export const vehicles = pgTable("vehicles", {
   id: serial("id").primaryKey(),
   model: text("model").notNull(),
@@ -77,25 +131,7 @@ export const vehicles = pgTable("vehicles", {
   pickupInstructions: text("pickup_instructions").default(''),
   locationLat: real("location_lat"),
   locationLon: real("location_lon"),
-  pricing: jsonb("pricing").$type<{
-    taxes: number;
-    cleaningFee: number;
-    includedMiles: number;
-    extraMileRate: number;
-    prices: { 
-      insurance500: number; 
-      insurance1000: number; 
-      childSeat: number; 
-      childSeatPerTrip: boolean;
-      prepaidFuel: number; 
-      prepaidFuelPerTrip: boolean;
-      lateReturnGrace: number; 
-      lateReturnGracePerTrip: boolean;
-      stressFreePackage: number; 
-      stressFreePackagePerTrip: boolean;
-    };
-     discountPrograms?: { minDays: number; percent: number }[];
-  }>(),
+  pricing: jsonb("pricing").$type<VehiclePricing>(),
   expenses: jsonb("expenses").$type<{
     lease: number;
     insurance: number;
@@ -143,38 +179,9 @@ export const bookings = pgTable("bookings", {
     licenseNumber: string;
     licenseImages: string[];
   }>().notNull(),
-  paymentRaw: jsonb("payment_raw").$type<{
-    cardName?: string;
-    cardNumber?: string;
-    expiry?: string;
-    cvc?: string;
-    last4?: string;
-    stripePaymentIntentId?: string;
-    type: string;
-  }>(),
+  paymentRaw: jsonb("payment_raw").$type<PaymentRaw>(),
   paymentMethod: text("payment_method"),
-  details: jsonb("details").$type<{
-    rate: number;
-    extras: number;
-    childSeatSelected?: boolean;
-    protection: number;
-    protectionType?: string;
-    fees: number;
-    tax: number;
-    discount?: number;
-    extendedRate?: number;
-    manualCharges?: { type: string; amount: number }[];
-    deliveryFee?: number;
-    deliveryType?: 'delivery' | 'pickup';
-    deliveryApprovalStatus?: 'pending' | 'approved' | 'rejected';
-    deliveryApprovalMessage?: string;
-    bookingApprovalStatus?: 'pending' | 'approved' | 'rejected';
-    bookingApprovalMessage?: string;
-    bookingApprovalRespondedAt?: string;
-    deliveryAddress?: string;
-    pickupAddress?: string;
-    hostEmail?: string;
-  }>().notNull(),
+  details: jsonb("details").$type<BookingDetails>().notNull(),
   carRentalAgreement: jsonb("car_rental_agreement").$type<{
     accepted: boolean;
     clientName: string;
