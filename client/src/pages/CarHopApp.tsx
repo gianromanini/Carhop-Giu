@@ -2503,6 +2503,10 @@ export default function CarHopApp() {
     );
     if (!confirmed) return;
     if (!installPromptEvent) {
+      if (isIOSSafariBrowser()) {
+        setShowSafariInstallGuide(true);
+        return;
+      }
       toast({
         title: 'Install CarHop Go from your browser menu',
         description: 'On your phone, open the browser menu and choose “Add to Home Screen” or “Install app”.',
@@ -14643,7 +14647,7 @@ export default function CarHopApp() {
                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-green-700"
                     data-testid="button-install-app-bookings"
                   >
-                    <Download size={15} /> Install CarHopGo
+                   <Download size={15} /> Install CarHop Go
                   </button>
                 </div>
               </div>
@@ -17637,6 +17641,95 @@ export default function CarHopApp() {
                 {updateBookingMutation.isPending ? <Loader size={14} className="animate-spin" /> : <><Unlock size={14} /> Confirm Check-out</>}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSafariInstallGuide && (
+        <div
+          className="fixed inset-0 z-[300] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="safari-install-guide-title"
+          data-testid="safari-install-guide"
+        >
+          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900 sm:rounded-2xl sm:p-6">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                  <Smartphone size={23} />
+                </div>
+                <div>
+                  <h2 id="safari-install-guide-title" className="text-lg font-bold text-zinc-900 dark:text-white">
+                    Instalar CarHop Go no iPhone
+                  </h2>
+                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    Siga estes 3 passos rápidos no Safari
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSafariInstallGuide(false)}
+                className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-white"
+                aria-label="Fechar instruções de instalação"
+                data-testid="button-close-safari-install-guide"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/60">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">1</div>
+                <div>
+                  <p className="font-semibold text-zinc-900 dark:text-white">Toque em Compartilhar</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                    No Safari, toque no ícone de um quadrado com uma seta para cima
+                    <span className="mx-1 inline-flex items-center rounded-md bg-white px-1.5 py-0.5 align-middle text-green-700 shadow-sm dark:bg-zinc-700 dark:text-green-400">
+                      <Upload size={14} />
+                    </span>
+                    na barra do navegador.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/60">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">2</div>
+                <div>
+                  <p className="font-semibold text-zinc-900 dark:text-white">Escolha “Adicionar à Tela de Início”</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                    Talvez seja necessário rolar o menu de compartilhamento para encontrar essa opção.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/60">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">3</div>
+                <div>
+                  <p className="font-semibold text-zinc-900 dark:text-white">Toque em “Adicionar”</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                    O atalho CarHop Go aparecerá na tela inicial do seu iPhone.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-green-500/30 bg-green-50 p-4 dark:bg-green-950/30">
+              <p className="text-sm font-semibold text-green-800 dark:text-green-300">Por que instalar?</p>
+              <p className="mt-1 text-sm leading-relaxed text-green-700 dark:text-green-200/90">
+                Com o atalho instalado, você pode receber atualizações das suas reservas com mais facilidade, mesmo quando não estiver conectado à sua conta.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSafariInstallGuide(false)}
+              className="mt-5 w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-green-700"
+              data-testid="button-dismiss-safari-install-guide"
+            >
+              Entendi
+            </button>
           </div>
         </div>
       )}
