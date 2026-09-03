@@ -46,6 +46,20 @@ function isAdminRequest(req: any): boolean {
     req.session?.adminAuthenticated === true;
 }
 
+const VEHICLE_COMMISSION_OPTIONS = [10, 15, 20, 25] as const;
+
+function isHostVehicleRequest(req: any): boolean {
+  const passportHost = req.isAuthenticated?.() && req.user?.isHost === true;
+  const sessionHost = Boolean(req.session?.authenticatedHostId || req.session?.authenticatedHostEmail);
+  return !isAdminRequest(req) && (passportHost || sessionHost);
+}
+
+function isAllowedVehicleCommission(value: unknown): value is typeof VEHICLE_COMMISSION_OPTIONS[number] {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    VEHICLE_COMMISSION_OPTIONS.includes(value as typeof VEHICLE_COMMISSION_OPTIONS[number]);
+}
+
 async function getNotificationSettings() {
   const stored = await storage.getSetting('notifications');
   return { ...DEFAULT_NOTIFICATION_SETTINGS, ...(stored?.value || {}) };
@@ -1563,6 +1577,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (!result.success) {
       return res.status(400).json({ error: result.error.flatten() });
     }
+    const commission = result.data.commission;
+    if (commission !== undefined && !isAllowedVehicleCommission(commission)) {
+      return res.status(400).json({ error: { commission: ["Commission must be 10, 15, 20, or 25 percent."] } });
+    }
+    if (isHostVehicleRequest(req) && !isAllowedVehicleCommission(commission)) {
+      return res.status(400).json({ error: { commission: ["Hosts must choose a commission plan: 10, 15, 20, or 25 percent."] } });
+    }
     const vehicle = await storage.createVehicle(result.data);
     res.status(201).json(vehicle);
   });
@@ -1572,6 +1593,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const result = insertVehicleSchema.partial().safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.flatten() });
+    }
+    if (result.data.commission !== undefined && !isAllowedVehicleCommission(result.data.commission)) {
+      return res.status(400).json({ error: { commission: ["Commission must be 10, 15, 20, or 25 percent."] } });
     }
     const vehicle = await storage.updateVehicle(id, result.data);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });

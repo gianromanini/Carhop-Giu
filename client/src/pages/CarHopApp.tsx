@@ -563,7 +563,9 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
   );
 };
 
-const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: 10, deductible: 1000, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []} };
+const VEHICLE_COMMISSION_OPTIONS = [10, 15, 20, 25] as const;
+const VEHICLE_DEDUCTIBLES: Record<number, number> = { 10: 1000, 15: 1250, 20: 750, 25: 500 };
+const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: null, deductible: 1000, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -721,7 +723,7 @@ interface FormDataType {
   hasBlindSpotWarning: boolean;
   hasDriveAssist: boolean;
   hasUSBCharger: boolean;
-  commission: number;
+  commission: number | null;
   deductible: number;
   availableLocations: string[];
   locationLat: number | null;
@@ -7133,14 +7135,22 @@ export default function CarHopApp() {
                 </Card>
 
                 {/* Add Vehicle Form stays below the fleet; edit forms are portaled into their selected card. */}
-                {(showHostAddVehicleForm || editingHostVehicle) && (() => {
-                  const vehicleForm = (
+                 {(showHostAddVehicleForm || editingHostVehicle) && (() => {
+                   const hostVehicleFormRequiresCommission = !isAdminViewer && Boolean(currentHost?.id);
+                   const vehicleForm = (
                   <form onSubmit={(e) => {
                     e.preventDefault();
                     if (formData.vinNumber.length !== 17) {
                       toast({ title: 'Error', description: 'VIN Number must be exactly 17 characters', variant: 'destructive' });
                       return;
                     }
+                     if (
+                       hostVehicleFormRequiresCommission &&
+                       (formData.commission === null || !VEHICLE_COMMISSION_OPTIONS.includes(formData.commission as typeof VEHICLE_COMMISSION_OPTIONS[number]))
+                     ) {
+                       toast({ title: 'Commission plan required', description: 'Choose one commission plan: 10%, 15%, 20% or 25%.', variant: 'destructive' });
+                       return;
+                     }
                      const vehiclePricing = priceConfigForm ? {
                       taxes: priceConfigForm.taxes,
                       cleaningFee: priceConfigForm.cleaningFee,
@@ -7153,7 +7163,7 @@ export default function CarHopApp() {
                       ...formData,
                       price: parseFloat(formData.price) || 0,
                       hostId: String(currentHost.id),
-                      commission: formData.commission || 10,
+                       commission: formData.commission,
                       deductible: formData.deductible || 1000,
                       locationLat: formData.locationLat || null,
                       locationLon: formData.locationLon || null,
@@ -7468,28 +7478,37 @@ export default function CarHopApp() {
                           )}
                         </div>
 
-                        <div className="border-t pt-3 sm:pt-4">
-                          <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">Commission</label>
+                         <div className="border-t pt-3 sm:pt-4">
+                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">
+                             Commission {hostVehicleFormRequiresCommission && <span className="text-red-500">*</span>}
+                           </label>
                           <div className="space-y-1.5 sm:space-y-2">
-                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: 1250})}>
-                              <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: 1250})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 10 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 10, deductible: VEHICLE_DEDUCTIBLES[10]})}>
+                               <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: VEHICLE_DEDUCTIBLES[10]})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                               <div className="ml-2 sm:ml-3">
+                                 <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">10%</p>
+                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$1000 Ded.</p>}
+                               </div>
+                             </div>
+                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: VEHICLE_DEDUCTIBLES[15]})}>
+                               <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: VEHICLE_DEDUCTIBLES[15]})} className="w-3 h-3 sm:w-4 sm:h-4" />
                               <div className="ml-2 sm:ml-3">
                                 <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">15%</p>
-                                <p className="text-[10px] sm:text-xs text-zinc-500">$1250 Ded.</p>
+                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$1250 Ded.</p>}
                               </div>
                             </div>
-                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 20, deductible: 750})}>
-                              <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: 750})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 20, deductible: VEHICLE_DEDUCTIBLES[20]})}>
+                               <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: VEHICLE_DEDUCTIBLES[20]})} className="w-3 h-3 sm:w-4 sm:h-4" />
                               <div className="ml-2 sm:ml-3">
                                 <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">20%</p>
-                                <p className="text-[10px] sm:text-xs text-zinc-500">$750 Ded.</p>
+                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$750 Ded.</p>}
                               </div>
                             </div>
-                            <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 25, deductible: 500})}>
-                              <input type="radio" name="commission" value="25" checked={formData.commission === 25} onChange={() => setFormData({...formData, commission: 25, deductible: 500})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 25, deductible: VEHICLE_DEDUCTIBLES[25]})}>
+                               <input type="radio" name="commission" value="25" checked={formData.commission === 25} onChange={() => setFormData({...formData, commission: 25, deductible: VEHICLE_DEDUCTIBLES[25]})} className="w-3 h-3 sm:w-4 sm:h-4" />
                               <div className="ml-2 sm:ml-3">
                                 <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">25%</p>
-                                <p className="text-[10px] sm:text-xs text-zinc-500">$500 Ded.</p>
+                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$500 Ded.</p>}
                               </div>
                             </div>
                           </div>
@@ -7562,20 +7581,24 @@ export default function CarHopApp() {
                         </div>
                       </div>
                       
-                      <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 sm:gap-2">
-                        <Shield size={12} className="sm:w-4 sm:h-4 text-blue-500"/>
-                        Insurance
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                        <div>
-                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$500 Ded.</label>
-                          <input type="text" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} disabled className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-xs sm:text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-500" />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$1000 Ded.</label>
-                          <input type="text" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} disabled className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-xs sm:text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-1000" />
-                        </div>
-                      </div>
+                       {isAdminViewer && (
+                         <>
+                           <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 sm:gap-2">
+                             <Shield size={12} className="sm:w-4 sm:h-4 text-blue-500"/>
+                             Insurance
+                           </h4>
+                           <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                             <div>
+                               <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$500 Ded.</label>
+                               <input type="text" value={priceConfigForm?.prices?.insurance500 || settings.prices.insurance500} disabled className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-800 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-xs sm:text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-500" />
+                             </div>
+                             <div>
+                               <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">$1000 Ded.</label>
+                               <input type="text" value={priceConfigForm?.prices?.insurance1000 || settings.prices.insurance1000} disabled className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-800 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-500 text-xs sm:text-sm cursor-not-allowed opacity-60" data-testid="input-host-insurance-1000" />
+                             </div>
+                           </div>
+                         </>
+                       )}
 
                       <h4 className="text-xs sm:text-sm font-bold mb-2 sm:mb-3 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 sm:gap-2">
                         <Shield size={12} className="sm:w-4 sm:h-4 text-green-500"/>
