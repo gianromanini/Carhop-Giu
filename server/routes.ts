@@ -6,6 +6,11 @@ import { setupAuth, isAuthenticated } from "./googleAuth";
 import { getUncachableStripeClient, getStripePublishableKey, verifyStripePaymentIntent } from "./stripeClient";
 import { stripBookingImages } from "./bookingUtils";
 import { calculateVehicleDiscount } from "@shared/pricing";
+import {
+  LEGACY_PLATFORM_COMMISSION,
+  VEHICLE_DEDUCTIBLES,
+  isAllowedVehicleCommission,
+} from "@shared/vehicleCommission";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import nodemailer from "nodemailer";
@@ -46,18 +51,10 @@ function isAdminRequest(req: any): boolean {
     req.session?.adminAuthenticated === true;
 }
 
-const VEHICLE_COMMISSION_OPTIONS = [10, 15, 20, 25] as const;
-
 function isHostVehicleRequest(req: any): boolean {
   const passportHost = req.isAuthenticated?.() && req.user?.isHost === true;
   const sessionHost = Boolean(req.session?.authenticatedHostId || req.session?.authenticatedHostEmail);
   return !isAdminRequest(req) && (passportHost || sessionHost);
-}
-
-function isAllowedVehicleCommission(value: unknown): value is typeof VEHICLE_COMMISSION_OPTIONS[number] {
-  return typeof value === 'number' &&
-    Number.isInteger(value) &&
-    VEHICLE_COMMISSION_OPTIONS.includes(value as typeof VEHICLE_COMMISSION_OPTIONS[number]);
 }
 
 async function getNotificationSettings() {
@@ -1578,13 +1575,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       return res.status(400).json({ error: result.error.flatten() });
     }
     const commission = result.data.commission;
-    if (commission !== undefined && !isAllowedVehicleCommission(commission)) {
-      return res.status(400).json({ error: { commission: ["Commission must be 10, 15, 20, or 25 percent."] } });
+    const rawCommissionProvided = req.body?.commission !== undefined && req.body?.commission !== null;
+    if (commission !== undefined && commission !== LEGACY_PLATFORM_COMMISSION && !isAllowedVehicleCommission(commission)) {
+      return res.status(400).json({ error: { commission: ["Commission must represent a 70%, 75%, 80%, or 90% Host share."] } });
     }
-    if (isHostVehicleRequest(req) && !isAllowedVehicleCommission(commission)) {
-      return res.status(400).json({ error: { commission: ["Hosts must choose a commission plan: 10, 15, 20, or 25 percent."] } });
+    if (isHostVehicleRequest(req) && (!rawCommissionProvided || !isAllowedVehicleCommission(commission))) {
+      return res.status(400).json({ error: { commission: ["Hosts must choose a 70%, 75%, 80%, or 90% Host share plan."] } });
     }
-    const vehicle = await storage.createVehicle(result.data);
+    const normalizedCommission = commission ?? 10;
+    const vehicle = await storage.createVehicle({
+      ...result.data,
+      commission: normalizedCommission,
+      deductible: VEHICLE_DEDUCTIBLES[normalizedCommission] ?? result.data.deductible ?? 2250,
+    });
     res.status(201).json(vehicle);
   });
 
@@ -1594,8 +1597,21 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (!result.success) {
       return res.status(400).json({ error: result.error.flatten() });
     }
-    if (result.data.commission !== undefined && !isAllowedVehicleCommission(result.data.commission)) {
-      return res.status(400).json({ error: { commission: ["Commission must be 10, 15, 20, or 25 percent."] } });
+    if (result.data.commission !== undefined) {
+      const existingVehicle = await storage.getVehicle(id);
+      const isUnchangedLegacyPlan =
+        result.data.commission === LEGACY_PLATFORM_COMMISSION &&
+        existingVehicle?.commission === LEGACY_PLATFORM_COMMISSION;
+      if (
+        result.data.commission !== LEGACY_PLATFORM_COMMISSION &&
+        !isAllowedVehicleCommission(result.data.commission)
+      ) {
+        return res.status(400).json({ error: { commission: ["Commission must represent a 70%, 75%, 80%, or 90% Host share."] } });
+      }
+      if (isHostVehicleRequest(req) && !isAllowedVehicleCommission(result.data.commission) && !isUnchangedLegacyPlan) {
+        return res.status(400).json({ error: { commission: ["Hosts must choose a 70%, 75%, 80%, or 90% Host share plan."] } });
+      }
+      result.data.deductible = VEHICLE_DEDUCTIBLES[result.data.commission] ?? result.data.deductible;
     }
     const vehicle = await storage.updateVehicle(id, result.data);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
@@ -3162,9 +3178,11 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
                   <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">1. PARTIES AND OVERVIEW</h3>
                   <p>This Host Partner Agreement is entered into between CarHop LLC and you. By accepting this Agreement, you agree to list your vehicle(s) on the CarHop platform.</p>
                   
-                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">2. COMMISSION STRUCTURE</h3>
-                  <p><strong>15% Commission Plan:</strong> $750 deductible per incident<br/>
-                  <strong>25% Commission Plan:</strong> $500 deductible per incident</p>
+                  <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">2. HOST EARNINGS STRUCTURE</h3>
+                  <p><strong>70% Host Earnings:</strong> $250 Damage / Responsibility per incident<br/>
+                  <strong>75% Host Earnings:</strong> $500 Damage / Responsibility per incident<br/>
+                  <strong>80% Host Earnings:</strong> $1,200 Damage / Responsibility per incident<br/>
+                  <strong>90% Host Earnings:</strong> $2,250 Damage / Responsibility per incident</p>
                   
                   <h3 style="color: #1f2937; font-size: 14px; margin: 15px 0 10px 0;">3. VEHICLE REQUIREMENTS</h3>
                   <p>Model Year 2010+, Max 120,000 Miles, clean title, registered/insured in Connecticut and we can request an Inspection in our Partners mechanics Places to approve.</p>

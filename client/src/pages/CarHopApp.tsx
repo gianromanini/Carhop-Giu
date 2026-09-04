@@ -13,6 +13,12 @@ import {
 const VehicleMap = lazy(() => import('@/components/VehicleMap'));
 import type { Vehicle, Booking } from '@shared/schema';
 import { calculateVehicleDiscount, type DiscountProgram } from '@shared/pricing';
+import {
+  HOST_COMMISSION_PLANS,
+  LEGACY_PLATFORM_COMMISSION,
+  LEGACY_VEHICLE_DEDUCTIBLE,
+  VEHICLE_DEDUCTIBLES,
+} from '@shared/vehicleCommission';
 type User = typeof import('@shared/schema').users.$inferSelect;
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -563,9 +569,7 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
   );
 };
 
-const VEHICLE_COMMISSION_OPTIONS = [10, 15, 20, 25] as const;
-const VEHICLE_DEDUCTIBLES: Record<number, number> = { 10: 1000, 15: 1250, 20: 750, 25: 500 };
-const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: null, deductible: 1000, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []} };
+const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: null, deductible: 2250, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -6249,28 +6253,20 @@ export default function CarHopApp() {
               <p>This Host Partner Agreement ("Agreement") is entered into between CarHop LLC ("CarHop," "Company," "we," or "us") and you ("Host," "you," or "your"). By accepting this Agreement, you agree to list your vehicle(s) on the CarHop platform for rental by approved customers ("Renters").</p>
               
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">2. COMMISSION STRUCTURE</h3>
-              <p>CarHop offers two commission plans. You select your plan when adding each vehicle:</p>
+              <p>CarHop offers four Host earnings plans. You select your plan when adding each vehicle:</p>
               <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
-                  <div className="text-center min-w-16">
-                    <span className="text-2xl font-bold text-green-600">15%</span>
-                    <p className="text-xs text-zinc-500">Commission</p>
+                {HOST_COMMISSION_PLANS.map((plan) => (
+                  <div key={plan.hostShare} className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
+                    <div className="text-center min-w-20">
+                      <span className="text-2xl font-bold text-green-600">{plan.hostShare}%</span>
+                      <p className="text-xs text-zinc-500">Host Earnings</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-zinc-900 dark:text-white">Host Earnings Plan</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">You receive <strong>{plan.hostShare}%</strong> of eligible rental earnings and are responsible for <strong>${plan.deductible} Damage / Responsibility</strong> per incident.</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-zinc-900 dark:text-white">Standard Plan</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">You are responsible for a <strong>$750 deductible</strong> per incident. Best for hosts who want to maximize earnings.</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
-                  <div className="text-center min-w-16">
-                    <span className="text-2xl font-bold text-blue-600">25%</span>
-                    <p className="text-xs text-zinc-500">Commission</p>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-zinc-900 dark:text-white">Premium Protection Plan</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Lower <strong>$500 deductible</strong> per incident. Best for hosts who want extra peace of mind.</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">3. VEHICLE REQUIREMENTS</h3>
@@ -6297,7 +6293,7 @@ export default function CarHopApp() {
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white pt-2">5. DEDUCTIBLE RESPONSIBILITY</h3>
               <p>In the event of damage, theft, or total loss:</p>
               <ul className="list-disc pl-6 space-y-1">
-                <li>The Host is responsible for paying the deductible based on their selected commission plan</li>
+                <li>The Host is responsible for the Damage / Responsibility amount based on their selected Host earnings plan</li>
                 <li>CarHop will attempt to recover the deductible from the Renter when applicable</li>
                 <li>If recovered, CarHop will reimburse the Host minus processing fees</li>
                 <li>Deductible is per incident, not per rental period</li>
@@ -7108,7 +7104,7 @@ export default function CarHopApp() {
                                       isPriceMatch: car.isPriceMatch || false,
                                       images: fullCar.images || [],
                                       commission: car.commission || 10,
-                                      deductible: car.deductible || 1000,
+                                      deductible: car.deductible ?? VEHICLE_DEDUCTIBLES[car.commission ?? 10] ?? 2250,
                                       availableLocations: car.availableLocations || [],
                                       isDeliveryEnabled: car.isDeliveryEnabled || false,
                                       maxDeliveryDistance: car.maxDeliveryDistance || 50,
@@ -7152,11 +7148,15 @@ export default function CarHopApp() {
                       toast({ title: 'Error', description: 'VIN Number must be exactly 17 characters', variant: 'destructive' });
                       return;
                     }
+                     const isPreservedLegacyCommission =
+                       Boolean(editingHostVehicle) && formData.commission === LEGACY_PLATFORM_COMMISSION;
                      if (
                        hostVehicleFormRequiresCommission &&
-                       (formData.commission === null || !VEHICLE_COMMISSION_OPTIONS.includes(formData.commission as typeof VEHICLE_COMMISSION_OPTIONS[number]))
+                       (formData.commission === null ||
+                         (!HOST_COMMISSION_PLANS.some(plan => plan.platformCommission === formData.commission) &&
+                           !isPreservedLegacyCommission))
                      ) {
-                       toast({ title: 'Commission plan required', description: 'Choose one commission plan: 10%, 15%, 20% or 25%.', variant: 'destructive' });
+                       toast({ title: 'Host share plan required', description: 'Choose 70%, 75%, 80% or 90% Host earnings.', variant: 'destructive' });
                        return;
                      }
                      const vehiclePricing = priceConfigForm ? {
@@ -7172,7 +7172,7 @@ export default function CarHopApp() {
                       price: parseFloat(formData.price) || 0,
                       hostId: String(currentHost.id),
                        commission: formData.commission,
-                      deductible: formData.deductible || 1000,
+                      deductible: formData.deductible || 2250,
                       locationLat: formData.locationLat || null,
                       locationLon: formData.locationLon || null,
                       pricing: vehiclePricing
@@ -7486,41 +7486,22 @@ export default function CarHopApp() {
                           )}
                         </div>
 
-                         <div className="border-t pt-3 sm:pt-4">
-                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">
-                             Commission {hostVehicleFormRequiresCommission && <span className="text-red-500">*</span>}
-                           </label>
-                          <div className="space-y-1.5 sm:space-y-2">
-                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 10 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 10, deductible: VEHICLE_DEDUCTIBLES[10]})}>
-                               <input type="radio" name="commission" value="10" checked={formData.commission === 10} onChange={() => setFormData({...formData, commission: 10, deductible: VEHICLE_DEDUCTIBLES[10]})} className="w-3 h-3 sm:w-4 sm:h-4" />
-                               <div className="ml-2 sm:ml-3">
-                                 <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">10%</p>
-                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$1000 Ded.</p>}
-                               </div>
-                             </div>
-                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 15 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 15, deductible: VEHICLE_DEDUCTIBLES[15]})}>
-                               <input type="radio" name="commission" value="15" checked={formData.commission === 15} onChange={() => setFormData({...formData, commission: 15, deductible: VEHICLE_DEDUCTIBLES[15]})} className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <div className="ml-2 sm:ml-3">
-                                <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">15%</p>
-                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$1250 Ded.</p>}
-                              </div>
-                            </div>
-                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 20 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 20, deductible: VEHICLE_DEDUCTIBLES[20]})}>
-                               <input type="radio" name="commission" value="20" checked={formData.commission === 20} onChange={() => setFormData({...formData, commission: 20, deductible: VEHICLE_DEDUCTIBLES[20]})} className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <div className="ml-2 sm:ml-3">
-                                <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">20%</p>
-                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$750 Ded.</p>}
-                              </div>
-                            </div>
-                             <div className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === 25 ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: 25, deductible: VEHICLE_DEDUCTIBLES[25]})}>
-                               <input type="radio" name="commission" value="25" checked={formData.commission === 25} onChange={() => setFormData({...formData, commission: 25, deductible: VEHICLE_DEDUCTIBLES[25]})} className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <div className="ml-2 sm:ml-3">
-                                <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">25%</p>
-                                 {!hostVehicleFormRequiresCommission && <p className="text-[10px] sm:text-xs text-zinc-500">$500 Ded.</p>}
-                              </div>
+                          <div className="border-t pt-3 sm:pt-4">
+                            <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 sm:mb-3 uppercase tracking-wider">
+                              Host Earnings Plan {hostVehicleFormRequiresCommission && <span className="text-red-500">*</span>}
+                            </label>
+                            <div className="space-y-1.5 sm:space-y-2">
+                              {[...HOST_COMMISSION_PLANS, ...(formData.commission === LEGACY_PLATFORM_COMMISSION ? [{ hostShare: 85, platformCommission: LEGACY_PLATFORM_COMMISSION, deductible: LEGACY_VEHICLE_DEDUCTIBLE, legacy: true }] : [])].map((plan) => (
+                                <div key={plan.platformCommission} className={`flex items-center p-2 sm:p-3 border rounded cursor-pointer transition-colors ${formData.commission === plan.platformCommission ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-zinc-300 dark:border-zinc-700 hover:border-green-400'}`} onClick={() => setFormData({...formData, commission: plan.platformCommission, deductible: plan.deductible})}>
+                                  <input type="radio" name="commission" value={plan.platformCommission} checked={formData.commission === plan.platformCommission} onChange={() => setFormData({...formData, commission: plan.platformCommission, deductible: plan.deductible})} className="w-3 h-3 sm:w-4 sm:h-4" />
+                                  <div className="ml-2 sm:ml-3">
+                                    <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">{plan.hostShare}% Host Earnings</p>
+                                    <p className="text-[10px] sm:text-xs text-zinc-500">${plan.deductible} Damage / Responsibility{('legacy' in plan && plan.legacy) ? ' (legacy)' : ''}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        </div>
 
                         <div className="border-t pt-3 sm:pt-4">
                           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 sm:mb-2 uppercase tracking-wider">Photos ({formData.images.filter(img => img.trim()).length})</label>

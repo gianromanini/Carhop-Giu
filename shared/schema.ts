@@ -119,7 +119,7 @@ export const vehicles = pgTable("vehicles", {
   hasUSBCharger: boolean("has_usb_charger").default(false),
   hostId: varchar("host_id"),
   commission: integer("commission").default(10),
-  deductible: integer("deductible").default(1000),
+  deductible: integer("deductible").default(2250),
   availableLocations: text("available_locations").array().default([]),
   deliveryAddress: text("delivery_address").default(''),
   isDeliveryEnabled: boolean("is_delivery_enabled").default(false),

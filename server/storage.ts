@@ -670,7 +670,7 @@ export class MemStorage implements IStorage {
       hasUSBCharger: vehicle.hasUSBCharger ?? false,
       hostId: vehicle.hostId ?? null,
       commission: vehicle.commission ?? 10,
-      deductible: vehicle.deductible ?? 1000,
+      deductible: vehicle.deductible ?? 2250,
       availableLocations: vehicle.availableLocations ?? [],
       deliveryAddress: vehicle.deliveryAddress ?? '',
       isDeliveryEnabled: vehicle.isDeliveryEnabled ?? false,
