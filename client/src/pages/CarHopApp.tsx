@@ -569,7 +569,7 @@ const HostEarningsChart = ({ bookings, vehicles }: { bookings: Booking[]; vehicl
   );
 };
 
-const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: null, deductible: 2250, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []} };
+const initialFormState = { model: '', year: new Date().getFullYear(), vinNumber: '', licensePlate: '', hostName: '', category: '', price: '', fuel: 'Gasoline', seats: 5, transmission: 'Automatic', driveType: 'AWD', images: [''], consumption: '', isPriceMatch: false, isAWD: false, hasCarPlay: false, hasBluetooth: false, hasReverseCamera: false, hasHeatedSeats: false, hasHeatedSteering: false, hasElectricSeats: false, hasPaddleShifters: false, hasKeylessEntry: false, hasBlindSpotWarning: false, hasDriveAssist: false, hasUSBCharger: false, commission: null, deductible: 2250, availableLocations: [], pickupInstructions: '', locationLat: null, locationLon: null, isDeliveryEnabled: false, maxDeliveryDistance: 50, minDeliveryFeeMiles: 5, minDeliveryFee: 15, deliveryPricePerMile: 2.50, minDeliveryHours: 6, pricing: {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false}, discountPrograms: []} };
 const initialCheckState = { photosOutside: [] as string[], photosInside: [] as string[], miles: '', gas: 'Full' };
 const initialExpenseState = { carId: '', lease: '', insurance: '', carWash: '', maintenance: '', trackApp: '', downPayment: '' };
 
@@ -583,12 +583,6 @@ interface SettingsType {
     insurance1000: number; 
     childSeat: number; 
     childSeatPerTrip: boolean;
-    prepaidFuel: number; 
-    prepaidFuelPerTrip: boolean;
-    lateReturnGrace: number; 
-    lateReturnGracePerTrip: boolean;
-    stressFreePackage: number; 
-    stressFreePackagePerTrip: boolean;
   };
   locations: string[];
   notifications?: NotificationSettings;
@@ -738,7 +732,7 @@ interface FormDataType {
   minDeliveryFee: number | undefined;
   deliveryPricePerMile: number | undefined;
   minDeliveryHours: number | undefined;
-  pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean; prepaidFuel: number; prepaidFuelPerTrip: boolean; lateReturnGrace: number; lateReturnGracePerTrip: boolean; stressFreePackage: number; stressFreePackagePerTrip: boolean }; discountPrograms?: DiscountProgram[] };
+  pricing: { taxes: number; cleaningFee: number; includedMiles: number; extraMileRate: number; prices: { insurance500: number; insurance1000: number; childSeat: number; childSeatPerTrip: boolean }; discountPrograms?: DiscountProgram[] };
   [key: string]: any;
 }
 
@@ -1752,7 +1746,7 @@ export default function CarHopApp() {
   const [viewCar, setViewCar] = useState<Vehicle | null>(null);
   const [viewHostProfile, setViewHostProfile] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormDataType>(initialFormState as FormDataType);
-  const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; prepaidFuel: string; lateReturnGrace: string; stressFreePackage: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
+  const [pricingStrings, setPricingStrings] = useState<{taxes: string; extraMileRate: string; childSeat: string; cleaningFee: string; includedMiles: string; insurance500: string; insurance1000: string}>({taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'});
   const { data: adminSession } = useQuery<{ authenticated: boolean }>({
     queryKey: ['/api/admin/session-status'],
     queryFn: async () => {
@@ -2261,7 +2255,7 @@ export default function CarHopApp() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
+  const defaultSettings: SettingsType = { taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: { insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false }, locations: ['JFK Airport', 'Downtown Center', 'Fairfield County'] };
   const settings: SettingsType = {
     taxes: settingsData?.taxes ?? defaultSettings.taxes,
     cleaningFee: settingsData?.cleaningFee ?? defaultSettings.cleaningFee,
@@ -2272,17 +2266,11 @@ export default function CarHopApp() {
       insurance1000: settingsData?.prices?.insurance1000 ?? defaultSettings.prices.insurance1000,
       childSeat: settingsData?.prices?.childSeat ?? defaultSettings.prices.childSeat,
       childSeatPerTrip: settingsData?.prices?.childSeatPerTrip ?? defaultSettings.prices.childSeatPerTrip,
-      prepaidFuel: settingsData?.prices?.prepaidFuel ?? defaultSettings.prices.prepaidFuel,
-      prepaidFuelPerTrip: settingsData?.prices?.prepaidFuelPerTrip ?? defaultSettings.prices.prepaidFuelPerTrip,
-      lateReturnGrace: settingsData?.prices?.lateReturnGrace ?? defaultSettings.prices.lateReturnGrace,
-      lateReturnGracePerTrip: settingsData?.prices?.lateReturnGracePerTrip ?? defaultSettings.prices.lateReturnGracePerTrip,
-      stressFreePackage: settingsData?.prices?.stressFreePackage ?? defaultSettings.prices.stressFreePackage,
-      stressFreePackagePerTrip: settingsData?.prices?.stressFreePackagePerTrip ?? defaultSettings.prices.stressFreePackagePerTrip,
     },
     locations: settingsData?.locations ?? defaultSettings.locations,
   };
 
-  const defaultPricingStrings = {taxes: '8.5', extraMileRate: '0.45', childSeat: '8', prepaidFuel: '35', lateReturnGrace: '25', stressFreePackage: '50', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'};
+  const defaultPricingStrings = {taxes: '8.5', extraMileRate: '0.45', childSeat: '8', cleaningFee: '25', includedMiles: '200', insurance500: '25', insurance1000: '15'};
   const createVehicleMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/vehicles', data),
     onSuccess: () => { 
@@ -4430,7 +4418,7 @@ export default function CarHopApp() {
       deliveryPricePerMile: formData.deliveryPricePerMile || 2.50,
       minDeliveryHours: formData.minDeliveryHours || 6,
       hostId: formData.hostId,
-      pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}}
+       pricing: formData.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false}}
     };
 
     if (editingId) {
@@ -4480,7 +4468,7 @@ export default function CarHopApp() {
   };
 
   const handleEditVehicle = (car: Vehicle) => {
-    const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}};
+    const pricing = car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false}};
     setFormData({
       ...initialFormState,
       ...car,
@@ -4493,9 +4481,6 @@ export default function CarHopApp() {
       taxes: String(pricing.taxes || '8.5'),
       extraMileRate: String(pricing.extraMileRate || '0.45'),
       childSeat: String(pricing.prices?.childSeat || '8'),
-      prepaidFuel: String(pricing.prices?.prepaidFuel || '35'),
-      lateReturnGrace: String(pricing.prices?.lateReturnGrace || '25'),
-      stressFreePackage: String(pricing.prices?.stressFreePackage || '50'),
       cleaningFee: String(pricing.cleaningFee || '25'),
       includedMiles: String(pricing.includedMiles || '200'),
       insurance500: String(pricing.prices?.insurance500 || '25'),
@@ -7114,7 +7099,7 @@ export default function CarHopApp() {
                                       minDeliveryHours: car.minDeliveryHours || 6,
                                       locationLat: car.locationLat || null,
                                       locationLon: car.locationLon || null,
-                                       pricing: fullCar.pricing || car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false, prepaidFuel: 35, prepaidFuelPerTrip: true, lateReturnGrace: 25, lateReturnGracePerTrip: true, stressFreePackage: 50, stressFreePackagePerTrip: true}, discountPrograms: []}
+                                       pricing: fullCar.pricing || car.pricing || {taxes: 8.5, cleaningFee: 25, includedMiles: 200, extraMileRate: 0.45, prices: {insurance500: 25, insurance1000: 15, childSeat: 8, childSeatPerTrip: false}, discountPrograms: []}
                                     });
                                     setHostVehicleImages(fullCar.images || []);
                                   }
@@ -7604,49 +7589,6 @@ export default function CarHopApp() {
                             </label>
                             <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
                               <input type="radio" name="childSeatBilling" checked={priceConfigForm?.prices?.childSeatPerTrip ?? settings.prices.childSeatPerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, childSeatPerTrip: true}})} className="accent-green-500" />
-                              /Trip
-                            </label>
-                          </div>
-                        </div>
-                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Prepaid Fuel</label>
-                          <input type="number" value={priceConfigForm?.prices?.prepaidFuel ?? settings.prices.prepaidFuel} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuel: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-prepaid-fuel" />
-                          <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                              <input type="radio" name="prepaidFuelBilling" checked={!(priceConfigForm?.prices?.prepaidFuelPerTrip ?? settings.prices.prepaidFuelPerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuelPerTrip: false}})} className="accent-green-500" />
-                              /Day
-                            </label>
-                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                              <input type="radio" name="prepaidFuelBilling" checked={priceConfigForm?.prices?.prepaidFuelPerTrip ?? settings.prices.prepaidFuelPerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, prepaidFuelPerTrip: true}})} className="accent-green-500" />
-                              /Trip
-                            </label>
-                          </div>
-                        </div>
-                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Late Grace 2hr</label>
-                          <input type="number" value={priceConfigForm?.prices?.lateReturnGrace ?? settings.prices.lateReturnGrace} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGrace: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-late-return-grace" />
-                          <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                              <input type="radio" name="lateReturnGraceBilling" checked={!(priceConfigForm?.prices?.lateReturnGracePerTrip ?? settings.prices.lateReturnGracePerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGracePerTrip: false}})} className="accent-green-500" />
-                              /Day
-                            </label>
-                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                              <input type="radio" name="lateReturnGraceBilling" checked={priceConfigForm?.prices?.lateReturnGracePerTrip ?? settings.prices.lateReturnGracePerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, lateReturnGracePerTrip: true}})} className="accent-green-500" />
-                              /Trip
-                            </label>
-                          </div>
-                        </div>
-                        <div className="p-2 sm:p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-gradient-to-br from-green-50 to-transparent dark:from-green-900/20">
-                          <label className="block text-[9px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-0.5 sm:mb-1 uppercase tracking-wider">Stress-Free</label>
-                          <p className="text-[8px] sm:text-[10px] text-zinc-400 mb-1 sm:mb-2">Fuel + Late Grace</p>
-                          <input type="number" value={priceConfigForm?.prices?.stressFreePackage ?? settings.prices.stressFreePackage} onChange={(e) => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackage: parseFloat(e.target.value) || 0}})} className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs sm:text-sm mb-1 sm:mb-2" data-testid="input-host-stress-free-package" />
-                          <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                              <input type="radio" name="stressFreePackageBilling" checked={!(priceConfigForm?.prices?.stressFreePackagePerTrip ?? settings.prices.stressFreePackagePerTrip)} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackagePerTrip: false}})} className="accent-green-500" />
-                              /Day
-                            </label>
-                            <label className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                              <input type="radio" name="stressFreePackageBilling" checked={priceConfigForm?.prices?.stressFreePackagePerTrip ?? settings.prices.stressFreePackagePerTrip} onChange={() => setPriceConfigForm({...priceConfigForm || settings, prices: {...(priceConfigForm || settings).prices, stressFreePackagePerTrip: true}})} className="accent-green-500" />
                               /Trip
                             </label>
                           </div>
@@ -10640,7 +10582,7 @@ export default function CarHopApp() {
                               <Button 
                                 variant="outline" 
                                 className="h-7 w-7 p-0 border-zinc-200 dark:border-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center justify-center relative overflow-visible" 
-                                onClick={async () => { setEditingId(isEditing ? null : car.id); if (!isEditing) { let fullCar: any = car; try { const r = await fetch(`/api/vehicles/${car.id}`); if (r.ok) { const f = await r.json(); if (f && f.id) fullCar = f; } } catch {} setFormData(fullCar); setPricingStrings({taxes: String(fullCar.pricing?.taxes || 8.5), cleaningFee: String(fullCar.pricing?.cleaningFee || 25), includedMiles: String(fullCar.pricing?.includedMiles || 200), extraMileRate: String(fullCar.pricing?.extraMileRate || 0.45), insurance500: String(fullCar.pricing?.prices?.insurance500 || 25), insurance1000: String(fullCar.pricing?.prices?.insurance1000 || 15), childSeat: String(fullCar.pricing?.prices?.childSeat || 8), prepaidFuel: String(fullCar.pricing?.prices?.prepaidFuel || 60), lateReturnGrace: String(fullCar.pricing?.prices?.lateReturnGrace || 35), stressFreePackage: String(fullCar.pricing?.prices?.stressFreePackage || 45)}); } }} 
+                                onClick={async () => { setEditingId(isEditing ? null : car.id); if (!isEditing) { let fullCar: any = car; try { const r = await fetch(`/api/vehicles/${car.id}`); if (r.ok) { const f = await r.json(); if (f && f.id) fullCar = f; } } catch {} setFormData(fullCar); setPricingStrings({taxes: String(fullCar.pricing?.taxes || 8.5), cleaningFee: String(fullCar.pricing?.cleaningFee || 25), includedMiles: String(fullCar.pricing?.includedMiles || 200), extraMileRate: String(fullCar.pricing?.extraMileRate || 0.45), insurance500: String(fullCar.pricing?.prices?.insurance500 || 25), insurance1000: String(fullCar.pricing?.prices?.insurance1000 || 15), childSeat: String(fullCar.pricing?.prices?.childSeat || 8)}); } }}
                                 data-testid={`button-edit-vehicle-${car.id}`}
                               >
                                 {isEditing ? (

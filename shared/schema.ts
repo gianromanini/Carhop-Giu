@@ -45,12 +45,6 @@ export type VehiclePricing = {
     insurance1000: number;
     childSeat: number;
     childSeatPerTrip: boolean;
-    prepaidFuel: number;
-    prepaidFuelPerTrip: boolean;
-    lateReturnGrace: number;
-    lateReturnGracePerTrip: boolean;
-    stressFreePackage: number;
-    stressFreePackagePerTrip: boolean;
   };
   discountPrograms?: { minDays: number; percent: number }[];
 };
