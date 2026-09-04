@@ -4497,8 +4497,16 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       res.json({ url: accountLink.url, accountId });
     } catch (error: any) {
-      console.error("[StripeConnect] onboard error:", error?.message || error);
-      res.status(500).json({ error: error?.message || "Failed to create onboarding link" });
+      const message = error?.message || "Failed to create onboarding link";
+      const connectNotEnabled = message.toLowerCase().includes('sign up for connect') ||
+        message.toLowerCase().includes('connect platform');
+      console.error("[StripeConnect] onboard error:", message);
+      res.status(connectNotEnabled ? 503 : 500).json({
+        error: connectNotEnabled
+          ? "Stripe Connect is not enabled for this Stripe account"
+          : message,
+        code: connectNotEnabled ? "STRIPE_CONNECT_NOT_ENABLED" : "STRIPE_CONNECT_ONBOARDING_FAILED",
+      });
     }
   });
 

@@ -9,3 +9,4 @@
 - [Admin UI access](admin-ui-access.md) — admin-only controls must use the unified admin viewer state, not only the legacy password-session flag.
 - [Admin host selector loading](admin-host-selector-loading.md) — load Admin-only reference lists after authorization so an early empty response cannot remain cached in selectors.
 - [npm override re-resolution](npm-override-resolution.md) — a valid scoped override may need its transitive parent re-resolved before npm removes a stale vulnerable lock entry.
+- [Stripe Connect activation](stripe-connect-requirement.md) — Express bank onboarding requires Connect enabled for the correct Stripe environment.

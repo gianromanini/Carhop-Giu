@@ -1101,6 +1101,7 @@ function StripePayoutPanel({ host, vehicles = [], bookings = [] }: { host: any; 
 
 function HostPayoutTab({ currentHost, vehicles, bookings, setCurrentHost }: { currentHost: any; vehicles: any[]; bookings: any[]; setCurrentHost?: (h: any) => void }) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const hostId = currentHost.id;
   const hostIdStr = String(hostId);
   const bankAccount = currentHost.bankAccount || null;
@@ -1185,7 +1186,27 @@ function HostPayoutTab({ currentHost, vehicles, bookings, setCurrentHost }: { cu
     mutationFn: () =>
       apiRequest('POST', `/api/hosts/${hostId}/stripe-connect/onboard`, {}).then((r: any) => r.json()),
     onSuccess: (data: any) => {
-      if (data?.url) window.location.href = data.url;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast({
+          title: 'Stripe setup unavailable',
+          description: 'Stripe did not return an onboarding link. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error: any) => {
+      const message = error?.message || '';
+      const connectNotEnabled = message.toLowerCase().includes('sign up for connect') ||
+        message.toLowerCase().includes('connect platform');
+      toast({
+        title: connectNotEnabled ? 'Stripe Connect is not enabled' : 'Unable to open Stripe',
+        description: connectNotEnabled
+          ? 'The administrator must activate Stripe Connect in the Stripe Dashboard before bank accounts can be linked.'
+          : 'We could not start the secure Stripe onboarding. Please try again or contact support.',
+        variant: 'destructive',
+      });
     },
   });
 
