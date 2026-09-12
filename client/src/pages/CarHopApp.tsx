@@ -8792,11 +8792,13 @@ export default function CarHopApp() {
                                     const diffMs = newReturn.getTime() - oldReturn.getTime();
                                     const extraDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
                                     if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
-                                    const pricePerDay = vehicles.find(v => v.id === b.vehicleId)?.price || 0;
+                                    const selectedVehicle = (allVehicles || []).find(v => String(v.id) === String(b.vehicleId))
+                                      || (vehicles || []).find(v => String(v.id) === String(b.vehicleId));
+                                    const pricePerDay = getRentalDailyRateForExtensionPreview(b, selectedVehicle);
                                     const extraCost = pricePerDay * extraDays;
-                                    const protectionPerDay = getProtectionDailyRateForPreview(b, vehicles.find(v => v.id === b.vehicleId), settings);
+                                    const protectionPerDay = getProtectionDailyRateForPreview(b, selectedVehicle, settings);
                                     const extraProtection = protectionPerDay * extraDays;
-                                    const taxRate = (vehicles.find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
+                                    const taxRate = (selectedVehicle?.pricing?.taxes || settings.taxes || 0) / 100;
                                     const extraTax = (extraCost + extraProtection) * taxRate;
                                     return (
                                       <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
@@ -12548,12 +12550,13 @@ export default function CarHopApp() {
                                                 const diffMs = newReturn.getTime() - oldReturn.getTime();
                                                 const extraDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
                                                 if (extraDays <= 0) return <p className="text-xs text-red-400">New date must be after {b.returnDate}</p>;
-                                                const pricePerDay = (allVehicles || vehicles).find(v => v.id === b.vehicleId)?.price || 0;
+                                                const selectedVehicle = (allVehicles || []).find(v => String(v.id) === String(b.vehicleId))
+                                                  || (vehicles || []).find(v => String(v.id) === String(b.vehicleId));
+                                                const pricePerDay = getRentalDailyRateForExtensionPreview(b, selectedVehicle);
                                                 const extraCost = pricePerDay * extraDays;
-                                                const selectedVehicle = (allVehicles || vehicles).find(v => v.id === b.vehicleId);
                                                 const protectionPerDay = getProtectionDailyRateForPreview(b, selectedVehicle, settings);
                                                 const extraProtection = protectionPerDay * extraDays;
-                                                const taxRate = ((allVehicles || vehicles).find(v => v.id === b.vehicleId)?.pricing?.taxes || settings.taxes || 0) / 100;
+                                                const taxRate = (selectedVehicle?.pricing?.taxes || settings.taxes || 0) / 100;
                                                 const extraTax = (extraCost + extraProtection) * taxRate;
                                                 return (
                                                   <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
