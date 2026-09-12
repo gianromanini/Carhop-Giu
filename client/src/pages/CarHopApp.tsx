@@ -210,6 +210,22 @@ const getRentalDailyRateForExtensionPreview = (booking: any, vehicle: any): numb
   return rentalTotal > 0 ? rentalTotal / bookingDays : 0;
 };
 
+const getExtensionDiscountForPreview = (
+  booking: any,
+  vehicle: any,
+  dailyRate: number,
+  addedDays: number,
+) => {
+  const oldDays = Math.max(1, Number(booking?.days) || 1);
+  const newDays = Math.max(1, oldDays + Math.max(0, addedDays));
+  const pricing = calculateVehicleDiscount(vehicle, newDays, dailyRate);
+  const previousDiscount = Number(booking?.details?.discount || 0);
+  return {
+    ...pricing,
+    discountDifference: pricing.discountAmount - previousDiscount,
+  };
+};
+
 const formatDisplayDate = (dateStr: string, timeStr: string) => {
   if (!dateStr) return "";
   const displayTime = timeStr || "10:00 AM";
@@ -8798,14 +8814,18 @@ export default function CarHopApp() {
                                     const extraCost = pricePerDay * extraDays;
                                     const protectionPerDay = getProtectionDailyRateForPreview(b, selectedVehicle, settings);
                                     const extraProtection = protectionPerDay * extraDays;
+                                    const discountPreview = getExtensionDiscountForPreview(b, selectedVehicle, pricePerDay, extraDays);
+                                    const discountDifference = discountPreview.discountDifference;
                                     const taxRate = (selectedVehicle?.pricing?.taxes || settings.taxes || 0) / 100;
-                                    const extraTax = (extraCost + extraProtection) * taxRate;
+                                    const extraTax = (extraCost + extraProtection - discountDifference) * taxRate;
+                                    const extraTotal = extraCost + extraProtection - discountDifference + extraTax;
                                     return (
                                       <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
                                         <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
                                         {extraProtection > 0 && <div className="flex justify-between text-zinc-300"><span>Protection ({b.details?.protectionType || 'plan'})</span><span>+${extraProtection.toFixed(2)}</span></div>}
+                                        {Math.abs(discountDifference) > 0.005 && <div className="flex justify-between text-green-300"><span>{discountDifference > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Discount adjustment'}</span><span>{discountDifference > 0 ? '-' : '+'}${Math.abs(discountDifference).toFixed(2)}</span></div>}
                                         {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
-                                        <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraProtection + extraTax).toFixed(2)}</span></div>
+                                        <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>{extraTotal >= 0 ? '+' : '-'}${Math.abs(extraTotal).toFixed(2)}</span></div>
                                       </div>
                                     );
                                   })()}
@@ -12556,14 +12576,18 @@ export default function CarHopApp() {
                                                 const extraCost = pricePerDay * extraDays;
                                                 const protectionPerDay = getProtectionDailyRateForPreview(b, selectedVehicle, settings);
                                                 const extraProtection = protectionPerDay * extraDays;
+                                                const discountPreview = getExtensionDiscountForPreview(b, selectedVehicle, pricePerDay, extraDays);
+                                                const discountDifference = discountPreview.discountDifference;
                                                 const taxRate = (selectedVehicle?.pricing?.taxes || settings.taxes || 0) / 100;
-                                                const extraTax = (extraCost + extraProtection) * taxRate;
+                                                const extraTax = (extraCost + extraProtection - discountDifference) * taxRate;
+                                                const extraTotal = extraCost + extraProtection - discountDifference + extraTax;
                                                 return (
                                                   <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
                                                     <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
                                                     {extraProtection > 0 && <div className="flex justify-between text-zinc-300"><span>Protection ({b.details?.protectionType || 'plan'})</span><span>+${extraProtection.toFixed(2)}</span></div>}
+                                                    {Math.abs(discountDifference) > 0.005 && <div className="flex justify-between text-green-300"><span>{discountDifference > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Discount adjustment'}</span><span>{discountDifference > 0 ? '-' : '+'}${Math.abs(discountDifference).toFixed(2)}</span></div>}
                                                     {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
-                                                    <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>+${(extraCost + extraProtection + extraTax).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>{extraTotal >= 0 ? '+' : '-'}${Math.abs(extraTotal).toFixed(2)}</span></div>
                                                   </div>
                                                 );
                                               })()}
@@ -15119,8 +15143,11 @@ export default function CarHopApp() {
                                const protectionDailyRate = getProtectionDailyRateForPreview(b, extensionVehicle, settings);
                                const extensionRentalAmount = extendedDays > 0 ? extendedDays * dailyRate : 0;
                                const extensionProtectionAmount = extendedDays > 0 ? extendedDays * protectionDailyRate : 0;
+                                const discountPreview = getExtensionDiscountForPreview(b, extensionVehicle, dailyRate, extendedDays);
+                                const discountDifference = discountPreview.discountDifference;
                                const extensionTaxRate = Number(extensionVehicle?.pricing?.taxes ?? settings.taxes ?? 0);
-                               const extensionTax = (extensionRentalAmount + extensionProtectionAmount) * (extensionTaxRate / 100);
+                                const extensionTax = (extensionRentalAmount + extensionProtectionAmount - discountDifference) * (extensionTaxRate / 100);
+                                const extensionTotal = extensionRentalAmount + extensionProtectionAmount - discountDifference + extensionTax;
                               
                               return (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg space-y-4">
@@ -15159,6 +15186,12 @@ export default function CarHopApp() {
                                              <span>Extended Days</span>
                                              <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)} = ${extensionRentalAmount.toFixed(2)}</span>
                                            </div>
+                                            {Math.abs(discountDifference) > 0.005 && (
+                                              <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
+                                                <span>{discountDifference > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Discount adjustment'}</span>
+                                                <span className="font-bold">{discountDifference > 0 ? '-' : '+'}${Math.abs(discountDifference).toFixed(2)}</span>
+                                              </div>
+                                            )}
                                            {extensionProtectionAmount > 0 && (
                                              <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
                                                <span>Daily Insurance</span>
@@ -15171,6 +15204,10 @@ export default function CarHopApp() {
                                                <span className="font-bold text-zinc-900 dark:text-white">+${extensionTax.toFixed(2)}</span>
                                              </div>
                                            )}
+                                            <div className="flex justify-between text-xs font-bold text-zinc-900 dark:text-white border-t border-zinc-200 dark:border-zinc-700 pt-2">
+                                              <span>Additional total</span>
+                                              <span>{extensionTotal >= 0 ? '+' : '-'}${Math.abs(extensionTotal).toFixed(2)}</span>
+                                            </div>
                                          </>
                                        )}
                                     </div>

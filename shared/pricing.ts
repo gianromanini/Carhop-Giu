@@ -15,9 +15,13 @@ export function normalizeDiscountPrograms(value: unknown): DiscountProgram[] {
     .sort((a, b) => b.minDays - a.minDays);
 }
 
-export function calculateVehicleDiscount(vehicle: any, days: number) {
+export function calculateVehicleDiscount(vehicle: any, days: number, dailyRateOverride?: number) {
   const safeDays = Math.max(1, Math.floor(Number(days) || 1));
-  const dailyRate = Math.max(0, Number(vehicle?.price) || 0);
+  const overrideRate = Number(dailyRateOverride);
+  const dailyRate = Math.max(
+    0,
+    Number.isFinite(overrideRate) && overrideRate > 0 ? overrideRate : Number(vehicle?.price) || 0,
+  );
   const grossRental = dailyRate * safeDays;
   const program = normalizeDiscountPrograms(vehicle?.pricing?.discountPrograms)
     .find((candidate) => safeDays > candidate.minDays);

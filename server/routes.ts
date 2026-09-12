@@ -2228,7 +2228,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const oldExtendedRate = booking.details?.extendedRate || 0;
       const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
       const oldDiscount = Number(booking.details?.discount || 0);
-      const discountPricing = calculateVehicleDiscount(vehicle, updateData.days);
+       const discountPricing = calculateVehicleDiscount(vehicle, updateData.days, pricePerDay);
       const newDiscount = discountPricing.discountAmount;
       const discountDifference = newDiscount - oldDiscount;
 
@@ -2427,7 +2427,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const oldExtendedRate = booking.details?.extendedRate || 0;
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
     const oldDiscount = Number(booking.details?.discount || 0);
-    const discountPricing = calculateVehicleDiscount(vehicle, newDays);
+    const discountPricing = calculateVehicleDiscount(vehicle, newDays, pricePerDay);
     const newDiscount = discountPricing.discountAmount;
     const discountDifference = newDiscount - oldDiscount;
 
