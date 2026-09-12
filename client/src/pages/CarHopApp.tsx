@@ -781,11 +781,11 @@ function DiscountProgramsEditor({ value, onChange }: { value?: DiscountProgram[]
       <div className="flex items-center justify-between gap-2 mb-2">
         <div>
           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Discount Programs</label>
-          <p className="text-[10px] text-zinc-400 mt-0.5">Apply to the vehicle rental rate when the booking reaches the minimum days.</p>
+          <p className="text-[10px] text-zinc-400 mt-0.5">Default weekly discounts are 10% up to 7 days, 15% from 8 to 20 days, and 20% at 21+ days. Custom lines override these defaults.</p>
         </div>
         <button
           type="button"
-          onClick={() => onChange([...programs, { minDays: 3, percent: 5 }])}
+          onClick={() => onChange([...programs, { minDays: 7, percent: 10 }])}
           className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold transition-colors whitespace-nowrap"
           data-testid="button-add-discount-program"
         >
