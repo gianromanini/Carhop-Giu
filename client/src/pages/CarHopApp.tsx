@@ -198,6 +198,18 @@ const getProtectionDailyRateForPreview = (booking: any, vehicle: any, settings: 
   return protectionTotal / bookingDays;
 };
 
+const getRentalDailyRateForExtensionPreview = (booking: any, vehicle: any): number => {
+  const storedRate = Number(booking?.details?.rentalDailyRate);
+  if (Number.isFinite(storedRate) && storedRate > 0) return storedRate;
+
+  const vehicleRate = Number(vehicle?.price);
+  if (Number.isFinite(vehicleRate) && vehicleRate > 0) return vehicleRate;
+
+  const bookingDays = Math.max(1, Number(booking?.days) || 1);
+  const rentalTotal = Number(booking?.details?.rate || 0);
+  return rentalTotal > 0 ? rentalTotal / bookingDays : 0;
+};
+
 const formatDisplayDate = (dateStr: string, timeStr: string) => {
   if (!dateStr) return "";
   const displayTime = timeStr || "10:00 AM";
@@ -3476,6 +3488,7 @@ export default function CarHopApp() {
       deliveryType: selectedDeliveryType,
       details: {
         rate: dailyRate * days,
+        rentalDailyRate: dailyRate,
          discount: totalData.discountAmount,
          discountPercent: totalData.discountPercent,
         extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
@@ -15097,10 +15110,14 @@ export default function CarHopApp() {
                               const extendedDays = Math.ceil(diffHours / 24);
                               
                               // Calculate costs
-                              const baseRate = b.details.rate || 0;
-                              const currentExtended = b.details.extendedRate || 0;
-                              const currentDays = b.days || 1;
-                              const dailyRate = (baseRate + currentExtended) / currentDays;
+                               const extensionVehicle = (allVehicles.length > 0 ? allVehicles : vehicles)
+                                 .find(v => String(v.id) === String(b.vehicleId));
+                               const dailyRate = getRentalDailyRateForExtensionPreview(b, extensionVehicle);
+                               const protectionDailyRate = getProtectionDailyRateForPreview(b, extensionVehicle, settings);
+                               const extensionRentalAmount = extendedDays > 0 ? extendedDays * dailyRate : 0;
+                               const extensionProtectionAmount = extendedDays > 0 ? extendedDays * protectionDailyRate : 0;
+                               const extensionTaxRate = Number(extensionVehicle?.pricing?.taxes ?? settings.taxes ?? 0);
+                               const extensionTax = (extensionRentalAmount + extensionProtectionAmount) * (extensionTaxRate / 100);
                               
                               return (
                               <div className="animate-in fade-in slide-in-from-top-2 mt-4 bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg space-y-4">
@@ -15133,12 +15150,26 @@ export default function CarHopApp() {
                                           })()}
                                         </span>
                                       </div>
-                                      {extendedDays > 0 && (
-                                        <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                                          <span>Extended Days</span>
-                                          <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)}</span>
-                                        </div>
-                                      )}
+                                       {extendedDays > 0 && (
+                                         <>
+                                           <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                             <span>Extended Days</span>
+                                             <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)} = ${extensionRentalAmount.toFixed(2)}</span>
+                                           </div>
+                                           {extensionProtectionAmount > 0 && (
+                                             <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                               <span>Daily Insurance</span>
+                                               <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${protectionDailyRate.toFixed(2)} = ${extensionProtectionAmount.toFixed(2)}</span>
+                                             </div>
+                                           )}
+                                           {extensionTax > 0 && (
+                                             <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
+                                               <span>Extension Tax ({extensionTaxRate}%)</span>
+                                               <span className="font-bold text-zinc-900 dark:text-white">+${extensionTax.toFixed(2)}</span>
+                                             </div>
+                                           )}
+                                         </>
+                                       )}
                                     </div>
                                   )}
                                   

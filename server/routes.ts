@@ -268,6 +268,18 @@ function getProtectionDailyRate(details: any, vehicle: any, settingsObj: any, bo
   return protectionTotal / safeDays;
 }
 
+function getRentalDailyRate(details: any, vehicle: any, bookingDays: number): number {
+  const storedRate = Number(details?.rentalDailyRate);
+  if (Number.isFinite(storedRate) && storedRate > 0) return storedRate;
+
+  const vehicleRate = Number(vehicle?.price);
+  if (Number.isFinite(vehicleRate) && vehicleRate > 0) return vehicleRate;
+
+  const rentalTotal = Number(details?.rate || 0);
+  const safeDays = Math.max(1, Number(bookingDays) || 1);
+  return rentalTotal > 0 ? rentalTotal / safeDays : 0;
+}
+
 // Email notification helper functions
 async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
   const clientEmail = booking.driver?.email;
@@ -2209,7 +2221,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       // Get the car price per day
       const vehicleId = booking.vehicleId;
       const vehicle = vehicleId ? await storage.getVehicle(vehicleId) : null;
-      const pricePerDay = vehicle?.price || 0;
+      const pricePerDay = getRentalDailyRate(booking.details, vehicle, oldDays);
       
       // Adjust total and extended rate based on days difference
       const rateDifference = pricePerDay * daysDifference;
@@ -2239,6 +2251,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       updateData.details = {
         ...booking.details,
         extendedRate: newExtendedRate,
+        rentalDailyRate: pricePerDay,
          discount: newDiscount,
          discountPercent: discountPricing.discountPercent,
         protection: newProtectionAmt,
@@ -2409,7 +2422,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     allSettings.forEach(s => (settingsObj[s.key] = s.value));
 
     const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
-    const pricePerDay = vehicle?.price || 0;
+    const pricePerDay = getRentalDailyRate(booking.details, vehicle, booking.days || 1);
     const rateDifference = pricePerDay * extraDays;
     const oldExtendedRate = booking.details?.extendedRate || 0;
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
@@ -2456,6 +2469,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       details: {
         ...booking.details,
         extendedRate: newExtendedRate,
+        rentalDailyRate: pricePerDay,
          discount: newDiscount,
          discountPercent: discountPricing.discountPercent,
         protection: newProtection,
