@@ -10,3 +10,4 @@
 - [Admin host selector loading](admin-host-selector-loading.md) — load Admin-only reference lists after authorization so an early empty response cannot remain cached in selectors.
 - [npm override re-resolution](npm-override-resolution.md) — a valid scoped override may need its transitive parent re-resolved before npm removes a stale vulnerable lock entry.
 - [Stripe Connect activation](stripe-connect-requirement.md) — Express bank onboarding requires Connect enabled for the correct Stripe environment.
+- [Orphaned booking vehicles](orphaned-booking-vehicles.md) — production bookings can outlive a deleted vehicle row; preserve a recoverable vehicle snapshot for Fleet and photos.

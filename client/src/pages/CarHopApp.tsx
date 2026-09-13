@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 const VehicleMap = lazy(() => import('@/components/VehicleMap'));
 import type { Vehicle, Booking } from '@shared/schema';
-import { calculateVehicleDiscount, type DiscountProgram } from '@shared/pricing';
+import { calculateVehicleDiscount, normalizeDiscountPrograms, type DiscountProgram } from '@shared/pricing';
 import {
   HOST_COMMISSION_PLANS,
   LEGACY_PLATFORM_COMMISSION,
@@ -784,11 +784,11 @@ function DiscountProgramsEditor({ value, onChange }: { value?: DiscountProgram[]
       <div className="flex items-center justify-between gap-2 mb-2">
         <div>
           <label className="block text-[10px] sm:text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Discount Programs</label>
-          <p className="text-[10px] text-zinc-400 mt-0.5">Default weekly discounts are 10% up to 7 days, 15% from 8 to 20 days, and 20% at 21+ days. Custom lines override these defaults.</p>
+          <p className="text-[10px] text-zinc-400 mt-0.5">Only the discount lines created for this vehicle will apply. Each line starts after the configured number of days.</p>
         </div>
         <button
           type="button"
-          onClick={() => onChange([...programs, { minDays: 7, percent: 10 }])}
+          onClick={() => onChange([...programs, { minDays: 1, percent: 0 }])}
           className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold transition-colors whitespace-nowrap"
           data-testid="button-add-discount-program"
         >
@@ -9604,8 +9604,8 @@ export default function CarHopApp() {
                       <TrendingUp size={18} className="mt-0.5 flex-shrink-0 text-green-400" />
                       <div>
                         <p className="text-sm sm:text-base font-bold text-green-300">Progressive discounts</p>
-                        <p className="mt-1 text-xs sm:text-sm text-green-100">Bookings longer than 3 days may qualify for greater savings.</p>
-                        <p className="mt-1 text-[10px] sm:text-xs text-green-300/80">Eligible discounts are applied automatically to the rental rate.</p>
+                         <p className="mt-1 text-xs sm:text-sm text-green-100">Discounts are based on the table configured for each vehicle.</p>
+                         <p className="mt-1 text-[10px] sm:text-xs text-green-300/80">Only the vehicle's own discount lines are applied.</p>
                       </div>
                     </div>
                   </div>
@@ -16260,7 +16260,22 @@ export default function CarHopApp() {
                       <TrendingUp size={16} className="mt-0.5 flex-shrink-0 text-green-400" />
                       <div>
                         <p className="text-sm font-bold text-green-300">Progressive discounts</p>
-                        <p className="text-xs text-green-100 mt-1">Bookings longer than 3 days may qualify for greater savings. Any eligible discount is applied automatically below.</p>
+                         <p className="text-xs text-green-100 mt-1">This vehicle uses only the progressive discount table configured by its Host.</p>
+                         {normalizeDiscountPrograms(cart.car.pricing?.discountPrograms).length > 0 ? (
+                           <div className="mt-2 space-y-1 text-[11px] text-green-100">
+                             {normalizeDiscountPrograms(cart.car.pricing?.discountPrograms)
+                               .slice()
+                               .sort((a, b) => a.minDays - b.minDays)
+                               .map((program) => (
+                                 <div key={`${program.minDays}-${program.percent}`} className="flex justify-between gap-3">
+                                   <span>More than {program.minDays} day{program.minDays === 1 ? '' : 's'}</span>
+                                   <span className="font-bold">{program.percent}% off</span>
+                                 </div>
+                               ))}
+                           </div>
+                         ) : (
+                           <p className="text-[11px] text-green-200/80 mt-2">No progressive discount configured for this vehicle.</p>
+                         )}
                         {calculateTotal().discountAmount > 0 && (
                           <p className="text-xs font-bold text-green-400 mt-2">
                             Current rental discount: {calculateTotal().discountPercent}% off (save ${calculateTotal().discountAmount.toFixed(2)})

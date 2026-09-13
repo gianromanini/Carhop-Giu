@@ -57,6 +57,76 @@ function isHostVehicleRequest(req: any): boolean {
   return !isAdminRequest(req) && (passportHost || sessionHost);
 }
 
+async function getOrphanVehicleSnapshot(vehicleId: number): Promise<any | undefined> {
+  const bookings = await storage.getBookings();
+  const booking = bookings
+    .filter((candidate: any) => Number(candidate.vehicleId) === vehicleId)
+    .sort((a: any, b: any) => {
+      const activeStatuses = new Set(['Active', 'Extended']);
+      return Number(activeStatuses.has(b.status)) - Number(activeStatuses.has(a.status)) ||
+        Number(b.id || 0) - Number(a.id || 0);
+    })[0];
+
+  if (!booking) return undefined;
+
+  const details = (booking.details || {}) as any;
+  const days = Math.max(1, Number(booking.days) || 1);
+  const storedDailyRate = Number(details.rentalDailyRate) || Number(details.vehiclePrice);
+  const historicalDailyRate = storedDailyRate > 0
+    ? storedDailyRate
+    : (Number(details.rate || 0) + Number(details.extendedRate || 0)) / days;
+
+  return {
+    id: vehicleId,
+    model: booking.carName || 'Vehicle from booking',
+    category: 'SUV',
+    price: Number.isFinite(historicalDailyRate) && historicalDailyRate > 0 ? historicalDailyRate : 0,
+    fuel: 'Gasoline',
+    seats: 5,
+    transmission: 'Automatic',
+    driveType: 'AWD',
+    year: details.vehicleYear || null,
+    vinNumber: null,
+    licensePlate: null,
+    hostName: details.hostName || null,
+    images: booking.image ? [booking.image] : [],
+    consumption: null,
+    isPriceMatch: false,
+    isAWD: true,
+    hasCarPlay: false,
+    hasBluetooth: false,
+    hasReverseCamera: false,
+    hasHeatedSeats: false,
+    hasHeatedSteering: false,
+    hasElectricSeats: false,
+    hasPaddleShifters: false,
+    hasKeylessEntry: false,
+    hasBlindSpotWarning: false,
+    hasDriveAssist: false,
+    hasUSBCharger: false,
+    hostId: details.hostId || null,
+    commission: 10,
+    deductible: 2250,
+    availableLocations: [],
+    deliveryAddress: '',
+    isDeliveryEnabled: false,
+    maxDeliveryDistance: 50,
+    minDeliveryFeeMiles: 5,
+    minDeliveryFee: 15,
+    deliveryPricePerMile: 2.5,
+    minDeliveryHours: 6,
+    pickupInstructions: '',
+    locationLat: null,
+    locationLon: null,
+    pricing: null,
+    expenses: null,
+    transferRequests: [],
+    availabilityStatus: 'unavailable',
+    createdAt: booking.createdAt || null,
+    isOrphanedBookingVehicle: true,
+  };
+}
+
 async function getNotificationSettings() {
   const stored = await storage.getSetting('notifications');
   return { ...DEFAULT_NOTIFICATION_SETTINGS, ...(stored?.value || {}) };
@@ -1477,13 +1547,31 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
   // ========== VEHICLES ==========
   app.get("/api/vehicles", async (req, res) => {
     const useImageUrls = String(req.query.imageMode || 'urls').toLowerCase() !== 'full';
-    const vehicles = useImageUrls
+    let vehicles = useImageUrls
       ? await storage.getVehicleSummaries()
       : await storage.getVehicles();
     const hosts = await storage.getHosts();
     const hostsMap = new Map(hosts.map(h => [h.id.toString(), h]));
     
     const includeUnavailable = String(req.query.includeUnavailable || '').toLowerCase() === 'true';
+    if (includeUnavailable) {
+      const existingVehicleIds = new Set(vehicles.map((vehicle) => Number(vehicle.id)));
+      const bookingVehicles = await storage.getBookings();
+      const orphanSnapshots = await Promise.all(
+        bookingVehicles
+          .filter((booking: any) =>
+            booking.vehicleId != null &&
+            !existingVehicleIds.has(Number(booking.vehicleId)) &&
+            ['Active', 'Extended'].includes(booking.status)
+          )
+          .map((booking: any) => getOrphanVehicleSnapshot(Number(booking.vehicleId)))
+      );
+      vehicles = [
+        ...vehicles,
+        ...orphanSnapshots.filter(Boolean),
+      ] as typeof vehicles;
+    }
+
     let filteredVehicles = includeUnavailable
       ? vehicles
       : vehicles.filter((vehicle) => vehicle.availabilityStatus !== 'unavailable');
@@ -1542,7 +1630,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       return res.status(400).json({ error: "Invalid vehicle image" });
     }
 
-    const vehicle = await storage.getVehicle(id);
+    const vehicle = await storage.getVehicle(id) || await getOrphanVehicleSnapshot(id);
     const image = vehicle?.images?.[index];
     if (!image) return res.status(404).json({ error: "Vehicle image not found" });
 
@@ -1566,7 +1654,7 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
   app.get("/api/vehicles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    const vehicle = await storage.getVehicle(id);
+    const vehicle = await storage.getVehicle(id) || await getOrphanVehicleSnapshot(id);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
     res.json(vehicle);
   });

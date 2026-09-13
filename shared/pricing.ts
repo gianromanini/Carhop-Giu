@@ -3,12 +3,6 @@ export type DiscountProgram = {
   percent: number;
 };
 
-export const DEFAULT_WEEKLY_DISCOUNT_PROGRAMS: DiscountProgram[] = [
-  { minDays: 21, percent: 20 },
-  { minDays: 8, percent: 15 },
-  { minDays: 7, percent: 10 },
-];
-
 export function normalizeDiscountPrograms(value: unknown): DiscountProgram[] {
   if (!Array.isArray(value)) return [];
 
@@ -30,9 +24,7 @@ export function calculateVehicleDiscount(vehicle: any, days: number, dailyRateOv
   );
   const grossRental = dailyRate * safeDays;
   const configuredPrograms = normalizeDiscountPrograms(vehicle?.pricing?.discountPrograms);
-  const program = configuredPrograms.length > 0
-    ? configuredPrograms.find((candidate) => safeDays > candidate.minDays)
-    : DEFAULT_WEEKLY_DISCOUNT_PROGRAMS.find((candidate) => safeDays >= candidate.minDays);
+  const program = configuredPrograms.find((candidate) => safeDays > candidate.minDays);
   const discountPercent = program?.percent || 0;
   const discountAmount = grossRental * (discountPercent / 100);
 
