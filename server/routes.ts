@@ -2359,10 +2359,17 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const oldExtendedRate = booking.details?.extendedRate || 0;
       const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
       const oldDiscount = Number(booking.details?.discount || 0);
+       const previousExtensionDiscountTotal = Math.max(0, Number(booking.details?.extensionDiscountTotal || 0));
+       const originalDiscount = Math.max(0, Number(
+         booking.details?.originalDiscount !== undefined
+           ? booking.details.originalDiscount
+           : oldDiscount - previousExtensionDiscountTotal
+       ));
       const extensionDays = Math.max(0, daysDifference);
       const discountPricing = calculateExtensionPricing(vehicle, extensionDays, pricePerDay);
       const extensionDiscount = discountPricing.discountAmount;
-      const newDiscount = oldDiscount + extensionDiscount;
+       const newExtensionDiscountTotal = previousExtensionDiscountTotal + extensionDiscount;
+       const newDiscount = originalDiscount + newExtensionDiscountTotal;
 
       // Protection: charge the same per-day rate used at booking start.
       const oldProtectionAmt = Number(booking.details?.protection || 0);
@@ -2384,7 +2391,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         ...booking.details,
         extendedRate: newExtendedRate,
         rentalDailyRate: pricePerDay,
-         discount: newDiscount,
+          discount: newDiscount,
+          originalDiscount,
+          extensionDiscountTotal: newExtensionDiscountTotal,
          discountPercent: discountPricing.discountPercent,
         protection: newProtectionAmt,
         protectionDailyRate: protectionPerDayAmt,
@@ -2561,9 +2570,16 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const oldExtendedRate = booking.details?.extendedRate || 0;
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
     const oldDiscount = Number(booking.details?.discount || 0);
+     const previousExtensionDiscountTotal = Math.max(0, Number(booking.details?.extensionDiscountTotal || 0));
+     const originalDiscount = Math.max(0, Number(
+       booking.details?.originalDiscount !== undefined
+         ? booking.details.originalDiscount
+         : oldDiscount - previousExtensionDiscountTotal
+     ));
     const discountPricing = calculateExtensionPricing(vehicle, extraDays, pricePerDay);
     const extensionDiscount = discountPricing.discountAmount;
-    const newDiscount = oldDiscount + extensionDiscount;
+     const newExtensionDiscountTotal = previousExtensionDiscountTotal + extensionDiscount;
+     const newDiscount = originalDiscount + newExtensionDiscountTotal;
 
     // Protection: charge the same per-day rate that was selected at booking start.
     const oldProtection = Number(booking.details?.protection || 0);
@@ -2605,6 +2621,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         extendedRate: newExtendedRate,
         rentalDailyRate: pricePerDay,
          discount: newDiscount,
+         originalDiscount,
+         extensionDiscountTotal: newExtensionDiscountTotal,
          discountPercent: discountPricing.discountPercent,
         protection: newProtection,
         protectionDailyRate: protectionPerDay,

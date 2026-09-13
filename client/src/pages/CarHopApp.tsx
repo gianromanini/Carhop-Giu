@@ -3522,6 +3522,8 @@ export default function CarHopApp() {
         rate: dailyRate * days,
         rentalDailyRate: dailyRate,
          discount: totalData.discountAmount,
+          originalDiscount: totalData.discountAmount,
+          extensionDiscountTotal: 0,
          discountPercent: totalData.discountPercent,
         extras: (cart.extrasSelected.includes('childSeat') ? (cart.car!.pricing?.prices?.childSeat || settings.prices.childSeat) : 0),
         childSeatSelected: cart.extrasSelected.includes('childSeat'),
@@ -14473,6 +14475,12 @@ export default function CarHopApp() {
                       const manualChargesTotal = Array.isArray(receiptBooking.details?.manualCharges) ? receiptBooking.details.manualCharges.reduce((sum, c: any) => sum + (c.amount || 0), 0) : 0;
                       const extraPaymentsTotal = (receiptBooking.extraPayments || []).reduce((sum, p) => sum + p.amount, 0);
                       const discount = receiptBooking.details?.discount || 0;
+                       const extensionDiscountTotal = Math.max(0, Number(receiptBooking.details?.extensionDiscountTotal || 0));
+                       const originalDiscount = Math.max(0, Number(
+                         receiptBooking.details?.originalDiscount !== undefined
+                           ? receiptBooking.details.originalDiscount
+                           : discount - extensionDiscountTotal
+                       ));
                       
                       // Compute additional charges subtotals
                       const additionalChargesBeforeTax = extendedRate + manualChargesTotal + extraPaymentsTotal - discount;
@@ -14572,12 +14580,26 @@ export default function CarHopApp() {
                                     <span className="text-green-600 dark:text-green-400">+${payment.amount.toFixed(2)}</span>
                                   </div>
                                 ))}
-                                {discount > 0 && (
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-zinc-600 dark:text-zinc-400">Discount</span>
-                                    <span className="text-green-600 dark:text-green-400">-${discount.toFixed(2)}</span>
-                                  </div>
-                                )}
+                                 {originalDiscount > 0 && extensionDiscountTotal > 0 && (
+                                   <div className="flex justify-between text-sm">
+                                     <span className="text-zinc-600 dark:text-zinc-400">Initial booking discount</span>
+                                     <span className="text-green-600 dark:text-green-400">-${originalDiscount.toFixed(2)}</span>
+                                   </div>
+                                 )}
+                                 {extensionDiscountTotal > 0 && (
+                                   <div className="flex justify-between text-sm">
+                                     <span className="text-zinc-600 dark:text-zinc-400">Extension discounts (all extensions)</span>
+                                     <span className="text-green-600 dark:text-green-400">-${extensionDiscountTotal.toFixed(2)}</span>
+                                   </div>
+                                 )}
+                                 {discount > 0 && (
+                                   <div className="flex justify-between text-sm font-bold">
+                                     <span className="text-zinc-600 dark:text-zinc-400">
+                                       {extensionDiscountTotal > 0 ? 'Total discounts' : 'Discount'}
+                                     </span>
+                                     <span className="text-green-600 dark:text-green-400">-${discount.toFixed(2)}</span>
+                                   </div>
+                                 )}
                                 {additionalTax > 0 && (
                                   <div className="flex justify-between text-sm">
                                     <span className="text-zinc-600 dark:text-zinc-400">Tax</span>

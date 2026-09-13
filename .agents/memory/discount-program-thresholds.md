@@ -10,3 +10,7 @@ A discount program configured on a vehicle with a minimum-day threshold of X app
 **How to apply:** Keep the “more than X days” rule and apply only the selected vehicle's configured programs. For an extension, run the table against the added days only; preserve the booking's existing discount and add the extension discount separately.
 
 **Why:** An extension charge represents only the newly selected days. Recalculating against the full booking duration can apply a large historical discount to the new charge and produce an incorrect total.
+
+Bookings should retain the original booking discount and a separate cumulative extension-discount total so the final receipt can show both components and their combined total.
+
+**Why:** A single mutable discount amount is enough for charging but does not explain how much discount came from the original booking versus later extensions.

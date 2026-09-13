@@ -68,6 +68,8 @@ export type BookingDetails = {
   fees: number;
   tax: number;
   discount?: number;
+  originalDiscount?: number;
+  extensionDiscountTotal?: number;
   discountPrograms?: { minDays: number; percent: number }[];
   extendedRate?: number;
   manualCharges?: { type: string; amount: number }[];
