@@ -219,19 +219,19 @@ const getExtensionDiscountForPreview = (
   dailyRate: number,
   addedDays: number,
 ) => {
-  const oldDays = Math.max(1, Number(booking?.days) || 1);
-  const newDays = Math.max(1, oldDays + Math.max(0, addedDays));
+  const extensionDays = Math.max(0, Math.floor(Number(addedDays) || 0));
   const pricingVehicle = vehicle || {
     price: dailyRate,
     pricing: {
       discountPrograms: booking?.details?.discountPrograms || [],
     },
   };
-  const pricing = calculateVehicleDiscount(pricingVehicle, newDays, dailyRate);
-  const previousDiscount = Number(booking?.details?.discount || 0);
+  const pricing = extensionDays > 0
+    ? calculateVehicleDiscount(pricingVehicle, extensionDays, dailyRate)
+    : { grossRental: 0, discountAmount: 0, discountPercent: 0, netRental: 0 };
   return {
     ...pricing,
-    discountDifference: pricing.discountAmount - previousDiscount,
+    discountDifference: pricing.discountAmount,
   };
 };
 
@@ -15237,12 +15237,10 @@ export default function CarHopApp() {
                                              <span>Extended Days</span>
                                              <span className="font-bold text-zinc-900 dark:text-white">{extendedDays} days × ${dailyRate.toFixed(2)} = ${extensionRentalAmount.toFixed(2)}</span>
                                            </div>
-                                            {Math.abs(discountDifference) > 0.005 && (
-                                              <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
-                                                <span>{discountDifference > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Discount adjustment'}</span>
-                                                <span className="font-bold">{discountDifference > 0 ? '-' : '+'}${Math.abs(discountDifference).toFixed(2)}</span>
-                                              </div>
-                                            )}
+                                             <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
+                                               <span>{discountPreview.discountPercent > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Progressive discount (0%)'}</span>
+                                               <span className="font-bold">-${Math.max(0, discountDifference).toFixed(2)}</span>
+                                             </div>
                                            {extensionProtectionAmount > 0 && (
                                              <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
                                                <span>Daily Insurance</span>

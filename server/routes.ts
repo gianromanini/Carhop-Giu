@@ -362,6 +362,18 @@ function getRentalDailyRate(details: any, vehicle: any, bookingDays: number): nu
   return rentalTotal > 0 ? rentalTotal / safeDays : 0;
 }
 
+function calculateExtensionPricing(vehicle: any, extensionDays: number, dailyRate: number) {
+  if (extensionDays <= 0) {
+    return {
+      grossRental: 0,
+      discountAmount: 0,
+      discountPercent: 0,
+      netRental: 0,
+    };
+  }
+  return calculateVehicleDiscount(vehicle, extensionDays, dailyRate);
+}
+
 // Email notification helper functions
 async function sendBookingConfirmationEmail(booking: any, vehicle: any) {
   const clientEmail = booking.driver?.email;
@@ -2347,9 +2359,10 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const oldExtendedRate = booking.details?.extendedRate || 0;
       const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
       const oldDiscount = Number(booking.details?.discount || 0);
-       const discountPricing = calculateVehicleDiscount(vehicle, updateData.days, pricePerDay);
-      const newDiscount = discountPricing.discountAmount;
-      const discountDifference = newDiscount - oldDiscount;
+      const extensionDays = Math.max(0, daysDifference);
+      const discountPricing = calculateExtensionPricing(vehicle, extensionDays, pricePerDay);
+      const extensionDiscount = discountPricing.discountAmount;
+      const newDiscount = oldDiscount + extensionDiscount;
 
       // Protection: charge the same per-day rate used at booking start.
       const oldProtectionAmt = Number(booking.details?.protection || 0);
@@ -2357,12 +2370,12 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const protectionDeltaAmt = protectionPerDayAmt * daysDifference;
       const newProtectionAmt = Math.max(0, oldProtectionAmt + protectionDeltaAmt);
 
-      // Calculate tax adjustment after applying any new duration discount.
+      // Calculate tax adjustment after applying the discount only to added days.
       const oldTax = booking.details?.tax || 0;
       let newTax = oldTax;
       if (daysDifference !== 0) {
         const taxRate = (settingsObj.taxes || 0) / 100;
-        const taxAdjustment = (rateDifference + protectionDeltaAmt - discountDifference) * taxRate;
+        const taxAdjustment = (rateDifference + protectionDeltaAmt - extensionDiscount) * taxRate;
         newTax = oldTax + taxAdjustment;
       }
       
@@ -2548,9 +2561,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const oldExtendedRate = booking.details?.extendedRate || 0;
     const newExtendedRate = Math.max(0, oldExtendedRate + rateDifference);
     const oldDiscount = Number(booking.details?.discount || 0);
-    const discountPricing = calculateVehicleDiscount(vehicle, newDays, pricePerDay);
-    const newDiscount = discountPricing.discountAmount;
-    const discountDifference = newDiscount - oldDiscount;
+    const discountPricing = calculateExtensionPricing(vehicle, extraDays, pricePerDay);
+    const extensionDiscount = discountPricing.discountAmount;
+    const newDiscount = oldDiscount + extensionDiscount;
 
     // Protection: charge the same per-day rate that was selected at booking start.
     const oldProtection = Number(booking.details?.protection || 0);
@@ -2561,19 +2574,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
     const oldTax = booking.details?.tax || 0;
     const taxRate = (settingsObj.taxes || 0) / 100;
-    // Tax follows the discounted rental amount plus the protection delta.
-    const taxAdjustment = (rateDifference + protectionDifference - discountDifference) * taxRate;
+    // Tax follows the extension-only discounted rental amount plus the protection delta.
+    const taxAdjustment = (rateDifference + protectionDifference - extensionDiscount) * taxRate;
     const newTax = oldTax + taxAdjustment;
 
-    // Incremental total: add the gross rate and protection deltas, then apply
-    // any newly earned discount and the corresponding tax adjustment.
+    // Incremental total: add the gross extension rate and protection delta, then apply
+    // the discount earned only by the extension days and its tax adjustment.
     // This preserves every other component already in booking.total (extras, fees, delivery,
     // discounts, manual charges, existing tax, etc.) without recomputing them.
-    const newTotal = (booking.total || 0) + rateDifference + protectionDifference - discountDifference + taxAdjustment;
+    const newTotal = (booking.total || 0) + rateDifference + protectionDifference - extensionDiscount + taxAdjustment;
 
     // Append a system message notifying the guest
     const noteText = note ? ` Note: ${note}` : '';
-    const totalAddition = rateDifference + protectionDifference - discountDifference + taxAdjustment;
+    const totalAddition = rateDifference + protectionDifference - extensionDiscount + taxAdjustment;
     const systemMsg = {
       id: `msg-${Date.now()}`,
       read: false,
