@@ -42,6 +42,7 @@ export interface IStorage {
   getVehicleSummaries(): Promise<VehicleSummary[]>;
   getVehicle(id: number): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
+  restoreVehicle(id: number, vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
   deleteVehicle(id: number): Promise<boolean>;
 
@@ -690,6 +691,15 @@ export class MemStorage implements IStorage {
     };
     this.vehicles.set(id, newVehicle);
     return newVehicle;
+  }
+
+  async restoreVehicle(id: number, vehicle: InsertVehicle): Promise<Vehicle> {
+    const created = await this.createVehicle(vehicle);
+    this.vehicles.delete(created.id);
+    const restored = { ...created, id } as Vehicle;
+    this.vehicles.set(id, restored);
+    this.vehicleId = Math.max(this.vehicleId, id + 1);
+    return restored;
   }
 
   async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
@@ -1480,6 +1490,24 @@ export class DatabaseStorage implements IStorage {
       return result[0];
     } catch (error) {
       console.error("Error creating vehicle:", error);
+      throw error;
+    }
+  }
+
+  async restoreVehicle(id: number, vehicle: InsertVehicle): Promise<Vehicle> {
+    if (!this.initialized) throw new Error("Database not initialized");
+    try {
+      const result = await this.db.insert(vehicles).values({ ...vehicle, id } as any).returning();
+      await this.db.execute(sql`
+        SELECT setval(
+          pg_get_serial_sequence('vehicles', 'id'),
+          GREATEST((SELECT COALESCE(MAX(id), 1) FROM vehicles), 1),
+          true
+        )
+      `);
+      return result[0];
+    } catch (error) {
+      console.error("Error restoring vehicle:", error);
       throw error;
     }
   }

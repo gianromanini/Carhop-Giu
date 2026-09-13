@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
-import { insertVehicleSchema, insertBookingSchema, insertHostSchema, insertPayoutSchema } from "@shared/schema";
+import { insertVehicleSchema, insertBookingSchema, insertHostSchema, insertPayoutSchema, type Vehicle } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./googleAuth";
 import { getUncachableStripeClient, getStripePublishableKey, verifyStripePaymentIntent } from "./stripeClient";
 import { stripBookingImages } from "./bookingUtils";
@@ -1709,11 +1709,13 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     if (!result.success) {
       return res.status(400).json({ error: result.error.flatten() });
     }
+    const existingVehicle = await storage.getVehicle(id);
+    const orphanSnapshot = existingVehicle ? undefined : await getOrphanVehicleSnapshot(id);
     if (result.data.commission !== undefined) {
-      const existingVehicle = await storage.getVehicle(id);
       const isUnchangedLegacyPlan =
         result.data.commission === LEGACY_PLATFORM_COMMISSION &&
-        existingVehicle?.commission === LEGACY_PLATFORM_COMMISSION;
+        (existingVehicle?.commission === LEGACY_PLATFORM_COMMISSION ||
+          orphanSnapshot?.commission === LEGACY_PLATFORM_COMMISSION);
       if (
         result.data.commission !== LEGACY_PLATFORM_COMMISSION &&
         !isAllowedVehicleCommission(result.data.commission)
@@ -1725,7 +1727,19 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       }
       result.data.deductible = VEHICLE_DEDUCTIBLES[result.data.commission] ?? result.data.deductible;
     }
-    const vehicle = await storage.updateVehicle(id, result.data);
+    let vehicle: Vehicle | undefined;
+    if (existingVehicle) {
+      vehicle = await storage.updateVehicle(id, result.data);
+    } else if (orphanSnapshot) {
+      const restoredData = insertVehicleSchema.safeParse({
+        ...orphanSnapshot,
+        ...result.data,
+      });
+      if (!restoredData.success) {
+        return res.status(400).json({ error: restoredData.error.flatten() });
+      }
+      vehicle = await storage.restoreVehicle(id, restoredData.data);
+    }
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
     res.json(vehicle);
   });

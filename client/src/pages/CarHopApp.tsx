@@ -2353,7 +2353,14 @@ export default function CarHopApp() {
       setEditingId(null); 
       setEditingHostVehicle(null);
       toast({ title: 'Vehicle updated successfully' });
-    }
+     },
+     onError: (error: any) => {
+       toast({
+         title: 'Could not save vehicle',
+         description: error?.message || 'Please try again.',
+         variant: 'destructive',
+       });
+     },
   });
 
   const toggleVehicleAvailabilityMutation = useMutation({
