@@ -8864,9 +8864,13 @@ export default function CarHopApp() {
                                     const extraTotal = extraCost + extraProtection - discountDifference + extraTax;
                                     return (
                                       <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
-                                        <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
+                                         <div className="flex justify-between text-zinc-300"><span>Rental ({extraDays} days)</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)} = +${extraCost.toFixed(2)}</span></div>
+                                         <div className="flex justify-between text-green-300">
+                                           <span>{discountPreview.discountPercent > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Progressive discount (0%)'}</span>
+                                           <span>-${Math.max(0, discountDifference).toFixed(2)}</span>
+                                         </div>
                                         {extraProtection > 0 && <div className="flex justify-between text-zinc-300"><span>Protection ({b.details?.protectionType || 'plan'})</span><span>+${extraProtection.toFixed(2)}</span></div>}
-                                        {Math.abs(discountDifference) > 0.005 && <div className="flex justify-between text-green-300"><span>{discountDifference > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Discount adjustment'}</span><span>{discountDifference > 0 ? '-' : '+'}${Math.abs(discountDifference).toFixed(2)}</span></div>}
+                                         {discountDifference < -0.005 && <div className="flex justify-between text-yellow-300"><span>Discount adjustment</span><span>+${Math.abs(discountDifference).toFixed(2)}</span></div>}
                                         {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
                                         <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>{extraTotal >= 0 ? '+' : '-'}${Math.abs(extraTotal).toFixed(2)}</span></div>
                                       </div>
@@ -12626,9 +12630,13 @@ export default function CarHopApp() {
                                                 const extraTotal = extraCost + extraProtection - discountDifference + extraTax;
                                                 return (
                                                   <div className="bg-blue-950/30 border border-blue-800 rounded-lg p-3 text-xs space-y-1">
-                                                    <div className="flex justify-between text-zinc-300"><span>Extra days</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)}/day</span></div>
+                                                     <div className="flex justify-between text-zinc-300"><span>Rental ({extraDays} days)</span><span className="font-bold">{extraDays} × ${pricePerDay.toFixed(2)} = +${extraCost.toFixed(2)}</span></div>
+                                                     <div className="flex justify-between text-green-300">
+                                                       <span>{discountPreview.discountPercent > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Progressive discount (0%)'}</span>
+                                                       <span>-${Math.max(0, discountDifference).toFixed(2)}</span>
+                                                     </div>
                                                     {extraProtection > 0 && <div className="flex justify-between text-zinc-300"><span>Protection ({b.details?.protectionType || 'plan'})</span><span>+${extraProtection.toFixed(2)}</span></div>}
-                                                    {Math.abs(discountDifference) > 0.005 && <div className="flex justify-between text-green-300"><span>{discountDifference > 0 ? `Progressive discount (${discountPreview.discountPercent}%)` : 'Discount adjustment'}</span><span>{discountDifference > 0 ? '-' : '+'}${Math.abs(discountDifference).toFixed(2)}</span></div>}
+                                                     {discountDifference < -0.005 && <div className="flex justify-between text-yellow-300"><span>Discount adjustment</span><span>+${Math.abs(discountDifference).toFixed(2)}</span></div>}
                                                     {extraTax > 0 && <div className="flex justify-between text-zinc-400"><span>Tax</span><span>+${extraTax.toFixed(2)}</span></div>}
                                                     <div className="flex justify-between text-blue-300 font-bold border-t border-blue-800 pt-1"><span>Added to booking</span><span>{extraTotal >= 0 ? '+' : '-'}${Math.abs(extraTotal).toFixed(2)}</span></div>
                                                   </div>
