@@ -202,6 +202,9 @@ const getRentalDailyRateForExtensionPreview = (booking: any, vehicle: any): numb
   const storedRate = Number(booking?.details?.rentalDailyRate);
   if (Number.isFinite(storedRate) && storedRate > 0) return storedRate;
 
+  const bookingVehicleRate = Number(booking?.vehiclePrice);
+  if (Number.isFinite(bookingVehicleRate) && bookingVehicleRate > 0) return bookingVehicleRate;
+
   const vehicleRate = Number(vehicle?.price);
   if (Number.isFinite(vehicleRate) && vehicleRate > 0) return vehicleRate;
 
@@ -6946,9 +6949,36 @@ export default function CarHopApp() {
           </div>
 
           {hostTab === 'fleet' && (() => {
-            const hostVehicles = (allVehicles.length > 0 ? allVehicles : vehicles).filter(v => String(v.hostId) === String(currentHost.id));
+            const vehicleById = new globalThis.Map<string, any>();
+            [...(allVehicles || []), ...(vehicles || [])].forEach((vehicle: any) => {
+              vehicleById.set(String(vehicle.id), vehicle);
+            });
+            const listedVehicles = Array.from(vehicleById.values());
+            const hostId = String(currentHost.id);
+            const hostBookingsForFleet = bookings.filter((booking: any) =>
+              String((booking.details as any)?.hostId || '') === hostId ||
+              String((booking.details as any)?.hostEmail || '').toLowerCase() === String(currentHost.email || '').toLowerCase()
+            );
+            const fallbackVehicles = hostBookingsForFleet
+              .filter((booking: any) => booking.vehicleId != null && !vehicleById.has(String(booking.vehicleId)))
+              .map((booking: any) => ({
+                id: Number(booking.vehicleId),
+                model: booking.carName || 'Vehicle from booking',
+                year: (booking.details as any)?.vehicleYear || null,
+                price: Number((booking.details as any)?.rentalDailyRate) ||
+                  Number(booking.vehiclePrice) ||
+                  (Number((booking.details as any)?.rate || 0) / Math.max(1, Number(booking.days) || 1)),
+                hostId,
+                availabilityStatus: 'unavailable',
+                images: booking.image ? [booking.image] : [],
+                category: 'Booked vehicle',
+                fuel: '',
+                seats: 0,
+              }));
+            const hostVehicles = [...listedVehicles, ...fallbackVehicles]
+              .filter((v: any) => String(v.hostId) === hostId);
             const pendingTransfers = vehicles
-              .filter(v => v.hostId === String(currentHost.id) && (v as any).transferRequests?.length > 0)
+              .filter(v => String(v.hostId) === hostId && (v as any).transferRequests?.length > 0)
               .flatMap(v => ((v as any).transferRequests || [])
                 .filter((tr: any) => tr.status === 'pending')
                 .map((tr: any) => ({ ...tr, vehicleId: v.id, vehicleModel: v.model }))
@@ -7045,7 +7075,7 @@ export default function CarHopApp() {
                         return 0;
                       }).filter((car: any) => {
                         if (hostFleetStatusFilter === 'all') return true;
-                        const activeBooking = bookings.find((bk: any) => bk.vehicleId === car.id && (bk.status === 'Active' || bk.status === 'Extended'));
+                          const activeBooking = bookings.find((bk: any) => String(bk.vehicleId) === String(car.id) && (bk.status === 'Active' || bk.status === 'Extended'));
                         const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
                         const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
                         const effectiveStatus = isOnTrip ? 'on-trip' : isBooked ? 'booked' : (car.availabilityStatus || 'available');
@@ -7074,7 +7104,7 @@ export default function CarHopApp() {
                                 <p className="text-xs text-zinc-500 truncate mt-1">{car.fuel} · {car.category} · {car.seats}p</p>
                                 <p className="text-xs font-bold text-green-600 mt-1">${car.price}/d | {car.commission || 10}%</p>
                                 {(() => {
-                                  const activeBooking = bookings.find((b: any) => b.vehicleId === car.id && (b.status === 'Active' || b.status === 'Extended'));
+                                  const activeBooking = bookings.find((b: any) => String(b.vehicleId) === String(car.id) && (b.status === 'Active' || b.status === 'Extended'));
                                   const isOnTrip = !!(activeBooking && activeBooking.checkInStatus === 'completed');
                                   const isBooked = !!(activeBooking && activeBooking.checkInStatus !== 'completed');
                                    const configuredStatus = (car as any).availabilityStatus || 'available';
