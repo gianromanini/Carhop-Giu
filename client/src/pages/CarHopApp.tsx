@@ -221,7 +221,13 @@ const getExtensionDiscountForPreview = (
 ) => {
   const oldDays = Math.max(1, Number(booking?.days) || 1);
   const newDays = Math.max(1, oldDays + Math.max(0, addedDays));
-  const pricing = calculateVehicleDiscount(vehicle, newDays, dailyRate);
+  const pricingVehicle = vehicle || {
+    price: dailyRate,
+    pricing: {
+      discountPrograms: booking?.details?.discountPrograms || [],
+    },
+  };
+  const pricing = calculateVehicleDiscount(pricingVehicle, newDays, dailyRate);
   const previousDiscount = Number(booking?.details?.discount || 0);
   return {
     ...pricing,

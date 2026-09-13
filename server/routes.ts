@@ -118,7 +118,19 @@ async function getOrphanVehicleSnapshot(vehicleId: number): Promise<any | undefi
     pickupInstructions: '',
     locationLat: null,
     locationLon: null,
-    pricing: null,
+    pricing: {
+      taxes: 0,
+      cleaningFee: 0,
+      includedMiles: 0,
+      extraMileRate: 0,
+      prices: {
+        insurance500: 0,
+        insurance1000: 0,
+        childSeat: 0,
+        childSeatPerTrip: false,
+      },
+      discountPrograms: Array.isArray(details.discountPrograms) ? details.discountPrograms : [],
+    },
     expenses: null,
     transferRequests: [],
     availabilityStatus: 'unavailable',
@@ -1939,6 +1951,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         (result.data.details as any).vehicleYear = vehicleForEnrich.year || null;
         (result.data.details as any).hostId = vehicleForEnrich.hostId || null;
         (result.data.details as any).hostName = hostForEnrich ? `${hostForEnrich.firstName} ${hostForEnrich.lastName}` : (vehicleForEnrich.hostName || null);
+        (result.data.details as any).discountPrograms = Array.isArray(vehicleForEnrich.pricing?.discountPrograms)
+          ? vehicleForEnrich.pricing.discountPrograms
+          : [];
       }
 
       // Initialize license verification as pending for host review
@@ -2308,7 +2323,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       
       // Get the car price per day
       const vehicleId = booking.vehicleId;
-      const vehicle = vehicleId ? await storage.getVehicle(vehicleId) : null;
+      const vehicle = vehicleId
+        ? await storage.getVehicle(vehicleId) || await getOrphanVehicleSnapshot(vehicleId)
+        : null;
       const pricePerDay = getRentalDailyRate(booking.details, vehicle, oldDays);
       
       // Adjust total and extended rate based on days difference
@@ -2509,7 +2526,9 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
     const settingsObj: Record<string, any> = {};
     allSettings.forEach(s => (settingsObj[s.key] = s.value));
 
-    const vehicle = booking.vehicleId ? await storage.getVehicle(booking.vehicleId) : null;
+    const vehicle = booking.vehicleId
+      ? await storage.getVehicle(booking.vehicleId) || await getOrphanVehicleSnapshot(booking.vehicleId)
+      : null;
     const pricePerDay = getRentalDailyRate(booking.details, vehicle, booking.days || 1);
     const rateDifference = pricePerDay * extraDays;
     const oldExtendedRate = booking.details?.extendedRate || 0;
